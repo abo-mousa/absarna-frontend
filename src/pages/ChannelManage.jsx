@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Upload, Video, BookOpen, FileText, Settings, Save, ArrowRight, Eye, EyeOff, Trash2 } from 'lucide-react';
+import { Upload, Video, BookOpen, FileText, MessageSquare, Settings, Save, ArrowRight, Eye, EyeOff, Trash2 } from 'lucide-react';
 import api from '@/lib/api/client';
 import { useAuth } from '../contexts/AuthContext';
 import Navbar from '../components/layout/Navbar';
@@ -11,6 +11,7 @@ const TABS = [
     { id: 'videos', label: 'الفيديوهات', icon: Video },
     { id: 'books', label: 'الكتب', icon: BookOpen },
     { id: 'articles', label: 'المقالات', icon: FileText },
+    { id: 'posts', label: 'المنشورات', icon: MessageSquare },
 ];
 
 function ErrorScreen({ emoji, title, description, onBack }) {
@@ -27,7 +28,7 @@ function ErrorScreen({ emoji, title, description, onBack }) {
     );
 }
 
-function ContentManageList({ items, loading, onToggleVisibility, onDelete }) {
+function ContentManageList({ items, loading, onToggleVisibility, onDelete, getLabel = (item) => item.title }) {
     if (loading) return <p className="text-sm text-text-muted py-2">جاري التحميل...</p>;
     if (items.length === 0) return <p className="text-sm text-text-muted py-4">لا يوجد محتوى بعد</p>;
 
@@ -41,7 +42,7 @@ function ContentManageList({ items, loading, onToggleVisibility, onDelete }) {
                     }`}
                 >
                     <div className="min-w-0">
-                        <strong className={`block truncate ${item.visible ? '' : 'text-text-muted'}`}>{item.title}</strong>
+                        <strong className={`block truncate ${item.visible ? '' : 'text-text-muted'}`}>{getLabel(item)}</strong>
                         {!item.visible && <span className="text-xs text-text-muted">مخفي عن الزوار</span>}
                     </div>
                     <div className="flex gap-1 flex-shrink-0">
@@ -96,12 +97,15 @@ function ChannelManage() {
         title: '', content: '', category: '', publishDate: '', isFeatured: false,
     });
 
+    const [postForm, setPostForm] = useState({ content: '', publishDate: '' });
+
     const [videoList, setVideoList] = useState([]);
     const [bookList, setBookList] = useState([]);
     const [articleList, setArticleList] = useState([]);
+    const [postList, setPostList] = useState([]);
     const [listLoading, setListLoading] = useState(false);
 
-    const LIST_SETTERS = { videos: setVideoList, books: setBookList, articles: setArticleList };
+    const LIST_SETTERS = { videos: setVideoList, books: setBookList, articles: setArticleList, posts: setPostList };
 
     useEffect(() => {
         if (!authLoading) fetchChannel();
@@ -169,7 +173,8 @@ function ChannelManage() {
     };
 
     const deleteItem = async (type, item) => {
-        if (!window.confirm(`هل تريد حذف "${item.title}"؟`)) return;
+        const label = item.title || (item.content ? `${item.content.substring(0, 40)}...` : '');
+        if (!window.confirm(`هل تريد حذف "${label}"؟`)) return;
         try {
             await api.delete(`/channels/${slug}/content/${type}/${item.id}`);
             showMessage('success:تم الحذف');
@@ -298,6 +303,18 @@ function ChannelManage() {
             fetchList('articles');
         } catch (err) {
             showMessage(`error:فشل في نشر المقال: ${err.response?.data?.message || err.message}`);
+        }
+    };
+
+    const handlePostSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            await api.post(`/channels/${slug}/content/posts`, { ...postForm, channelId: channel.id });
+            setPostForm({ content: '', publishDate: '' });
+            showMessage('success:تم نشر التحديث');
+            fetchList('posts');
+        } catch (err) {
+            showMessage(`error:فشل في نشر التحديث: ${err.response?.data?.message || err.message}`);
         }
     };
 
@@ -469,6 +486,42 @@ function ChannelManage() {
                                 loading={listLoading}
                                 onToggleVisibility={(item) => toggleVisibility('articles', item)}
                                 onDelete={(item) => deleteItem('articles', item)}
+                            />
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'posts' && (
+                    <div className="grid gap-6">
+                        <form onSubmit={handlePostSubmit} className={formCardClass}>
+                            <h3 className="text-lg font-bold">نشر تحديث</h3>
+
+                            <Input
+                                label="المحتوى"
+                                textarea
+                                rows={4}
+                                value={postForm.content}
+                                onChange={(e) => setPostForm({ ...postForm, content: e.target.value })}
+                                required
+                            />
+                            <Input
+                                label="تاريخ النشر"
+                                type="date"
+                                value={postForm.publishDate}
+                                onChange={(e) => setPostForm({ ...postForm, publishDate: e.target.value })}
+                            />
+
+                            <Button type="submit">نشر</Button>
+                        </form>
+
+                        <div>
+                            <h3 className="text-lg font-bold mb-3">منشوراتي ({postList.length})</h3>
+                            <ContentManageList
+                                items={postList}
+                                loading={listLoading}
+                                getLabel={(item) => item.content?.length > 60 ? `${item.content.substring(0, 60)}...` : item.content}
+                                onToggleVisibility={(item) => toggleVisibility('posts', item)}
+                                onDelete={(item) => deleteItem('posts', item)}
                             />
                         </div>
                     </div>

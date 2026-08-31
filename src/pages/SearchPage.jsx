@@ -1,14 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '@/lib/api/client';
+import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
 import { Spinner, EmptyState } from '../components/ui';
 import { VideoCard } from '../components/content';
+import { useWatchProgressMap } from '../hooks/useContents';
 
 function SearchPage() {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const query = searchParams.get('q') || '';
+    const { token } = useAuth();
+    const watchProgress = useWatchProgressMap(!!token);
 
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -61,7 +65,12 @@ function SearchPage() {
                 <>
                     <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
                         {results.map((video) => (
-                            <VideoCard key={video.id} video={video} onClick={() => navigate(`/video/${video.id}`)} />
+                            <VideoCard
+                                key={video.id}
+                                video={video}
+                                onClick={() => navigate(`/video/${video.id}`)}
+                                watchedSeconds={watchProgress[video.id]}
+                            />
                         ))}
                     </div>
 

@@ -5,7 +5,8 @@ import api from '@/lib/api/client';
 import Navbar from '../components/layout/Navbar';
 import { Spinner } from '../components/ui';
 import { VideoPlayer, CommentsSection, VideoCard } from '../components/content';
-import { useRelatedContent } from '../hooks/useContents';
+import { useRelatedContent, useWatchProgressMap } from '../hooks/useContents';
+import { useAuth } from '../contexts/AuthContext';
 
 function VideoDetail() {
     const { id } = useParams();
@@ -14,6 +15,8 @@ function VideoDetail() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const { data: related = [] } = useRelatedContent(id);
+    const { token } = useAuth();
+    const watchProgress = useWatchProgressMap(!!token);
 
     useEffect(() => {
         fetchVideo();
@@ -67,7 +70,7 @@ function VideoDetail() {
 
             <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
                 <div className="bg-surface rounded-lg overflow-hidden border border-border-light shadow-sm mb-6">
-                    <VideoPlayer sourceType={video.sourceType} sourceUrl={video.sourceUrl} title={video.title} />
+                    <VideoPlayer contentId={video.id} sourceType={video.sourceType} sourceUrl={video.sourceUrl} title={video.title} />
                 </div>
 
                 <div className="bg-surface p-5 sm:p-6 rounded-lg border border-border-light mb-6">
@@ -93,7 +96,12 @@ function VideoDetail() {
                         <h2 className="text-lg font-bold mb-3">قد يعجبك أيضاً</h2>
                         <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-4">
                             {related.map((item) => (
-                                <VideoCard key={item.id} video={item} onClick={() => navigate(`/video/${item.id}`)} />
+                                <VideoCard
+                                    key={item.id}
+                                    video={item}
+                                    onClick={() => navigate(`/video/${item.id}`)}
+                                    watchedSeconds={watchProgress[item.id]}
+                                />
                             ))}
                         </div>
                     </div>

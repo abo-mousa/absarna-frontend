@@ -25,3 +25,12 @@ export const youtubeThumbnail = (sourceUrl) => {
     const id = extractYouTubeId(sourceUrl);
     return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : null;
 };
+
+// Parses the backend's "MM:SS" / "H:MM:SS" duration string (ContentController's Content.duration)
+// into whole seconds, for computing a watched-percentage against WatchHistory.progressSeconds.
+export const durationToSeconds = (duration) => {
+    if (!duration || typeof duration !== 'string') return null;
+    const parts = duration.split(':').map(Number);
+    if (parts.length === 0 || parts.some((part) => Number.isNaN(part))) return null;
+    return parts.reduce((total, part) => total * 60 + part, 0);
+};

@@ -1,22 +1,38 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowRight, BookOpen, Download, X } from 'lucide-react';
 import api from '@/lib/api/client';
 import { resolveMediaUrl } from '@/lib/media';
+import { useAuth } from '../contexts/AuthContext';
 import Navbar from '../components/layout/Navbar';
 import { Spinner } from '../components/ui';
 import { CommentsSection } from '../components/content';
 
+// Code-split: pdfjs is a large dependency that only visitors who actually open a book should pay for.
+const PdfReader = lazy(() => import('../components/content/PdfReader'));
+
 function BookDetail() {
     const { id } = useParams();
+    const { token } = useAuth();
     const [book, setBook] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [showPdf, setShowPdf] = useState(false);
+    const [savedPage, setSavedPage] = useState(null);
 
     useEffect(() => {
         fetchBook();
     }, [id]);
+
+    useEffect(() => {
+        if (!token) {
+            setSavedPage(null);
+            return;
+        }
+        api.get(`/books/${id}/read`)
+            .then((res) => setSavedPage(res.data?.currentPage || null))
+            .catch((err) => console.error('Failed to fetch reading progress:', err));
+    }, [id, token]);
 
     const fetchBook = async () => {
         try {
@@ -29,6 +45,14 @@ function BookDetail() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handlePageChange = (page) => {
+        setSavedPage(page);
+        if (!token) return;
+        api.post(`/books/${id}/read`, { currentPage: page }).catch(() => {
+            // Best-effort: never let a failed reading-progress write disrupt the reader.
+        });
     };
 
     if (loading) {
@@ -91,43 +115,47 @@ function BookDetail() {
                         )}
 
                         {pdfUrl && (
-                            <div className="flex gap-2 flex-wrap">
-                                <button
-                                    onClick={() => setShowPdf(!showPdf)}
-                                    className="flex-1 min-w-[150px] flex items-center justify-center gap-2 py-3 bg-primary text-white rounded-md font-semibold"
-                                >
-                                    <BookOpen size={18} /> {showPdf ? 'إخفاء القراءة' : 'قراءة أونلاين'}
-                                </button>
+                            <>
+                                {savedPage && !showPdf && (
+                                    <p className="text-sm text-text-muted mb-3">
+                                        توقفت عند صفحة {savedPage}
+                                    </p>
+                                )}
+                                <div className="flex gap-2 flex-wrap">
+                                    <button
+                                        onClick={() => setShowPdf(!showPdf)}
+                                        className="flex-1 min-w-[150px] flex items-center justify-center gap-2 py-3 bg-primary text-white rounded-md font-semibold"
+                                    >
+                                        <BookOpen size={18} />
+                                        {showPdf ? 'إخفاء القراءة' : savedPage ? 'متابعة القراءة' : 'قراءة أونلاين'}
+                                    </button>
 
-                                <a
-                                    href={pdfUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex-1 min-w-[150px] flex items-center justify-center gap-2 py-3 bg-primary-light text-primary rounded-md font-semibold"
-                                >
-                                    <Download size={18} /> تحميل PDF
-                                </a>
-                            </div>
+                                    <a
+                                        href={pdfUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex-1 min-w-[150px] flex items-center justify-center gap-2 py-3 bg-primary-light text-primary rounded-md font-semibold"
+                                    >
+                                        <Download size={18} /> تحميل PDF
+                                    </a>
+                                </div>
+                            </>
                         )}
                     </div>
                 </div>
 
                 {showPdf && pdfUrl && (
-                    <div className="bg-surface rounded-lg overflow-hidden border border-border-light shadow-sm h-[80vh] flex flex-col mb-6">
+                    <div className="bg-surface rounded-lg overflow-hidden border border-border-light shadow-sm flex flex-col mb-6">
                         <div className="flex justify-between items-center px-5 py-3 border-b border-border-light">
                             <h3 className="m-0 flex items-center gap-2"><BookOpen size={18} /> {book.title}</h3>
                             <button onClick={() => setShowPdf(false)} className="text-text-muted hover:text-text-primary">
                                 <X size={20} />
                             </button>
                         </div>
-                        <div className="flex-1 overflow-auto">
-                            <object data={pdfUrl} type="application/pdf" className="w-full h-full border-0">
-                                <p className="text-center p-10">
-                                    <a href={pdfUrl} target="_blank" rel="noopener noreferrer" className="text-primary font-semibold">
-                                        افتح الملف في تبويب جديد
-                                    </a>
-                                </p>
-                            </object>
+                        <div className="flex-1 overflow-auto p-4">
+                            <Suspense fallback={<div className="py-16 text-center text-text-muted">جاري التحميل...</div>}>
+                                <PdfReader fileUrl={pdfUrl} initialPage={savedPage || 1} onPageChange={handlePageChange} />
+                            </Suspense>
                         </div>
                     </div>
                 )}

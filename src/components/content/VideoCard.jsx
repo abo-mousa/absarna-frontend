@@ -1,5 +1,5 @@
 import { Play, Eye, EyeOff, Trash2 } from 'lucide-react';
-import { resolveMediaUrl, youtubeThumbnail } from '@/lib/media';
+import { resolveMediaUrl, youtubeThumbnail, durationToSeconds } from '@/lib/media';
 
 function getThumbnail(video) {
     if (video.thumbnailUrl) return resolveMediaUrl(video.thumbnailUrl);
@@ -7,8 +7,19 @@ function getThumbnail(video) {
     return null;
 }
 
-function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete }) {
+// Percent watched, for the small YouTube-style progress bar on the thumbnail. Hidden below 1%
+// so a barely-started video doesn't show a distracting sliver.
+function getWatchedPercent(video, watchedSeconds) {
+    if (!watchedSeconds) return null;
+    const totalSeconds = durationToSeconds(video.duration);
+    if (!totalSeconds) return null;
+    const percent = (watchedSeconds / totalSeconds) * 100;
+    return percent > 1 ? Math.min(100, percent) : null;
+}
+
+function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watchedSeconds }) {
     const thumbnail = getThumbnail(video);
+    const watchedPercent = getWatchedPercent(video, watchedSeconds);
 
     return (
         <div
@@ -22,7 +33,7 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete }) {
                     <img
                         src={thumbnail}
                         alt={video.title}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain"
                         onError={(e) => {
                             e.target.style.display = 'none';
                         }}
@@ -67,6 +78,12 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete }) {
                         >
                             <Trash2 size={14} />
                         </button>
+                    </div>
+                )}
+
+                {watchedPercent !== null && (
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/40">
+                        <div className="h-full bg-primary/40" style={{ width: `${watchedPercent}%` }} />
                     </div>
                 )}
             </div>

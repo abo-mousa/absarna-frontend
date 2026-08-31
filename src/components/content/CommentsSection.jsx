@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { CornerUpLeft } from 'lucide-react';
 import api from '@/lib/api/client';
 import { useAuth } from '../../contexts/AuthContext';
+import { EmailVerificationNotice } from '../auth';
 
 function CommentsSection({ type, id }) {
     const { token, user } = useAuth();
@@ -12,6 +13,7 @@ function CommentsSection({ type, id }) {
     const [submitting, setSubmitting] = useState(false);
     const [replyingTo, setReplyingTo] = useState(null);
     const [replyContent, setReplyContent] = useState('');
+    const [needsVerification, setNeedsVerification] = useState(false);
 
     useEffect(() => {
         fetchComments();
@@ -35,11 +37,16 @@ function CommentsSection({ type, id }) {
 
         try {
             setSubmitting(true);
+            setNeedsVerification(false);
             await api.post(`/${type}s/${id}/comments`, { content: newComment.trim() });
             setNewComment('');
             fetchComments();
         } catch (err) {
-            alert('فشل في إرسال التعليق');
+            if (err.response?.data?.emailVerificationRequired) {
+                setNeedsVerification(true);
+            } else {
+                alert('فشل في إرسال التعليق');
+            }
         } finally {
             setSubmitting(false);
         }
@@ -50,12 +57,17 @@ function CommentsSection({ type, id }) {
         if (!replyContent.trim()) return;
 
         try {
+            setNeedsVerification(false);
             await api.post(`/comments/${parentId}/reply`, { content: replyContent.trim() });
             setReplyContent('');
             setReplyingTo(null);
             fetchComments();
         } catch (err) {
-            alert('فشل في إرسال الرد');
+            if (err.response?.data?.emailVerificationRequired) {
+                setNeedsVerification(true);
+            } else {
+                alert('فشل في إرسال الرد');
+            }
         }
     };
 
@@ -78,6 +90,9 @@ function CommentsSection({ type, id }) {
                     <div className="text-sm text-text-muted">
                         التعليق باسم <strong className="text-primary">{user?.fullName || user?.username}</strong>
                     </div>
+                    {needsVerification && (
+                        <EmailVerificationNotice message="يجب توثيق بريدك الإلكتروني قبل إضافة تعليق" />
+                    )}
                     <textarea
                         placeholder="اكتب تعليقك هنا..."
                         value={newComment}

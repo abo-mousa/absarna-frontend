@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import api from '@/lib/api/client';
 
@@ -74,4 +75,50 @@ export const useRelatedContent = (id, limit = 6) => {
         enabled: !!id,
         staleTime: 5 * 60 * 1000,
     });
+};
+
+// The caller's own "continue watching" list — bounded/non-paginated per the backend's design
+// (see manara-platform's CLAUDE.md), never used to drive ranking, only to show progress.
+export const useWatchHistory = (enabled = true) => {
+    return useQuery({
+        queryKey: ['watch-history'],
+        queryFn: async () => {
+            const res = await api.get('/user/history?limit=200');
+            return res.data;
+        },
+        enabled,
+        staleTime: 60 * 1000,
+    });
+};
+
+// contentId -> progressSeconds, for VideoCard's watched-progress bar.
+export const useWatchProgressMap = (enabled = true) => {
+    const { data: history = [] } = useWatchHistory(enabled);
+    return useMemo(
+        () => Object.fromEntries(history.map((entry) => [entry.contentId, entry.progressSeconds])),
+        [history]
+    );
+};
+
+// The caller's own "resume reading" list — same bounded/non-ranking-signal design as
+// useWatchHistory, for books instead of videos.
+export const useReadingHistory = (enabled = true) => {
+    return useQuery({
+        queryKey: ['reading-history'],
+        queryFn: async () => {
+            const res = await api.get('/user/reading-history?limit=200');
+            return res.data;
+        },
+        enabled,
+        staleTime: 60 * 1000,
+    });
+};
+
+// bookId -> currentPage, for BookCard's read-progress bar.
+export const useReadingProgressMap = (enabled = true) => {
+    const { data: history = [] } = useReadingHistory(enabled);
+    return useMemo(
+        () => Object.fromEntries(history.map((entry) => [entry.bookId, entry.currentPage])),
+        [history]
+    );
 };

@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
 import { Spinner, EmptyState } from '../components/ui';
 import { VideoCard } from '../components/content';
-import { useInfiniteContents, useCategories, useFeed } from '../hooks/useContents';
+import { useInfiniteContents, useCategories, useFeed, useWatchProgressMap } from '../hooks/useContents';
 
 function Home() {
     const navigate = useNavigate();
@@ -29,6 +29,8 @@ function Home() {
         () => Object.fromEntries(myChannels.map((c) => [c.id, c.slug])),
         [myChannels]
     );
+
+    const watchProgress = useWatchProgressMap(!!token);
 
     const isDefaultView = selectedCategory === '';
 
@@ -82,6 +84,7 @@ function Home() {
         isOwner: !!mySlugByChannelId[video.channelId],
         onToggleVisibility: handleToggleVisibility,
         onDelete: handleDelete,
+        watchedSeconds: watchProgress[video.id],
     });
 
     const feedSections = [

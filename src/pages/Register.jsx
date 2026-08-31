@@ -52,8 +52,12 @@ function Register() {
 
         setLoading(true);
         const result = await register(form.username, form.email, form.password, form.fullName);
-        if (result.success) navigate('/');
-        else setError(result.message);
+        if (result.success) {
+            alert('تم إنشاء الحساب! أرسلنا رابط توثيق إلى بريدك الإلكتروني.');
+            navigate('/');
+        } else {
+            setError(result.message);
+        }
         setLoading(false);
     };
 

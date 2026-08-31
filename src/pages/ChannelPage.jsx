@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Bell, Check, Video, BookOpen, FileText, Settings } from 'lucide-react';
+import { Bell, Check, Video, BookOpen, FileText, MessageSquare, Settings } from 'lucide-react';
 import api from '@/lib/api/client';
 import { useAuth } from '../contexts/AuthContext';
 import Navbar from '../components/layout/Navbar';
 import SideBar from '../components/layout/SideBar';
 import { Spinner, Avatar } from '../components/ui';
-import { VideoCard, BookCard, ArticleCard } from '../components/content';
+import { VideoCard, BookCard, ArticleCard, PostCard } from '../components/content';
+import { useWatchProgressMap } from '../hooks/useContents';
 
 function ChannelPage() {
     const { slug } = useParams();
@@ -16,12 +17,14 @@ function ChannelPage() {
     const [videos, setVideos] = useState([]);
     const [books, setBooks] = useState([]);
     const [articles, setArticles] = useState([]);
+    const [posts, setPosts] = useState([]);
     const [activeTab, setActiveTab] = useState('videos');
     const [loading, setLoading] = useState(true);
     const [subscribed, setSubscribed] = useState(false);
     const [subscriberCount, setSubscriberCount] = useState(0);
     const [subscribing, setSubscribing] = useState(false);
     const [drawerOpen, setDrawerOpen] = useState(false);
+    const watchProgress = useWatchProgressMap(!!token);
 
     useEffect(() => {
         fetchChannelData();
@@ -37,15 +40,17 @@ function ChannelPage() {
             const channelRes = await api.get(`/channels/${slug}`);
             setChannel(channelRes.data);
 
-            const [videosRes, booksRes, articlesRes] = await Promise.all([
+            const [videosRes, booksRes, articlesRes, postsRes] = await Promise.all([
                 api.get(`/channels/${slug}/contents?page=0&size=50`),
                 api.get(`/channels/${slug}/books`),
                 api.get(`/channels/${slug}/articles`),
+                api.get(`/channels/${slug}/posts`),
             ]);
 
             setVideos(videosRes.data?.content || []);
             setBooks(booksRes.data?.content || booksRes.data || []);
             setArticles(articlesRes.data?.content || articlesRes.data || []);
+            setPosts(postsRes.data?.content || postsRes.data || []);
         } catch (err) {
             console.error('Failed to fetch channel:', err);
         } finally {
@@ -94,6 +99,7 @@ function ChannelPage() {
         { id: 'videos', label: 'فيديوهات', icon: Video, count: videos.length },
         { id: 'books', label: 'كتب', icon: BookOpen, count: books.length },
         { id: 'articles', label: 'مقالات', icon: FileText, count: articles.length },
+        { id: 'posts', label: 'منشورات', icon: MessageSquare, count: posts.length },
     ];
 
     if (loading) {
@@ -177,7 +183,12 @@ function ChannelPage() {
                         ) : (
                             <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-4">
                                 {videos.map((video) => (
-                                    <VideoCard key={video.id} video={video} onClick={() => navigate(`/video/${video.id}`)} />
+                                    <VideoCard
+                                        key={video.id}
+                                        video={video}
+                                        onClick={() => navigate(`/video/${video.id}`)}
+                                        watchedSeconds={watchProgress[video.id]}
+                                    />
                                 ))}
                             </div>
                         )
@@ -202,6 +213,18 @@ function ChannelPage() {
                             <div className="grid gap-3">
                                 {articles.map((article) => (
                                     <ArticleCard key={article.id} article={article} />
+                                ))}
+                            </div>
+                        )
+                    )}
+
+                    {activeTab === 'posts' && (
+                        posts.length === 0 ? (
+                            <p className="text-center text-text-muted py-10">لا توجد منشورات بعد</p>
+                        ) : (
+                            <div className="grid gap-3">
+                                {posts.map((post) => (
+                                    <PostCard key={post.id} post={post} />
                                 ))}
                             </div>
                         )

@@ -2,22 +2,37 @@ import { useNavigate } from 'react-router-dom';
 import { BookOpen, Download } from 'lucide-react';
 import { resolveMediaUrl } from '@/lib/media';
 
-function BookCard({ book }) {
+// Percent read, for the small progress bar on the cover — same idea as VideoCard's
+// watched-percent, hidden below 1% so a barely-opened book doesn't show a sliver.
+function getReadPercent(book, currentPage) {
+    if (!currentPage || !book.pages) return null;
+    const percent = (currentPage / book.pages) * 100;
+    return percent > 1 ? Math.min(100, percent) : null;
+}
+
+function BookCard({ book, currentPage }) {
     const navigate = useNavigate();
     const previewUrl = resolveMediaUrl(book.previewImageUrl);
     const pdfUrl = resolveMediaUrl(book.pdfUrl);
+    const readPercent = getReadPercent(book, currentPage);
 
     return (
         <div className="flex flex-col h-full bg-surface rounded-lg overflow-hidden border border-border-light shadow-sm hover:shadow-md transition-shadow">
             <div
                 onClick={() => navigate(`/books/${book.id}`)}
-                className="h-[200px] bg-surface-hover overflow-hidden cursor-pointer"
+                className="relative h-[200px] bg-surface-hover overflow-hidden cursor-pointer"
             >
                 {previewUrl ? (
                     <img src={previewUrl} alt={book.title} className="w-full h-full object-cover" />
                 ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary-dark to-primary text-5xl opacity-50">
                         📖
+                    </div>
+                )}
+
+                {readPercent !== null && (
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/40">
+                        <div className="h-full bg-primary/40" style={{ width: `${readPercent}%` }} />
                     </div>
                 )}
             </div>

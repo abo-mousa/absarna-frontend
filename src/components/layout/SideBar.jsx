@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Bell, Plus, Settings } from 'lucide-react';
+import { Home, Bell, History, Plus, Settings } from 'lucide-react';
 import api from '@/lib/api/client';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -127,6 +127,13 @@ function SideBar({ currentChannel, open = false, onClose }) {
                         <Link to="/subscriptions" onClick={onClose} className={navLinkClass(isActive('/subscriptions'))}>
                             <Bell size={18} />
                             الاشتراكات
+                        </Link>
+                    )}
+
+                    {token && (
+                        <Link to="/history" onClick={onClose} className={navLinkClass(isActive('/history'))}>
+                            <History size={18} />
+                            سجل المشاهدة
                         </Link>
                     )}
                 </div>

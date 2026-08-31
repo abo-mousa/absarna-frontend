@@ -6,8 +6,10 @@ import ChannelPage from './pages/ChannelPage';
 import Admin from './pages/Admin';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import VerifyEmail from './pages/VerifyEmail';
 import UserProfile from './pages/UserProfile';
 import Subscriptions from './pages/Subscriptions';
+import History from './pages/History';
 import SearchPage from './pages/SearchPage';
 import Books from './pages/Books';
 import BookDetail from './pages/BookDetail';
@@ -77,6 +79,7 @@ function AppRoutes() {
             {/* Auth */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
 
             {/* Protected */}
             <Route path="/profile" element={
@@ -84,6 +87,9 @@ function AppRoutes() {
             } />
             <Route path="/subscriptions" element={
                 <ProtectedRoute><Subscriptions /></ProtectedRoute>
+            } />
+            <Route path="/history" element={
+                <ProtectedRoute><History /></ProtectedRoute>
             } />
             <Route path="/admin" element={
                 <ProtectedRoute><Admin /></ProtectedRoute>

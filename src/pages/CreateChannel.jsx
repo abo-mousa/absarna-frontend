@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import api from '@/lib/api/client';
 import Navbar from '../components/layout/Navbar';
 import { Input, Button } from '../components/ui';
+import { EmailVerificationNotice } from '../components/auth';
 
 function CreateChannel() {
     const navigate = useNavigate();
     const [form, setForm] = useState({ name: '', slug: '', description: '', primaryColor: '#0D6B4D' });
     const [error, setError] = useState('');
+    const [needsVerification, setNeedsVerification] = useState(false);
     const [loading, setLoading] = useState(false);
 
     const handleSlugChange = (value) => {
@@ -18,6 +20,7 @@ function CreateChannel() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setNeedsVerification(false);
         setLoading(true);
 
         try {
@@ -25,7 +28,11 @@ function CreateChannel() {
             alert('تم إنشاء القناة! ستظهر بعد موافقة الإدارة.');
             navigate('/');
         } catch (err) {
-            setError(err.response?.data?.message || 'فشل في إنشاء القناة');
+            if (err.response?.data?.emailVerificationRequired) {
+                setNeedsVerification(true);
+            } else {
+                setError(err.response?.data?.message || 'فشل في إنشاء القناة');
+            }
         } finally {
             setLoading(false);
         }
@@ -81,9 +88,13 @@ function CreateChannel() {
                             />
                         </div>
 
+                        {needsVerification && (
+                            <EmailVerificationNotice message="يجب توثيق بريدك الإلكتروني قبل إنشاء قناة" />
+                        )}
+
                         {error && <p className="text-red-600 text-sm bg-red-100 p-2.5 rounded-md">{error}</p>}
 
-                        <Button type="submit" disabled={loading} fullWidth>
+                        <Button type="submit" disabled={loading || needsVerification} fullWidth>
                             {loading ? 'جاري الإنشاء...' : 'إنشاء القناة'}
                         </Button>
                     </form>
