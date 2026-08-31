@@ -1,0 +1,103 @@
+import { useState, useEffect } from 'react';
+import { Play, Send, Heart, Mail } from 'lucide-react';
+import api from '@/lib/api/client';
+import Navbar from '../components/layout/Navbar.jsx';
+import { Spinner } from '../components/ui';
+
+const socialLinkClass = 'flex items-center gap-2 px-5 py-2.5 rounded-full font-semibold text-sm text-white transition-opacity hover:opacity-90';
+
+function Biography() {
+    const [bio, setBio] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchBio = async () => {
+            try {
+                const res = await api.get('/biography');
+                setBio(res.data);
+            } catch (err) {
+                console.error('Failed to load biography', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchBio();
+    }, []);
+
+    return (
+        <div dir="rtl" className="min-h-screen bg-bg">
+            <Navbar />
+
+            <div className="max-w-reading mx-auto px-4 sm:px-6 py-10">
+                <h1 className="text-2xl font-bold text-center mb-8">السيرة الذاتية</h1>
+
+                {loading ? (
+                    <Spinner />
+                ) : bio ? (
+                    <div className="bg-surface p-6 sm:p-10 rounded-xl shadow-sm border border-border-light">
+                        {bio.photoUrl && (
+                            <img
+                                src={bio.photoUrl}
+                                alt={bio.fullName}
+                                className="w-[150px] h-[150px] rounded-full object-cover mx-auto mb-6"
+                            />
+                        )}
+
+                        <h1 className="text-center text-3xl font-bold mb-2">{bio.fullName || 'محمد إلهامي'}</h1>
+
+                        {bio.occupation && (
+                            <p className="text-center text-text-secondary mb-6">{bio.occupation}</p>
+                        )}
+
+                        {bio.shortBio && (
+                            <p className="text-center text-lg leading-loose mb-8">{bio.shortBio}</p>
+                        )}
+
+                        {bio.detailedBio && (
+                            <div className="whitespace-pre-wrap leading-loose text-[1.05rem] text-text-secondary">
+                                {bio.detailedBio}
+                            </div>
+                        )}
+
+                        {bio.education && (
+                            <div className="mt-6 p-4 bg-bg rounded-lg">
+                                <strong>المؤهلات:</strong> {bio.education}
+                            </div>
+                        )}
+
+                        <div className="flex gap-3 justify-center mt-8 flex-wrap">
+                            {bio.youtubeUrl && (
+                                <a href={bio.youtubeUrl} target="_blank" rel="noopener noreferrer"
+                                   className={socialLinkClass} style={{ background: '#FF0000' }}>
+                                    <Play size={16} /> يوتيوب
+                                </a>
+                            )}
+                            {bio.telegramUrl && (
+                                <a href={bio.telegramUrl} target="_blank" rel="noopener noreferrer"
+                                   className={socialLinkClass} style={{ background: '#0088cc' }}>
+                                    <Send size={16} /> تيليجرام
+                                </a>
+                            )}
+                            {bio.patreonUrl && (
+                                <a href={bio.patreonUrl} target="_blank" rel="noopener noreferrer"
+                                   className={`${socialLinkClass} text-[#8B6914]`} style={{ background: '#FEF9E7' }}>
+                                    <Heart size={16} /> Patreon
+                                </a>
+                            )}
+                            {bio.email && (
+                                <a href={`mailto:${bio.email}`}
+                                   className={`${socialLinkClass} !text-primary border border-primary`} style={{ background: 'transparent' }}>
+                                    <Mail size={16} /> تواصل
+                                </a>
+                            )}
+                        </div>
+                    </div>
+                ) : (
+                    <p className="text-center text-text-muted">لا توجد معلومات</p>
+                )}
+            </div>
+        </div>
+    );
+}
+
+export default Biography;

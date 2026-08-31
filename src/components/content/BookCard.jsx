@@ -1,0 +1,68 @@
+import { useNavigate } from 'react-router-dom';
+import { BookOpen, Download } from 'lucide-react';
+import { resolveMediaUrl } from '@/lib/media';
+
+function BookCard({ book }) {
+    const navigate = useNavigate();
+    const previewUrl = resolveMediaUrl(book.previewImageUrl);
+    const pdfUrl = resolveMediaUrl(book.pdfUrl);
+
+    return (
+        <div className="flex flex-col h-full bg-surface rounded-lg overflow-hidden border border-border-light shadow-sm hover:shadow-md transition-shadow">
+            <div
+                onClick={() => navigate(`/books/${book.id}`)}
+                className="h-[200px] bg-surface-hover overflow-hidden cursor-pointer"
+            >
+                {previewUrl ? (
+                    <img src={previewUrl} alt={book.title} className="w-full h-full object-cover" />
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary-dark to-primary text-5xl opacity-50">
+                        📖
+                    </div>
+                )}
+            </div>
+
+            <div className="p-4 flex flex-col flex-1">
+                {book.category && (
+                    <span className="inline-block w-fit px-2.5 py-0.5 bg-primary-light text-primary rounded-full text-xs font-semibold mb-2">
+                        {book.category}
+                    </span>
+                )}
+
+                <h3
+                    onClick={() => navigate(`/books/${book.id}`)}
+                    className="text-[0.95rem] font-semibold mb-2 leading-snug cursor-pointer line-clamp-2"
+                >
+                    {book.title}
+                </h3>
+
+                <div className="flex gap-3 text-xs text-text-muted mb-3">
+                    {book.pages && <span>{book.pages} صفحة</span>}
+                    {book.publishDate && <span>{book.publishDate}</span>}
+                </div>
+
+                <div className="flex gap-2 mt-auto">
+                    <button
+                        onClick={() => navigate(`/books/${book.id}`)}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-primary text-white rounded-md font-semibold text-sm hover:bg-primary-dark transition-colors"
+                    >
+                        <BookOpen size={15} /> قراءة
+                    </button>
+
+                    {pdfUrl && (
+                        <a
+                            href={pdfUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-primary-light text-primary rounded-md font-semibold text-sm"
+                        >
+                            <Download size={15} /> تحميل
+                        </a>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+export default BookCard;

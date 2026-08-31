@@ -1,0 +1,46 @@
+import { useState, useEffect } from 'react';
+import api from '@/lib/api/client';
+import PageShell from '../components/layout/PageShell';
+import { Spinner, EmptyState } from '../components/ui';
+import { BookCard } from '../components/content';
+
+function Books() {
+    const [books, setBooks] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchBooks();
+    }, []);
+
+    const fetchBooks = async () => {
+        try {
+            setLoading(true);
+            const res = await api.get('/books');
+            setBooks(res.data?.content || res.data || []);
+        } catch (err) {
+            console.error('Failed to fetch books:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <PageShell sidebar={false} contentClassName="max-w-[1100px] mx-auto px-4 sm:px-6 py-8">
+            <h1 className="text-2xl font-bold mb-6">المكتبة</h1>
+
+            {loading ? (
+                <Spinner />
+            ) : books.length === 0 ? (
+                <EmptyState icon="📚" title="لا توجد كتب" description="سيتم إضافة الكتب قريباً" />
+            ) : (
+                <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-5">
+                    {books.map((book) => (
+                        <BookCard key={book.id} book={book} />
+                    ))}
+                </div>
+            )}
+        </PageShell>
+    );
+}
+
+export default Books;
