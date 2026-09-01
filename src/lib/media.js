@@ -9,10 +9,12 @@ export const resolveMediaUrl = (url) => {
     return `${API_BASE_URL}/uploads/${url}`;
 };
 
+const YOUTUBE_HOSTNAMES = new Set(['youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtu.be']);
+
 export const extractYouTubeId = (sourceUrl) => {
     try {
         const url = new URL(sourceUrl);
-        if (url.hostname.includes('youtube.com') || url.hostname.includes('youtu.be')) {
+        if (YOUTUBE_HOSTNAMES.has(url.hostname)) {
             return url.searchParams.get('v') || url.pathname.split('/').pop();
         }
     } catch (e) {

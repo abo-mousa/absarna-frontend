@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, keepPreviousData } from '@tanstack/react-query';
 import api from '@/lib/api/client';
 import { useDebouncedValue } from './useDebouncedValue';
 
@@ -23,7 +23,7 @@ export const useInfiniteContents = (search = '', category = '', size = 12, enabl
         },
         enabled,
         staleTime: 5 * 60 * 1000,
-        keepPreviousData: true,
+        placeholderData: keepPreviousData,
     });
 };
 
@@ -84,7 +84,7 @@ export const useSearchSuggestions = (rawQuery, limit = 8, enabled = true) => {
         },
         enabled,
         staleTime: query ? 60 * 1000 : 5 * 60 * 1000,
-        keepPreviousData: true,
+        placeholderData: keepPreviousData,
     });
 };
 

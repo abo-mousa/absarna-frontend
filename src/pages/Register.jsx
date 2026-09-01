@@ -3,24 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Navbar from '../components/layout/Navbar';
 import { Input, Button } from '../components/ui';
-
-function calculateStrength(password) {
-    let strength = 0;
-    if (password.length >= 8) strength += 20;
-    if (password.length >= 12) strength += 10;
-    if (password.match(/[A-Z]/)) strength += 15;
-    if (password.match(/[a-z]/)) strength += 15;
-    if (password.match(/\d/)) strength += 20;
-    if (password.match(/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/)) strength += 20;
-    return Math.min(strength, 100);
-}
-
-function getStrengthLabel(strength) {
-    if (strength >= 80) return { text: 'قوية جداً', color: '#059669' };
-    if (strength >= 60) return { text: 'قوية', color: '#10B981' };
-    if (strength >= 40) return { text: 'متوسطة', color: '#D4AF37' };
-    return { text: 'ضعيفة', color: '#DC2626' };
-}
+import { getPasswordRules, getPasswordStrengthLabel, isPasswordValid, validateUsername } from '@/lib/validation';
 
 function Register() {
     const navigate = useNavigate();
@@ -30,23 +13,27 @@ function Register() {
     });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const [passwordStrength, setPasswordStrength] = useState(0);
 
-    const handlePasswordChange = (value) => {
-        setForm({ ...form, password: value });
-        setPasswordStrength(calculateStrength(value));
-    };
+    const passwordRules = getPasswordRules(form.password);
+    const passedCount = passwordRules.filter((rule) => rule.valid).length;
+    const strengthInfo = getPasswordStrengthLabel(passwordRules);
+    const usernameError = form.username ? validateUsername(form.username) : '';
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
 
+        const usernameValidationError = validateUsername(form.username);
+        if (usernameValidationError) {
+            setError(usernameValidationError);
+            return;
+        }
         if (form.password !== form.confirmPassword) {
             setError('كلمتا المرور غير متطابقتين');
             return;
         }
-        if (passwordStrength < 60) {
-            setError('كلمة المرور ضعيفة — استخدم 8 أحرف على الأقل مع أرقام ورموز');
+        if (!isPasswordValid(form.password)) {
+            setError('كلمة المرور يجب أن تحتوي على 8 أحرف على الأقل مع حرف كبير وحرف صغير ورقم ورمز خاص');
             return;
         }
 
@@ -61,8 +48,6 @@ function Register() {
         setLoading(false);
     };
 
-    const strengthInfo = getStrengthLabel(passwordStrength);
-
     return (
         <div dir="rtl" className="min-h-screen bg-bg">
             <Navbar />
@@ -74,14 +59,20 @@ function Register() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="grid gap-4">
-                    <Input
-                        label="اسم المستخدم *"
-                        value={form.username}
-                        onChange={(e) => setForm({ ...form, username: e.target.value })}
-                        required
-                        placeholder="username"
-                        dir="ltr"
-                    />
+                    <div>
+                        <Input
+                            label="اسم المستخدم *"
+                            value={form.username}
+                            onChange={(e) => setForm({ ...form, username: e.target.value })}
+                            required
+                            placeholder="username"
+                            dir="ltr"
+                            className={usernameError ? '!border-red-600' : ''}
+                        />
+                        {usernameError && (
+                            <p className="text-red-600 text-xs mt-1">{usernameError}</p>
+                        )}
+                    </div>
 
                     <Input
                         label="الاسم الكامل"
@@ -104,7 +95,7 @@ function Register() {
                             label="كلمة المرور *"
                             type="password"
                             value={form.password}
-                            onChange={(e) => handlePasswordChange(e.target.value)}
+                            onChange={(e) => setForm({ ...form, password: e.target.value })}
                             required
                             placeholder="••••••••"
                             dir="ltr"
@@ -118,7 +109,7 @@ function Register() {
                                             key={level}
                                             className="flex-1 h-1.5 rounded-full"
                                             style={{
-                                                background: passwordStrength >= level * 20 ? strengthInfo.color : '#E5E7EB',
+                                                background: passedCount >= level ? strengthInfo.color : '#E5E7EB',
                                             }}
                                         />
                                     ))}
@@ -126,6 +117,16 @@ function Register() {
                                 <span className="text-xs" style={{ color: strengthInfo.color }}>
                                     {strengthInfo.text}
                                 </span>
+                                <ul className="mt-1.5 grid grid-cols-1 xs:grid-cols-2 gap-x-3 gap-y-0.5">
+                                    {passwordRules.map((rule) => (
+                                        <li
+                                            key={rule.key}
+                                            className={`text-xs ${rule.valid ? 'text-primary' : 'text-text-muted'}`}
+                                        >
+                                            {rule.valid ? '✓' : '○'} {rule.label}
+                                        </li>
+                                    ))}
+                                </ul>
                             </div>
                         )}
                     </div>

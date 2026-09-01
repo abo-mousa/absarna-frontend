@@ -5,35 +5,16 @@ import api from '@/lib/api/client';
 import { changePassword } from '@/lib/api/auth';
 import Navbar from '../components/layout/Navbar';
 import { Input, Button } from '../components/ui';
-
-function calculateStrength(password) {
-    let strength = 0;
-    if (password.length >= 8) strength += 20;
-    if (password.length >= 12) strength += 10;
-    if (password.match(/[A-Z]/)) strength += 15;
-    if (password.match(/[a-z]/)) strength += 15;
-    if (password.match(/\d/)) strength += 20;
-    if (password.match(/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/)) strength += 20;
-    return Math.min(strength, 100);
-}
-
-function getStrengthLabel(strength) {
-    if (strength >= 80) return { text: 'قوية جداً', color: '#059669' };
-    if (strength >= 60) return { text: 'قوية', color: '#10B981' };
-    if (strength >= 40) return { text: 'متوسطة', color: '#D4AF37' };
-    return { text: 'ضعيفة', color: '#DC2626' };
-}
+import { getPasswordRules, getPasswordStrengthLabel, isPasswordValid } from '@/lib/validation';
 
 function ChangePasswordCard() {
     const { showToast } = useToast();
     const [form, setForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
-    const [passwordStrength, setPasswordStrength] = useState(0);
     const [saving, setSaving] = useState(false);
 
-    const handleNewPasswordChange = (value) => {
-        setForm({ ...form, newPassword: value });
-        setPasswordStrength(calculateStrength(value));
-    };
+    const passwordRules = getPasswordRules(form.newPassword);
+    const passedCount = passwordRules.filter((rule) => rule.valid).length;
+    const strengthInfo = getPasswordStrengthLabel(passwordRules);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -42,8 +23,8 @@ function ChangePasswordCard() {
             showToast('كلمتا المرور غير متطابقتين', 'error');
             return;
         }
-        if (passwordStrength < 60) {
-            showToast('كلمة المرور ضعيفة — استخدم 8 أحرف على الأقل مع أرقام ورموز', 'error');
+        if (!isPasswordValid(form.newPassword)) {
+            showToast('كلمة المرور يجب أن تحتوي على 8 أحرف على الأقل مع حرف كبير وحرف صغير ورقم ورمز خاص', 'error');
             return;
         }
 
@@ -52,15 +33,12 @@ function ChangePasswordCard() {
             await changePassword(form.currentPassword, form.newPassword);
             showToast('تم تغيير كلمة المرور بنجاح', 'success');
             setForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
-            setPasswordStrength(0);
         } catch (err) {
             showToast(err.response?.data?.error || 'فشل في تغيير كلمة المرور', 'error');
         } finally {
             setSaving(false);
         }
     };
-
-    const strengthInfo = getStrengthLabel(passwordStrength);
 
     return (
         <div className="bg-surface p-6 sm:p-8 rounded-lg shadow-sm border border-border-light mt-6">
@@ -82,7 +60,7 @@ function ChangePasswordCard() {
                         label="كلمة المرور الجديدة"
                         type="password"
                         value={form.newPassword}
-                        onChange={(e) => handleNewPasswordChange(e.target.value)}
+                        onChange={(e) => setForm({ ...form, newPassword: e.target.value })}
                         required
                         placeholder="••••••••"
                         dir="ltr"
@@ -96,7 +74,7 @@ function ChangePasswordCard() {
                                         key={level}
                                         className="flex-1 h-1.5 rounded-full"
                                         style={{
-                                            background: passwordStrength >= level * 20 ? strengthInfo.color : '#E5E7EB',
+                                            background: passedCount >= level ? strengthInfo.color : '#E5E7EB',
                                         }}
                                     />
                                 ))}
@@ -104,6 +82,16 @@ function ChangePasswordCard() {
                             <span className="text-xs" style={{ color: strengthInfo.color }}>
                                 {strengthInfo.text}
                             </span>
+                            <ul className="mt-1.5 grid grid-cols-1 xs:grid-cols-2 gap-x-3 gap-y-0.5">
+                                {passwordRules.map((rule) => (
+                                    <li
+                                        key={rule.key}
+                                        className={`text-xs ${rule.valid ? 'text-primary' : 'text-text-muted'}`}
+                                    >
+                                        {rule.valid ? '✓' : '○'} {rule.label}
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
                     )}
                 </div>

@@ -18,6 +18,32 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
+// Shared in-flight refresh promise — several parallel authenticated requests hitting a 401 at
+// once (e.g. a page firing multiple queries on mount) must not each fire their own
+// /auth/refresh call, since the backend rate-limits that endpoint to 10/min. Every caller
+// that 401s while a refresh is already running awaits the same promise instead.
+let refreshPromise = null;
+
+const refreshAccessToken = (refreshToken) => {
+    if (!refreshPromise) {
+        refreshPromise = axios
+            .post(`${API_BASE_URL}/api/auth/refresh`, { refreshToken })
+            .then((res) => {
+                localStorage.setItem('token', res.data.token);
+                // The backend may rotate the refresh token on use — store it if returned,
+                // otherwise the old one (still valid) stays in place.
+                if (res.data.refreshToken) {
+                    localStorage.setItem('refreshToken', res.data.refreshToken);
+                }
+                return res.data.token;
+            })
+            .finally(() => {
+                refreshPromise = null;
+            });
+    }
+    return refreshPromise;
+};
+
 // Response interceptor — auto refresh on 401
 api.interceptors.response.use(
     (response) => response,
@@ -36,18 +62,17 @@ api.interceptors.response.use(
             const refreshToken = localStorage.getItem('refreshToken');
             if (refreshToken) {
                 try {
-                    const res = await axios.post(
-                        `${API_BASE_URL}/api/auth/refresh`,
-                        { refreshToken }
-                    );
-
-                    localStorage.setItem('token', res.data.token);
-                    originalRequest.headers.Authorization = `Bearer ${res.data.token}`;
+                    const newToken = await refreshAccessToken(refreshToken);
+                    originalRequest.headers.Authorization = `Bearer ${newToken}`;
                     return api(originalRequest);
                 } catch (refreshError) {
                     localStorage.removeItem('token');
                     localStorage.removeItem('refreshToken');
-                    window.location.href = '/login';
+                    // A soft signal instead of a hard `window.location.href` redirect — the
+                    // latter force-reloads the whole SPA even when the 401'd request came
+                    // from a public page being browsed anonymously. AuthContext listens for
+                    // this to clear its in-memory state and navigate via the router.
+                    window.dispatchEvent(new Event('auth:session-expired'));
                 }
             }
         }

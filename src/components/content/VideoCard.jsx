@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Play, Eye, EyeOff, Trash2 } from 'lucide-react';
 import { resolveMediaUrl, youtubeThumbnail, durationToSeconds } from '@/lib/media';
 
@@ -18,7 +19,8 @@ function getWatchedPercent(video, watchedSeconds) {
 }
 
 function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watchedSeconds }) {
-    const thumbnail = getThumbnail(video);
+    const [thumbnailFailed, setThumbnailFailed] = useState(false);
+    const thumbnail = thumbnailFailed ? null : getThumbnail(video);
     const watchedPercent = getWatchedPercent(video, watchedSeconds);
 
     return (
@@ -34,9 +36,7 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                         src={thumbnail}
                         alt={video.title}
                         className="w-full h-full object-contain"
-                        onError={(e) => {
-                            e.target.style.display = 'none';
-                        }}
+                        onError={() => setThumbnailFailed(true)}
                     />
                 ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary-dark to-primary text-5xl opacity-50">

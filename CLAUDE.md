@@ -142,3 +142,185 @@ npm run build    # ALWAYS run before trusting a session's changes
 `npm run build` (Rollup) does full static import/export resolution and will catch things `npm run dev` (esbuild, lazy) won't — e.g. an imported named export that doesn't actually exist in the package. This exact class of bug (a `lucide-react` icon that didn't exist in the installed version) once broke the entire app with a blank white screen on every page, because `App.jsx` statically imports every page up front rather than lazy-loading per route — one bad import anywhere breaks the whole module graph on load. `npm run build` catches it in ~1.5s; a dev-mode HMR log won't.
 
 Backend must be running (see its own `CLAUDE.md`) on `localhost:8080` for the app to have real data — `VITE_API_BASE_URL` env var overrides this if needed.
+
+---
+
+# Review findings — 2026-09-01
+
+Full read-through of the frontend (no code changed). Everything below is **open**; delete an
+entry when it's actually fixed rather than leaving it here as history. Backend-side findings
+live in the backend's own `CLAUDE.md` under the same heading — several items here have a
+matching entry there and are best fixed on both sides at once.
+
+## Bugs
+
+Fixed 2026-09-01 (session after the review that logged this list): the React Query v4→v5
+option renames (`cacheTime`→`gcTime` in `App.jsx`, `keepPreviousData: true`→`placeholderData:
+keepPreviousData` in `useContents.js`), `AuthContext.fetchUserProfile` no longer logging out on
+a non-401/403 failure, client-side password/username validation now mirroring the backend's
+actual rules via new `lib/validation.js` (used by `Register.jsx`, `ResetPassword.jsx`,
+`UserProfile.jsx`'s `ChangePasswordCard`), `/admin` and `/admin/channels` now gated on
+`user.role === 'PLATFORM_ADMIN'` (`ProtectedRoute`'s new `adminOnly` prop in `App.jsx`),
+`client.js`'s token refresh now deduped behind a shared in-flight promise, stores a rotated
+refresh token when the backend returns one, and signals expiry via a `window` event
+(`auth:session-expired`, handled in `AuthContext`) instead of a hard `window.location.href`
+reload, `extractYouTubeId` now checks an exact hostname set instead of `.includes(...)`, and
+`VideoCard`'s broken-thumbnail `onError` now falls back to the 🎬 placeholder instead of
+leaving an empty box.
+
+**Postponed — all below are in `ChannelManage.jsx`/`Navbar.jsx`'s content-publish path, which
+is getting a rewrite alongside a dedicated upload backend service; fixing them now would be
+wasted work.** Revisit once that lands.
+
+1. **Empty date/number form fields are sent as `""`.** `ChannelManage`'s video/book/article/post
+   payloads always spread the whole form object, so an untouched `publishDate` or `pages` goes
+   over the wire as an empty string rather than being omitted. Jackson's coercion of `""` into
+   `LocalDate`/`Integer` is version- and config-dependent — verify what the API actually does
+   with it, and strip empty strings from the payload either way.
+2. **The video publish form has no publish-date input at all** (books and articles do), so every
+   video is created with `publishDate = null` — and because every backend list sorts
+   `ORDER BY publish_date DESC` and Postgres sorts NULLs first, **newly published videos pin
+   themselves to the top of the home feed and channel pages forever**. Add the field (and see
+   the backend note about `NULLS LAST`). **Needs a BE-side look too** (the `NULLS LAST` sort
+   fix) even once the form gets the field, for any existing NULL rows.
+3. **`videoForm.speaker` and `videoForm.isFeatured` are dead state** — neither has an input, and
+   `handleVideoSubmit` overrides `speaker` with `channel.name` after the spread anyway. Drop
+   them or render them.
+4. **Platform admins get a channel-management page where every action 403s.**
+   `ChannelManage` admits `isOwner || isAdmin`, but the backend's `canManageChannel` is
+   owner-only for all content operations (only `PUT /api/channels/{id}` has an admin bypass).
+   **Needs a BE decision**: either give admins real access server-side (extend
+   `canManageChannel`'s bypass) or drop `isAdmin` from the frontend guard to match reality.
+5. **The Navbar's "رفع" link points at `/upload`, which is not a route** — the `*` fallback
+   silently redirects to Home. Already listed under "Known gaps"; leave as-is until the new
+   upload service defines where this should point.
+
+## UX / UI
+
+- **`<html lang="en">` and no `dir="rtl"` on the root element.** The app is Arabic RTL
+  throughout but sets direction on 29 individual page wrappers instead. Screen readers announce
+  it as English, and anything rendered outside those wrappers (the `ErrorBoundary` fallback,
+  toasts) inherits LTR. One-line fix in `index.html`: `<html lang="ar" dir="rtl">`, then delete
+  the per-page `dir="rtl"`.
+- **No per-page `<title>` and no OG/Twitter meta.** Every page is "منارة | Manara" in the tab,
+  in history and in every shared link — for a public content platform whose whole point is
+  spreading educational material, shared video/book/article links render as an untitled,
+  imageless card. Highest-value UX item on this list.
+- **A video's detail page never names its channel.** `VideoDetail` shows duration, category,
+  series and speaker but no channel link — on a multi-channel platform you can't get from a
+  video to the channel that published it. `VideoCard` has the same gap in a mixed feed. Add
+  channel name + avatar + link to both.
+- **Channel pages ignore `bannerUrl` and `description`.** `ChannelManage` lets an owner set both,
+  `ChannelDTO` returns both, and `ChannelPage` renders neither — just a flat `primaryColor`
+  band and an initial-letter avatar. Owners are filling in fields that never appear.
+- **Logged-out visitors always see "0 مشترك"** on channel pages, because `useSubscriptionStatus`
+  is gated on `!!token` (correctly — the endpoint 500s for anonymous callers). Needs the
+  backend split of public count vs. per-caller flag; until then the count should be hidden
+  rather than shown as zero.
+- **`alert()` and `window.confirm()` are still the interaction model in five places** —
+  `Home` (visibility toggle + delete), `CommentsSection` (×2), `Admin` (×2), `Register` — even
+  though `ToastContext` exists and is documented as the convention, and `Modal` exists unused
+  for confirmations. Destructive deletes in particular deserve the real modal.
+- **A channel's public video tab silently caps at 50** (`useChannelContents` hard-codes
+  `size=50`) with no "load more", and the tab count badge shows the truncated number. Books,
+  articles and posts have no pagination at all, client or server.
+- **`/books` and `/articles` have no search, filter, sort or pagination** — just a full grid.
+  The library is the page most likely to grow past usability first.
+- **Thumbnails use `object-contain` inside a fixed-height box**, so YouTube's 4:3 `hqdefault`
+  images sit letterboxed against the card background and the grid reads as ragged. An
+  `aspect-video` container with `object-cover` fixes it.
+- **Comment count counts top-level comments only** (`comments.length`), so a thread with 3
+  comments and 10 replies reads "التعليقات (3)".
+- **No comment editing, deleting or reporting for the person who wrote it** — the only deletion
+  path is a platform-admin API call with no UI. Also no character limit or counter on the
+  textarea.
+- **`ar-EG` date formatting renders Arabic-Indic digits** (`٢٠٢٦`) in comments, while durations,
+  subscriber counts and publish dates elsewhere use Latin digits. Pick one.
+- **The comment date has no time component** and no relative formatting ("منذ ساعتين") — `dayjs`
+  is already a dependency and unused for this.
+- **No 404 page.** `*` redirects to Home, so a typo'd or dead link looks like a successful
+  navigation.
+- **Category chips can lead to empty result grids** — `/api/categories` includes categories that
+  only hidden content uses (backend issue, but it surfaces here).
+- **Watch history never records for YouTube-sourced videos** (no `timeupdate` without the
+  IFrame Player API), which is most of the catalogue — so "continue watching" is empty for the
+  content people actually watch. Loading the IFrame API for `onStateChange`/`getCurrentTime`
+  would close this without changing the feature's design.
+- **The YouTube embed uses `youtube.com` rather than `youtube-nocookie.com`**, sets no `rel=0`,
+  no `loading="lazy"`, and passes the deprecated `frameBorder` prop. A privacy-respecting
+  platform should use the no-cookie domain.
+
+## Accessibility
+
+- Six `aria-*` attributes in the entire app. The most concrete gaps:
+- **`VideoCard`/`BookCard` are clickable `<div>`s** with nested `<button>`s — not focusable,
+  not keyboard-activatable, no `role`. Every card grid in the app is mouse-only.
+- **No focus management on route change** and no skip-to-content link; focus stays wherever it
+  was, so keyboard and screen-reader users restart from the top of the DOM on every navigation.
+- **The mobile sidebar drawer** doesn't trap focus, isn't marked `role="dialog"`/`aria-modal`,
+  and doesn't restore focus on close. Same for `Modal`.
+- Icon-only buttons rely on `title` rather than `aria-label` in most places (`Navbar`'s menu
+  button is the exception that does it right).
+- Colour-only state signalling on the visible/hidden toggle and the subscribe button.
+
+## Refactoring / structure
+
+- **`ChannelManage.jsx` is 507 lines** holding five tabs, four content forms, twelve mutations
+  and four lists, with the per-type logic copy-pasted four times. Extract a
+  `<ContentPublishForm type=… fields=… />` driven by a per-type field schema and a
+  `useChannelContentTab(slug, type)` hook that bundles list + create + toggle + delete. This
+  mirrors the identical duplication on the backend (`ChannelContentController`) and the two are
+  worth fixing together — adding a fifth content type currently means editing eight files
+  across both repos.
+- **`PageShell` is bypassed by the pages that most need it** — `ChannelPage`, `VideoDetail`,
+  `ChannelManage`, `Admin`, `Register` and others hand-roll `<div dir="rtl"><Navbar/>…`. That's
+  also why the loading and error states differ subtly from page to page.
+- **Loading/error/empty states are re-implemented per page.** `Spinner` + `EmptyState` exist;
+  a small `<QueryState query={…}>` wrapper (or a shared `renderQuery` helper) would remove the
+  same four-branch ternary from ~12 files, and would stop new pages from inventing a
+  thirteenth variant.
+- **`ProtectedRoute` hand-rolls an inline-styled spinner** using CSS variables
+  (`var(--bg)`, `var(--border)`) — the one surviving pocket of the pre-Tailwind style, and it
+  duplicates `Spinner`.
+- **The `user` object shape is implicit** and read as `user?.role`, `user.id`, `user.emailVerified`
+  across a dozen files. Even without TypeScript, one `lib/user.js` exporting
+  `isPlatformAdmin(user)` / `canManageChannel(user, channel)` would stop role strings being
+  compared inline in `Navbar`, `ChannelManage` and `App`.
+- **Direct `api.get/post/patch/delete` calls still leak into pages** — `Home`'s visibility
+  toggle and delete, `ChannelManage`'s two upload handlers. The `Home` ones have a documented
+  reason (variable slug) but could be a `useToggleVideoVisibilityByChannelId` hook instead of
+  hand-rolled cache invalidation.
+- **Every page is statically imported in `App.jsx`.** `React.lazy` per route (as already done
+  for `PdfReader`) would cut the initial bundle substantially — `framer-motion`,
+  `react-hook-form` and the admin tabs are all paid for on first paint. Worth checking whether
+  `framer-motion` and `react-hook-form` are used at all; several dependencies look unreferenced.
+- **The five admin CMS tab components remain unrouted dead code** (existing "Known gaps" entry)
+  — either wire them up or delete them; they're currently a second, divergent implementation of
+  what `ChannelManage` does.
+- **`.DS_Store` files are committed in `src/`, `src/components/` and `src/lib/`**, and the repo
+  still has no git repository per the note above — worth resolving both.
+
+## Feature ideas that fit the platform's values
+
+Matching the backend's list; these follow the "surface useful content, don't optimise for
+time-on-site" principle rather than fighting it.
+
+- **Bookmarks / "read later"** as an explicit, user-owned list — the honest alternative to
+  behavioural recommendation.
+- **Series navigation**: a lecture that knows it's part 3 of 12, with previous/next and a
+  progress indicator. This is the feature that turns the library into a course, and it's the
+  strongest argument for the non-addictive feed — people come back for a reason they chose.
+- **A share sheet with proper link previews** (depends on the meta-tag work above) plus copy-
+  link-at-timestamp for videos.
+- **Reader improvements on `PdfReader`**: text search inside the PDF, page-number jump,
+  a table of contents, and per-page notes/highlights keyed to the existing reading history.
+- **Offline/PWA for downloaded books and articles** — genuinely useful for an audience with
+  intermittent connectivity, and it doesn't require any engagement machinery.
+- **Transcript view alongside the video player** (needs the backend transcript work), with
+  click-to-seek. Biggest accessibility and skimmability win available.
+- **A "من القنوات التي تتابعها" digest/inbox page** — an explicit list of what's new since your
+  last visit, which you can clear, instead of an implicit ranked feed.
+- **Dark mode.** The Tailwind theme is already fully tokenised; a `dark:` variant pass is
+  mostly mechanical and it matters for long-form reading at night.
+- **Arabic search normalization on the client's typeahead display** (alef/hamza forms,
+  diacritics) to match the backend fix.

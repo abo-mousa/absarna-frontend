@@ -1,9 +1,11 @@
 import { createContext, useState, useContext, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '@/lib/api/client';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
+    const navigate = useNavigate();
     const [token, setToken] = useState(localStorage.getItem('token'));
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -16,13 +18,28 @@ export const AuthProvider = ({ children }) => {
         }
     }, []);
 
+    // client.js dispatches this once a token refresh has actually failed (invalid/expired
+    // refresh token) — a real "you're logged out", not a generic network blip.
+    useEffect(() => {
+        const handleSessionExpired = () => {
+            logout();
+            navigate('/login');
+        };
+        window.addEventListener('auth:session-expired', handleSessionExpired);
+        return () => window.removeEventListener('auth:session-expired', handleSessionExpired);
+    }, []);
+
     const fetchUserProfile = async () => {
         try {
             const res = await api.get('/user/profile');
             setUser(res.data);
         } catch (err) {
             console.error('Failed to fetch profile:', err);
-            logout();
+            // Only a 401/403 means the session is actually invalid — a 500, timeout, or
+            // offline blip on mount shouldn't destroy an otherwise-valid session.
+            if (err.response?.status === 401 || err.response?.status === 403) {
+                logout();
+            }
         } finally {
             setLoading(false);
         }

@@ -28,7 +28,7 @@ const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
             staleTime: 10 * 60 * 1000,
-            cacheTime: 30 * 60 * 1000,
+            gcTime: 30 * 60 * 1000,
             refetchOnWindowFocus: false,
             refetchOnMount: false,
             refetchOnReconnect: false,
@@ -37,8 +37,8 @@ const queryClient = new QueryClient({
     },
 });
 
-const ProtectedRoute = ({ children }) => {
-    const { token, loading } = useAuth();
+const ProtectedRoute = ({ children, adminOnly = false }) => {
+    const { token, user, loading } = useAuth();
 
     if (loading) {
         return (
@@ -62,7 +62,9 @@ const ProtectedRoute = ({ children }) => {
         );
     }
 
-    return token ? children : <Navigate to="/login" />;
+    if (!token) return <Navigate to="/login" />;
+    if (adminOnly && user?.role !== 'PLATFORM_ADMIN') return <Navigate to="/" />;
+    return children;
 };
 
 function AppRoutes() {
@@ -97,10 +99,10 @@ function AppRoutes() {
                 <ProtectedRoute><History /></ProtectedRoute>
             } />
             <Route path="/admin" element={
-                <ProtectedRoute><Admin /></ProtectedRoute>
+                <ProtectedRoute adminOnly><Admin /></ProtectedRoute>
             } />
             <Route path="/admin/channels" element={
-                <ProtectedRoute><AdminChannels /></ProtectedRoute>
+                <ProtectedRoute adminOnly><AdminChannels /></ProtectedRoute>
             } />
             <Route path="/create-channel" element={
                 <ProtectedRoute><CreateChannel /></ProtectedRoute>
