@@ -35,7 +35,7 @@ function ChangePasswordCard() {
             showToast('تم تغيير كلمة المرور بنجاح', 'success');
             setForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
         } catch (err) {
-            showToast(err.response?.data?.error || 'فشل في تغيير كلمة المرور', 'error');
+            showToast(err.response?.data?.message || 'فشل في تغيير كلمة المرور', 'error');
         } finally {
             setSaving(false);
         }
@@ -142,7 +142,7 @@ function UserProfile() {
             await api.put('/user/profile', form);
             showToast('تم حفظ الملف الشخصي', 'success');
         } catch (err) {
-            showToast('فشل في الحفظ', 'error');
+            showToast(err.response?.data?.message || 'فشل في الحفظ', 'error');
         } finally {
             setSaving(false);
         }
