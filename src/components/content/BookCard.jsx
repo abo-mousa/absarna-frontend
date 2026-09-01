@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Download } from 'lucide-react';
 import { resolveMediaUrl } from '@/lib/media';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Percent read, for the small progress bar on the cover — same idea as VideoCard's
 // watched-percent, hidden below 1% so a barely-opened book doesn't show a sliver.
@@ -12,8 +13,11 @@ function getReadPercent(book, currentPage) {
 
 function BookCard({ book, currentPage }) {
     const navigate = useNavigate();
-    const previewUrl = resolveMediaUrl(book.previewImageUrl);
-    const pdfUrl = resolveMediaUrl(book.pdfUrl);
+    const { token } = useAuth();
+    // Token only needed for the owner's own hidden book — see resolveMediaUrl's comment.
+    const authToken = book.visible === false ? token : null;
+    const previewUrl = resolveMediaUrl(book.previewImageUrl, authToken);
+    const pdfUrl = resolveMediaUrl(book.pdfUrl, authToken);
     const readPercent = getReadPercent(book, currentPage);
 
     return (

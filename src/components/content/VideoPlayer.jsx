@@ -165,7 +165,7 @@ function VideoPlayer({ contentId, sourceType, sourceUrl, title }) {
                 onEnded={handlePauseOrEnded}
                 className="w-full max-h-[500px] rounded-lg bg-black"
             >
-                <source src={resolveMediaUrl(sourceUrl)} type="video/mp4" />
+                <source src={resolveMediaUrl(sourceUrl, token)} type="video/mp4" />
                 متصفحك لا يدعم تشغيل الفيديو
             </video>
         );

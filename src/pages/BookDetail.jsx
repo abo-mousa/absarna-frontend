@@ -63,8 +63,12 @@ function BookDetail() {
         );
     }
 
-    const pdfUrl = resolveMediaUrl(book.pdfUrl);
-    const previewUrl = resolveMediaUrl(book.previewImageUrl);
+    // Token needed whenever the caller isn't guaranteed public access — a hidden book, or one
+    // whose channel got suspended after this page loaded it as the owner (see
+    // resolveMediaUrl's comment). Unlike BookCard/VideoCard's list view, this is a single item
+    // per page load, so passing it unconditionally isn't worth gating on book.visible.
+    const pdfUrl = resolveMediaUrl(book.pdfUrl, token);
+    const previewUrl = resolveMediaUrl(book.previewImageUrl, token);
 
     return (
         <PageShell sidebar={false}>

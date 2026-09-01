@@ -3,10 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { Play, Eye, EyeOff, Trash2 } from 'lucide-react';
 import { resolveMediaUrl, youtubeThumbnail, durationToSeconds } from '@/lib/media';
 import { useChannel } from '@/hooks/useChannels';
+import { useAuth } from '@/contexts/AuthContext';
 import Avatar from '../ui/Avatar';
 
-function getThumbnail(video) {
-    if (video.thumbnailUrl) return resolveMediaUrl(video.thumbnailUrl);
+// Token is only needed (and only passed in) for a hidden video — see resolveMediaUrl's comment
+// for why: a public thumbnail never needs it, so this keeps the token out of every ordinary
+// feed/search thumbnail request.
+function getThumbnail(video, token) {
+    if (video.thumbnailUrl) return resolveMediaUrl(video.thumbnailUrl, video.visible === false ? token : null);
     if (video.sourceType === 'YOUTUBE') return youtubeThumbnail(video.sourceUrl);
     return null;
 }
@@ -23,8 +27,9 @@ function getWatchedPercent(video, watchedSeconds) {
 
 function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watchedSeconds, showChannel = true }) {
     const navigate = useNavigate();
+    const { token } = useAuth();
     const [thumbnailFailed, setThumbnailFailed] = useState(false);
-    const thumbnail = thumbnailFailed ? null : getThumbnail(video);
+    const thumbnail = thumbnailFailed ? null : getThumbnail(video, token);
     const watchedPercent = getWatchedPercent(video, watchedSeconds);
     const { data: channel } = useChannel(video.channelId, showChannel && !!video.channelId);
 
