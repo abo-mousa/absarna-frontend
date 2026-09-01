@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Upload, Video, BookOpen, FileText, MessageSquare, Settings, Save, ArrowRight, Eye, EyeOff, Trash2 } from 'lucide-react';
 import api from '@/lib/api/client';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import Navbar from '../components/layout/Navbar';
 import { Spinner, Input, Button } from '../components/ui';
 import {
@@ -79,8 +80,8 @@ function ChannelManage() {
     const { slug } = useParams();
     const navigate = useNavigate();
     const { user, loading: authLoading } = useAuth();
+    const { showToast } = useToast();
     const [activeTab, setActiveTab] = useState('overview');
-    const [message, setMessage] = useState('');
 
     const { data: channel, isLoading: channelLoading, isError: channelError, error: channelFetchError } = useChannel(slug, !authLoading);
 
@@ -141,9 +142,12 @@ function ChannelManage() {
     const deleteArticle = useDeleteContent(slug, 'articles');
     const deletePost = useDeleteContent(slug, 'posts');
 
+    // Call sites below still pass the original "type:text" string shape — kept as-is to
+    // avoid touching all twelve call sites; this just forwards to the shared toast now
+    // instead of a local, in-page banner.
     const showMessage = (msg) => {
-        setMessage(msg);
-        setTimeout(() => setMessage(''), 3000);
+        const isSuccess = msg.startsWith('success:');
+        showToast(msg.split(':').slice(1).join(':'), isSuccess ? 'success' : 'error');
     };
 
     const deleteItem = (mutation, item) => {
@@ -314,7 +318,6 @@ function ChannelManage() {
         return <ErrorScreen emoji="⛔" title="غير مصرح لك" description="ليس لديك صلاحية لإدارة هذه القناة" onBack={() => navigate('/')} />;
     }
 
-    const isSuccess = message.startsWith('success:');
     const formCardClass = 'grid gap-4 bg-surface p-6 rounded-lg border border-border-light';
 
     return (
@@ -327,12 +330,6 @@ function ChannelManage() {
                     </button>
                     <h1 className="text-xl font-bold">إدارة: {channel.name}</h1>
                 </div>
-
-                {message && (
-                    <p className={`p-2.5 rounded-md mb-4 ${isSuccess ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
-                        {message.split(':').slice(1).join(':')}
-                    </p>
-                )}
 
                 <div className="flex gap-2 mb-6 flex-wrap">
                     {TABS.map((tab) => (

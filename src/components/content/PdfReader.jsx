@@ -15,7 +15,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 // quickly flipping through several pages doesn't fire a write per page.
 const REPORT_DEBOUNCE_MS = 1000;
 
-function PdfReader({ fileUrl, initialPage = 1, onPageChange }) {
+function PdfReader({ fileUrl, initialPage = 1, onPageChange, onPageChangeImmediate }) {
     const [numPages, setNumPages] = useState(null);
     const [pageNumber, setPageNumber] = useState(initialPage);
     const [loadError, setLoadError] = useState(false);
@@ -23,6 +23,15 @@ function PdfReader({ fileUrl, initialPage = 1, onPageChange }) {
     const containerRef = useRef(null);
     const debounceRef = useRef(null);
     const appliedInitialPageRef = useRef(initialPage <= 1);
+    // Mirror the latest callback/page-state into refs so the unmount cleanup below (an effect
+    // with `[]` deps, so its closure is otherwise frozen at mount) can flush the true latest
+    // values instead of whatever was current on first render.
+    const onPageChangeRef = useRef(onPageChange);
+    onPageChangeRef.current = onPageChange;
+    const pageNumberRef = useRef(pageNumber);
+    pageNumberRef.current = pageNumber;
+    const numPagesRef = useRef(numPages);
+    numPagesRef.current = numPages;
 
     // initialPage often arrives asynchronously (fetched after this component already mounted
     // at page 1) — apply it once, the first time it becomes a real saved page.
@@ -43,7 +52,15 @@ function PdfReader({ fileUrl, initialPage = 1, onPageChange }) {
         return () => observer.disconnect();
     }, []);
 
-    useEffect(() => () => clearTimeout(debounceRef.current), []);
+    // Flush (not drop) a still-pending debounced report on unmount — navigating away from the
+    // reader within the debounce window used to silently discard that page turn instead of
+    // ever reporting it.
+    useEffect(() => () => {
+        if (debounceRef.current) {
+            clearTimeout(debounceRef.current);
+            onPageChangeRef.current?.(pageNumberRef.current, numPagesRef.current);
+        }
+    }, []);
 
     const reportPage = (page, total) => {
         if (!onPageChange) return;
@@ -55,6 +72,9 @@ function PdfReader({ fileUrl, initialPage = 1, onPageChange }) {
         if (!numPages) return;
         const clamped = Math.min(Math.max(1, page), numPages);
         setPageNumber(clamped);
+        // Zero-cost (no network call) — just lets the parent keep a `pagehide`-safe ref of the
+        // true latest page, since the debounced `reportPage` write below may not have fired yet.
+        onPageChangeImmediate?.(clamped, numPages);
         reportPage(clamped, numPages);
     };
 

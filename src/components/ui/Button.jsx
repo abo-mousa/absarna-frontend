@@ -1,9 +1,9 @@
 const VARIANTS = {
-    primary: 'bg-primary text-white hover:bg-primary-dark',
-    secondary: 'bg-primary-light text-primary hover:bg-primary/20',
-    outline: 'bg-transparent text-text-secondary border border-border hover:bg-surface-hover',
-    danger: 'bg-red-600 text-white hover:bg-red-700',
-    ghost: 'bg-transparent text-text-secondary hover:bg-surface-hover',
+    primary: 'bg-primary text-white hover:bg-primary-dark active:bg-primary-dark',
+    secondary: 'bg-primary-light text-primary hover:bg-primary/20 active:bg-primary/30',
+    outline: 'bg-transparent text-text-secondary border border-border hover:bg-surface-hover active:bg-border-light',
+    danger: 'bg-red-600 text-white hover:bg-red-700 active:bg-red-800',
+    ghost: 'bg-transparent text-text-secondary hover:bg-surface-hover active:bg-border-light',
 };
 
 const SIZES = {
@@ -28,7 +28,8 @@ function Button({
             type={type}
             onClick={onClick}
             disabled={disabled}
-            className={`inline-flex items-center justify-center gap-2 rounded-md font-semibold transition-colors
+            className={`inline-flex items-center justify-center gap-2 rounded-md font-semibold
+                transition duration-150 active:scale-[0.97]
                 ${VARIANTS[variant]} ${SIZES[size]}
                 ${fullWidth ? 'w-full' : ''}
                 ${disabled ? 'opacity-50 pointer-events-none' : ''}

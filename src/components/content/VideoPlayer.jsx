@@ -2,11 +2,19 @@ import { useEffect, useRef } from 'react';
 import { resolveMediaUrl, extractYouTubeId } from '@/lib/media';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api/client';
+import { flushOnUnload } from '@/lib/api/beacon';
 
 // How often onTimeUpdate (fires several times a second) is allowed to actually hit the
 // backend — watch history is a convenience feature, not an analytics stream, so this stays
-// coarse on purpose.
-const PROGRESS_REPORT_INTERVAL_MS = 15000;
+// coarse on purpose. Safe to keep coarse because `pagehide` below now catches the exact-exit
+// moment separately — this interval only bounds how much is lost if the tab disappears
+// *without* a clean exit (crash, force-kill), not the common refresh/navigate-away case.
+const PROGRESS_REPORT_INTERVAL_MS = 60000;
+
+// Below this, a play doesn't count as a "watch" for history purposes — otherwise clicking a
+// thumbnail by accident and backing out immediately would still create/bump a watch-history
+// row, pushing an actually-watched video out of the per-user cap.
+const MIN_WATCH_SECONDS = 5;
 
 function VideoPlayer({ contentId, sourceType, sourceUrl, title }) {
     const { token } = useAuth();
@@ -20,7 +28,7 @@ function VideoPlayer({ contentId, sourceType, sourceUrl, title }) {
     const reportProgress = (seconds, { token: authToken, contentId: authContentId } = authRef.current) => {
         if (!authToken || !authContentId) return;
         const progressSeconds = Math.floor(seconds);
-        if (progressSeconds <= 0) return;
+        if (progressSeconds < MIN_WATCH_SECONDS) return;
         api.post(`/contents/${authContentId}/watch`, { progressSeconds }).catch(() => {
             // Best-effort: never let a failed watch-history write disrupt playback.
         });
@@ -39,7 +47,8 @@ function VideoPlayer({ contentId, sourceType, sourceUrl, title }) {
     };
 
     // Flush the last-seen position on unmount — navigating away mid-playback doesn't
-    // reliably fire onPause first.
+    // reliably fire onPause first. Covers in-app (SPA) navigation only: a real unmount never
+    // happens on a hard refresh/tab-close, since the whole JS context is discarded first.
     useEffect(() => {
         return () => {
             const el = videoRef.current;
@@ -47,6 +56,21 @@ function VideoPlayer({ contentId, sourceType, sourceUrl, title }) {
                 reportProgress(el.currentTime, authRef.current);
             }
         };
+    }, []);
+
+    // Covers the hard-refresh/tab-close/hard-navigation case above: `pagehide` fires in those
+    // cases (unlike unmount), but by then a normal axios/XHR call would get cancelled mid-flight
+    // by the browser, so this uses a `keepalive` fetch instead — see lib/api/beacon.js.
+    useEffect(() => {
+        const handlePageHide = () => {
+            const el = videoRef.current;
+            const { contentId } = authRef.current;
+            const progressSeconds = el ? Math.floor(el.currentTime) : 0;
+            if (progressSeconds < MIN_WATCH_SECONDS || !contentId) return;
+            flushOnUnload(`/contents/${contentId}/watch`, { progressSeconds });
+        };
+        window.addEventListener('pagehide', handlePageHide);
+        return () => window.removeEventListener('pagehide', handlePageHide);
     }, []);
 
     if (sourceType === 'LOCAL' || sourceType === 'STREAM') {

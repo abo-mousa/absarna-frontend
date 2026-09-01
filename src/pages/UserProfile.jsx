@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import api from '@/lib/api/client';
 import { changePassword } from '@/lib/api/auth';
 import Navbar from '../components/layout/Navbar';
@@ -24,9 +25,9 @@ function getStrengthLabel(strength) {
 }
 
 function ChangePasswordCard() {
+    const { showToast } = useToast();
     const [form, setForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
     const [passwordStrength, setPasswordStrength] = useState(0);
-    const [message, setMessage] = useState('');
     const [saving, setSaving] = useState(false);
 
     const handleNewPasswordChange = (value) => {
@@ -36,42 +37,34 @@ function ChangePasswordCard() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setMessage('');
 
         if (form.newPassword !== form.confirmPassword) {
-            setMessage('error:كلمتا المرور غير متطابقتين');
+            showToast('كلمتا المرور غير متطابقتين', 'error');
             return;
         }
         if (passwordStrength < 60) {
-            setMessage('error:كلمة المرور ضعيفة — استخدم 8 أحرف على الأقل مع أرقام ورموز');
+            showToast('كلمة المرور ضعيفة — استخدم 8 أحرف على الأقل مع أرقام ورموز', 'error');
             return;
         }
 
         setSaving(true);
         try {
             await changePassword(form.currentPassword, form.newPassword);
-            setMessage('success:تم تغيير كلمة المرور بنجاح');
+            showToast('تم تغيير كلمة المرور بنجاح', 'success');
             setForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
             setPasswordStrength(0);
         } catch (err) {
-            setMessage(`error:${err.response?.data?.error || 'فشل في تغيير كلمة المرور'}`);
+            showToast(err.response?.data?.error || 'فشل في تغيير كلمة المرور', 'error');
         } finally {
             setSaving(false);
         }
     };
 
-    const isSuccess = message.startsWith('success:');
     const strengthInfo = getStrengthLabel(passwordStrength);
 
     return (
         <div className="bg-surface p-6 sm:p-8 rounded-lg shadow-sm border border-border-light mt-6">
             <h2 className="text-lg font-bold mb-6">تغيير كلمة المرور</h2>
-
-            {message && (
-                <p className={`p-2.5 rounded-md mb-4 ${isSuccess ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
-                    {message.split(':').slice(1).join(':')}
-                </p>
-            )}
 
             <form onSubmit={handleSubmit} className="grid gap-4">
                 <Input
@@ -136,8 +129,8 @@ function ChangePasswordCard() {
 
 function UserProfile() {
     const { user } = useAuth();
+    const { showToast } = useToast();
     const [form, setForm] = useState({ fullName: '', bio: '', email: '', profilePictureUrl: '' });
-    const [message, setMessage] = useState('');
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
@@ -154,19 +147,16 @@ function UserProfile() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSaving(true);
-        setMessage('');
 
         try {
             await api.put('/user/profile', form);
-            setMessage('success:تم حفظ الملف الشخصي');
+            showToast('تم حفظ الملف الشخصي', 'success');
         } catch (err) {
-            setMessage('error:فشل في الحفظ');
+            showToast('فشل في الحفظ', 'error');
         } finally {
             setSaving(false);
         }
     };
-
-    const isSuccess = message.startsWith('success:');
 
     return (
         <div dir="rtl" className="min-h-screen bg-bg">
@@ -175,12 +165,6 @@ function UserProfile() {
             <div className="max-w-[500px] mx-auto my-8 sm:my-10 px-4">
                 <div className="bg-surface p-6 sm:p-8 rounded-lg shadow-sm border border-border-light">
                     <h1 className="text-xl font-bold mb-6">الملف الشخصي</h1>
-
-                    {message && (
-                        <p className={`p-2.5 rounded-md mb-4 ${isSuccess ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
-                            {message.split(':')[1]}
-                        </p>
-                    )}
 
                     <form onSubmit={handleSubmit} className="grid gap-4">
                         <Input label="اسم المستخدم" value={user?.username || ''} dir="ltr" disabled />

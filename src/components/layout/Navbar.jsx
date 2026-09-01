@@ -37,21 +37,26 @@ function Navbar({ onMenuClick }) {
                 </Link>
 
                 <div className="flex-1 flex justify-center">
-                    <form onSubmit={handleSearch} className="w-full max-w-[500px] relative">
-                        <button
-                            type="submit"
-                            aria-label="بحث"
-                            className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors"
-                        >
-                            <Search size={16} />
-                        </button>
+                    <form
+                        onSubmit={handleSearch}
+                        className="w-full max-w-[500px] relative rounded-full transition-shadow duration-200 focus-within:shadow-md"
+                    >
+                        {/* `peer` + DOM order (input before the icon button) lets the icon react to
+                            the input's own focus state via `peer-focus`, without JS state. */}
                         <input
                             type="text"
                             placeholder="ابحث..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pr-10 pl-4 py-2 rounded-full border border-border bg-surface text-sm outline-none focus:border-primary transition-colors"
+                            className="peer w-full pr-10 pl-4 py-2 rounded-full border border-border bg-surface text-sm outline-none focus:border-primary transition-colors"
                         />
+                        <button
+                            type="submit"
+                            aria-label="بحث"
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted transition-colors hover:text-primary peer-focus:text-primary"
+                        >
+                            <Search size={16} />
+                        </button>
                     </form>
                 </div>
 

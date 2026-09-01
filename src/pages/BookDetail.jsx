@@ -1,7 +1,8 @@
-import { useState, lazy, Suspense } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowRight, BookOpen, Download, X } from 'lucide-react';
 import { resolveMediaUrl } from '@/lib/media';
+import { flushOnUnload } from '@/lib/api/beacon';
 import { useAuth } from '../contexts/AuthContext';
 import Navbar from '../components/layout/Navbar';
 import { Spinner } from '../components/ui';
@@ -18,11 +19,30 @@ function BookDetail() {
     const { data: book, isLoading, isError } = useBook(id);
     const { data: savedPage } = useBookReadProgress(id, !!token);
     const saveReadProgress = useSaveReadProgress(id);
+    const lastPageRef = useRef(null);
 
     const handlePageChange = (page) => {
         if (!token) return;
         saveReadProgress.mutate(page);
     };
+
+    // Zero-cost local tracking (no request) so the pagehide flush below always has the true
+    // latest page, even one turned less than a second ago (still sitting in PdfReader's debounce).
+    const handlePageChangeImmediate = (page) => {
+        lastPageRef.current = page;
+    };
+
+    // Hard refresh/tab-close/hard navigation never reaches PdfReader's own unmount cleanup (the
+    // whole JS context is torn down first) — `pagehide` fires in those cases, but by then a
+    // normal axios call would get cancelled mid-flight, hence the keepalive-based flush.
+    useEffect(() => {
+        const handlePageHide = () => {
+            if (!token || !lastPageRef.current) return;
+            flushOnUnload(`/books/${id}/read`, { currentPage: lastPageRef.current });
+        };
+        window.addEventListener('pagehide', handlePageHide);
+        return () => window.removeEventListener('pagehide', handlePageHide);
+    }, [id, token]);
 
     if (isLoading) {
         return (
@@ -123,7 +143,12 @@ function BookDetail() {
                         </div>
                         <div className="flex-1 overflow-auto p-4">
                             <Suspense fallback={<div className="py-16 text-center text-text-muted">جاري التحميل...</div>}>
-                                <PdfReader fileUrl={pdfUrl} initialPage={savedPage || 1} onPageChange={handlePageChange} />
+                                <PdfReader
+                                    fileUrl={pdfUrl}
+                                    initialPage={savedPage || 1}
+                                    onPageChange={handlePageChange}
+                                    onPageChangeImmediate={handlePageChangeImmediate}
+                                />
                             </Suspense>
                         </div>
                     </div>
