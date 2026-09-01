@@ -169,7 +169,7 @@ export const useUpdateChannel = (slug, channelId) => {
 
     return useMutation({
         mutationFn: async (form) => {
-            const res = await api.put(`/channels/${channelId}`, form);
+            const res = await api.patch(`/channels/${channelId}`, form);
             return res.data;
         },
         onSuccess: (data) => {
