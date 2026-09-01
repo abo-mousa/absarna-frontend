@@ -1,24 +1,14 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Search, Upload, User, Shield, LogOut, Menu } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Upload, User, Shield, LogOut, Menu } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import logo from '../../assets/logo.svg';
+import SearchBar from './SearchBar';
 
 const iconButtonClass = 'flex flex-col items-center justify-center gap-0.5 min-w-[50px] px-2.5 py-1.5 rounded-md text-text-secondary hover:bg-surface-hover transition-colors';
 const iconLabelClass = 'hidden sm:block text-[0.65rem] font-medium text-text-muted';
 
 function Navbar({ onMenuClick }) {
     const { token, user, logout } = useAuth();
-    const navigate = useNavigate();
-    const [searchQuery, setSearchQuery] = useState('');
-
-    const handleSearch = (e) => {
-        e.preventDefault();
-        if (searchQuery.trim()) {
-            navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-            setSearchQuery('');
-        }
-    };
 
     return (
         <nav className="sticky top-0 z-[1000] bg-bg/95 backdrop-blur-md border-b border-border-light">
@@ -37,27 +27,7 @@ function Navbar({ onMenuClick }) {
                 </Link>
 
                 <div className="flex-1 flex justify-center">
-                    <form
-                        onSubmit={handleSearch}
-                        className="w-full max-w-[500px] relative rounded-full transition-shadow duration-200 focus-within:shadow-md"
-                    >
-                        {/* `peer` + DOM order (input before the icon button) lets the icon react to
-                            the input's own focus state via `peer-focus`, without JS state. */}
-                        <input
-                            type="text"
-                            placeholder="ابحث..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="peer w-full pr-10 pl-4 py-2 rounded-full border border-border bg-surface text-sm outline-none focus:border-primary transition-colors"
-                        />
-                        <button
-                            type="submit"
-                            aria-label="بحث"
-                            className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted transition-colors hover:text-primary peer-focus:text-primary"
-                        >
-                            <Search size={16} />
-                        </button>
-                    </form>
+                    <SearchBar />
                 </div>
 
                 <div className="flex items-center gap-1 flex-shrink-0">

@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import api from '@/lib/api/client';
+import { useDebouncedValue } from './useDebouncedValue';
 
 export const fetchContents = async ({ pageParam = 0, queryKey }) => {
     const [, { search, category, size }] = queryKey;
@@ -63,6 +64,27 @@ export const useInfiniteSearch = (query, size = 12, enabled = true) => {
         getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.currentPage + 1 : undefined),
         enabled: enabled && !!query && query.trim().length > 0,
         staleTime: 2 * 60 * 1000,
+    });
+};
+
+// Search-box typeahead: debounces `rawQuery` itself (rather than the request) so a fast
+// typist doesn't fire one request per keystroke, then leans on React Query's own
+// queryKey cache for the "retype something already seen" case — no separate cache needed.
+// `rawQuery` blank/empty still queries (q omitted) so a suggestion list appears on focus,
+// before the user types anything, per GET /api/search/suggestions's own blank-query default.
+export const useSearchSuggestions = (rawQuery, limit = 8, enabled = true) => {
+    const query = useDebouncedValue(rawQuery.trim(), 200);
+    return useQuery({
+        queryKey: ['search-suggestions', query, limit],
+        queryFn: async ({ signal }) => {
+            let url = `/search/suggestions?limit=${limit}`;
+            if (query) url += `&q=${encodeURIComponent(query)}`;
+            const res = await api.get(url, { signal });
+            return res.data;
+        },
+        enabled,
+        staleTime: query ? 60 * 1000 : 5 * 60 * 1000,
+        keepPreviousData: true,
     });
 };
 
