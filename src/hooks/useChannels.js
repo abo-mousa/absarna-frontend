@@ -226,6 +226,32 @@ export const useDeleteContent = (slug, type) => {
     });
 };
 
+// Home's feed mixes videos from many owned channels, so (unlike the tab hooks above, which are
+// scoped to one fixed slug via useParams) the slug varies per call and is passed with the video.
+export const useToggleVideoVisibilityByChannelId = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ slug, video }) => {
+            await api.patch(`/channels/${slug}/content/videos/${video.id}/visibility`, {
+                visible: video.visible === false,
+            });
+        },
+        onSuccess: (_data, { slug }) => invalidateChannelContent(queryClient, slug, 'videos'),
+    });
+};
+
+export const useDeleteVideoByChannelId = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ slug, video }) => {
+            await api.delete(`/channels/${slug}/content/videos/${video.id}`);
+        },
+        onSuccess: (_data, { slug }) => invalidateChannelContent(queryClient, slug, 'videos'),
+    });
+};
+
 // ============ Admin channel moderation ============
 
 export const usePendingChannels = (enabled = true) => {

@@ -1,6 +1,6 @@
 import { Check, X, Pause } from 'lucide-react';
-import Navbar from '../components/layout/Navbar';
-import { Spinner, Avatar, Badge, Button } from '../components/ui';
+import PageShell from '../components/layout/PageShell';
+import { QueryState, Avatar, Badge, Button } from '../components/ui';
 import { useToast } from '../contexts/ToastContext';
 import { usePageMeta } from '../hooks/usePageMeta';
 import {
@@ -48,65 +48,56 @@ function AdminChannels() {
         suspendChannel.mutate(id, { onError: () => showToast('فشل في التعليق', 'error') });
     };
 
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-bg">
-                <Navbar />
-                <Spinner />
-            </div>
-        );
-    }
-
     return (
-        <div className="min-h-screen bg-bg">
-            <Navbar />
-
+        <PageShell sidebar={false}>
             <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-6">
                 <h1 className="text-xl font-bold mb-6">إدارة القنوات</h1>
 
-                <h2 className="text-base font-bold mb-3">بانتظار الموافقة ({pendingChannels.length})</h2>
+                <QueryState isLoading={loading}>
+                    <h2 className="text-base font-bold mb-3">بانتظار الموافقة ({pendingChannels.length})</h2>
 
-                {pendingChannels.length === 0 ? (
-                    <p className="text-text-muted mb-8">لا توجد قنوات بانتظار الموافقة</p>
-                ) : (
-                    <div className="grid gap-3 mb-8">
-                        {pendingChannels.map((channel) => (
+                    {pendingChannels.length === 0 ? (
+                        <p className="text-text-muted mb-8">لا توجد قنوات بانتظار الموافقة</p>
+                    ) : (
+                        <div className="grid gap-3 mb-8">
+                            {pendingChannels.map((channel) => (
+                                <div key={channel.id} className="flex items-center gap-4 bg-surface p-4 rounded-lg border border-border-light flex-wrap">
+                                    <Avatar name={channel.name} color={channel.primaryColor} />
+                                    <div className="flex-1 min-w-[150px]">
+                                        <strong>{channel.name}</strong>
+                                        <p className="text-sm text-text-muted">@{channel.slug}</p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button size="sm" onClick={() => handleApprove(channel.id)} icon={<Check size={14} />}>موافقة</Button>
+                                        <Button variant="danger" size="sm" onClick={() => handleReject(channel.id)} icon={<X size={14} />}>رفض</Button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    <h2 className="text-base font-bold mb-3">جميع القنوات ({allChannels.length})</h2>
+
+                    <div className="grid gap-3">
+                        {allChannels.map((channel) => (
                             <div key={channel.id} className="flex items-center gap-4 bg-surface p-4 rounded-lg border border-border-light flex-wrap">
                                 <Avatar name={channel.name} color={channel.primaryColor} />
                                 <div className="flex-1 min-w-[150px]">
                                     <strong>{channel.name}</strong>
                                     <p className="text-sm text-text-muted">@{channel.slug}</p>
                                 </div>
-                                <div className="flex gap-2">
-                                    <Button size="sm" onClick={() => handleApprove(channel.id)} icon={<Check size={14} />}>موافقة</Button>
-                                    <Button variant="danger" size="sm" onClick={() => handleReject(channel.id)} icon={<X size={14} />}>رفض</Button>
-                                </div>
+                                <Badge variant={STATUS_VARIANT[channel.status]}>{STATUS_LABEL[channel.status]}</Badge>
+                                {channel.status === 'ACTIVE' && (
+                                    <Button size="sm" onClick={() => handleSuspend(channel.id)} icon={<Pause size={14} />} className="!bg-gold hover:!bg-gold">
+                                        تعليق
+                                    </Button>
+                                )}
                             </div>
                         ))}
                     </div>
-                )}
-
-                <h2 className="text-base font-bold mb-3">جميع القنوات ({allChannels.length})</h2>
-
-                <div className="grid gap-3">
-                    {allChannels.map((channel) => (
-                        <div key={channel.id} className="flex items-center gap-4 bg-surface p-4 rounded-lg border border-border-light flex-wrap">
-                            <Avatar name={channel.name} color={channel.primaryColor} />
-                            <div className="flex-1 min-w-[150px]">
-                                <strong>{channel.name}</strong>
-                                <p className="text-sm text-text-muted">@{channel.slug}</p>
-                            </div>
-                            <Badge variant={STATUS_VARIANT[channel.status]}>{STATUS_LABEL[channel.status]}</Badge>
-                            {channel.status === 'ACTIVE' && (
-                                <Button size="sm" onClick={() => handleSuspend(channel.id)} icon={<Pause size={14} />} className="!bg-gold hover:!bg-gold">
-                                    تعليق
-                                </Button>
-                            )}
-                        </div>
-                    ))}
-                </div>
+                </QueryState>
             </div>
-        </div>
+        </PageShell>
     );
 }
 

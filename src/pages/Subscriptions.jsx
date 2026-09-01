@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import PageShell from '../components/layout/PageShell';
-import { Spinner, EmptyState, Avatar } from '../components/ui';
+import { QueryState, Avatar } from '../components/ui';
 import { useToast } from '../contexts/ToastContext';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { useSubscriptions, useUnsubscribe } from '../hooks/useChannels';
@@ -20,13 +20,15 @@ function Subscriptions() {
         <PageShell contentClassName="p-4 sm:p-6">
             <h1 className="text-xl font-bold mb-6">اشتراكاتي</h1>
 
-            {isLoading ? (
-                <Spinner />
-            ) : isError ? (
-                <p className="text-red-600 p-3 bg-red-100 rounded-md">فشل في تحميل الاشتراكات</p>
-            ) : subscriptions.length === 0 ? (
-                <EmptyState icon="🔔" title="لا توجد اشتراكات" description="اشترك في القنوات لمتابعة محتواها" />
-            ) : (
+            <QueryState
+                isLoading={isLoading}
+                isError={isError}
+                isEmpty={subscriptions.length === 0}
+                errorTitle="فشل في تحميل الاشتراكات"
+                emptyIcon="🔔"
+                emptyTitle="لا توجد اشتراكات"
+                emptyDescription="اشترك في القنوات لمتابعة محتواها"
+            >
                 <div className="grid gap-4">
                     {subscriptions.map((sub) => (
                         <div key={sub.subscriptionId} className="flex items-center gap-4 bg-surface p-4 rounded-lg border border-border-light shadow-sm flex-wrap">
@@ -57,7 +59,7 @@ function Subscriptions() {
                         </div>
                     ))}
                 </div>
-            )}
+            </QueryState>
         </PageShell>
     );
 }

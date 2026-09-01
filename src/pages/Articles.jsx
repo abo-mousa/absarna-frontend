@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Type, Clock, Calendar } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
-import { Spinner, EmptyState, Input } from '../components/ui';
+import { QueryState, Input } from '../components/ui';
 import { useArticles } from '../hooks/useArticles';
 import { usePageMeta } from '../hooks/usePageMeta';
 
@@ -78,54 +78,52 @@ function Articles() {
                 </div>
             )}
 
-            {isLoading ? (
-                <Spinner />
-            ) : articles.length === 0 ? (
-                <EmptyState icon="📝" title="لا توجد مقالات" />
-            ) : filtered.length === 0 ? (
-                <EmptyState icon="🔍" title="لا توجد نتائج" description="جرّب كلمة بحث أو تصنيفاً آخر" />
-            ) : (
-                <>
-                    <div className="grid gap-4">
-                        {visible.map((article) => (
-                            <Link
-                                key={article.id}
-                                to={`/articles/${article.id}`}
-                                className="block bg-surface p-5 rounded-lg border border-border-light shadow-sm hover:shadow-md transition-shadow text-text-primary no-underline"
-                            >
-                                <h3 className="text-lg font-semibold mb-2">{article.title}</h3>
-                                <div className="flex gap-4 flex-wrap text-sm text-text-muted">
-                                    {article.wordCount > 0 && (
-                                        <span className="flex items-center gap-1"><Type size={13} /> {article.wordCount} كلمة</span>
-                                    )}
-                                    {article.readingTimeMinutes > 0 && (
-                                        <span className="flex items-center gap-1"><Clock size={13} /> {article.readingTimeMinutes} دقائق</span>
-                                    )}
-                                    {article.publishDate && (
-                                        <span className="flex items-center gap-1"><Calendar size={13} /> {article.publishDate}</span>
-                                    )}
-                                </div>
-                                {article.content && (
-                                    <p className="mt-2 text-text-secondary text-sm leading-relaxed">
-                                        {article.content.substring(0, 150)}...
-                                    </p>
+            <QueryState
+                isLoading={isLoading}
+                isEmpty={articles.length === 0 || filtered.length === 0}
+                emptyIcon={articles.length === 0 ? '📝' : '🔍'}
+                emptyTitle={articles.length === 0 ? 'لا توجد مقالات' : 'لا توجد نتائج'}
+                emptyDescription={articles.length === 0 ? undefined : 'جرّب كلمة بحث أو تصنيفاً آخر'}
+            >
+                <div className="grid gap-4">
+                    {visible.map((article) => (
+                        <Link
+                            key={article.id}
+                            to={`/articles/${article.id}`}
+                            className="block bg-surface p-5 rounded-lg border border-border-light shadow-sm hover:shadow-md transition-shadow text-text-primary no-underline"
+                        >
+                            <h3 className="text-lg font-semibold mb-2">{article.title}</h3>
+                            <div className="flex gap-4 flex-wrap text-sm text-text-muted">
+                                {article.wordCount > 0 && (
+                                    <span className="flex items-center gap-1"><Type size={13} /> {article.wordCount} كلمة</span>
                                 )}
-                            </Link>
-                        ))}
-                    </div>
+                                {article.readingTimeMinutes > 0 && (
+                                    <span className="flex items-center gap-1"><Clock size={13} /> {article.readingTimeMinutes} دقائق</span>
+                                )}
+                                {article.publishDate && (
+                                    <span className="flex items-center gap-1"><Calendar size={13} /> {article.publishDate}</span>
+                                )}
+                            </div>
+                            {article.content && (
+                                <p className="mt-2 text-text-secondary text-sm leading-relaxed">
+                                    {article.content.substring(0, 150)}...
+                                </p>
+                            )}
+                        </Link>
+                    ))}
+                </div>
 
-                    {visibleCount < filtered.length && (
-                        <div className="text-center mt-6">
-                            <button
-                                onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
-                                className="px-8 py-2.5 bg-primary text-white rounded-md font-semibold"
-                            >
-                                تحميل المزيد
-                            </button>
-                        </div>
-                    )}
-                </>
-            )}
+                {visibleCount < filtered.length && (
+                    <div className="text-center mt-6">
+                        <button
+                            onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                            className="px-8 py-2.5 bg-primary text-white rounded-md font-semibold"
+                        >
+                            تحميل المزيد
+                        </button>
+                    </div>
+                )}
+            </QueryState>
         </PageShell>
     );
 }

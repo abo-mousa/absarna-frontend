@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Video, BookOpen, FileText, Tv, Bell, Shield, Check, X } from 'lucide-react';
-import Navbar from '../components/layout/Navbar';
-import { Button } from '../components/ui';
+import PageShell from '../components/layout/PageShell';
+import { Button, QueryState } from '../components/ui';
 import { useToast } from '../contexts/ToastContext';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { useStats } from '../hooks/useAdminData';
@@ -32,9 +32,7 @@ function Admin() {
     ];
 
     return (
-        <div className="min-h-screen bg-bg">
-            <Navbar />
-
+        <PageShell sidebar={false}>
             <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-6">
                 <div className="flex justify-between items-center flex-wrap gap-3 mb-6">
                     <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
@@ -63,11 +61,7 @@ function Admin() {
                     <Bell size={18} /> قنوات بانتظار الموافقة
                 </h2>
 
-                {pendingChannels.length === 0 ? (
-                    <div className="bg-surface p-6 rounded-lg text-center text-text-muted border border-border-light">
-                        لا توجد قنوات بانتظار الموافقة
-                    </div>
-                ) : (
+                <QueryState isEmpty={pendingChannels.length === 0} emptyTitle="لا توجد قنوات بانتظار الموافقة">
                     <div className="grid gap-3">
                         {pendingChannels.map((channel) => (
                             <div key={channel.id} className="flex items-center gap-4 bg-surface p-4 rounded-lg border border-border-light flex-wrap">
@@ -92,9 +86,9 @@ function Admin() {
                             </div>
                         ))}
                     </div>
-                )}
+                </QueryState>
             </div>
-        </div>
+        </PageShell>
     );
 }
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '@/lib/api/client';
-import Navbar from '../components/layout/Navbar';
+import PageShell from '../components/layout/PageShell';
 import { Input, Button } from '../components/ui';
 import { EmailVerificationNotice } from '../components/auth';
 import { useToast } from '../contexts/ToastContext';
@@ -43,9 +43,7 @@ function CreateChannel() {
     };
 
     return (
-        <div className="min-h-screen bg-bg">
-            <Navbar />
-
+        <PageShell sidebar={false}>
             <div className="max-w-[500px] mx-auto my-8 sm:my-10 px-4">
                 <div className="bg-surface p-6 sm:p-8 rounded-lg shadow-sm border border-border-light">
                     <h1 className="text-xl font-bold mb-2">إنشاء قناة جديدة</h1>
@@ -104,7 +102,7 @@ function CreateChannel() {
                     </form>
                 </div>
             </div>
-        </div>
+        </PageShell>
     );
 }
 

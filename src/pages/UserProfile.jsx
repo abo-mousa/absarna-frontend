@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import api from '@/lib/api/client';
 import { changePassword } from '@/lib/api/auth';
-import Navbar from '../components/layout/Navbar';
+import PageShell from '../components/layout/PageShell';
 import { Input, Button } from '../components/ui';
 import { getPasswordRules, getPasswordStrengthLabel, isPasswordValid } from '@/lib/validation';
 import { usePageMeta } from '../hooks/usePageMeta';
@@ -149,9 +149,7 @@ function UserProfile() {
     };
 
     return (
-        <div className="min-h-screen bg-bg">
-            <Navbar />
-
+        <PageShell sidebar={false}>
             <div className="max-w-[500px] mx-auto my-8 sm:my-10 px-4">
                 <div className="bg-surface p-6 sm:p-8 rounded-lg shadow-sm border border-border-light">
                     <h1 className="text-xl font-bold mb-6">الملف الشخصي</h1>
@@ -189,7 +187,7 @@ function UserProfile() {
 
                 <ChangePasswordCard />
             </div>
-        </div>
+        </PageShell>
     );
 }
 

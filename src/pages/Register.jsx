@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { usePageMeta } from '../hooks/usePageMeta';
-import Navbar from '../components/layout/Navbar';
+import PageShell from '../components/layout/PageShell';
 import { Input, Button } from '../components/ui';
 import { getPasswordRules, getPasswordStrengthLabel, isPasswordValid, validateUsername } from '@/lib/validation';
 
@@ -53,9 +53,7 @@ function Register() {
     };
 
     return (
-        <div className="min-h-screen bg-bg">
-            <Navbar />
-
+        <PageShell sidebar={false}>
             <div className="max-w-[400px] mx-auto my-10 sm:my-16 p-6 sm:p-8 bg-surface rounded-lg shadow-md border border-border-light">
                 <div className="text-center mb-6">
                     <h2 className="text-xl font-bold">إنشاء حساب</h2>
@@ -167,7 +165,7 @@ function Register() {
                     </p>
                 </div>
             </div>
-        </div>
+        </PageShell>
     );
 }
 

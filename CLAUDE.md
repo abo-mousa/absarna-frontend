@@ -18,12 +18,11 @@ Fully migrated from hand-rolled inline `style={{}}` objects to Tailwind (`tailwi
 src/
   assets/       logo.svg
   components/
-    ui/         Button, Card, Input, Modal, Badge, Grid, Spinner, EmptyState, Avatar — barrel export via index.js
+    ui/         Button, Card, Input, Modal, Badge, Grid, Spinner, EmptyState, QueryState, Avatar — barrel export via index.js
     layout/     Navbar, SideBar, PageShell, SearchBar — barrel export via index.js
     content/    VideoCard, BookCard, ArticleCard, VideoPlayer, CommentsSection — barrel export via index.js
-    admin/      5 CMS tab components — barrel export via index.js (see "Known gaps" — currently unrouted)
     auth/       EmailVerificationNotice — barrel export via index.js, see "Email verification" below
-  pages/        route-level components
+  pages/        route-level components, each lazy-loaded per route in App.jsx (see "Build / verify" below)
   hooks/        useContents, useBooks, useArticles, useBiography, useChannels, useComments,
                 useAdminData, useParallelUpload, useDebouncedValue, useOutsideClick —
                 see "Data fetching: React Query" below and "Search suggestions" below
@@ -32,12 +31,19 @@ src/
     api/        client.js (axios instance + interceptors), auth.js, contents.js (thin per-domain wrappers)
     env.js       API_BASE_URL / STREAM_BASE_URL, from VITE_API_BASE_URL env var (no more hardcoded localhost:8080)
     media.js     resolveMediaUrl(), extractYouTubeId(), youtubeThumbnail() — shared, don't reimplement per-component
+    user.js      isPlatformAdmin(user), isChannelOwner(user, channel), canManageChannel(user, channel) —
+                 the `user`/`channel` shape is still implicit (no TypeScript), but role/ownership checks go
+                 through these instead of comparing `user.role === 'PLATFORM_ADMIN'` inline
 ```
 Path alias `@/` → `src/` (configured in `vite.config.js`). Import from a component folder's `index.js` (e.g. `import { Button, Card } from '@/components/ui'`), not the individual file, unless there's a specific reason not to.
 
 ## `PageShell`
 
-Shared app shell (`components/layout/PageShell.jsx`) wrapping `Navbar` + collapsible `SideBar` (mobile drawer) + a `<main>`. Most browsing pages should render `<PageShell contentClassName="...">{children}</PageShell>` rather than hand-rolling `<Navbar/><SideBar/><main>` — pages that don't want a sidebar pass `sidebar={false}` (used by the Medium-style reading pages and auth forms).
+Shared app shell (`components/layout/PageShell.jsx`) wrapping `Navbar` + collapsible `SideBar` (mobile drawer) + a `<main>`. Every page renders `<PageShell contentClassName="...">{children}</PageShell>` rather than hand-rolling `<Navbar/><SideBar/><main>` — pages that don't want a sidebar pass `sidebar={false}` (used by the Medium-style reading pages, auth forms, and detail/manage pages that were never meant to show the browsing sidebar).
+
+## `QueryState`
+
+`components/ui/QueryState.jsx` collapses the loading/error/empty/success four-branch ternary that used to be hand-rolled per page around a `useQuery`/`useInfiniteQuery` result: `<QueryState isLoading isError isEmpty errorTitle emptyTitle emptyDescription emptyAction errorAction>{children}</QueryState>` renders a `Spinner`, an `EmptyState` (for either the error or empty case, swapping icon/copy), or `children` once data's ready. Reach for this instead of inventing another loading/error/empty variant per page.
 
 ## Comment auth model
 
@@ -130,8 +136,7 @@ None of this adds request volume — layer 1 actually got *less* frequent for vi
 
 ## Known gaps
 
-- The 5 admin CMS tab components (`VideosTab`/`BooksTab`/`ArticlesTab`/`DashboardTab`/`BiographyTab`) are fully built but **not wired into any route** — `Admin.jsx` (the page actually routed at `/admin`) is a separate, simpler stats+channel-approval dashboard. The Navbar's "رفع" (Upload) link points to `/upload`, which isn't a registered route.
-- No git repository as of the last check — if one still doesn't exist, that's worth flagging to the user rather than assuming.
+- The Navbar's "رفع" (Upload) link points to `/upload`, which isn't a registered route — the `*` fallback (`NotFound`) catches it. There used to be 5 unrouted admin CMS tab components under `components/admin/` meant to eventually back this; they were deleted 2026-09-01 (dead code, fully duplicated by `ChannelManage.jsx`) rather than wired up. If per-type CMS tabs come back, build them as part of the `ChannelManage` rewrite mentioned under "Bugs" below, not as a second implementation.
 
 ## Build / verify
 
@@ -248,40 +253,36 @@ Still open:
 
 ## Refactoring / structure
 
-- **`ChannelManage.jsx` is 507 lines** holding five tabs, four content forms, twelve mutations
-  and four lists, with the per-type logic copy-pasted four times. Extract a
-  `<ContentPublishForm type=… fields=… />` driven by a per-type field schema and a
-  `useChannelContentTab(slug, type)` hook that bundles list + create + toggle + delete. This
-  mirrors the identical duplication on the backend (`ChannelContentController`) and the two are
-  worth fixing together — adding a fifth content type currently means editing eight files
-  across both repos.
-- **`PageShell` is bypassed by the pages that most need it** — `ChannelPage`, `VideoDetail`,
-  `ChannelManage`, `Admin`, `Register` and others hand-roll `<div dir="rtl"><Navbar/>…`. That's
-  also why the loading and error states differ subtly from page to page.
-- **Loading/error/empty states are re-implemented per page.** `Spinner` + `EmptyState` exist;
-  a small `<QueryState query={…}>` wrapper (or a shared `renderQuery` helper) would remove the
-  same four-branch ternary from ~12 files, and would stop new pages from inventing a
-  thirteenth variant.
-- **`ProtectedRoute` hand-rolls an inline-styled spinner** using CSS variables
-  (`var(--bg)`, `var(--border)`) — the one surviving pocket of the pre-Tailwind style, and it
-  duplicates `Spinner`.
-- **The `user` object shape is implicit** and read as `user?.role`, `user.id`, `user.emailVerified`
-  across a dozen files. Even without TypeScript, one `lib/user.js` exporting
-  `isPlatformAdmin(user)` / `canManageChannel(user, channel)` would stop role strings being
-  compared inline in `Navbar`, `ChannelManage` and `App`.
-- **Direct `api.get/post/patch/delete` calls still leak into pages** — `Home`'s visibility
-  toggle and delete, `ChannelManage`'s two upload handlers. The `Home` ones have a documented
-  reason (variable slug) but could be a `useToggleVideoVisibilityByChannelId` hook instead of
-  hand-rolled cache invalidation.
-- **Every page is statically imported in `App.jsx`.** `React.lazy` per route (as already done
-  for `PdfReader`) would cut the initial bundle substantially — `framer-motion`,
-  `react-hook-form` and the admin tabs are all paid for on first paint. Worth checking whether
-  `framer-motion` and `react-hook-form` are used at all; several dependencies look unreferenced.
-- **The five admin CMS tab components remain unrouted dead code** (existing "Known gaps" entry)
-  — either wire them up or delete them; they're currently a second, divergent implementation of
-  what `ChannelManage` does.
-- **`.DS_Store` files are committed in `src/`, `src/components/` and `src/lib/`**, and the repo
-  still has no git repository per the note above — worth resolving both.
+Resolved 2026-09-01: `PageShell` is now used by every page, including the ones that used to
+hand-roll `<div className="min-h-screen bg-bg"><Navbar/>…` (`ChannelPage`, `VideoDetail`,
+`BookDetail`, `ArticleDetail`, `ChannelManage`, `Admin`, `AdminChannels`, `Register`, `Login`,
+`ForgotPassword`, `ResetPassword`, `VerifyEmail`, `NotFound`, `UserProfile`, `CreateChannel`,
+`Biography`) — pages with no browsing sidebar pass `sidebar={false}`, see "`PageShell`" above;
+loading/error/empty ternaries were collapsed into the new `QueryState` (see "`QueryState`"
+above) across all of the pages listed there plus `Home`, `SearchPage`, `Books`, `Articles`,
+`Subscriptions`, `History`; `ProtectedRoute` (`App.jsx`) now renders `<Spinner/>` inside a
+Tailwind-classed wrapper instead of the old CSS-variable inline-styled spinner; `lib/user.js`
+now exports `isPlatformAdmin`/`isChannelOwner`/`canManageChannel`, wired into `App.jsx`,
+`Navbar.jsx`, `ChannelPage.jsx`, `ChannelManage.jsx` in place of inline `user?.role === …` /
+`channel.ownerUserId === user.id` checks; `Home`'s visibility-toggle/delete direct `api.patch`/
+`api.delete` calls became `useToggleVideoVisibilityByChannelId`/`useDeleteVideoByChannelId`
+(`hooks/useChannels.js`, reusing the existing `invalidateChannelContent` helper) — `ChannelManage`'s
+two file-upload handlers are unchanged, per their own documented reason (upload-progress
+callbacks don't fit `useMutation` cleanly); every page in `App.jsx` is now `React.lazy`-loaded
+per route behind one `<Suspense>` (mirroring the existing `PdfReader` pattern), and `framer-motion`/
+`react-hook-form` — confirmed genuinely unreferenced anywhere in `src/` — were removed from
+`package.json`; the five admin CMS tab components were deleted rather than wired up (see "Known
+gaps"). Checked and turned out not to be an issue: `.DS_Store` was never actually git-tracked
+(already covered by `.gitignore`), and the repo does have a git history now.
+
+**Still open, deliberately not touched in the same pass**: `ChannelManage.jsx` is still ~500
+lines holding five tabs, four content forms, and per-type logic copy-pasted four times — the
+`<ContentPublishForm type=… fields=… />` + `useChannelContentTab(slug, type)` extraction
+described in earlier notes here is real, but this file (along with `Navbar.jsx`'s upload link)
+is the one getting a rewrite alongside a dedicated upload backend service per the "Bugs"
+section below — restructuring its internals now would be thrown away. Revisit this extraction
+once that rewrite lands, and pair it with the identical duplication on the backend's
+`ChannelContentController`.
 
 ## Feature ideas that fit the platform's values
 

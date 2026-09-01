@@ -4,8 +4,8 @@ import { ArrowRight, BookOpen, Download, X } from 'lucide-react';
 import { resolveMediaUrl } from '@/lib/media';
 import { flushOnUnload } from '@/lib/api/beacon';
 import { useAuth } from '../contexts/AuthContext';
-import Navbar from '../components/layout/Navbar';
-import { Spinner } from '../components/ui';
+import PageShell from '../components/layout/PageShell';
+import { QueryState } from '../components/ui';
 import { CommentsSection } from '../components/content';
 import { useBook, useBookReadProgress, useSaveReadProgress } from '../hooks/useBooks';
 import { usePageMeta } from '../hooks/usePageMeta';
@@ -50,24 +50,16 @@ function BookDetail() {
         return () => window.removeEventListener('pagehide', handlePageHide);
     }, [id, token]);
 
-    if (isLoading) {
+    if (isLoading || isError || !book) {
         return (
-            <div className="min-h-screen bg-bg">
-                <Navbar />
-                <Spinner />
-            </div>
-        );
-    }
-
-    if (isError || !book) {
-        return (
-            <div className="min-h-screen bg-bg">
-                <Navbar />
-                <div className="text-center py-16 px-5">
-                    <p className="text-red-600 text-lg mb-2">الكتاب غير موجود</p>
-                    <Link to="/books" className="text-primary font-semibold">العودة للمكتبة</Link>
-                </div>
-            </div>
+            <PageShell sidebar={false}>
+                <QueryState
+                    isLoading={isLoading}
+                    isError={isError || !book}
+                    errorTitle="الكتاب غير موجود"
+                    errorAction={<Link to="/books" className="text-primary font-semibold">العودة للمكتبة</Link>}
+                />
+            </PageShell>
         );
     }
 
@@ -75,9 +67,7 @@ function BookDetail() {
     const previewUrl = resolveMediaUrl(book.previewImageUrl);
 
     return (
-        <div className="min-h-screen bg-bg">
-            <Navbar />
-
+        <PageShell sidebar={false}>
             <div className="max-w-reading mx-auto px-4 sm:px-6 py-6 sm:py-8">
                 <div className="bg-surface rounded-lg overflow-hidden border border-border-light shadow-sm mb-6">
                     {previewUrl && !showPdf && (
@@ -168,7 +158,7 @@ function BookDetail() {
                     </Link>
                 </div>
             </div>
-        </div>
+        </PageShell>
     );
 }
 

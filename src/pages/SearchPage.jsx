@@ -1,7 +1,7 @@
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
-import { Spinner, EmptyState } from '../components/ui';
+import { QueryState } from '../components/ui';
 import { VideoCard } from '../components/content';
 import { useInfiniteSearch, useWatchProgressMap } from '../hooks/useContents';
 import { usePageMeta } from '../hooks/usePageMeta';
@@ -33,38 +33,38 @@ function SearchPage() {
                 {!isLoading && <p className="text-text-muted text-sm">{totalItems} نتيجة</p>}
             </div>
 
-            {isLoading ? (
-                <Spinner />
-            ) : isError ? (
-                <EmptyState icon="⚠️" title="فشل البحث" />
-            ) : results.length === 0 ? (
-                <EmptyState icon="🔍" title="لا توجد نتائج" description={`لم يتم العثور على نتائج لـ "${query}"`} />
-            ) : (
-                <>
-                    <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {results.map((video) => (
-                            <VideoCard
-                                key={video.id}
-                                video={video}
-                                onClick={() => navigate(`/video/${video.id}`)}
-                                watchedSeconds={watchProgress[video.id]}
-                            />
-                        ))}
-                    </div>
+            <QueryState
+                isLoading={isLoading}
+                isError={isError}
+                isEmpty={results.length === 0}
+                errorTitle="فشل البحث"
+                emptyIcon="🔍"
+                emptyTitle="لا توجد نتائج"
+                emptyDescription={`لم يتم العثور على نتائج لـ "${query}"`}
+            >
+                <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {results.map((video) => (
+                        <VideoCard
+                            key={video.id}
+                            video={video}
+                            onClick={() => navigate(`/video/${video.id}`)}
+                            watchedSeconds={watchProgress[video.id]}
+                        />
+                    ))}
+                </div>
 
-                    {hasNextPage && (
-                        <div className="text-center mt-6">
-                            <button
-                                onClick={fetchNextPage}
-                                disabled={isFetchingNextPage}
-                                className="px-8 py-2.5 bg-primary text-white rounded-md font-semibold disabled:opacity-60"
-                            >
-                                {isFetchingNextPage ? 'جاري التحميل...' : 'تحميل المزيد'}
-                            </button>
-                        </div>
-                    )}
-                </>
-            )}
+                {hasNextPage && (
+                    <div className="text-center mt-6">
+                        <button
+                            onClick={fetchNextPage}
+                            disabled={isFetchingNextPage}
+                            className="px-8 py-2.5 bg-primary text-white rounded-md font-semibold disabled:opacity-60"
+                        >
+                            {isFetchingNextPage ? 'جاري التحميل...' : 'تحميل المزيد'}
+                        </button>
+                    </div>
+                )}
+            </QueryState>
         </PageShell>
     );
 }

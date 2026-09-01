@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Upload, User, Shield, LogOut, Menu } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { isPlatformAdmin } from '@/lib/user';
 import logo from '../../assets/logo.svg';
 import SearchBar from './SearchBar';
 
@@ -45,7 +46,7 @@ function Navbar({ onMenuClick }) {
                                 <span className={iconLabelClass}>حسابي</span>
                             </Link>
 
-                            {user?.role === 'PLATFORM_ADMIN' && (
+                            {isPlatformAdmin(user) && (
                                 <Link to="/admin" title="لوحة التحكم" className={`${iconButtonClass} bg-primary-dark text-white hover:bg-primary-dark/90`}>
                                     <Shield size={18} />
                                     <span className="hidden sm:block text-[0.65rem] font-medium text-white">الإدارة</span>

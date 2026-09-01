@@ -1,7 +1,7 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowRight, Clock, Folder, Tv, User, Calendar } from 'lucide-react';
-import Navbar from '../components/layout/Navbar';
-import { Spinner, Avatar } from '../components/ui';
+import PageShell from '../components/layout/PageShell';
+import { QueryState, Avatar } from '../components/ui';
 import { VideoPlayer, CommentsSection, VideoCard } from '../components/content';
 import { useContent, useRelatedContent, useWatchProgressMap } from '../hooks/useContents';
 import { useChannel } from '../hooks/useChannels';
@@ -27,24 +27,16 @@ function VideoDetail() {
         image: thumbnail,
     });
 
-    if (isLoading) {
+    if (isLoading || isError || !video) {
         return (
-            <div className="min-h-screen bg-bg">
-                <Navbar />
-                <Spinner />
-            </div>
-        );
-    }
-
-    if (isError || !video) {
-        return (
-            <div className="min-h-screen bg-bg">
-                <Navbar />
-                <div className="text-center py-16 px-5">
-                    <p className="text-red-600 text-lg mb-2">فشل في تحميل الفيديو</p>
-                    <Link to="/" className="text-primary font-semibold">العودة للرئيسية</Link>
-                </div>
-            </div>
+            <PageShell sidebar={false}>
+                <QueryState
+                    isLoading={isLoading}
+                    isError={isError || !video}
+                    errorTitle="فشل في تحميل الفيديو"
+                    errorAction={<Link to="/" className="text-primary font-semibold">العودة للرئيسية</Link>}
+                />
+            </PageShell>
         );
     }
 
@@ -57,9 +49,7 @@ function VideoDetail() {
     ].filter(Boolean);
 
     return (
-        <div className="min-h-screen bg-bg">
-            <Navbar />
-
+        <PageShell sidebar={false}>
             <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
                 <div className="bg-surface rounded-lg overflow-hidden border border-border-light shadow-sm mb-6">
                     <VideoPlayer contentId={video.id} sourceType={video.sourceType} sourceUrl={video.sourceUrl} title={video.title} />
@@ -115,7 +105,7 @@ function VideoDetail() {
                     </Link>
                 </div>
             </div>
-        </div>
+        </PageShell>
     );
 }
 

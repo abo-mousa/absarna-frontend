@@ -1,6 +1,6 @@
 import { Play, Send, Heart, Mail } from 'lucide-react';
-import Navbar from '../components/layout/Navbar.jsx';
-import { Spinner } from '../components/ui';
+import PageShell from '../components/layout/PageShell';
+import { QueryState } from '../components/ui';
 import { useBiography } from '../hooks/useBiography';
 import { usePageMeta } from '../hooks/usePageMeta';
 
@@ -11,15 +11,11 @@ function Biography() {
     usePageMeta({ title: 'السيرة الذاتية', description: bio?.shortBio, image: bio?.photoUrl });
 
     return (
-        <div className="min-h-screen bg-bg">
-            <Navbar />
+        <PageShell sidebar={false} contentClassName="max-w-reading mx-auto px-4 sm:px-6 py-10">
+            <h1 className="text-2xl font-bold text-center mb-8">السيرة الذاتية</h1>
 
-            <div className="max-w-reading mx-auto px-4 sm:px-6 py-10">
-                <h1 className="text-2xl font-bold text-center mb-8">السيرة الذاتية</h1>
-
-                {isLoading ? (
-                    <Spinner />
-                ) : bio ? (
+            <QueryState isLoading={isLoading} isEmpty={!bio} emptyTitle="لا توجد معلومات">
+                {bio && (
                     <div className="bg-surface p-6 sm:p-10 rounded-xl shadow-sm border border-border-light">
                         {bio.photoUrl && (
                             <img
@@ -78,11 +74,9 @@ function Biography() {
                             )}
                         </div>
                     </div>
-                ) : (
-                    <p className="text-center text-text-muted">لا توجد معلومات</p>
                 )}
-            </div>
-        </div>
+            </QueryState>
+        </PageShell>
     );
 }
 

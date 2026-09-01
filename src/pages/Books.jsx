@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
-import { Spinner, EmptyState, Input } from '../components/ui';
+import { QueryState, Input } from '../components/ui';
 import { BookCard } from '../components/content';
 import { useReadingProgressMap } from '../hooks/useContents';
 import { useBooks } from '../hooks/useBooks';
@@ -81,32 +81,30 @@ function Books() {
                 </div>
             )}
 
-            {isLoading ? (
-                <Spinner />
-            ) : books.length === 0 ? (
-                <EmptyState icon="📚" title="لا توجد كتب" description="سيتم إضافة الكتب قريباً" />
-            ) : filtered.length === 0 ? (
-                <EmptyState icon="🔍" title="لا توجد نتائج" description="جرّب كلمة بحث أو تصنيفاً آخر" />
-            ) : (
-                <>
-                    <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-5">
-                        {visible.map((book) => (
-                            <BookCard key={book.id} book={book} currentPage={readingProgress[book.id]} />
-                        ))}
-                    </div>
+            <QueryState
+                isLoading={isLoading}
+                isEmpty={books.length === 0 || filtered.length === 0}
+                emptyIcon={books.length === 0 ? '📚' : '🔍'}
+                emptyTitle={books.length === 0 ? 'لا توجد كتب' : 'لا توجد نتائج'}
+                emptyDescription={books.length === 0 ? 'سيتم إضافة الكتب قريباً' : 'جرّب كلمة بحث أو تصنيفاً آخر'}
+            >
+                <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-5">
+                    {visible.map((book) => (
+                        <BookCard key={book.id} book={book} currentPage={readingProgress[book.id]} />
+                    ))}
+                </div>
 
-                    {visibleCount < filtered.length && (
-                        <div className="text-center mt-6">
-                            <button
-                                onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
-                                className="px-8 py-2.5 bg-primary text-white rounded-md font-semibold"
-                            >
-                                تحميل المزيد
-                            </button>
-                        </div>
-                    )}
-                </>
-            )}
+                {visibleCount < filtered.length && (
+                    <div className="text-center mt-6">
+                        <button
+                            onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                            className="px-8 py-2.5 bg-primary text-white rounded-md font-semibold"
+                        >
+                            تحميل المزيد
+                        </button>
+                    </div>
+                )}
+            </QueryState>
         </PageShell>
     );
 }

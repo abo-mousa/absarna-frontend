@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MailCheck } from 'lucide-react';
 import { forgotPassword } from '@/lib/api/auth';
-import Navbar from '../components/layout/Navbar';
+import PageShell from '../components/layout/PageShell';
 import { Input, Button } from '../components/ui';
 import { usePageMeta } from '../hooks/usePageMeta';
 
@@ -31,9 +31,7 @@ function ForgotPassword() {
     };
 
     return (
-        <div className="min-h-screen bg-bg">
-            <Navbar />
-
+        <PageShell sidebar={false}>
             <div className="max-w-[400px] mx-auto my-10 sm:my-16 p-6 sm:p-8 bg-surface rounded-lg shadow-md border border-border-light">
                 {sent ? (
                     <div className="text-center">
@@ -84,7 +82,7 @@ function ForgotPassword() {
                     </>
                 )}
             </div>
-        </div>
+        </PageShell>
     );
 }
 

@@ -1,29 +1,33 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
-import Home from './pages/Home';
-import ChannelPage from './pages/ChannelPage';
-import Admin from './pages/Admin';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import VerifyEmail from './pages/VerifyEmail';
-import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/ResetPassword';
-import UserProfile from './pages/UserProfile';
-import Subscriptions from './pages/Subscriptions';
-import History from './pages/History';
-import SearchPage from './pages/SearchPage';
-import Books from './pages/Books';
-import BookDetail from './pages/BookDetail';
-import Articles from './pages/Articles';
-import ArticleDetail from './pages/ArticleDetail';
-import Biography from './pages/Biography';
-import VideoDetail from './pages/VideoDetail';
-import AdminChannels from './pages/AdminChannels';
-import CreateChannel from './pages/CreateChannel';
-import ChannelManage from './pages/ChannelManage';
-import NotFound from './pages/NotFound';
+import { isPlatformAdmin } from '@/lib/user';
+import { Spinner } from './components/ui';
+
+const Home = lazy(() => import('./pages/Home'));
+const ChannelPage = lazy(() => import('./pages/ChannelPage'));
+const Admin = lazy(() => import('./pages/Admin'));
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const UserProfile = lazy(() => import('./pages/UserProfile'));
+const Subscriptions = lazy(() => import('./pages/Subscriptions'));
+const History = lazy(() => import('./pages/History'));
+const SearchPage = lazy(() => import('./pages/SearchPage'));
+const Books = lazy(() => import('./pages/Books'));
+const BookDetail = lazy(() => import('./pages/BookDetail'));
+const Articles = lazy(() => import('./pages/Articles'));
+const ArticleDetail = lazy(() => import('./pages/ArticleDetail'));
+const Biography = lazy(() => import('./pages/Biography'));
+const VideoDetail = lazy(() => import('./pages/VideoDetail'));
+const AdminChannels = lazy(() => import('./pages/AdminChannels'));
+const CreateChannel = lazy(() => import('./pages/CreateChannel'));
+const ChannelManage = lazy(() => import('./pages/ChannelManage'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -43,78 +47,72 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
 
     if (loading) {
         return (
-            <div style={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                minHeight: '100vh',
-                background: 'var(--bg)'
-            }}>
-                <div style={{
-                    width: '40px',
-                    height: '40px',
-                    border: '3px solid var(--border)',
-                    borderTopColor: 'var(--primary)',
-                    borderRadius: '50%',
-                    animation: 'spin 0.8s linear infinite'
-                }} />
-                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            <div className="flex min-h-screen items-center justify-center bg-bg">
+                <Spinner />
             </div>
         );
     }
 
     if (!token) return <Navigate to="/login" />;
-    if (adminOnly && user?.role !== 'PLATFORM_ADMIN') return <Navigate to="/" />;
+    if (adminOnly && !isPlatformAdmin(user)) return <Navigate to="/" />;
     return children;
 };
 
+const RouteFallback = () => (
+    <div className="flex min-h-screen items-center justify-center bg-bg">
+        <Spinner />
+    </div>
+);
+
 function AppRoutes() {
     return (
-        <Routes>
-            {/* Public */}
-            <Route path="/" element={<Home />} />
-            <Route path="/search" element={<SearchPage />} />
-            <Route path="/channel/:slug" element={<ChannelPage />} />
-            <Route path="/video/:id" element={<VideoDetail />} />
-            <Route path="/books" element={<Books />} />
-            <Route path="/books/:id" element={<BookDetail />} />
-            <Route path="/articles" element={<Articles />} />
-            <Route path="/articles/:id" element={<ArticleDetail />} />
-            <Route path="/biography" element={<Biography />} />
+        <Suspense fallback={<RouteFallback />}>
+            <Routes>
+                {/* Public */}
+                <Route path="/" element={<Home />} />
+                <Route path="/search" element={<SearchPage />} />
+                <Route path="/channel/:slug" element={<ChannelPage />} />
+                <Route path="/video/:id" element={<VideoDetail />} />
+                <Route path="/books" element={<Books />} />
+                <Route path="/books/:id" element={<BookDetail />} />
+                <Route path="/articles" element={<Articles />} />
+                <Route path="/articles/:id" element={<ArticleDetail />} />
+                <Route path="/biography" element={<Biography />} />
 
-            {/* Auth */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/verify-email" element={<VerifyEmail />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
+                {/* Auth */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/verify-email" element={<VerifyEmail />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
 
-            {/* Protected */}
-            <Route path="/profile" element={
-                <ProtectedRoute><UserProfile /></ProtectedRoute>
-            } />
-            <Route path="/subscriptions" element={
-                <ProtectedRoute><Subscriptions /></ProtectedRoute>
-            } />
-            <Route path="/history" element={
-                <ProtectedRoute><History /></ProtectedRoute>
-            } />
-            <Route path="/admin" element={
-                <ProtectedRoute adminOnly><Admin /></ProtectedRoute>
-            } />
-            <Route path="/admin/channels" element={
-                <ProtectedRoute adminOnly><AdminChannels /></ProtectedRoute>
-            } />
-            <Route path="/create-channel" element={
-                <ProtectedRoute><CreateChannel /></ProtectedRoute>
-            } />
-            <Route path="/channel/:slug/manage" element={
-                <ProtectedRoute><ChannelManage /></ProtectedRoute>
-            } />
+                {/* Protected */}
+                <Route path="/profile" element={
+                    <ProtectedRoute><UserProfile /></ProtectedRoute>
+                } />
+                <Route path="/subscriptions" element={
+                    <ProtectedRoute><Subscriptions /></ProtectedRoute>
+                } />
+                <Route path="/history" element={
+                    <ProtectedRoute><History /></ProtectedRoute>
+                } />
+                <Route path="/admin" element={
+                    <ProtectedRoute adminOnly><Admin /></ProtectedRoute>
+                } />
+                <Route path="/admin/channels" element={
+                    <ProtectedRoute adminOnly><AdminChannels /></ProtectedRoute>
+                } />
+                <Route path="/create-channel" element={
+                    <ProtectedRoute><CreateChannel /></ProtectedRoute>
+                } />
+                <Route path="/channel/:slug/manage" element={
+                    <ProtectedRoute><ChannelManage /></ProtectedRoute>
+                } />
 
-            {/* Fallback */}
-            <Route path="*" element={<NotFound />} />
-        </Routes>
+                {/* Fallback */}
+                <Route path="*" element={<NotFound />} />
+            </Routes>
+        </Suspense>
     );
 }
 

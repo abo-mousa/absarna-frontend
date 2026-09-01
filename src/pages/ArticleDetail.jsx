@@ -1,7 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
 import { ArrowRight, Type, Clock, Calendar } from 'lucide-react';
-import Navbar from '../components/layout/Navbar';
-import { Spinner } from '../components/ui';
+import PageShell from '../components/layout/PageShell';
+import { QueryState } from '../components/ui';
 import { CommentsSection } from '../components/content';
 import { useArticle } from '../hooks/useArticles';
 import { usePageMeta } from '../hooks/usePageMeta';
@@ -11,31 +11,21 @@ function ArticleDetail() {
     const { data: article, isLoading, isError } = useArticle(id);
     usePageMeta({ title: article?.title, description: article?.content?.slice(0, 200) });
 
-    if (isLoading) {
+    if (isLoading || isError || !article) {
         return (
-            <div className="min-h-screen bg-bg">
-                <Navbar />
-                <Spinner />
-            </div>
-        );
-    }
-
-    if (isError || !article) {
-        return (
-            <div className="min-h-screen bg-bg">
-                <Navbar />
-                <div className="text-center py-16 px-5">
-                    <p className="text-red-600 text-lg mb-2">فشل في تحميل المقال</p>
-                    <Link to="/articles" className="text-primary font-semibold">العودة للمقالات</Link>
-                </div>
-            </div>
+            <PageShell sidebar={false}>
+                <QueryState
+                    isLoading={isLoading}
+                    isError={isError || !article}
+                    errorTitle="فشل في تحميل المقال"
+                    errorAction={<Link to="/articles" className="text-primary font-semibold">العودة للمقالات</Link>}
+                />
+            </PageShell>
         );
     }
 
     return (
-        <div className="min-h-screen bg-bg">
-            <Navbar />
-
+        <PageShell sidebar={false}>
             <div className="max-w-reading mx-auto px-4 sm:px-6 py-6 sm:py-8">
                 <div className="bg-surface p-6 sm:p-8 rounded-lg border border-border-light shadow-sm mb-6">
                     {article.category && (
@@ -71,7 +61,7 @@ function ArticleDetail() {
                     </Link>
                 </div>
             </div>
-        </div>
+        </PageShell>
     );
 }
 

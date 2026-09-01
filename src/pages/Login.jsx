@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import Navbar from '../components/layout/Navbar';
+import PageShell from '../components/layout/PageShell';
 import { Input, Button } from '../components/ui';
 import { usePageMeta } from '../hooks/usePageMeta';
 
@@ -26,9 +26,7 @@ function Login() {
     };
 
     return (
-        <div className="min-h-screen bg-bg">
-            <Navbar />
-
+        <PageShell sidebar={false}>
             <div className="max-w-[400px] mx-auto my-10 sm:my-16 p-6 sm:p-8 bg-surface rounded-lg shadow-md border border-border-light">
                 <div className="text-center mb-6">
                     <h2 className="text-xl font-bold">تسجيل الدخول</h2>
@@ -78,7 +76,7 @@ function Login() {
                     </p>
                 </div>
             </div>
-        </div>
+        </PageShell>
     );
 }
 

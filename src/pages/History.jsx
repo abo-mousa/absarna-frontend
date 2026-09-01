@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Trash2, Video, BookOpen } from 'lucide-react';
 import api from '@/lib/api/client';
 import PageShell from '../components/layout/PageShell';
-import { Spinner, EmptyState } from '../components/ui';
+import { QueryState } from '../components/ui';
 import { VideoCard, BookCard } from '../components/content';
 import { useWatchHistory, useReadingHistory } from '../hooks/useContents';
 import { useToast } from '../contexts/ToastContext';
@@ -73,17 +73,15 @@ function History() {
                 ))}
             </div>
 
-            {isLoading ? (
-                <Spinner />
-            ) : isError ? (
-                <p className="text-red-600 p-3 bg-red-100 rounded-md">فشل في تحميل السجل</p>
-            ) : history.length === 0 ? (
-                <EmptyState
-                    icon="🕘"
-                    title={isVideos ? 'لا يوجد سجل مشاهدة' : 'لا يوجد سجل قراءة'}
-                    description={isVideos ? 'الفيديوهات التي تشاهدها ستظهر هنا' : 'الكتب التي تقرأها ستظهر هنا'}
-                />
-            ) : (
+            <QueryState
+                isLoading={isLoading}
+                isError={isError}
+                isEmpty={history.length === 0}
+                errorTitle="فشل في تحميل السجل"
+                emptyIcon="🕘"
+                emptyTitle={isVideos ? 'لا يوجد سجل مشاهدة' : 'لا يوجد سجل قراءة'}
+                emptyDescription={isVideos ? 'الفيديوهات التي تشاهدها ستظهر هنا' : 'الكتب التي تقرأها ستظهر هنا'}
+            >
                 <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
                     {isVideos
                         ? history.map((entry) => (
@@ -98,7 +96,7 @@ function History() {
                               <BookCard key={entry.id} book={entry.book} currentPage={entry.currentPage} />
                           ))}
                 </div>
-            )}
+            </QueryState>
         </PageShell>
     );
 }

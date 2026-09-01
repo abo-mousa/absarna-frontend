@@ -5,8 +5,9 @@ import api from '@/lib/api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { usePageMeta } from '../hooks/usePageMeta';
-import Navbar from '../components/layout/Navbar';
-import { Spinner, Input, Button } from '../components/ui';
+import PageShell from '../components/layout/PageShell';
+import { QueryState, Input, Button } from '../components/ui';
+import { canManageChannel } from '@/lib/user';
 import {
     useChannel,
     useUpdateChannel,
@@ -26,15 +27,14 @@ const TABS = [
 
 function ErrorScreen({ emoji, title, description, onBack }) {
     return (
-        <div className="min-h-screen bg-bg">
-            <Navbar />
+        <PageShell sidebar={false}>
             <div className="max-w-[600px] mx-auto my-16 sm:my-20 p-8 sm:p-10 text-center bg-surface rounded-lg shadow-md border border-border-light">
                 <div className="text-5xl mb-4">{emoji}</div>
                 <h2 className="text-xl font-bold mb-2">{title}</h2>
                 <p className="text-text-muted">{description}</p>
                 <Button className="mt-5" onClick={onBack}>العودة للرئيسية</Button>
             </div>
-        </div>
+        </PageShell>
     );
 }
 
@@ -299,10 +299,9 @@ function ChannelManage() {
 
     if (authLoading || channelLoading) {
         return (
-            <div className="min-h-screen bg-bg">
-                <Navbar />
-                <Spinner />
-            </div>
+            <PageShell sidebar={false}>
+                <QueryState isLoading />
+            </PageShell>
         );
     }
 
@@ -313,18 +312,14 @@ function ChannelManage() {
         return <ErrorScreen emoji="🔍" title="القناة غير موجودة" description={description} onBack={() => navigate('/')} />;
     }
 
-    const isOwner = user && channel.ownerUserId === user.id;
-    const isAdmin = user?.role === 'PLATFORM_ADMIN';
-
-    if (!isOwner && !isAdmin) {
+    if (!canManageChannel(user, channel)) {
         return <ErrorScreen emoji="⛔" title="غير مصرح لك" description="ليس لديك صلاحية لإدارة هذه القناة" onBack={() => navigate('/')} />;
     }
 
     const formCardClass = 'grid gap-4 bg-surface p-6 rounded-lg border border-border-light';
 
     return (
-        <div className="min-h-screen bg-bg">
-            <Navbar />
+        <PageShell sidebar={false}>
             <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-6">
                 <div className="flex items-center gap-3 mb-6">
                     <button onClick={() => navigate(`/channel/${slug}`)} className="text-text-secondary">
@@ -502,7 +497,7 @@ function ChannelManage() {
                     </div>
                 )}
             </div>
-        </div>
+        </PageShell>
     );
 }
 
