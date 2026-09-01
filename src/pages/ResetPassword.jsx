@@ -5,8 +5,10 @@ import { resetPassword } from '@/lib/api/auth';
 import Navbar from '../components/layout/Navbar';
 import { Input, Button } from '../components/ui';
 import { getPasswordRules, getPasswordStrengthLabel, isPasswordValid } from '@/lib/validation';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 function ResetPassword() {
+    usePageMeta({ title: 'إعادة تعيين كلمة المرور' });
     const [searchParams] = useSearchParams();
     const token = searchParams.get('token');
 
@@ -51,7 +53,7 @@ function ResetPassword() {
     const strengthInfo = getPasswordStrengthLabel(passwordRules);
 
     return (
-        <div dir="rtl" className="min-h-screen bg-bg">
+        <div className="min-h-screen bg-bg">
             <Navbar />
 
             <div className="max-w-[400px] mx-auto my-10 sm:my-16 p-6 sm:p-8 bg-surface rounded-lg shadow-md border border-border-light">

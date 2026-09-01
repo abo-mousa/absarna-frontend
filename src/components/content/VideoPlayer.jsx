@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useId } from 'react';
 import { resolveMediaUrl, extractYouTubeId } from '@/lib/media';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api/client';
@@ -15,6 +15,26 @@ const PROGRESS_REPORT_INTERVAL_MS = 60000;
 // thumbnail by accident and backing out immediately would still create/bump a watch-history
 // row, pushing an actually-watched video out of the per-user cap.
 const MIN_WATCH_SECONDS = 5;
+
+// Lazily injects the YouTube IFrame Player API script (once per page) so embedded YouTube
+// videos can report watch progress the same way native <video> elements do via onTimeUpdate —
+// a plain <iframe src="...embed/..."> has no such event.
+let youtubeApiPromise = null;
+function loadYouTubeIframeApi() {
+    if (window.YT?.Player) return Promise.resolve(window.YT);
+    if (youtubeApiPromise) return youtubeApiPromise;
+    youtubeApiPromise = new Promise((resolve) => {
+        const previous = window.onYouTubeIframeAPIReady;
+        window.onYouTubeIframeAPIReady = () => {
+            previous?.();
+            resolve(window.YT);
+        };
+        const script = document.createElement('script');
+        script.src = 'https://www.youtube.com/iframe_api';
+        document.head.appendChild(script);
+    });
+    return youtubeApiPromise;
+}
 
 function VideoPlayer({ contentId, sourceType, sourceUrl, title }) {
     const { token } = useAuth();
@@ -73,6 +93,66 @@ function VideoPlayer({ contentId, sourceType, sourceUrl, title }) {
         return () => window.removeEventListener('pagehide', handlePageHide);
     }, []);
 
+    // --- YouTube-specific: IFrame Player API wiring, so embedded YouTube videos (most of the
+    // catalogue) get the same watch-history tracking native <video> elements get for free via
+    // onTimeUpdate. Hooks run unconditionally regardless of sourceType; each effect no-ops when
+    // the source isn't YOUTUBE.
+    const youtubePlayerRef = useRef(null);
+    const youtubeIntervalRef = useRef(null);
+    const youtubeContainerId = `yt-player-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
+    const isYouTube = sourceType === 'YOUTUBE';
+    const youtubeVideoId = isYouTube ? extractYouTubeId(sourceUrl) : '';
+
+    useEffect(() => {
+        if (!isYouTube || !youtubeVideoId) return;
+        let destroyed = false;
+
+        loadYouTubeIframeApi().then((YT) => {
+            if (destroyed) return;
+            youtubePlayerRef.current = new YT.Player(youtubeContainerId, {
+                videoId: youtubeVideoId,
+                host: 'https://www.youtube-nocookie.com',
+                playerVars: { rel: 0 },
+                events: {
+                    onStateChange: (e) => {
+                        clearInterval(youtubeIntervalRef.current);
+                        if (e.data === YT.PlayerState.PLAYING) {
+                            youtubeIntervalRef.current = setInterval(() => {
+                                reportProgress(youtubePlayerRef.current.getCurrentTime());
+                            }, PROGRESS_REPORT_INTERVAL_MS);
+                        } else if (e.data === YT.PlayerState.PAUSED || e.data === YT.PlayerState.ENDED) {
+                            reportProgress(youtubePlayerRef.current.getCurrentTime());
+                        }
+                    },
+                },
+            });
+        });
+
+        return () => {
+            destroyed = true;
+            clearInterval(youtubeIntervalRef.current);
+            const player = youtubePlayerRef.current;
+            if (player?.getCurrentTime) {
+                reportProgress(player.getCurrentTime(), authRef.current);
+                player.destroy?.();
+            }
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isYouTube, youtubeVideoId]);
+
+    useEffect(() => {
+        if (!isYouTube) return;
+        const handlePageHide = () => {
+            const player = youtubePlayerRef.current;
+            const { contentId } = authRef.current;
+            const progressSeconds = player?.getCurrentTime ? Math.floor(player.getCurrentTime()) : 0;
+            if (progressSeconds < MIN_WATCH_SECONDS || !contentId) return;
+            flushOnUnload(`/contents/${contentId}/watch`, { progressSeconds });
+        };
+        window.addEventListener('pagehide', handlePageHide);
+        return () => window.removeEventListener('pagehide', handlePageHide);
+    }, [isYouTube]);
+
     if (sourceType === 'LOCAL' || sourceType === 'STREAM') {
         return (
             <video
@@ -106,10 +186,8 @@ function VideoPlayer({ contentId, sourceType, sourceUrl, title }) {
         );
     }
 
-    if (sourceType === 'YOUTUBE') {
-        const videoId = extractYouTubeId(sourceUrl);
-
-        if (!videoId) {
+    if (isYouTube) {
+        if (!youtubeVideoId) {
             return (
                 <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="text-primary font-semibold">
                     شاهد على يوتيوب
@@ -117,17 +195,9 @@ function VideoPlayer({ contentId, sourceType, sourceUrl, title }) {
             );
         }
 
-        // No native timeupdate event without the YouTube IFrame Player API, so watch
-        // progress isn't tracked for embedded YouTube videos.
         return (
-            <div className="relative pb-[56.25%] h-0 rounded-lg overflow-hidden">
-                <iframe
-                    className="absolute inset-0 w-full h-full"
-                    src={`https://www.youtube.com/embed/${videoId}`}
-                    title={title}
-                    frameBorder="0"
-                    allowFullScreen
-                />
+            <div className="relative pb-[56.25%] h-0 rounded-lg overflow-hidden border-0">
+                <div id={youtubeContainerId} title={title} className="absolute inset-0 w-full h-full" />
             </div>
         );
     }

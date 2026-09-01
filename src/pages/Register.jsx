@@ -1,13 +1,17 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
+import { usePageMeta } from '../hooks/usePageMeta';
 import Navbar from '../components/layout/Navbar';
 import { Input, Button } from '../components/ui';
 import { getPasswordRules, getPasswordStrengthLabel, isPasswordValid, validateUsername } from '@/lib/validation';
 
 function Register() {
+    usePageMeta({ title: 'إنشاء حساب' });
     const navigate = useNavigate();
     const { register } = useAuth();
+    const { showToast } = useToast();
     const [form, setForm] = useState({
         username: '', email: '', password: '', confirmPassword: '', fullName: '',
     });
@@ -40,7 +44,7 @@ function Register() {
         setLoading(true);
         const result = await register(form.username, form.email, form.password, form.fullName);
         if (result.success) {
-            alert('تم إنشاء الحساب! أرسلنا رابط توثيق إلى بريدك الإلكتروني.');
+            showToast('تم إنشاء الحساب! أرسلنا رابط توثيق إلى بريدك الإلكتروني.', 'success');
             navigate('/');
         } else {
             setError(result.message);
@@ -49,7 +53,7 @@ function Register() {
     };
 
     return (
-        <div dir="rtl" className="min-h-screen bg-bg">
+        <div className="min-h-screen bg-bg">
             <Navbar />
 
             <div className="max-w-[400px] mx-auto my-10 sm:my-16 p-6 sm:p-8 bg-surface rounded-lg shadow-md border border-border-light">

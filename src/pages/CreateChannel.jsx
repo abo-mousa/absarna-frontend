@@ -4,8 +4,12 @@ import api from '@/lib/api/client';
 import Navbar from '../components/layout/Navbar';
 import { Input, Button } from '../components/ui';
 import { EmailVerificationNotice } from '../components/auth';
+import { useToast } from '../contexts/ToastContext';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 function CreateChannel() {
+    usePageMeta({ title: 'إنشاء قناة' });
+    const { showToast } = useToast();
     const navigate = useNavigate();
     const [form, setForm] = useState({ name: '', slug: '', description: '', primaryColor: '#0D6B4D' });
     const [error, setError] = useState('');
@@ -25,7 +29,7 @@ function CreateChannel() {
 
         try {
             await api.post('/channels', form);
-            alert('تم إنشاء القناة! ستظهر بعد موافقة الإدارة.');
+            showToast('تم إنشاء القناة! ستظهر بعد موافقة الإدارة.', 'success');
             navigate('/');
         } catch (err) {
             if (err.response?.data?.emailVerificationRequired) {
@@ -39,7 +43,7 @@ function CreateChannel() {
     };
 
     return (
-        <div dir="rtl" className="min-h-screen bg-bg">
+        <div className="min-h-screen bg-bg">
             <Navbar />
 
             <div className="max-w-[500px] mx-auto my-8 sm:my-10 px-4">

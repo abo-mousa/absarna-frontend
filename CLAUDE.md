@@ -197,58 +197,41 @@ wasted work.** Revisit once that lands.
 
 ## UX / UI
 
-- **`<html lang="en">` and no `dir="rtl"` on the root element.** The app is Arabic RTL
-  throughout but sets direction on 29 individual page wrappers instead. Screen readers announce
-  it as English, and anything rendered outside those wrappers (the `ErrorBoundary` fallback,
-  toasts) inherits LTR. One-line fix in `index.html`: `<html lang="ar" dir="rtl">`, then delete
-  the per-page `dir="rtl"`.
-- **No per-page `<title>` and no OG/Twitter meta.** Every page is "منارة | Manara" in the tab,
-  in history and in every shared link — for a public content platform whose whole point is
-  spreading educational material, shared video/book/article links render as an untitled,
-  imageless card. Highest-value UX item on this list.
-- **A video's detail page never names its channel.** `VideoDetail` shows duration, category,
-  series and speaker but no channel link — on a multi-channel platform you can't get from a
-  video to the channel that published it. `VideoCard` has the same gap in a mixed feed. Add
-  channel name + avatar + link to both.
-- **Channel pages ignore `bannerUrl` and `description`.** `ChannelManage` lets an owner set both,
-  `ChannelDTO` returns both, and `ChannelPage` renders neither — just a flat `primaryColor`
-  band and an initial-letter avatar. Owners are filling in fields that never appear.
-- **Logged-out visitors always see "0 مشترك"** on channel pages, because `useSubscriptionStatus`
-  is gated on `!!token` (correctly — the endpoint 500s for anonymous callers). Needs the
-  backend split of public count vs. per-caller flag; until then the count should be hidden
-  rather than shown as zero.
-- **`alert()` and `window.confirm()` are still the interaction model in five places** —
-  `Home` (visibility toggle + delete), `CommentsSection` (×2), `Admin` (×2), `Register` — even
-  though `ToastContext` exists and is documented as the convention, and `Modal` exists unused
-  for confirmations. Destructive deletes in particular deserve the real modal.
-- **A channel's public video tab silently caps at 50** (`useChannelContents` hard-codes
-  `size=50`) with no "load more", and the tab count badge shows the truncated number. Books,
-  articles and posts have no pagination at all, client or server.
-- **`/books` and `/articles` have no search, filter, sort or pagination** — just a full grid.
-  The library is the page most likely to grow past usability first.
-- **Thumbnails use `object-contain` inside a fixed-height box**, so YouTube's 4:3 `hqdefault`
-  images sit letterboxed against the card background and the grid reads as ragged. An
-  `aspect-video` container with `object-cover` fixes it.
-- **Comment count counts top-level comments only** (`comments.length`), so a thread with 3
-  comments and 10 replies reads "التعليقات (3)".
-- **No comment editing, deleting or reporting for the person who wrote it** — the only deletion
-  path is a platform-admin API call with no UI. Also no character limit or counter on the
-  textarea.
-- **`ar-EG` date formatting renders Arabic-Indic digits** (`٢٠٢٦`) in comments, while durations,
-  subscriber counts and publish dates elsewhere use Latin digits. Pick one.
-- **The comment date has no time component** and no relative formatting ("منذ ساعتين") — `dayjs`
-  is already a dependency and unused for this.
-- **No 404 page.** `*` redirects to Home, so a typo'd or dead link looks like a successful
-  navigation.
+Fixed 2026-09-01: `<html lang="ar" dir="rtl">` set on the root element (per-page `dir="rtl"`
+wrappers deleted — `Input.jsx`'s label `dir="rtl"` is unrelated and stays); per-page `<title>` +
+OG/Twitter meta via the new `hooks/usePageMeta.js`, wired into every page; `VideoCard`/
+`VideoDetail` now show the owning channel's name + avatar, linked to the channel page (via
+`useChannel(video.channelId)` — `GET /channels/{identifier}` already accepted a numeric id as a
+slug fallback, so no backend change was needed); `ChannelPage` renders `bannerUrl` and
+`description`; the subscriber count is hidden (not shown as `0`) for logged-out visitors;
+`alert()`/`window.confirm()` replaced with `useToast()`/`Modal` in `Home`, `CommentsSection`,
+`Admin`, `Register`, and (bonus, same bug) `Subscriptions`, `History`, `AdminChannels`,
+`CreateChannel`; a channel's video tab now paginates via `useChannelContents` as an
+`useInfiniteQuery` with a "load more" button, and its tab badge shows the real total — this
+needed a small backend change too, since `GET /channels/{slug}/contents` was returning a raw
+`Page<Content>` with no `hasNext`/`currentPage` fields (see manara-platform's `ChannelController`,
+now mirroring `GET /api/contents`'s `{content, currentPage, hasNext, totalItems}` shape); `/books`
+and `/articles` got client-side search/category-filter/sort/"load more" (both endpoints already
+return the full unfiltered list, so nothing server-side was needed); `VideoCard` thumbnails are
+`aspect-video`/`object-cover` instead of a fixed-height `object-contain` box; comment counts
+include replies; comment dates use `dayjs` (`lib/dayjsAr.js`, a custom locale that keeps Latin
+digits — dayjs's bundled `ar` locale swaps to Arabic-Indic same as `ar-EG` did) with relative
+formatting under a week old and an absolute date+time past that; comments gained a character
+counter/limit and author-only edit/delete (the backend already had `PATCH`/`DELETE
+/comments/{id}` gated on `Comment.userId` — `CommentDTO.userId` was already exposed specifically
+for this, per its own code comment — the frontend just hadn't wired it up); a real `NotFound`
+page now renders on the `*` route instead of silently redirecting to Home; YouTube videos are
+now played through the IFrame Player API (`youtube-nocookie.com`, `rel=0`) instead of a bare
+`<iframe src>`, which both drops the deprecated `frameBorder` prop and — as a side effect of
+needing `onStateChange`/`getCurrentTime` for the embed anyway — closes the "watch history never
+records for YouTube videos" gap from the same list.
+
+Still open:
+
+- **Comment reporting.** Author-only edit/delete now exist (see above), but there's still no way
+  for a reader to report someone else's comment — no backend endpoint for it yet.
 - **Category chips can lead to empty result grids** — `/api/categories` includes categories that
   only hidden content uses (backend issue, but it surfaces here).
-- **Watch history never records for YouTube-sourced videos** (no `timeupdate` without the
-  IFrame Player API), which is most of the catalogue — so "continue watching" is empty for the
-  content people actually watch. Loading the IFrame API for `onStateChange`/`getCurrentTime`
-  would close this without changing the feature's design.
-- **The YouTube embed uses `youtube.com` rather than `youtube-nocookie.com`**, sets no `rel=0`,
-  no `loading="lazy"`, and passes the deprecated `frameBorder` prop. A privacy-respecting
-  platform should use the no-cookie domain.
 
 ## Accessibility
 

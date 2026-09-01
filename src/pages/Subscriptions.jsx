@@ -1,15 +1,19 @@
 import { Link } from 'react-router-dom';
 import PageShell from '../components/layout/PageShell';
 import { Spinner, EmptyState, Avatar } from '../components/ui';
+import { useToast } from '../contexts/ToastContext';
+import { usePageMeta } from '../hooks/usePageMeta';
 import { useSubscriptions, useUnsubscribe } from '../hooks/useChannels';
 
 function Subscriptions() {
+    usePageMeta({ title: 'اشتراكاتي' });
+    const { showToast } = useToast();
     const { data: subscriptions = [], isLoading, isError } = useSubscriptions();
     const unsubscribe = useUnsubscribe();
 
     const handleUnsubscribe = (channelId) => {
         if (!window.confirm('هل تريد إلغاء الاشتراك؟')) return;
-        unsubscribe.mutate(channelId, { onError: () => alert('فشل في إلغاء الاشتراك') });
+        unsubscribe.mutate(channelId, { onError: () => showToast('فشل في إلغاء الاشتراك', 'error') });
     };
 
     return (

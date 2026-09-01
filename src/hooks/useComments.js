@@ -40,3 +40,32 @@ export const useReplyComment = (type, id) => {
         },
     });
 };
+
+// Author-only edit/delete (backend gates on Comment.userId, see CommentController) — works for
+// both top-level comments and replies since both share the same /comments/{id} endpoint.
+export const useUpdateComment = (type, id) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ commentId, content }) => {
+            const res = await api.patch(`/comments/${commentId}`, { content });
+            return res.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['comments', type, id] });
+        },
+    });
+};
+
+export const useDeleteComment = (type, id) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (commentId) => {
+            await api.delete(`/comments/${commentId}`);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['comments', type, id] });
+        },
+    });
+};

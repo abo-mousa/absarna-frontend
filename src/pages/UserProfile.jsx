@@ -6,6 +6,7 @@ import { changePassword } from '@/lib/api/auth';
 import Navbar from '../components/layout/Navbar';
 import { Input, Button } from '../components/ui';
 import { getPasswordRules, getPasswordStrengthLabel, isPasswordValid } from '@/lib/validation';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 function ChangePasswordCard() {
     const { showToast } = useToast();
@@ -116,6 +117,7 @@ function ChangePasswordCard() {
 }
 
 function UserProfile() {
+    usePageMeta({ title: 'الملف الشخصي' });
     const { user } = useAuth();
     const { showToast } = useToast();
     const [form, setForm] = useState({ fullName: '', bio: '', email: '', profilePictureUrl: '' });
@@ -147,7 +149,7 @@ function UserProfile() {
     };
 
     return (
-        <div dir="rtl" className="min-h-screen bg-bg">
+        <div className="min-h-screen bg-bg">
             <Navbar />
 
             <div className="max-w-[500px] mx-auto my-8 sm:my-10 px-4">

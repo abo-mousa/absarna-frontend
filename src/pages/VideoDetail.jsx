@@ -1,22 +1,35 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowRight, Clock, Folder, Tv, User, Calendar } from 'lucide-react';
 import Navbar from '../components/layout/Navbar';
-import { Spinner } from '../components/ui';
+import { Spinner, Avatar } from '../components/ui';
 import { VideoPlayer, CommentsSection, VideoCard } from '../components/content';
 import { useContent, useRelatedContent, useWatchProgressMap } from '../hooks/useContents';
+import { useChannel } from '../hooks/useChannels';
 import { useAuth } from '../contexts/AuthContext';
+import { usePageMeta } from '../hooks/usePageMeta';
+import { resolveMediaUrl, youtubeThumbnail } from '@/lib/media';
 
 function VideoDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { data: video, isLoading, isError } = useContent(id);
     const { data: related = [] } = useRelatedContent(id);
+    const { data: channel } = useChannel(video?.channelId, !!video?.channelId);
     const { token } = useAuth();
     const watchProgress = useWatchProgressMap(!!token);
 
+    const thumbnail = video?.thumbnailUrl
+        ? resolveMediaUrl(video.thumbnailUrl)
+        : video?.sourceType === 'YOUTUBE' ? youtubeThumbnail(video.sourceUrl) : null;
+    usePageMeta({
+        title: video?.title,
+        description: video?.description?.slice(0, 200),
+        image: thumbnail,
+    });
+
     if (isLoading) {
         return (
-            <div dir="rtl" className="min-h-screen bg-bg">
+            <div className="min-h-screen bg-bg">
                 <Navbar />
                 <Spinner />
             </div>
@@ -25,7 +38,7 @@ function VideoDetail() {
 
     if (isError || !video) {
         return (
-            <div dir="rtl" className="min-h-screen bg-bg">
+            <div className="min-h-screen bg-bg">
                 <Navbar />
                 <div className="text-center py-16 px-5">
                     <p className="text-red-600 text-lg mb-2">فشل في تحميل الفيديو</p>
@@ -44,7 +57,7 @@ function VideoDetail() {
     ].filter(Boolean);
 
     return (
-        <div dir="rtl" className="min-h-screen bg-bg">
+        <div className="min-h-screen bg-bg">
             <Navbar />
 
             <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
@@ -54,6 +67,16 @@ function VideoDetail() {
 
                 <div className="bg-surface p-5 sm:p-6 rounded-lg border border-border-light mb-6">
                     <h1 className="text-xl sm:text-2xl font-bold mb-3">{video.title}</h1>
+
+                    {channel && (
+                        <Link
+                            to={`/channel/${channel.slug}`}
+                            className="flex items-center gap-2 w-fit mb-4 text-text-primary hover:text-primary transition-colors"
+                        >
+                            <Avatar src={resolveMediaUrl(channel.logoUrl)} name={channel.name} size="sm" />
+                            <span className="font-semibold text-sm">{channel.name}</span>
+                        </Link>
+                    )}
 
                     <div className="flex gap-4 flex-wrap text-sm text-text-secondary mb-4">
                         {meta.map(({ icon: Icon, text }, i) => (

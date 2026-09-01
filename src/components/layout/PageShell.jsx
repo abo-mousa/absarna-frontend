@@ -8,7 +8,7 @@ function PageShell({ children, sidebar = true, currentChannel, contentClassName 
     const [drawerOpen, setDrawerOpen] = useState(false);
 
     return (
-        <div dir="rtl" className="min-h-screen bg-bg">
+        <div className="min-h-screen bg-bg">
             <Navbar onMenuClick={() => setDrawerOpen(true)} />
             <div className="flex">
                 {sidebar && (

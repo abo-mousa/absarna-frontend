@@ -4,14 +4,16 @@ import Navbar from '../components/layout/Navbar';
 import { Spinner } from '../components/ui';
 import { CommentsSection } from '../components/content';
 import { useArticle } from '../hooks/useArticles';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 function ArticleDetail() {
     const { id } = useParams();
     const { data: article, isLoading, isError } = useArticle(id);
+    usePageMeta({ title: article?.title, description: article?.content?.slice(0, 200) });
 
     if (isLoading) {
         return (
-            <div dir="rtl" className="min-h-screen bg-bg">
+            <div className="min-h-screen bg-bg">
                 <Navbar />
                 <Spinner />
             </div>
@@ -20,7 +22,7 @@ function ArticleDetail() {
 
     if (isError || !article) {
         return (
-            <div dir="rtl" className="min-h-screen bg-bg">
+            <div className="min-h-screen bg-bg">
                 <Navbar />
                 <div className="text-center py-16 px-5">
                     <p className="text-red-600 text-lg mb-2">فشل في تحميل المقال</p>
@@ -31,7 +33,7 @@ function ArticleDetail() {
     }
 
     return (
-        <div dir="rtl" className="min-h-screen bg-bg">
+        <div className="min-h-screen bg-bg">
             <Navbar />
 
             <div className="max-w-reading mx-auto px-4 sm:px-6 py-6 sm:py-8">

@@ -7,8 +7,12 @@ import PageShell from '../components/layout/PageShell';
 import { Spinner, EmptyState } from '../components/ui';
 import { VideoCard, BookCard } from '../components/content';
 import { useWatchHistory, useReadingHistory } from '../hooks/useContents';
+import { useToast } from '../contexts/ToastContext';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 function History() {
+    usePageMeta({ title: 'السجل' });
+    const { showToast } = useToast();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const [activeTab, setActiveTab] = useState('videos');
@@ -33,7 +37,7 @@ function History() {
             await api.delete(isVideos ? '/user/history' : '/user/reading-history');
             queryClient.invalidateQueries({ queryKey: [isVideos ? 'watch-history' : 'reading-history'] });
         } catch (err) {
-            alert('فشل في مسح السجل');
+            showToast('فشل في مسح السجل', 'error');
         }
     };
 

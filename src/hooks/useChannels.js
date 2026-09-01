@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api/client';
 
 // Maps a content type to the query key its public channel-page list is cached under —
@@ -24,13 +24,16 @@ export const useChannel = (slug, enabled = true) => {
     });
 };
 
-export const useChannelContents = (slug, enabled = true) => {
-    return useQuery({
-        queryKey: ['channel-contents', slug],
-        queryFn: async () => {
-            const res = await api.get(`/channels/${slug}/contents?page=0&size=50`);
-            return res.data?.content || [];
+// "Load more" pagination, same accumulating-pages shape as useInfiniteContents — a channel's
+// video tab used to hard-cap at one 50-item page with no way to see older videos past that.
+export const useChannelContents = (slug, size = 24, enabled = true) => {
+    return useInfiniteQuery({
+        queryKey: ['channel-contents', slug, size],
+        queryFn: async ({ pageParam = 0 }) => {
+            const res = await api.get(`/channels/${slug}/contents?page=${pageParam}&size=${size}`);
+            return res.data;
         },
+        getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.currentPage + 1 : undefined),
         enabled: enabled && !!slug,
     });
 };

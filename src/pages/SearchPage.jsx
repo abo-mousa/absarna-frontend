@@ -4,6 +4,7 @@ import PageShell from '../components/layout/PageShell';
 import { Spinner, EmptyState } from '../components/ui';
 import { VideoCard } from '../components/content';
 import { useInfiniteSearch, useWatchProgressMap } from '../hooks/useContents';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 function SearchPage() {
     const [searchParams] = useSearchParams();
@@ -11,6 +12,7 @@ function SearchPage() {
     const query = searchParams.get('q') || '';
     const { token } = useAuth();
     const watchProgress = useWatchProgressMap(!!token);
+    usePageMeta({ title: query ? `بحث: ${query}` : 'بحث' });
 
     const {
         data,

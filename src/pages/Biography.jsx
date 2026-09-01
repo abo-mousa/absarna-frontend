@@ -2,14 +2,16 @@ import { Play, Send, Heart, Mail } from 'lucide-react';
 import Navbar from '../components/layout/Navbar.jsx';
 import { Spinner } from '../components/ui';
 import { useBiography } from '../hooks/useBiography';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 const socialLinkClass = 'flex items-center gap-2 px-5 py-2.5 rounded-full font-semibold text-sm text-white transition-opacity hover:opacity-90';
 
 function Biography() {
     const { data: bio, isLoading } = useBiography();
+    usePageMeta({ title: 'السيرة الذاتية', description: bio?.shortBio, image: bio?.photoUrl });
 
     return (
-        <div dir="rtl" className="min-h-screen bg-bg">
+        <div className="min-h-screen bg-bg">
             <Navbar />
 
             <div className="max-w-reading mx-auto px-4 sm:px-6 py-10">

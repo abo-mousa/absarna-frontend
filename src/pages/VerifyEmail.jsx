@@ -5,8 +5,10 @@ import { verifyEmail } from '@/lib/api/auth';
 import { useAuth } from '../contexts/AuthContext';
 import Navbar from '../components/layout/Navbar';
 import { Button, Spinner } from '../components/ui';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 function VerifyEmail() {
+    usePageMeta({ title: 'توثيق البريد الإلكتروني' });
     const [searchParams] = useSearchParams();
     const token = searchParams.get('token');
     const { token: authToken, refreshUser } = useAuth();
@@ -38,7 +40,7 @@ function VerifyEmail() {
     }, [token, authToken, refreshUser]);
 
     return (
-        <div dir="rtl" className="min-h-screen bg-bg">
+        <div className="min-h-screen bg-bg">
             <Navbar />
 
             <div className="max-w-[400px] mx-auto my-10 sm:my-16 p-6 sm:p-8 bg-surface rounded-lg shadow-md border border-border-light text-center">

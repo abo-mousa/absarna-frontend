@@ -7,6 +7,8 @@ import SideBar from '../components/layout/SideBar';
 import { Spinner, Avatar } from '../components/ui';
 import { VideoCard, BookCard, ArticleCard, PostCard } from '../components/content';
 import { useWatchProgressMap } from '../hooks/useContents';
+import { usePageMeta } from '../hooks/usePageMeta';
+import { resolveMediaUrl } from '@/lib/media';
 import {
     useChannel,
     useChannelContents,
@@ -26,7 +28,14 @@ function ChannelPage() {
     const watchProgress = useWatchProgressMap(!!token);
 
     const { data: channel, isLoading: channelLoading } = useChannel(slug);
-    const { data: videos = [] } = useChannelContents(slug, !!channel);
+    const {
+        data: videoPages,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+    } = useChannelContents(slug, 24, !!channel);
+    const videos = videoPages?.pages.flatMap((page) => page.content) || [];
+    const videoCount = videoPages?.pages[0]?.totalItems ?? videos.length;
     const { data: books = [] } = useChannelBooks(slug, !!channel);
     const { data: articles = [] } = useChannelArticles(slug, !!channel);
     const { data: posts = [] } = useChannelPosts(slug, !!channel);
@@ -35,6 +44,12 @@ function ChannelPage() {
 
     const subscribed = subscriptionStatus?.subscribed || false;
     const subscriberCount = subscriptionStatus?.subscriberCount || 0;
+
+    usePageMeta({
+        title: channel?.name,
+        description: channel?.description?.slice(0, 200),
+        image: resolveMediaUrl(channel?.bannerUrl || channel?.logoUrl),
+    });
 
     const handleSubscribe = () => {
         if (!token) {
@@ -47,7 +62,7 @@ function ChannelPage() {
     const isOwner = user && channel && channel.ownerUserId === user.id;
 
     const tabs = [
-        { id: 'videos', label: 'فيديوهات', icon: Video, count: videos.length },
+        { id: 'videos', label: 'فيديوهات', icon: Video, count: videoCount },
         { id: 'books', label: 'كتب', icon: BookOpen, count: books.length },
         { id: 'articles', label: 'مقالات', icon: FileText, count: articles.length },
         { id: 'posts', label: 'منشورات', icon: MessageSquare, count: posts.length },
@@ -55,7 +70,7 @@ function ChannelPage() {
 
     if (channelLoading) {
         return (
-            <div dir="rtl" className="min-h-screen bg-bg">
+            <div className="min-h-screen bg-bg">
                 <Navbar />
                 <Spinner />
             </div>
@@ -64,7 +79,7 @@ function ChannelPage() {
 
     if (!channel) {
         return (
-            <div dir="rtl" className="min-h-screen bg-bg">
+            <div className="min-h-screen bg-bg">
                 <Navbar />
                 <p className="text-center py-16">القناة غير موجودة</p>
             </div>
@@ -72,40 +87,52 @@ function ChannelPage() {
     }
 
     return (
-        <div dir="rtl" className="min-h-screen bg-bg">
+        <div className="min-h-screen bg-bg">
             <Navbar onMenuClick={() => setDrawerOpen(true)} />
             <div className="flex">
                 <SideBar currentChannel={slug} open={drawerOpen} onClose={() => setDrawerOpen(false)} />
                 <main className="flex-1 min-w-0 p-4 sm:p-6">
-                    <div
-                        className="rounded-lg p-5 sm:p-6 text-white mb-5 flex items-center gap-4 flex-wrap"
-                        style={{ background: channel.primaryColor || '#0D6B4D' }}
-                    >
-                        <Avatar name={channel.name} size="lg" className="!bg-white/20" />
-
-                        <div className="flex-1 min-w-[150px]">
-                            <h1 className="text-white m-0 text-xl sm:text-2xl font-bold">{channel.name}</h1>
-                            <p className="opacity-90 text-sm mt-1">{subscriberCount} مشترك</p>
-                        </div>
-
-                        {isOwner && (
-                            <Link
-                                to={`/channel/${slug}/manage`}
-                                className="flex items-center gap-1.5 px-4 py-2.5 bg-white/20 text-white rounded-full font-semibold text-sm"
-                            >
-                                <Settings size={18} /> إدارة القناة
-                            </Link>
+                    <div className="rounded-lg overflow-hidden mb-5" style={{ background: channel.primaryColor || '#0D6B4D' }}>
+                        {channel.bannerUrl && (
+                            <div className="h-[120px] sm:h-[160px] w-full overflow-hidden">
+                                <img
+                                    src={resolveMediaUrl(channel.bannerUrl)}
+                                    alt=""
+                                    className="w-full h-full object-cover"
+                                />
+                            </div>
                         )}
 
-                        <button
-                            onClick={handleSubscribe}
-                            disabled={toggleSubscription.isPending}
-                            className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-semibold text-sm ${
-                                subscribed ? 'bg-white/20 text-white' : 'bg-white text-primary'
-                            }`}
-                        >
-                            {toggleSubscription.isPending ? '...' : subscribed ? <><Check size={18} /> مشترك</> : <><Bell size={18} /> اشترك</>}
-                        </button>
+                        <div className="p-5 sm:p-6 text-white flex items-center gap-4 flex-wrap">
+                            <Avatar src={resolveMediaUrl(channel.logoUrl)} name={channel.name} size="lg" className="!bg-white/20" />
+
+                            <div className="flex-1 min-w-[150px]">
+                                <h1 className="text-white m-0 text-xl sm:text-2xl font-bold">{channel.name}</h1>
+                                {token && <p className="opacity-90 text-sm mt-1">{subscriberCount} مشترك</p>}
+                                {channel.description && (
+                                    <p className="opacity-90 text-sm mt-2 max-w-[500px]">{channel.description}</p>
+                                )}
+                            </div>
+
+                            {isOwner && (
+                                <Link
+                                    to={`/channel/${slug}/manage`}
+                                    className="flex items-center gap-1.5 px-4 py-2.5 bg-white/20 text-white rounded-full font-semibold text-sm"
+                                >
+                                    <Settings size={18} /> إدارة القناة
+                                </Link>
+                            )}
+
+                            <button
+                                onClick={handleSubscribe}
+                                disabled={toggleSubscription.isPending}
+                                className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-semibold text-sm ${
+                                    subscribed ? 'bg-white/20 text-white' : 'bg-white text-primary'
+                                }`}
+                            >
+                                {toggleSubscription.isPending ? '...' : subscribed ? <><Check size={18} /> مشترك</> : <><Bell size={18} /> اشترك</>}
+                            </button>
+                        </div>
                     </div>
 
                     <div className="flex gap-2 mb-5 flex-wrap">
@@ -132,16 +159,31 @@ function ChannelPage() {
                         videos.length === 0 ? (
                             <p className="text-center text-text-muted py-10">لا توجد فيديوهات بعد</p>
                         ) : (
-                            <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-4">
-                                {videos.map((video) => (
-                                    <VideoCard
-                                        key={video.id}
-                                        video={video}
-                                        onClick={() => navigate(`/video/${video.id}`)}
-                                        watchedSeconds={watchProgress[video.id]}
-                                    />
-                                ))}
-                            </div>
+                            <>
+                                <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-4">
+                                    {videos.map((video) => (
+                                        <VideoCard
+                                            key={video.id}
+                                            video={video}
+                                            onClick={() => navigate(`/video/${video.id}`)}
+                                            watchedSeconds={watchProgress[video.id]}
+                                            showChannel={false}
+                                        />
+                                    ))}
+                                </div>
+
+                                {hasNextPage && (
+                                    <div className="text-center mt-6">
+                                        <button
+                                            onClick={fetchNextPage}
+                                            disabled={isFetchingNextPage}
+                                            className="px-8 py-2.5 bg-primary text-white rounded-md font-semibold disabled:opacity-60"
+                                        >
+                                            {isFetchingNextPage ? 'جاري التحميل...' : 'تحميل المزيد'}
+                                        </button>
+                                    </div>
+                                )}
+                            </>
                         )
                     )}
 

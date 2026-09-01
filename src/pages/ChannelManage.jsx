@@ -4,6 +4,7 @@ import { Upload, Video, BookOpen, FileText, MessageSquare, Settings, Save, Arrow
 import api from '@/lib/api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import { usePageMeta } from '../hooks/usePageMeta';
 import Navbar from '../components/layout/Navbar';
 import { Spinner, Input, Button } from '../components/ui';
 import {
@@ -25,7 +26,7 @@ const TABS = [
 
 function ErrorScreen({ emoji, title, description, onBack }) {
     return (
-        <div dir="rtl" className="min-h-screen bg-bg">
+        <div className="min-h-screen bg-bg">
             <Navbar />
             <div className="max-w-[600px] mx-auto my-16 sm:my-20 p-8 sm:p-10 text-center bg-surface rounded-lg shadow-md border border-border-light">
                 <div className="text-5xl mb-4">{emoji}</div>
@@ -84,6 +85,7 @@ function ChannelManage() {
     const [activeTab, setActiveTab] = useState('overview');
 
     const { data: channel, isLoading: channelLoading, isError: channelError, error: channelFetchError } = useChannel(slug, !authLoading);
+    usePageMeta({ title: channel ? `إدارة ${channel.name}` : 'إدارة القناة' });
 
     const [form, setForm] = useState({ name: '', description: '', primaryColor: '#0D6B4D', logoUrl: '', bannerUrl: '' });
     const [saving, setSaving] = useState(false);
@@ -297,7 +299,7 @@ function ChannelManage() {
 
     if (authLoading || channelLoading) {
         return (
-            <div dir="rtl" className="min-h-screen bg-bg">
+            <div className="min-h-screen bg-bg">
                 <Navbar />
                 <Spinner />
             </div>
@@ -321,7 +323,7 @@ function ChannelManage() {
     const formCardClass = 'grid gap-4 bg-surface p-6 rounded-lg border border-border-light';
 
     return (
-        <div dir="rtl" className="min-h-screen bg-bg">
+        <div className="min-h-screen bg-bg">
             <Navbar />
             <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-6">
                 <div className="flex items-center gap-3 mb-6">

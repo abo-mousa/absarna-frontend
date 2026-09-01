@@ -3,8 +3,9 @@ import { useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api/client';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import PageShell from '../components/layout/PageShell';
-import { Spinner, EmptyState } from '../components/ui';
+import { Spinner, EmptyState, Modal } from '../components/ui';
 import { VideoCard } from '../components/content';
 import { useInfiniteContents, useCategories, useFeed, useWatchProgressMap } from '../hooks/useContents';
 import { useMyChannels } from '../hooks/useChannels';
@@ -13,7 +14,9 @@ function Home() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const { token } = useAuth();
+    const { showToast } = useToast();
     const [selectedCategory, setSelectedCategory] = useState('');
+    const [deletingVideo, setDeletingVideo] = useState(null);
     const { data: myChannels = [] } = useMyChannels(!!token);
 
     const mySlugByChannelId = useMemo(
@@ -58,19 +61,20 @@ function Home() {
             });
             refreshFeed(slug);
         } catch (err) {
-            alert('فشل في تحديث الظهور');
+            showToast('فشل في تحديث الظهور', 'error');
         }
     };
 
-    const handleDelete = async (video) => {
+    const confirmDelete = async () => {
+        const video = deletingVideo;
+        setDeletingVideo(null);
         const slug = mySlugByChannelId[video.channelId];
         if (!slug) return;
-        if (!window.confirm(`هل تريد حذف "${video.title}"؟`)) return;
         try {
             await api.delete(`/channels/${slug}/content/videos/${video.id}`);
             refreshFeed(slug);
         } catch (err) {
-            alert('فشل في الحذف');
+            showToast('فشل في الحذف', 'error');
         }
     };
 
@@ -80,7 +84,7 @@ function Home() {
         onClick: () => navigate(`/video/${video.id}`),
         isOwner: !!mySlugByChannelId[video.channelId],
         onToggleVisibility: handleToggleVisibility,
-        onDelete: handleDelete,
+        onDelete: setDeletingVideo,
         watchedSeconds: watchProgress[video.id],
     });
 
@@ -174,6 +178,20 @@ function Home() {
                     )}
                 </div>
             )}
+
+            <Modal open={!!deletingVideo} onClose={() => setDeletingVideo(null)} title="حذف الفيديو" maxWidth="400px">
+                <p className="text-text-secondary mb-5">
+                    هل تريد حذف "{deletingVideo?.title}"؟ لا يمكن التراجع عن هذا الإجراء.
+                </p>
+                <div className="flex gap-2 justify-end">
+                    <button onClick={() => setDeletingVideo(null)} className="px-4 py-2 text-text-secondary font-semibold">
+                        إلغاء
+                    </button>
+                    <button onClick={confirmDelete} className="px-4 py-2 bg-red-600 text-white rounded-md font-semibold">
+                        حذف
+                    </button>
+                </div>
+            </Modal>
         </PageShell>
     );
 }

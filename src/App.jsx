@@ -23,6 +23,7 @@ import VideoDetail from './pages/VideoDetail';
 import AdminChannels from './pages/AdminChannels';
 import CreateChannel from './pages/CreateChannel';
 import ChannelManage from './pages/ChannelManage';
+import NotFound from './pages/NotFound';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -112,7 +113,7 @@ function AppRoutes() {
             } />
 
             {/* Fallback */}
-            <Route path="*" element={<Navigate to="/" />} />
+            <Route path="*" element={<NotFound />} />
         </Routes>
     );
 }

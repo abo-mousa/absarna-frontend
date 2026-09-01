@@ -8,6 +8,7 @@ import Navbar from '../components/layout/Navbar';
 import { Spinner } from '../components/ui';
 import { CommentsSection } from '../components/content';
 import { useBook, useBookReadProgress, useSaveReadProgress } from '../hooks/useBooks';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 // Code-split: pdfjs is a large dependency that only visitors who actually open a book should pay for.
 const PdfReader = lazy(() => import('../components/content/PdfReader'));
@@ -20,6 +21,11 @@ function BookDetail() {
     const { data: savedPage } = useBookReadProgress(id, !!token);
     const saveReadProgress = useSaveReadProgress(id);
     const lastPageRef = useRef(null);
+    usePageMeta({
+        title: book?.title,
+        description: book?.description?.slice(0, 200),
+        image: resolveMediaUrl(book?.previewImageUrl),
+    });
 
     const handlePageChange = (page) => {
         if (!token) return;
@@ -46,7 +52,7 @@ function BookDetail() {
 
     if (isLoading) {
         return (
-            <div dir="rtl" className="min-h-screen bg-bg">
+            <div className="min-h-screen bg-bg">
                 <Navbar />
                 <Spinner />
             </div>
@@ -55,7 +61,7 @@ function BookDetail() {
 
     if (isError || !book) {
         return (
-            <div dir="rtl" className="min-h-screen bg-bg">
+            <div className="min-h-screen bg-bg">
                 <Navbar />
                 <div className="text-center py-16 px-5">
                     <p className="text-red-600 text-lg mb-2">الكتاب غير موجود</p>
@@ -69,7 +75,7 @@ function BookDetail() {
     const previewUrl = resolveMediaUrl(book.previewImageUrl);
 
     return (
-        <div dir="rtl" className="min-h-screen bg-bg">
+        <div className="min-h-screen bg-bg">
             <Navbar />
 
             <div className="max-w-reading mx-auto px-4 sm:px-6 py-6 sm:py-8">

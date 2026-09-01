@@ -2,21 +2,25 @@ import { Link } from 'react-router-dom';
 import { Video, BookOpen, FileText, Tv, Bell, Shield, Check, X } from 'lucide-react';
 import Navbar from '../components/layout/Navbar';
 import { Button } from '../components/ui';
+import { useToast } from '../contexts/ToastContext';
+import { usePageMeta } from '../hooks/usePageMeta';
 import { useStats } from '../hooks/useAdminData';
 import { usePendingChannels, useApproveChannel, useRejectChannel } from '../hooks/useChannels';
 
 function Admin() {
+    usePageMeta({ title: 'لوحة التحكم' });
+    const { showToast } = useToast();
     const { data: stats = {} } = useStats();
     const { data: pendingChannels = [] } = usePendingChannels();
     const approveChannel = useApproveChannel();
     const rejectChannel = useRejectChannel();
 
     const handleApprove = (id) => {
-        approveChannel.mutate(id, { onError: () => alert('فشل في الموافقة') });
+        approveChannel.mutate(id, { onError: () => showToast('فشل في الموافقة', 'error') });
     };
 
     const handleReject = (id) => {
-        rejectChannel.mutate(id, { onError: () => alert('فشل في الرفض') });
+        rejectChannel.mutate(id, { onError: () => showToast('فشل في الرفض', 'error') });
     };
 
     const statCards = [
@@ -28,7 +32,7 @@ function Admin() {
     ];
 
     return (
-        <div dir="rtl" className="min-h-screen bg-bg">
+        <div className="min-h-screen bg-bg">
             <Navbar />
 
             <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-6">

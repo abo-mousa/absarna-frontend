@@ -1,6 +1,9 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Play, Eye, EyeOff, Trash2 } from 'lucide-react';
 import { resolveMediaUrl, youtubeThumbnail, durationToSeconds } from '@/lib/media';
+import { useChannel } from '@/hooks/useChannels';
+import Avatar from '../ui/Avatar';
 
 function getThumbnail(video) {
     if (video.thumbnailUrl) return resolveMediaUrl(video.thumbnailUrl);
@@ -18,10 +21,12 @@ function getWatchedPercent(video, watchedSeconds) {
     return percent > 1 ? Math.min(100, percent) : null;
 }
 
-function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watchedSeconds }) {
+function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watchedSeconds, showChannel = true }) {
+    const navigate = useNavigate();
     const [thumbnailFailed, setThumbnailFailed] = useState(false);
     const thumbnail = thumbnailFailed ? null : getThumbnail(video);
     const watchedPercent = getWatchedPercent(video, watchedSeconds);
+    const { data: channel } = useChannel(video.channelId, showChannel && !!video.channelId);
 
     return (
         <div
@@ -30,12 +35,12 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                 hover:shadow-md hover:-translate-y-1 transition-all cursor-pointer
                 ${video.visible === false ? 'border-dashed border-border' : 'border-border-light'}`}
         >
-            <div className="relative h-[180px] sm:h-[200px] bg-surface-hover overflow-hidden">
+            <div className="relative aspect-video bg-surface-hover overflow-hidden">
                 {thumbnail ? (
                     <img
                         src={thumbnail}
                         alt={video.title}
-                        className="w-full h-full object-contain"
+                        className="w-full h-full object-cover"
                         onError={() => setThumbnailFailed(true)}
                     />
                 ) : (
@@ -97,6 +102,15 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                 <h3 className="text-[0.95rem] font-semibold mb-1.5 leading-snug line-clamp-2">
                     {video.title}
                 </h3>
+                {channel && (
+                    <button
+                        onClick={(e) => { e.stopPropagation(); navigate(`/channel/${channel.slug}`); }}
+                        className="flex items-center gap-1.5 mb-1.5 text-xs text-text-secondary hover:text-primary transition-colors"
+                    >
+                        <Avatar src={resolveMediaUrl(channel.logoUrl)} name={channel.name} size="sm" className="!w-5 !h-5 !text-[0.65rem]" />
+                        {channel.name}
+                    </button>
+                )}
                 {video.publishDate && (
                     <div className="text-xs text-text-muted">{video.publishDate}</div>
                 )}
