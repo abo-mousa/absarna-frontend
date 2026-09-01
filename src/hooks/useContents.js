@@ -52,6 +52,20 @@ export const useSearch = (query, page = 0, size = 12) => {
     });
 };
 
+// SearchPage's "load more" pagination — same accumulating-pages shape as useInfiniteContents.
+export const useInfiniteSearch = (query, size = 12, enabled = true) => {
+    return useInfiniteQuery({
+        queryKey: ['search-infinite', query, size],
+        queryFn: async ({ pageParam = 0 }) => {
+            const res = await api.get(`/search?q=${encodeURIComponent(query)}&page=${pageParam}&size=${size}`);
+            return res.data;
+        },
+        getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.currentPage + 1 : undefined),
+        enabled: enabled && !!query && query.trim().length > 0,
+        staleTime: 2 * 60 * 1000,
+    });
+};
+
 // Bounded home feed (subscribed / discover / featured) — a fixed snapshot, not paginated.
 export const useFeed = (enabled = true) => {
     return useQuery({
@@ -62,6 +76,17 @@ export const useFeed = (enabled = true) => {
         },
         enabled,
         staleTime: 5 * 60 * 1000,
+    });
+};
+
+export const useContent = (id) => {
+    return useQuery({
+        queryKey: ['content', id],
+        queryFn: async () => {
+            const res = await api.get(`/contents/${id}`);
+            return res.data;
+        },
+        enabled: !!id,
     });
 };
 

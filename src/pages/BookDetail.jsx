@@ -1,12 +1,12 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowRight, BookOpen, Download, X } from 'lucide-react';
-import api from '@/lib/api/client';
 import { resolveMediaUrl } from '@/lib/media';
 import { useAuth } from '../contexts/AuthContext';
 import Navbar from '../components/layout/Navbar';
 import { Spinner } from '../components/ui';
 import { CommentsSection } from '../components/content';
+import { useBook, useBookReadProgress, useSaveReadProgress } from '../hooks/useBooks';
 
 // Code-split: pdfjs is a large dependency that only visitors who actually open a book should pay for.
 const PdfReader = lazy(() => import('../components/content/PdfReader'));
@@ -14,48 +14,17 @@ const PdfReader = lazy(() => import('../components/content/PdfReader'));
 function BookDetail() {
     const { id } = useParams();
     const { token } = useAuth();
-    const [book, setBook] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
     const [showPdf, setShowPdf] = useState(false);
-    const [savedPage, setSavedPage] = useState(null);
-
-    useEffect(() => {
-        fetchBook();
-    }, [id]);
-
-    useEffect(() => {
-        if (!token) {
-            setSavedPage(null);
-            return;
-        }
-        api.get(`/books/${id}/read`)
-            .then((res) => setSavedPage(res.data?.currentPage || null))
-            .catch((err) => console.error('Failed to fetch reading progress:', err));
-    }, [id, token]);
-
-    const fetchBook = async () => {
-        try {
-            setLoading(true);
-            const res = await api.get(`/books/${id}`);
-            setBook(res.data);
-        } catch (err) {
-            console.error('Failed to fetch book:', err);
-            setError('فشل في تحميل الكتاب');
-        } finally {
-            setLoading(false);
-        }
-    };
+    const { data: book, isLoading, isError } = useBook(id);
+    const { data: savedPage } = useBookReadProgress(id, !!token);
+    const saveReadProgress = useSaveReadProgress(id);
 
     const handlePageChange = (page) => {
-        setSavedPage(page);
         if (!token) return;
-        api.post(`/books/${id}/read`, { currentPage: page }).catch(() => {
-            // Best-effort: never let a failed reading-progress write disrupt the reader.
-        });
+        saveReadProgress.mutate(page);
     };
 
-    if (loading) {
+    if (isLoading) {
         return (
             <div dir="rtl" className="min-h-screen bg-bg">
                 <Navbar />
@@ -64,12 +33,12 @@ function BookDetail() {
         );
     }
 
-    if (error || !book) {
+    if (isError || !book) {
         return (
             <div dir="rtl" className="min-h-screen bg-bg">
                 <Navbar />
                 <div className="text-center py-16 px-5">
-                    <p className="text-red-600 text-lg mb-2">{error || 'الكتاب غير موجود'}</p>
+                    <p className="text-red-600 text-lg mb-2">الكتاب غير موجود</p>
                     <Link to="/books" className="text-primary font-semibold">العودة للمكتبة</Link>
                 </div>
             </div>

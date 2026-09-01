@@ -1,47 +1,22 @@
-import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Video, BookOpen, FileText, Tv, Bell, Shield, Check, X } from 'lucide-react';
-import api from '@/lib/api/client';
 import Navbar from '../components/layout/Navbar';
 import { Button } from '../components/ui';
+import { useStats } from '../hooks/useAdminData';
+import { usePendingChannels, useApproveChannel, useRejectChannel } from '../hooks/useChannels';
 
 function Admin() {
-    const [stats, setStats] = useState({});
-    const [pendingChannels, setPendingChannels] = useState([]);
+    const { data: stats = {} } = useStats();
+    const { data: pendingChannels = [] } = usePendingChannels();
+    const approveChannel = useApproveChannel();
+    const rejectChannel = useRejectChannel();
 
-    useEffect(() => {
-        fetchAdminData();
-    }, []);
-
-    const fetchAdminData = async () => {
-        try {
-            const [statsRes, pendingRes] = await Promise.all([
-                api.get('/admin/stats'),
-                api.get('/channels/admin/pending'),
-            ]);
-            setStats(statsRes.data);
-            setPendingChannels(pendingRes.data || []);
-        } catch (err) {
-            console.error('Failed to fetch admin data:', err);
-        }
+    const handleApprove = (id) => {
+        approveChannel.mutate(id, { onError: () => alert('فشل في الموافقة') });
     };
 
-    const approveChannel = async (id) => {
-        try {
-            await api.post(`/channels/admin/${id}/approve`);
-            fetchAdminData();
-        } catch (err) {
-            alert('فشل في الموافقة');
-        }
-    };
-
-    const rejectChannel = async (id) => {
-        try {
-            await api.post(`/channels/admin/${id}/reject`);
-            fetchAdminData();
-        } catch (err) {
-            alert('فشل في الرفض');
-        }
+    const handleReject = (id) => {
+        rejectChannel.mutate(id, { onError: () => alert('فشل في الرفض') });
     };
 
     const statCards = [
@@ -103,10 +78,10 @@ function Admin() {
                                     <p className="text-sm text-text-muted">@{channel.slug}</p>
                                 </div>
                                 <div className="flex gap-2">
-                                    <Button variant="primary" size="sm" onClick={() => approveChannel(channel.id)} icon={<Check size={14} />}>
+                                    <Button variant="primary" size="sm" onClick={() => handleApprove(channel.id)} icon={<Check size={14} />}>
                                         موافقة
                                     </Button>
-                                    <Button variant="danger" size="sm" onClick={() => rejectChannel(channel.id)} icon={<X size={14} />}>
+                                    <Button variant="danger" size="sm" onClick={() => handleReject(channel.id)} icon={<X size={14} />}>
                                         رفض
                                     </Button>
                                 </div>

@@ -1,52 +1,25 @@
-import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import api from '@/lib/api/client';
 import PageShell from '../components/layout/PageShell';
 import { Spinner, EmptyState, Avatar } from '../components/ui';
+import { useSubscriptions, useUnsubscribe } from '../hooks/useChannels';
 
 function Subscriptions() {
-    const [subscriptions, setSubscriptions] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
+    const { data: subscriptions = [], isLoading, isError } = useSubscriptions();
+    const unsubscribe = useUnsubscribe();
 
-    useEffect(() => {
-        fetchSubscriptions();
-    }, []);
-
-    const fetchSubscriptions = async () => {
-        try {
-            setLoading(true);
-            setError('');
-            const res = await api.get('/user/subscriptions');
-            setSubscriptions(res.data || []);
-        } catch (err) {
-            console.error('Failed to fetch subscriptions:', err);
-            setError('فشل في تحميل الاشتراكات');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleUnsubscribe = async (channelId) => {
+    const handleUnsubscribe = (channelId) => {
         if (!window.confirm('هل تريد إلغاء الاشتراك؟')) return;
-
-        try {
-            await api.delete(`/channels/${channelId}/subscribe`);
-            setSubscriptions((prev) => prev.filter((sub) => sub.channelId !== channelId));
-        } catch (err) {
-            console.error('Failed to unsubscribe:', err);
-            alert('فشل في إلغاء الاشتراك');
-        }
+        unsubscribe.mutate(channelId, { onError: () => alert('فشل في إلغاء الاشتراك') });
     };
 
     return (
         <PageShell contentClassName="p-4 sm:p-6">
             <h1 className="text-xl font-bold mb-6">اشتراكاتي</h1>
 
-            {loading ? (
+            {isLoading ? (
                 <Spinner />
-            ) : error ? (
-                <p className="text-red-600 p-3 bg-red-100 rounded-md">{error}</p>
+            ) : isError ? (
+                <p className="text-red-600 p-3 bg-red-100 rounded-md">فشل في تحميل الاشتراكات</p>
             ) : subscriptions.length === 0 ? (
                 <EmptyState icon="🔔" title="لا توجد اشتراكات" description="اشترك في القنوات لمتابعة محتواها" />
             ) : (

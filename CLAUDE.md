@@ -24,7 +24,8 @@ src/
     admin/      5 CMS tab components — barrel export via index.js (see "Known gaps" — currently unrouted)
     auth/       EmailVerificationNotice — barrel export via index.js, see "Email verification" below
   pages/        route-level components
-  hooks/        useContents, useBooks, useAdminData, useParallelUpload
+  hooks/        useContents, useBooks, useArticles, useBiography, useChannels, useComments,
+                useAdminData, useParallelUpload — see "Data fetching: React Query" below
   contexts/     AuthContext
   lib/
     api/        client.js (axios instance + interceptors), auth.js, contents.js (thin per-domain wrappers)
@@ -50,6 +51,30 @@ Backend gates two actions on `user.emailVerified` (login itself is never blocked
 - `lib/api/auth.js` exports `verifyEmail(token)` and `resendVerification()` (the latter relies on the shared `client.js` interceptor to attach the JWT, same as every other authenticated call).
 - `user.emailVerified` needs no special plumbing beyond this — it's just another field on the `user` object from `/auth/login`, `/auth/register`, and `/user/profile`, all already consumed as-is (see "no formal type" — the user shape is implicit, inferred from usage).
 - `Register.jsx` shows a one-off `alert()` after a successful registration noting a verification email was "sent" (it's actually just logged server-side for now — see backend `CLAUDE.md`, no real provider wired up yet) — matches this codebase's existing per-component `alert()` convention (no toast/snackbar system).
+
+## Data fetching: React Query
+
+`App.jsx` wraps the app in a `QueryClientProvider` (`staleTime` 10min, `cacheTime` 30min, no refetch-on-focus/mount/reconnect). Every GET that reads app data should go through a `useQuery`/`useInfiniteQuery` hook in `hooks/`, not a raw `api.get` in a page's `useEffect` — a direct `useEffect` fetch bypasses the cache entirely, re-hits the backend on every mount, and can't be deduped against another component fetching the same thing (this used to happen: `SideBar.jsx` and `Home.jsx` each independently re-fetched `/channels/my-channels` before both were switched to the shared `useMyChannels()` hook in `hooks/useChannels.js`). The one deliberate exception is `AuthContext`'s own profile fetch — it's session state tightly coupled to login/logout's `localStorage` side effects, not cacheable "data" in this sense, so it stays a plain `api.get` in `fetchUserProfile`.
+
+- `hooks/useContents.js` — home feed, infinite content browsing, infinite search (`useInfiniteSearch`, mirrors `useInfiniteContents`'s accumulating-pages shape for `SearchPage.jsx`'s "load more"), single content (`useContent`), related content, categories, watch/reading history.
+- `hooks/useBooks.js` — public `useBooks`/`useBook`, plus `useBookReadProgress`/`useSaveReadProgress` (the latter updates its cache optimistically in `onMutate`, not `onSuccess`, matching the reader's original never-block-on-network behavior for a best-effort progress write).
+- `hooks/useArticles.js`, `hooks/useBiography.js` — same shape, straightforward.
+- `hooks/useBiography.js`'s query key (`['biography']`) is deliberately the same key `useUpdateBiography` (`hooks/useAdminData.js`) invalidates on save — an admin edit shows up on the public page with no extra wiring.
+- `hooks/useComments.js` — `useComments(type, id)` plus `useCreateComment`/`useReplyComment` mutations that invalidate that same key.
+- `hooks/useChannels.js` — the big one: public channel page data (`useChannel`, `useChannelContents`/`Books`/`Articles`/`Posts`, `useSubscriptionStatus`, `useToggleSubscription`), sidebar/subscriptions data (`useAllChannels`, `useSubscriptions`, `useUnsubscribe`, `useMyChannels`), owner management (`useChannelContentList`, `useUpdateChannel`, `useCreateChannelContent`, `useToggleContentVisibility`, `useDeleteContent` — these last three share an `invalidateChannelContent` helper keyed off a `type → public query key` map, so a publish/toggle/delete on `ChannelManage.jsx` refreshes the same list `ChannelPage.jsx`'s visitors see), and admin channel moderation (`usePendingChannels`, `useAllAdminChannels`, `useApproveChannel`/`useRejectChannel`/`useSuspendChannel` — shared by both `Admin.jsx`'s dashboard and `AdminChannels.jsx`).
+- Video visibility/delete toggled from `Home.jsx`'s feed (owner's own videos, mixed into the feed) can't use the fixed-`(slug, type)` hooks above since the slug varies per video — it stays a direct `api.patch`/`api.delete`, but its `refreshFeed(slug)` helper invalidates that specific channel's `channel-contents`/`channel-manage` cache keys too, not just `['feed']`/`['contents']`.
+- `ChannelManage.jsx`'s two file-upload handlers (`handleVideoFileSelect`/`handleBookFileSelect`) stay plain `api.post` with `onUploadProgress` — they populate a form with a returned URL, not something cacheable, and `useMutation` doesn't have a clean spot for upload-progress callbacks.
+
+## Password reset & change password
+
+- `src/pages/ForgotPassword.jsx` (`/forgot-password`, public) and `src/pages/ResetPassword.jsx` (`/reset-password?token=...`, public) mirror `VerifyEmail.jsx`'s status-state pattern (form → success/error). `ForgotPassword` always renders the same success state after a successful request — the backend's response is deliberately identical whether or not the email is registered (see backend `CLAUDE.md`), so there's no separate "email not found" branch to build.
+- `lib/api/auth.js` exports `forgotPassword(email)`, `resetPassword(token, newPassword)`, `changePassword(currentPassword, newPassword)`. None of these go through `AuthContext` — they don't touch the token/localStorage — called directly the same way `VerifyEmail.jsx` calls `verifyEmail`.
+- `UserProfile.jsx` has a second card, `ChangePasswordCard`, below the profile-save form — its own local state and submit handler, deliberately not merged into the profile form (different validation, different endpoint).
+- `Login.jsx` links to `/forgot-password` ("نسيت كلمة المرور؟") under the password field.
+
+## Password field eye-icon toggle
+
+`components/ui/Input.jsx` shows/hides the typed value for any `type="password"` field: internal `showPassword` state toggles the actual `<input>`'s `type` between `password`/`text`, rendered via an absolutely-positioned `lucide-react` `Eye`/`EyeOff` button inside a `relative` wrapper (`pr-10` added so the button doesn't overlap typed text). This applies automatically everywhere `Input` is used with `type="password"` — Login, Register, ResetPassword, ChangePasswordCard — with no per-page wiring. Extend this component rather than building a one-off toggle in a specific form if requirements ever diverge per-field.
 
 ## Owner content management (videos only, so far)
 

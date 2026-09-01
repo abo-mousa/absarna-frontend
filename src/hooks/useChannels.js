@@ -1,0 +1,280 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import api from '@/lib/api/client';
+
+// Maps a content type to the query key its public channel-page list is cached under —
+// shared by the owner-management mutations below so a publish/toggle/delete on
+// ChannelManage.jsx invalidates the same list ChannelPage.jsx's visitors see.
+const PUBLIC_LIST_KEY = {
+    videos: 'channel-contents',
+    books: 'channel-books',
+    articles: 'channel-articles',
+    posts: 'channel-posts',
+};
+
+// ============ Public channel page ============
+
+export const useChannel = (slug, enabled = true) => {
+    return useQuery({
+        queryKey: ['channel', slug],
+        queryFn: async () => {
+            const res = await api.get(`/channels/${slug}`);
+            return res.data;
+        },
+        enabled: enabled && !!slug,
+    });
+};
+
+export const useChannelContents = (slug, enabled = true) => {
+    return useQuery({
+        queryKey: ['channel-contents', slug],
+        queryFn: async () => {
+            const res = await api.get(`/channels/${slug}/contents?page=0&size=50`);
+            return res.data?.content || [];
+        },
+        enabled: enabled && !!slug,
+    });
+};
+
+export const useChannelBooks = (slug, enabled = true) => {
+    return useQuery({
+        queryKey: ['channel-books', slug],
+        queryFn: async () => {
+            const res = await api.get(`/channels/${slug}/books`);
+            return res.data?.content || res.data || [];
+        },
+        enabled: enabled && !!slug,
+    });
+};
+
+export const useChannelArticles = (slug, enabled = true) => {
+    return useQuery({
+        queryKey: ['channel-articles', slug],
+        queryFn: async () => {
+            const res = await api.get(`/channels/${slug}/articles`);
+            return res.data?.content || res.data || [];
+        },
+        enabled: enabled && !!slug,
+    });
+};
+
+export const useChannelPosts = (slug, enabled = true) => {
+    return useQuery({
+        queryKey: ['channel-posts', slug],
+        queryFn: async () => {
+            const res = await api.get(`/channels/${slug}/posts`);
+            return res.data?.content || res.data || [];
+        },
+        enabled: enabled && !!slug,
+    });
+};
+
+export const useSubscriptionStatus = (channelId, enabled = true) => {
+    return useQuery({
+        queryKey: ['subscription-status', channelId],
+        queryFn: async () => {
+            const res = await api.get(`/channels/${channelId}/subscription-status`);
+            return res.data;
+        },
+        enabled: enabled && !!channelId,
+    });
+};
+
+export const useToggleSubscription = (channelId) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (subscribed) => {
+            if (subscribed) {
+                await api.delete(`/channels/${channelId}/subscribe`);
+            } else {
+                await api.post(`/channels/${channelId}/subscribe`);
+            }
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['subscription-status', channelId] });
+            queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
+        },
+    });
+};
+
+// ============ Sidebar / Subscriptions page ============
+
+export const useAllChannels = (enabled = true) => {
+    return useQuery({
+        queryKey: ['all-channels'],
+        queryFn: async () => {
+            const res = await api.get('/channels');
+            return res.data || [];
+        },
+        enabled,
+        staleTime: 5 * 60 * 1000,
+    });
+};
+
+export const useSubscriptions = (enabled = true) => {
+    return useQuery({
+        queryKey: ['subscriptions'],
+        queryFn: async () => {
+            const res = await api.get('/user/subscriptions');
+            return res.data || [];
+        },
+        enabled,
+    });
+};
+
+export const useUnsubscribe = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (channelId) => {
+            await api.delete(`/channels/${channelId}/subscribe`);
+            return channelId;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
+        },
+    });
+};
+
+export const useMyChannels = (enabled = true) => {
+    return useQuery({
+        queryKey: ['my-channels'],
+        queryFn: async () => {
+            const res = await api.get('/channels/my-channels');
+            return res.data || [];
+        },
+        enabled,
+        staleTime: 5 * 60 * 1000,
+    });
+};
+
+// ============ Owner management (ChannelManage.jsx) ============
+
+export const useChannelContentList = (slug, type, enabled = true) => {
+    return useQuery({
+        queryKey: ['channel-manage', slug, type],
+        queryFn: async () => {
+            const res = await api.get(`/channels/${slug}/content/${type}`);
+            return res.data || [];
+        },
+        enabled: enabled && !!slug && !!type,
+    });
+};
+
+export const useUpdateChannel = (slug, channelId) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (form) => {
+            const res = await api.put(`/channels/${channelId}`, form);
+            return res.data;
+        },
+        onSuccess: (data) => {
+            queryClient.setQueryData(['channel', slug], data);
+        },
+    });
+};
+
+// Shared invalidation for any owner mutation (publish/toggle/delete) on one channel's content
+// list — refreshes both the owner's manage view and whatever public list mirrors it.
+const invalidateChannelContent = (queryClient, slug, type) => {
+    queryClient.invalidateQueries({ queryKey: ['channel-manage', slug, type] });
+    const publicKey = PUBLIC_LIST_KEY[type];
+    if (publicKey) queryClient.invalidateQueries({ queryKey: [publicKey, slug] });
+    if (type === 'videos') {
+        queryClient.invalidateQueries({ queryKey: ['feed'] });
+        queryClient.invalidateQueries({ queryKey: ['contents'] });
+    }
+};
+
+export const useCreateChannelContent = (slug, type) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (payload) => {
+            const res = await api.post(`/channels/${slug}/content/${type}`, payload);
+            return res.data;
+        },
+        onSuccess: () => invalidateChannelContent(queryClient, slug, type),
+    });
+};
+
+export const useToggleContentVisibility = (slug, type) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (item) => {
+            await api.patch(`/channels/${slug}/content/${type}/${item.id}/visibility`, {
+                visible: !item.visible,
+            });
+        },
+        onSuccess: () => invalidateChannelContent(queryClient, slug, type),
+    });
+};
+
+export const useDeleteContent = (slug, type) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (item) => {
+            await api.delete(`/channels/${slug}/content/${type}/${item.id}`);
+        },
+        onSuccess: () => invalidateChannelContent(queryClient, slug, type),
+    });
+};
+
+// ============ Admin channel moderation ============
+
+export const usePendingChannels = (enabled = true) => {
+    return useQuery({
+        queryKey: ['admin-pending-channels'],
+        queryFn: async () => {
+            const res = await api.get('/channels/admin/pending');
+            return res.data || [];
+        },
+        enabled,
+        staleTime: 30 * 1000,
+    });
+};
+
+export const useAllAdminChannels = (enabled = true) => {
+    return useQuery({
+        queryKey: ['admin-all-channels'],
+        queryFn: async () => {
+            const res = await api.get('/channels/admin/all');
+            return res.data || [];
+        },
+        enabled,
+        staleTime: 30 * 1000,
+    });
+};
+
+const invalidateAdminChannels = (queryClient) => {
+    queryClient.invalidateQueries({ queryKey: ['admin-pending-channels'] });
+    queryClient.invalidateQueries({ queryKey: ['admin-all-channels'] });
+    queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+};
+
+export const useApproveChannel = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (id) => api.post(`/channels/admin/${id}/approve`),
+        onSuccess: () => invalidateAdminChannels(queryClient),
+    });
+};
+
+export const useRejectChannel = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (id) => api.post(`/channels/admin/${id}/reject`),
+        onSuccess: () => invalidateAdminChannels(queryClient),
+    });
+};
+
+export const useSuspendChannel = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (id) => api.post(`/channels/admin/${id}/suspend`),
+        onSuccess: () => invalidateAdminChannels(queryClient),
+    });
+};

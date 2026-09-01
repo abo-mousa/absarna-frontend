@@ -1,28 +1,12 @@
-import { useState, useEffect } from 'react';
 import { Play, Send, Heart, Mail } from 'lucide-react';
-import api from '@/lib/api/client';
 import Navbar from '../components/layout/Navbar.jsx';
 import { Spinner } from '../components/ui';
+import { useBiography } from '../hooks/useBiography';
 
 const socialLinkClass = 'flex items-center gap-2 px-5 py-2.5 rounded-full font-semibold text-sm text-white transition-opacity hover:opacity-90';
 
 function Biography() {
-    const [bio, setBio] = useState(null);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchBio = async () => {
-            try {
-                const res = await api.get('/biography');
-                setBio(res.data);
-            } catch (err) {
-                console.error('Failed to load biography', err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchBio();
-    }, []);
+    const { data: bio, isLoading } = useBiography();
 
     return (
         <div dir="rtl" className="min-h-screen bg-bg">
@@ -31,7 +15,7 @@ function Biography() {
             <div className="max-w-reading mx-auto px-4 sm:px-6 py-10">
                 <h1 className="text-2xl font-bold text-center mb-8">السيرة الذاتية</h1>
 
-                {loading ? (
+                {isLoading ? (
                     <Spinner />
                 ) : bio ? (
                     <div className="bg-surface p-6 sm:p-10 rounded-xl shadow-sm border border-border-light">

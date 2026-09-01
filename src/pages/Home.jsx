@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api/client';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,23 +7,14 @@ import PageShell from '../components/layout/PageShell';
 import { Spinner, EmptyState } from '../components/ui';
 import { VideoCard } from '../components/content';
 import { useInfiniteContents, useCategories, useFeed, useWatchProgressMap } from '../hooks/useContents';
+import { useMyChannels } from '../hooks/useChannels';
 
 function Home() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const { token } = useAuth();
     const [selectedCategory, setSelectedCategory] = useState('');
-    const [myChannels, setMyChannels] = useState([]);
-
-    useEffect(() => {
-        if (!token) {
-            setMyChannels([]);
-            return;
-        }
-        api.get('/channels/my-channels')
-            .then((res) => setMyChannels(res.data || []))
-            .catch((err) => console.error('Failed to fetch my channels:', err));
-    }, [token]);
+    const { data: myChannels = [] } = useMyChannels(!!token);
 
     const mySlugByChannelId = useMemo(
         () => Object.fromEntries(myChannels.map((c) => [c.id, c.slug])),
@@ -47,9 +38,15 @@ function Home() {
         isFetchingNextPage,
     } = useInfiniteContents('', selectedCategory, 12, !isDefaultView);
 
-    const refreshFeed = () => {
+    // Also invalidates that channel's own cached lists (public channel page + owner's manage
+    // view) since a video mutated here belongs to a specific channel, not just the home feed.
+    const refreshFeed = (slug) => {
         queryClient.invalidateQueries({ queryKey: ['contents'] });
         queryClient.invalidateQueries({ queryKey: ['feed'] });
+        if (slug) {
+            queryClient.invalidateQueries({ queryKey: ['channel-contents', slug] });
+            queryClient.invalidateQueries({ queryKey: ['channel-manage', slug, 'videos'] });
+        }
     };
 
     const handleToggleVisibility = async (video) => {
@@ -59,7 +56,7 @@ function Home() {
             await api.patch(`/channels/${slug}/content/videos/${video.id}/visibility`, {
                 visible: video.visible === false,
             });
-            refreshFeed();
+            refreshFeed(slug);
         } catch (err) {
             alert('فشل في تحديث الظهور');
         }
@@ -71,7 +68,7 @@ function Home() {
         if (!window.confirm(`هل تريد حذف "${video.title}"؟`)) return;
         try {
             await api.delete(`/channels/${slug}/content/videos/${video.id}`);
-            refreshFeed();
+            refreshFeed(slug);
         } catch (err) {
             alert('فشل في الحذف');
         }

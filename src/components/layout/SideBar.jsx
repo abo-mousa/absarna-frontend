@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, Bell, History, Plus, Settings } from 'lucide-react';
-import api from '@/lib/api/client';
 import { useAuth } from '../../contexts/AuthContext';
+import { useAllChannels, useSubscriptions, useMyChannels } from '../../hooks/useChannels';
 
 const navLinkClass = (active) =>
     `flex items-center gap-3 px-3 py-2 rounded-md text-sm mb-0.5 transition-colors ${
@@ -53,47 +52,9 @@ function ChannelRow({ channel, slug, name, color, currentChannel, onClose, manag
 function SideBar({ currentChannel, open = false, onClose }) {
     const { token } = useAuth();
     const location = useLocation();
-    const [channels, setChannels] = useState([]);
-    const [subscriptions, setSubscriptions] = useState([]);
-    const [myChannels, setMyChannels] = useState([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        fetchChannels();
-        if (token) {
-            fetchSubscriptions();
-            fetchMyChannels();
-        }
-    }, [token]);
-
-    const fetchChannels = async () => {
-        try {
-            const res = await api.get('/channels');
-            setChannels(res.data || []);
-        } catch (err) {
-            console.error('Failed to fetch channels:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const fetchSubscriptions = async () => {
-        try {
-            const res = await api.get('/user/subscriptions');
-            setSubscriptions(res.data || []);
-        } catch (err) {
-            console.error('Failed to fetch subscriptions:', err);
-        }
-    };
-
-    const fetchMyChannels = async () => {
-        try {
-            const res = await api.get('/channels/my-channels');
-            setMyChannels(res.data || []);
-        } catch (err) {
-            console.error('Failed to fetch my channels:', err);
-        }
-    };
+    const { data: channels = [], isLoading: loading } = useAllChannels();
+    const { data: subscriptions = [] } = useSubscriptions(!!token);
+    const { data: myChannels = [] } = useMyChannels(!!token);
 
     const isActive = (path) => location.pathname === path;
 

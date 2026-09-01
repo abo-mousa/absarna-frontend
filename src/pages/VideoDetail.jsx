@@ -1,41 +1,20 @@
-import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowRight, Clock, Folder, Tv, User, Calendar } from 'lucide-react';
-import api from '@/lib/api/client';
 import Navbar from '../components/layout/Navbar';
 import { Spinner } from '../components/ui';
 import { VideoPlayer, CommentsSection, VideoCard } from '../components/content';
-import { useRelatedContent, useWatchProgressMap } from '../hooks/useContents';
+import { useContent, useRelatedContent, useWatchProgressMap } from '../hooks/useContents';
 import { useAuth } from '../contexts/AuthContext';
 
 function VideoDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const [video, setVideo] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
+    const { data: video, isLoading, isError } = useContent(id);
     const { data: related = [] } = useRelatedContent(id);
     const { token } = useAuth();
     const watchProgress = useWatchProgressMap(!!token);
 
-    useEffect(() => {
-        fetchVideo();
-    }, [id]);
-
-    const fetchVideo = async () => {
-        try {
-            setLoading(true);
-            const res = await api.get(`/contents/${id}`);
-            setVideo(res.data);
-        } catch (err) {
-            console.error('Failed to fetch video:', err);
-            setError('فشل في تحميل الفيديو');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    if (loading) {
+    if (isLoading) {
         return (
             <div dir="rtl" className="min-h-screen bg-bg">
                 <Navbar />
@@ -44,12 +23,12 @@ function VideoDetail() {
         );
     }
 
-    if (error || !video) {
+    if (isError || !video) {
         return (
             <div dir="rtl" className="min-h-screen bg-bg">
                 <Navbar />
                 <div className="text-center py-16 px-5">
-                    <p className="text-red-600 text-lg mb-2">{error || 'الفيديو غير موجود'}</p>
+                    <p className="text-red-600 text-lg mb-2">فشل في تحميل الفيديو</p>
                     <Link to="/" className="text-primary font-semibold">العودة للرئيسية</Link>
                 </div>
             </div>

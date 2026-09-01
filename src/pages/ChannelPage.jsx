@@ -1,96 +1,47 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Bell, Check, Video, BookOpen, FileText, MessageSquare, Settings } from 'lucide-react';
-import api from '@/lib/api/client';
 import { useAuth } from '../contexts/AuthContext';
 import Navbar from '../components/layout/Navbar';
 import SideBar from '../components/layout/SideBar';
 import { Spinner, Avatar } from '../components/ui';
 import { VideoCard, BookCard, ArticleCard, PostCard } from '../components/content';
 import { useWatchProgressMap } from '../hooks/useContents';
+import {
+    useChannel,
+    useChannelContents,
+    useChannelBooks,
+    useChannelArticles,
+    useChannelPosts,
+    useSubscriptionStatus,
+    useToggleSubscription,
+} from '../hooks/useChannels';
 
 function ChannelPage() {
     const { slug } = useParams();
     const navigate = useNavigate();
     const { token, user } = useAuth();
-    const [channel, setChannel] = useState(null);
-    const [videos, setVideos] = useState([]);
-    const [books, setBooks] = useState([]);
-    const [articles, setArticles] = useState([]);
-    const [posts, setPosts] = useState([]);
     const [activeTab, setActiveTab] = useState('videos');
-    const [loading, setLoading] = useState(true);
-    const [subscribed, setSubscribed] = useState(false);
-    const [subscriberCount, setSubscriberCount] = useState(0);
-    const [subscribing, setSubscribing] = useState(false);
     const [drawerOpen, setDrawerOpen] = useState(false);
     const watchProgress = useWatchProgressMap(!!token);
 
-    useEffect(() => {
-        fetchChannelData();
-    }, [slug]);
+    const { data: channel, isLoading: channelLoading } = useChannel(slug);
+    const { data: videos = [] } = useChannelContents(slug, !!channel);
+    const { data: books = [] } = useChannelBooks(slug, !!channel);
+    const { data: articles = [] } = useChannelArticles(slug, !!channel);
+    const { data: posts = [] } = useChannelPosts(slug, !!channel);
+    const { data: subscriptionStatus } = useSubscriptionStatus(channel?.id, !!token && !!channel);
+    const toggleSubscription = useToggleSubscription(channel?.id);
 
-    useEffect(() => {
-        if (token && channel) checkSubscriptionStatus();
-    }, [token, channel]);
+    const subscribed = subscriptionStatus?.subscribed || false;
+    const subscriberCount = subscriptionStatus?.subscriberCount || 0;
 
-    const fetchChannelData = async () => {
-        try {
-            setLoading(true);
-            const channelRes = await api.get(`/channels/${slug}`);
-            setChannel(channelRes.data);
-
-            const [videosRes, booksRes, articlesRes, postsRes] = await Promise.all([
-                api.get(`/channels/${slug}/contents?page=0&size=50`),
-                api.get(`/channels/${slug}/books`),
-                api.get(`/channels/${slug}/articles`),
-                api.get(`/channels/${slug}/posts`),
-            ]);
-
-            setVideos(videosRes.data?.content || []);
-            setBooks(booksRes.data?.content || booksRes.data || []);
-            setArticles(articlesRes.data?.content || articlesRes.data || []);
-            setPosts(postsRes.data?.content || postsRes.data || []);
-        } catch (err) {
-            console.error('Failed to fetch channel:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const checkSubscriptionStatus = async () => {
-        if (!channel) return;
-        try {
-            const res = await api.get(`/channels/${channel.id}/subscription-status`);
-            setSubscribed(res.data.subscribed);
-            setSubscriberCount(res.data.subscriberCount);
-        } catch (err) {
-            console.error('Failed to check subscription:', err);
-        }
-    };
-
-    const handleSubscribe = async () => {
+    const handleSubscribe = () => {
         if (!token) {
             navigate('/login');
             return;
         }
-
-        setSubscribing(true);
-        try {
-            if (subscribed) {
-                await api.delete(`/channels/${channel.id}/subscribe`);
-                setSubscribed(false);
-                setSubscriberCount((prev) => Math.max(0, prev - 1));
-            } else {
-                await api.post(`/channels/${channel.id}/subscribe`);
-                setSubscribed(true);
-                setSubscriberCount((prev) => prev + 1);
-            }
-        } catch (err) {
-            console.error('Subscription failed:', err);
-        } finally {
-            setSubscribing(false);
-        }
+        toggleSubscription.mutate(subscribed);
     };
 
     const isOwner = user && channel && channel.ownerUserId === user.id;
@@ -102,7 +53,7 @@ function ChannelPage() {
         { id: 'posts', label: 'منشورات', icon: MessageSquare, count: posts.length },
     ];
 
-    if (loading) {
+    if (channelLoading) {
         return (
             <div dir="rtl" className="min-h-screen bg-bg">
                 <Navbar />
@@ -148,12 +99,12 @@ function ChannelPage() {
 
                         <button
                             onClick={handleSubscribe}
-                            disabled={subscribing}
+                            disabled={toggleSubscription.isPending}
                             className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-semibold text-sm ${
                                 subscribed ? 'bg-white/20 text-white' : 'bg-white text-primary'
                             }`}
                         >
-                            {subscribing ? '...' : subscribed ? <><Check size={18} /> مشترك</> : <><Bell size={18} /> اشترك</>}
+                            {toggleSubscription.isPending ? '...' : subscribed ? <><Check size={18} /> مشترك</> : <><Bell size={18} /> اشترك</>}
                         </button>
                     </div>
 

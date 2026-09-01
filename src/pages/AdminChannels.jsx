@@ -1,8 +1,13 @@
-import { useState, useEffect } from 'react';
 import { Check, X, Pause } from 'lucide-react';
-import api from '@/lib/api/client';
 import Navbar from '../components/layout/Navbar';
 import { Spinner, Avatar, Badge, Button } from '../components/ui';
+import {
+    usePendingChannels,
+    useAllAdminChannels,
+    useApproveChannel,
+    useRejectChannel,
+    useSuspendChannel,
+} from '../hooks/useChannels';
 
 const STATUS_VARIANT = {
     PENDING: 'featured',
@@ -19,55 +24,24 @@ const STATUS_LABEL = {
 };
 
 function AdminChannels() {
-    const [pendingChannels, setPendingChannels] = useState([]);
-    const [allChannels, setAllChannels] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const { data: pendingChannels = [], isLoading: pendingLoading } = usePendingChannels();
+    const { data: allChannels = [], isLoading: allLoading } = useAllAdminChannels();
+    const approveChannel = useApproveChannel();
+    const rejectChannel = useRejectChannel();
+    const suspendChannel = useSuspendChannel();
 
-    useEffect(() => {
-        fetchChannels();
-    }, []);
+    const loading = pendingLoading || allLoading;
 
-    const fetchChannels = async () => {
-        try {
-            setLoading(true);
-            const [pendingRes, allRes] = await Promise.all([
-                api.get('/channels/admin/pending'),
-                api.get('/channels/admin/all'),
-            ]);
-            setPendingChannels(pendingRes.data || []);
-            setAllChannels(allRes.data || []);
-        } catch (err) {
-            console.error('Failed to fetch channels:', err);
-        } finally {
-            setLoading(false);
-        }
+    const handleApprove = (id) => {
+        approveChannel.mutate(id, { onError: () => alert('فشل في الموافقة') });
     };
 
-    const approveChannel = async (id) => {
-        try {
-            await api.post(`/channels/admin/${id}/approve`);
-            fetchChannels();
-        } catch (err) {
-            alert('فشل في الموافقة');
-        }
+    const handleReject = (id) => {
+        rejectChannel.mutate(id, { onError: () => alert('فشل في الرفض') });
     };
 
-    const rejectChannel = async (id) => {
-        try {
-            await api.post(`/channels/admin/${id}/reject`);
-            fetchChannels();
-        } catch (err) {
-            alert('فشل في الرفض');
-        }
-    };
-
-    const suspendChannel = async (id) => {
-        try {
-            await api.post(`/channels/admin/${id}/suspend`);
-            fetchChannels();
-        } catch (err) {
-            alert('فشل في التعليق');
-        }
+    const handleSuspend = (id) => {
+        suspendChannel.mutate(id, { onError: () => alert('فشل في التعليق') });
     };
 
     if (loading) {
@@ -100,8 +74,8 @@ function AdminChannels() {
                                     <p className="text-sm text-text-muted">@{channel.slug}</p>
                                 </div>
                                 <div className="flex gap-2">
-                                    <Button size="sm" onClick={() => approveChannel(channel.id)} icon={<Check size={14} />}>موافقة</Button>
-                                    <Button variant="danger" size="sm" onClick={() => rejectChannel(channel.id)} icon={<X size={14} />}>رفض</Button>
+                                    <Button size="sm" onClick={() => handleApprove(channel.id)} icon={<Check size={14} />}>موافقة</Button>
+                                    <Button variant="danger" size="sm" onClick={() => handleReject(channel.id)} icon={<X size={14} />}>رفض</Button>
                                 </div>
                             </div>
                         ))}
@@ -120,7 +94,7 @@ function AdminChannels() {
                             </div>
                             <Badge variant={STATUS_VARIANT[channel.status]}>{STATUS_LABEL[channel.status]}</Badge>
                             {channel.status === 'ACTIVE' && (
-                                <Button size="sm" onClick={() => suspendChannel(channel.id)} icon={<Pause size={14} />} className="!bg-gold hover:!bg-gold">
+                                <Button size="sm" onClick={() => handleSuspend(channel.id)} icon={<Pause size={14} />} className="!bg-gold hover:!bg-gold">
                                     تعليق
                                 </Button>
                             )}

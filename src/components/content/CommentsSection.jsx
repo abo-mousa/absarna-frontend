@@ -1,74 +1,55 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CornerUpLeft } from 'lucide-react';
-import api from '@/lib/api/client';
 import { useAuth } from '../../contexts/AuthContext';
 import { EmailVerificationNotice } from '../auth';
+import { useComments, useCreateComment, useReplyComment } from '../../hooks/useComments';
 
 function CommentsSection({ type, id }) {
     const { token, user } = useAuth();
-    const [comments, setComments] = useState([]);
+    const { data: comments = [], isLoading } = useComments(type, id);
+    const createComment = useCreateComment(type, id);
+    const replyComment = useReplyComment(type, id);
     const [newComment, setNewComment] = useState('');
-    const [loading, setLoading] = useState(true);
-    const [submitting, setSubmitting] = useState(false);
     const [replyingTo, setReplyingTo] = useState(null);
     const [replyContent, setReplyContent] = useState('');
     const [needsVerification, setNeedsVerification] = useState(false);
 
-    useEffect(() => {
-        fetchComments();
-    }, [type, id]);
-
-    const fetchComments = async () => {
-        try {
-            setLoading(true);
-            const res = await api.get(`/${type}s/${id}/comments`);
-            setComments(res.data || []);
-        } catch (err) {
-            console.error('Failed to fetch comments:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
         if (!newComment.trim()) return;
 
-        try {
-            setSubmitting(true);
-            setNeedsVerification(false);
-            await api.post(`/${type}s/${id}/comments`, { content: newComment.trim() });
-            setNewComment('');
-            fetchComments();
-        } catch (err) {
-            if (err.response?.data?.emailVerificationRequired) {
-                setNeedsVerification(true);
-            } else {
-                alert('فشل في إرسال التعليق');
-            }
-        } finally {
-            setSubmitting(false);
-        }
+        setNeedsVerification(false);
+        createComment.mutate(newComment.trim(), {
+            onSuccess: () => setNewComment(''),
+            onError: (err) => {
+                if (err.response?.data?.emailVerificationRequired) {
+                    setNeedsVerification(true);
+                } else {
+                    alert('فشل في إرسال التعليق');
+                }
+            },
+        });
     };
 
-    const handleReplySubmit = async (e, parentId) => {
+    const handleReplySubmit = (e, parentId) => {
         e.preventDefault();
         if (!replyContent.trim()) return;
 
-        try {
-            setNeedsVerification(false);
-            await api.post(`/comments/${parentId}/reply`, { content: replyContent.trim() });
-            setReplyContent('');
-            setReplyingTo(null);
-            fetchComments();
-        } catch (err) {
-            if (err.response?.data?.emailVerificationRequired) {
-                setNeedsVerification(true);
-            } else {
-                alert('فشل في إرسال الرد');
-            }
-        }
+        setNeedsVerification(false);
+        replyComment.mutate({ parentId, content: replyContent.trim() }, {
+            onSuccess: () => {
+                setReplyContent('');
+                setReplyingTo(null);
+            },
+            onError: (err) => {
+                if (err.response?.data?.emailVerificationRequired) {
+                    setNeedsVerification(true);
+                } else {
+                    alert('فشل في إرسال الرد');
+                }
+            },
+        });
     };
 
     const formatDate = (dateStr) => {
@@ -102,10 +83,10 @@ function CommentsSection({ type, id }) {
                     />
                     <button
                         type="submit"
-                        disabled={submitting}
+                        disabled={createComment.isPending}
                         className="px-5 py-2.5 bg-primary text-white rounded-md font-semibold hover:bg-primary-dark transition-colors disabled:opacity-60"
                     >
-                        {submitting ? 'جاري الإرسال...' : 'إرسال التعليق'}
+                        {createComment.isPending ? 'جاري الإرسال...' : 'إرسال التعليق'}
                     </button>
                 </form>
             ) : (
@@ -114,7 +95,7 @@ function CommentsSection({ type, id }) {
                 </div>
             )}
 
-            {loading ? (
+            {isLoading ? (
                 <p className="text-text-muted">جاري التحميل...</p>
             ) : comments.length === 0 ? (
                 <p className="text-text-muted text-center py-5">لا توجد تعليقات بعد — كن أول من يعلق!</p>

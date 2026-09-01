@@ -1,3 +1,6 @@
+import { useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
+
 function Input({
                    label,
                    value,
@@ -12,9 +15,13 @@ function Input({
                    className = '',
                    ...rest
                }) {
+    const [showPassword, setShowPassword] = useState(false);
+    const isPassword = type === 'password';
+    const inputType = isPassword && showPassword ? 'text' : type;
+
     const baseClass = `w-full px-3.5 py-2.5 rounded-md border border-border bg-surface text-[0.95rem]
         outline-none transition-colors focus:border-primary resize-${textarea ? 'y' : 'none'}
-        disabled:bg-surface-hover disabled:cursor-not-allowed ${className}`;
+        disabled:bg-surface-hover disabled:cursor-not-allowed ${isPassword ? 'pr-10' : ''} ${className}`;
 
     return (
         <div>
@@ -37,6 +44,29 @@ function Input({
                     className={baseClass}
                     {...rest}
                 />
+            ) : isPassword ? (
+                <div className="relative">
+                    <input
+                        type={inputType}
+                        value={value}
+                        onChange={onChange}
+                        placeholder={placeholder}
+                        required={required}
+                        disabled={disabled}
+                        dir={dir}
+                        className={baseClass}
+                        {...rest}
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        tabIndex={-1}
+                        aria-label={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+                        className="absolute inset-y-0 right-2.5 flex items-center text-text-muted hover:text-text-secondary"
+                    >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                </div>
             ) : (
                 <input
                     type={type}

@@ -43,15 +43,22 @@ function Login() {
                         dir="ltr"
                     />
 
-                    <Input
-                        label="كلمة المرور"
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        placeholder="••••••••"
-                        dir="ltr"
-                    />
+                    <div>
+                        <Input
+                            label="كلمة المرور"
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                            placeholder="••••••••"
+                            dir="ltr"
+                        />
+                        <div className="text-left mt-1.5">
+                            <Link to="/forgot-password" className="text-sm text-primary font-semibold">
+                                نسيت كلمة المرور؟
+                            </Link>
+                        </div>
+                    </div>
 
                     {error && (
                         <p className="text-red-600 text-sm bg-red-100 p-2.5 rounded-md">{error}</p>

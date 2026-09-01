@@ -5,6 +5,14 @@ import api from '@/lib/api/client';
 import { useAuth } from '../contexts/AuthContext';
 import Navbar from '../components/layout/Navbar';
 import { Spinner, Input, Button } from '../components/ui';
+import {
+    useChannel,
+    useUpdateChannel,
+    useChannelContentList,
+    useCreateChannelContent,
+    useToggleContentVisibility,
+    useDeleteContent,
+} from '../hooks/useChannels';
 
 const TABS = [
     { id: 'overview', label: 'نظرة عامة', icon: Settings },
@@ -71,14 +79,29 @@ function ChannelManage() {
     const { slug } = useParams();
     const navigate = useNavigate();
     const { user, loading: authLoading } = useAuth();
-    const [channel, setChannel] = useState(null);
-    const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('overview');
     const [message, setMessage] = useState('');
-    const [error, setError] = useState('');
+
+    const { data: channel, isLoading: channelLoading, isError: channelError, error: channelFetchError } = useChannel(slug, !authLoading);
 
     const [form, setForm] = useState({ name: '', description: '', primaryColor: '#0D6B4D', logoUrl: '', bannerUrl: '' });
     const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+        if (channel) {
+            setForm({
+                name: channel.name || '',
+                description: channel.description || '',
+                primaryColor: channel.primaryColor || '#0D6B4D',
+                logoUrl: channel.logoUrl || '',
+                bannerUrl: channel.bannerUrl || '',
+            });
+        }
+    }, [channel]);
+
+    useEffect(() => {
+        if (!authLoading && !user) navigate('/');
+    }, [authLoading, user, navigate]);
 
     const [videoForm, setVideoForm] = useState({
         title: '', description: '', sourceType: 'LOCAL', sourceUrl: '',
@@ -99,96 +122,50 @@ function ChannelManage() {
 
     const [postForm, setPostForm] = useState({ content: '', publishDate: '' });
 
-    const [videoList, setVideoList] = useState([]);
-    const [bookList, setBookList] = useState([]);
-    const [articleList, setArticleList] = useState([]);
-    const [postList, setPostList] = useState([]);
-    const [listLoading, setListLoading] = useState(false);
+    const { data: videoList = [], isLoading: videoListLoading } = useChannelContentList(slug, 'videos', activeTab === 'videos');
+    const { data: bookList = [], isLoading: bookListLoading } = useChannelContentList(slug, 'books', activeTab === 'books');
+    const { data: articleList = [], isLoading: articleListLoading } = useChannelContentList(slug, 'articles', activeTab === 'articles');
+    const { data: postList = [], isLoading: postListLoading } = useChannelContentList(slug, 'posts', activeTab === 'posts');
 
-    const LIST_SETTERS = { videos: setVideoList, books: setBookList, articles: setArticleList, posts: setPostList };
-
-    useEffect(() => {
-        if (!authLoading) fetchChannel();
-    }, [slug, authLoading]);
-
-    useEffect(() => {
-        if (!authLoading && !user) navigate('/');
-    }, [authLoading, user, navigate]);
-
-    useEffect(() => {
-        if (channel && LIST_SETTERS[activeTab]) fetchList(activeTab);
-    }, [activeTab, channel]);
-
-    const fetchChannel = async () => {
-        try {
-            setLoading(true);
-            setError('');
-            const res = await api.get(`/channels/${slug}`);
-
-            if (!res.data) {
-                setError('القناة غير موجودة');
-                return;
-            }
-
-            setChannel(res.data);
-            setForm({
-                name: res.data.name || '',
-                description: res.data.description || '',
-                primaryColor: res.data.primaryColor || '#0D6B4D',
-                logoUrl: res.data.logoUrl || '',
-                bannerUrl: res.data.bannerUrl || '',
-            });
-        } catch (err) {
-            console.error('Failed to fetch channel:', err);
-            setError(err.response?.status === 404 ? 'القناة غير موجودة' : 'فشل في تحميل القناة');
-        } finally {
-            setLoading(false);
-        }
-    };
+    const updateChannel = useUpdateChannel(slug, channel?.id);
+    const createVideo = useCreateChannelContent(slug, 'videos');
+    const createBook = useCreateChannelContent(slug, 'books');
+    const createArticle = useCreateChannelContent(slug, 'articles');
+    const createPost = useCreateChannelContent(slug, 'posts');
+    const toggleVideoVisibility = useToggleContentVisibility(slug, 'videos');
+    const toggleBookVisibility = useToggleContentVisibility(slug, 'books');
+    const toggleArticleVisibility = useToggleContentVisibility(slug, 'articles');
+    const togglePostVisibility = useToggleContentVisibility(slug, 'posts');
+    const deleteVideo = useDeleteContent(slug, 'videos');
+    const deleteBook = useDeleteContent(slug, 'books');
+    const deleteArticle = useDeleteContent(slug, 'articles');
+    const deletePost = useDeleteContent(slug, 'posts');
 
     const showMessage = (msg) => {
         setMessage(msg);
         setTimeout(() => setMessage(''), 3000);
     };
 
-    const fetchList = async (type) => {
-        try {
-            setListLoading(true);
-            const res = await api.get(`/channels/${slug}/content/${type}`);
-            LIST_SETTERS[type](res.data || []);
-        } catch (err) {
-            console.error(`Failed to fetch ${type}:`, err);
-        } finally {
-            setListLoading(false);
-        }
-    };
-
-    const toggleVisibility = async (type, item) => {
-        try {
-            await api.patch(`/channels/${slug}/content/${type}/${item.id}/visibility`, { visible: !item.visible });
-            fetchList(type);
-        } catch (err) {
-            showMessage('error:فشل في تحديث الظهور');
-        }
-    };
-
-    const deleteItem = async (type, item) => {
+    const deleteItem = (mutation, item) => {
         const label = item.title || (item.content ? `${item.content.substring(0, 40)}...` : '');
         if (!window.confirm(`هل تريد حذف "${label}"؟`)) return;
-        try {
-            await api.delete(`/channels/${slug}/content/${type}/${item.id}`);
-            showMessage('success:تم الحذف');
-            fetchList(type);
-        } catch (err) {
-            showMessage('error:فشل في الحذف');
-        }
+        mutation.mutate(item, {
+            onSuccess: () => showMessage('success:تم الحذف'),
+            onError: () => showMessage('error:فشل في الحذف'),
+        });
+    };
+
+    const toggleVisibility = (mutation, item) => {
+        mutation.mutate(item, {
+            onError: () => showMessage('error:فشل في تحديث الظهور'),
+        });
     };
 
     const handleSave = async (e) => {
         e.preventDefault();
         setSaving(true);
         try {
-            await api.put(`/channels/${channel.id}`, form);
+            await updateChannel.mutateAsync(form);
             showMessage('success:تم حفظ التغييرات');
         } catch (err) {
             showMessage('error:فشل في الحفظ');
@@ -239,10 +216,9 @@ function ChannelManage() {
     const handleVideoSubmit = async (e) => {
         e.preventDefault();
         try {
-            await api.post(`/channels/${slug}/content/videos`, { ...videoForm, channelId: channel.id, speaker: channel.name });
+            await createVideo.mutateAsync({ ...videoForm, channelId: channel.id, speaker: channel.name });
             setVideoForm({ title: '', description: '', sourceType: 'LOCAL', sourceUrl: '', category: '', series: '', speaker: '', publishDate: '', isFeatured: false });
             showMessage('success:تم نشر الفيديو');
-            fetchList('videos');
         } catch (err) {
             showMessage(`error:فشل في نشر الفيديو: ${err.response?.data?.message || err.message}`);
         }
@@ -285,10 +261,9 @@ function ChannelManage() {
     const handleBookSubmit = async (e) => {
         e.preventDefault();
         try {
-            await api.post(`/channels/${slug}/content/books`, { ...bookForm, channelId: channel.id });
+            await createBook.mutateAsync({ ...bookForm, channelId: channel.id });
             setBookForm({ title: '', description: '', pdfUrl: '', previewImageUrl: '', category: '', publishDate: '', pages: '', isFeatured: false });
             showMessage('success:تم نشر الكتاب');
-            fetchList('books');
         } catch (err) {
             showMessage(`error:فشل في نشر الكتاب: ${err.response?.data?.message || err.message}`);
         }
@@ -297,10 +272,9 @@ function ChannelManage() {
     const handleArticleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await api.post(`/channels/${slug}/content/articles`, { ...articleForm, channelId: channel.id });
+            await createArticle.mutateAsync({ ...articleForm, channelId: channel.id });
             setArticleForm({ title: '', content: '', category: '', publishDate: '', isFeatured: false });
             showMessage('success:تم نشر المقال');
-            fetchList('articles');
         } catch (err) {
             showMessage(`error:فشل في نشر المقال: ${err.response?.data?.message || err.message}`);
         }
@@ -309,16 +283,15 @@ function ChannelManage() {
     const handlePostSubmit = async (e) => {
         e.preventDefault();
         try {
-            await api.post(`/channels/${slug}/content/posts`, { ...postForm, channelId: channel.id });
+            await createPost.mutateAsync({ ...postForm, channelId: channel.id });
             setPostForm({ content: '', publishDate: '' });
             showMessage('success:تم نشر التحديث');
-            fetchList('posts');
         } catch (err) {
             showMessage(`error:فشل في نشر التحديث: ${err.response?.data?.message || err.message}`);
         }
     };
 
-    if (authLoading || loading) {
+    if (authLoading || channelLoading) {
         return (
             <div dir="rtl" className="min-h-screen bg-bg">
                 <Navbar />
@@ -327,8 +300,11 @@ function ChannelManage() {
         );
     }
 
-    if (error || !channel) {
-        return <ErrorScreen emoji="🔍" title="القناة غير موجودة" description={error || 'لم نتمكن من العثور على هذه القناة'} onBack={() => navigate('/')} />;
+    if (channelError || !channel) {
+        const description = channelFetchError?.response?.status === 404
+            ? 'القناة غير موجودة'
+            : 'لم نتمكن من العثور على هذه القناة';
+        return <ErrorScreen emoji="🔍" title="القناة غير موجودة" description={description} onBack={() => navigate('/')} />;
     }
 
     const isOwner = user && channel.ownerUserId === user.id;
@@ -421,9 +397,9 @@ function ChannelManage() {
                             <h3 className="text-lg font-bold mb-3">فيديوهاتي ({videoList.length})</h3>
                             <ContentManageList
                                 items={videoList}
-                                loading={listLoading}
-                                onToggleVisibility={(item) => toggleVisibility('videos', item)}
-                                onDelete={(item) => deleteItem('videos', item)}
+                                loading={videoListLoading}
+                                onToggleVisibility={(item) => toggleVisibility(toggleVideoVisibility, item)}
+                                onDelete={(item) => deleteItem(deleteVideo, item)}
                             />
                         </div>
                     </div>
@@ -455,9 +431,9 @@ function ChannelManage() {
                             <h3 className="text-lg font-bold mb-3">كتبي ({bookList.length})</h3>
                             <ContentManageList
                                 items={bookList}
-                                loading={listLoading}
-                                onToggleVisibility={(item) => toggleVisibility('books', item)}
-                                onDelete={(item) => deleteItem('books', item)}
+                                loading={bookListLoading}
+                                onToggleVisibility={(item) => toggleVisibility(toggleBookVisibility, item)}
+                                onDelete={(item) => deleteItem(deleteBook, item)}
                             />
                         </div>
                     </div>
@@ -483,9 +459,9 @@ function ChannelManage() {
                             <h3 className="text-lg font-bold mb-3">مقالاتي ({articleList.length})</h3>
                             <ContentManageList
                                 items={articleList}
-                                loading={listLoading}
-                                onToggleVisibility={(item) => toggleVisibility('articles', item)}
-                                onDelete={(item) => deleteItem('articles', item)}
+                                loading={articleListLoading}
+                                onToggleVisibility={(item) => toggleVisibility(toggleArticleVisibility, item)}
+                                onDelete={(item) => deleteItem(deleteArticle, item)}
                             />
                         </div>
                     </div>
@@ -518,10 +494,10 @@ function ChannelManage() {
                             <h3 className="text-lg font-bold mb-3">منشوراتي ({postList.length})</h3>
                             <ContentManageList
                                 items={postList}
-                                loading={listLoading}
+                                loading={postListLoading}
                                 getLabel={(item) => item.content?.length > 60 ? `${item.content.substring(0, 60)}...` : item.content}
-                                onToggleVisibility={(item) => toggleVisibility('posts', item)}
-                                onDelete={(item) => deleteItem('posts', item)}
+                                onToggleVisibility={(item) => toggleVisibility(togglePostVisibility, item)}
+                                onDelete={(item) => deleteItem(deletePost, item)}
                             />
                         </div>
                     </div>

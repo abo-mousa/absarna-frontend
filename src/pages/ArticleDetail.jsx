@@ -1,35 +1,15 @@
-import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowRight, Type, Clock, Calendar } from 'lucide-react';
-import api from '@/lib/api/client';
 import Navbar from '../components/layout/Navbar';
 import { Spinner } from '../components/ui';
 import { CommentsSection } from '../components/content';
+import { useArticle } from '../hooks/useArticles';
 
 function ArticleDetail() {
     const { id } = useParams();
-    const [article, setArticle] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
+    const { data: article, isLoading, isError } = useArticle(id);
 
-    useEffect(() => {
-        fetchArticle();
-    }, [id]);
-
-    const fetchArticle = async () => {
-        try {
-            setLoading(true);
-            const res = await api.get(`/articles/${id}`);
-            setArticle(res.data);
-        } catch (err) {
-            console.error('Failed to fetch article:', err);
-            setError('فشل في تحميل المقال');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    if (loading) {
+    if (isLoading) {
         return (
             <div dir="rtl" className="min-h-screen bg-bg">
                 <Navbar />
@@ -38,12 +18,12 @@ function ArticleDetail() {
         );
     }
 
-    if (error || !article) {
+    if (isError || !article) {
         return (
             <div dir="rtl" className="min-h-screen bg-bg">
                 <Navbar />
                 <div className="text-center py-16 px-5">
-                    <p className="text-red-600 text-lg mb-2">{error || 'المقال غير موجود'}</p>
+                    <p className="text-red-600 text-lg mb-2">فشل في تحميل المقال</p>
                     <Link to="/articles" className="text-primary font-semibold">العودة للمقالات</Link>
                 </div>
             </div>

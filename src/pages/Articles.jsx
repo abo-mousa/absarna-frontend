@@ -1,35 +1,17 @@
-import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Type, Clock, Calendar } from 'lucide-react';
-import api from '@/lib/api/client';
 import PageShell from '../components/layout/PageShell';
 import { Spinner, EmptyState } from '../components/ui';
+import { useArticles } from '../hooks/useArticles';
 
 function Articles() {
-    const [articles, setArticles] = useState([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        fetchArticles();
-    }, []);
-
-    const fetchArticles = async () => {
-        try {
-            setLoading(true);
-            const res = await api.get('/articles');
-            setArticles(res.data?.content || res.data || []);
-        } catch (err) {
-            console.error('Failed to fetch articles:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
+    const { data: articles = [], isLoading } = useArticles();
 
     return (
         <PageShell sidebar={false} contentClassName="max-w-reading mx-auto px-4 sm:px-6 py-8">
             <h1 className="text-2xl font-bold mb-6">المقالات</h1>
 
-            {loading ? (
+            {isLoading ? (
                 <Spinner />
             ) : articles.length === 0 ? (
                 <EmptyState icon="📝" title="لا توجد مقالات" />

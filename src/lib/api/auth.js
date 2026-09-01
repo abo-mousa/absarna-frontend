@@ -13,3 +13,11 @@ export const updateProfile = (profile) => api.put('/user/profile', profile);
 export const verifyEmail = (token) => api.post('/auth/verify-email', { token });
 
 export const resendVerification = () => api.post('/auth/resend-verification');
+
+export const forgotPassword = (email) => api.post('/auth/forgot-password', { email });
+
+export const resetPassword = (token, newPassword) =>
+    api.post('/auth/reset-password', { token, newPassword });
+
+export const changePassword = (currentPassword, newPassword) =>
+    api.post('/user/change-password', { currentPassword, newPassword });

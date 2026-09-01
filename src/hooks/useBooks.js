@@ -26,6 +26,36 @@ export const useBook = (id) => {
     });
 };
 
+// Caller's own saved reading position for one book — {} when nothing saved yet.
+export const useBookReadProgress = (id, enabled = true) => {
+    return useQuery({
+        queryKey: ['book-read-progress', id],
+        queryFn: async () => {
+            const res = await api.get(`/books/${id}/read`);
+            return res.data?.currentPage || null;
+        },
+        enabled: enabled && !!id,
+        staleTime: 60 * 1000,
+    });
+};
+
+// Best-effort write on every page turn — updates the cached page optimistically (matching the
+// previous local-state behavior of never blocking the reader on the network) and never rolls
+// back on failure, since a dropped progress write shouldn't visibly disrupt reading.
+export const useSaveReadProgress = (id) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (currentPage) => {
+            await api.post(`/books/${id}/read`, { currentPage });
+            return currentPage;
+        },
+        onMutate: (currentPage) => {
+            queryClient.setQueryData(['book-read-progress', id], currentPage);
+        },
+    });
+};
+
 // Create book
 export const useCreateBook = () => {
     const queryClient = useQueryClient();
