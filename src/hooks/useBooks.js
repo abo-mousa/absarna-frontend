@@ -1,15 +1,17 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api/client';
 
-// Fetch all books (cached for 5 minutes)
-export const useBooks = (category = '') => {
-    return useQuery({
-        queryKey: ['books', category],
-        queryFn: async () => {
-            const url = category ? `/books?category=${encodeURIComponent(category)}` : '/books';
-            const res = await api.get(url);
+// "Load more" pagination, same accumulating-pages shape as useInfiniteContents/
+// useChannelContents — GET /api/books used to return the whole table in one unpaginated
+// response.
+export const useBooks = (size = 12) => {
+    return useInfiniteQuery({
+        queryKey: ['books', size],
+        queryFn: async ({ pageParam = 0 }) => {
+            const res = await api.get(`/books?page=${pageParam}&size=${size}`);
             return res.data;
         },
+        getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.currentPage + 1 : undefined),
         staleTime: 5 * 60 * 1000,
     });
 };

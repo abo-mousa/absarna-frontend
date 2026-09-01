@@ -15,12 +15,18 @@ const SORTS = [
 
 function Articles() {
     usePageMeta({ title: 'المقالات', description: 'مقالات إسلامية على منارة' });
-    const { data: articles = [], isLoading } = useArticles();
+    const {
+        data,
+        isLoading,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+    } = useArticles(PAGE_SIZE);
+    const articles = useMemo(() => data?.pages.flatMap((page) => page.content) || [], [data]);
 
     const [search, setSearch] = useState('');
     const [category, setCategory] = useState('');
     const [sortBy, setSortBy] = useState('newest');
-    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
     const categories = useMemo(
         () => [...new Set(articles.map((a) => a.category).filter(Boolean))],
@@ -41,8 +47,6 @@ function Articles() {
         return result;
     }, [articles, category, search, sortBy]);
 
-    const visible = filtered.slice(0, visibleCount);
-
     return (
         <PageShell sidebar={false} contentClassName="max-w-reading mx-auto px-4 sm:px-6 py-8">
             <h1 className="text-2xl font-bold mb-6">المقالات</h1>
@@ -53,14 +57,14 @@ function Articles() {
                         <Input
                             placeholder="ابحث عن مقال..."
                             value={search}
-                            onChange={(e) => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE); }}
+                            onChange={(e) => setSearch(e.target.value)}
                         />
                     </div>
 
                     {categories.length > 0 && (
                         <select
                             value={category}
-                            onChange={(e) => { setCategory(e.target.value); setVisibleCount(PAGE_SIZE); }}
+                            onChange={(e) => setCategory(e.target.value)}
                             className="px-3.5 py-2.5 rounded-md border border-border bg-surface text-sm"
                         >
                             <option value="">كل التصنيفات</option>
@@ -86,7 +90,7 @@ function Articles() {
                 emptyDescription={articles.length === 0 ? undefined : 'جرّب كلمة بحث أو تصنيفاً آخر'}
             >
                 <div className="grid gap-4">
-                    {visible.map((article) => (
+                    {filtered.map((article) => (
                         <Link
                             key={article.id}
                             to={`/articles/${article.id}`}
@@ -113,13 +117,14 @@ function Articles() {
                     ))}
                 </div>
 
-                {visibleCount < filtered.length && (
+                {hasNextPage && (
                     <div className="text-center mt-6">
                         <button
-                            onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
-                            className="px-8 py-2.5 bg-primary text-white rounded-md font-semibold"
+                            onClick={() => fetchNextPage()}
+                            disabled={isFetchingNextPage}
+                            className="px-8 py-2.5 bg-primary text-white rounded-md font-semibold disabled:opacity-60"
                         >
-                            تحميل المزيد
+                            {isFetchingNextPage ? 'جاري التحميل...' : 'تحميل المزيد'}
                         </button>
                     </div>
                 )}

@@ -35,9 +35,33 @@ function ChannelPage() {
     } = useChannelContents(slug, 24, !!channel);
     const videos = videoPages?.pages.flatMap((page) => page.content) || [];
     const videoCount = videoPages?.pages[0]?.totalItems ?? videos.length;
-    const { data: books = [] } = useChannelBooks(slug, !!channel);
-    const { data: articles = [] } = useChannelArticles(slug, !!channel);
-    const { data: posts = [] } = useChannelPosts(slug, !!channel);
+
+    const {
+        data: bookPages,
+        fetchNextPage: fetchNextBooksPage,
+        hasNextPage: hasNextBooksPage,
+        isFetchingNextPage: isFetchingNextBooksPage,
+    } = useChannelBooks(slug, 24, !!channel);
+    const books = bookPages?.pages.flatMap((page) => page.content) || [];
+    const bookCount = bookPages?.pages[0]?.totalItems ?? books.length;
+
+    const {
+        data: articlePages,
+        fetchNextPage: fetchNextArticlesPage,
+        hasNextPage: hasNextArticlesPage,
+        isFetchingNextPage: isFetchingNextArticlesPage,
+    } = useChannelArticles(slug, 24, !!channel);
+    const articles = articlePages?.pages.flatMap((page) => page.content) || [];
+    const articleCount = articlePages?.pages[0]?.totalItems ?? articles.length;
+
+    const {
+        data: postPages,
+        fetchNextPage: fetchNextPostsPage,
+        hasNextPage: hasNextPostsPage,
+        isFetchingNextPage: isFetchingNextPostsPage,
+    } = useChannelPosts(slug, 24, !!channel);
+    const posts = postPages?.pages.flatMap((page) => page.content) || [];
+    const postCount = postPages?.pages[0]?.totalItems ?? posts.length;
     const { data: subscriptionStatus } = useSubscriptionStatus(channel?.id, !!token && !!channel);
     const toggleSubscription = useToggleSubscription(channel?.id);
 
@@ -62,9 +86,9 @@ function ChannelPage() {
 
     const tabs = [
         { id: 'videos', label: 'فيديوهات', icon: Video, count: videoCount },
-        { id: 'books', label: 'كتب', icon: BookOpen, count: books.length },
-        { id: 'articles', label: 'مقالات', icon: FileText, count: articles.length },
-        { id: 'posts', label: 'منشورات', icon: MessageSquare, count: posts.length },
+        { id: 'books', label: 'كتب', icon: BookOpen, count: bookCount },
+        { id: 'articles', label: 'مقالات', icon: FileText, count: articleCount },
+        { id: 'posts', label: 'منشورات', icon: MessageSquare, count: postCount },
     ];
 
     if (channelLoading || !channel) {
@@ -179,6 +203,18 @@ function ChannelPage() {
                             <BookCard key={book.id} book={book} />
                         ))}
                     </div>
+
+                    {hasNextBooksPage && (
+                        <div className="text-center mt-6">
+                            <button
+                                onClick={() => fetchNextBooksPage()}
+                                disabled={isFetchingNextBooksPage}
+                                className="px-8 py-2.5 bg-primary text-white rounded-md font-semibold disabled:opacity-60"
+                            >
+                                {isFetchingNextBooksPage ? 'جاري التحميل...' : 'تحميل المزيد'}
+                            </button>
+                        </div>
+                    )}
                 </QueryState>
             )}
 
@@ -189,6 +225,18 @@ function ChannelPage() {
                             <ArticleCard key={article.id} article={article} />
                         ))}
                     </div>
+
+                    {hasNextArticlesPage && (
+                        <div className="text-center mt-6">
+                            <button
+                                onClick={() => fetchNextArticlesPage()}
+                                disabled={isFetchingNextArticlesPage}
+                                className="px-8 py-2.5 bg-primary text-white rounded-md font-semibold disabled:opacity-60"
+                            >
+                                {isFetchingNextArticlesPage ? 'جاري التحميل...' : 'تحميل المزيد'}
+                            </button>
+                        </div>
+                    )}
                 </QueryState>
             )}
 
@@ -199,6 +247,18 @@ function ChannelPage() {
                             <PostCard key={post.id} post={post} />
                         ))}
                     </div>
+
+                    {hasNextPostsPage && (
+                        <div className="text-center mt-6">
+                            <button
+                                onClick={() => fetchNextPostsPage()}
+                                disabled={isFetchingNextPostsPage}
+                                className="px-8 py-2.5 bg-primary text-white rounded-md font-semibold disabled:opacity-60"
+                            >
+                                {isFetchingNextPostsPage ? 'جاري التحميل...' : 'تحميل المزيد'}
+                            </button>
+                        </div>
+                    )}
                 </QueryState>
             )}
         </PageShell>

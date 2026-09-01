@@ -18,12 +18,18 @@ function Books() {
     usePageMeta({ title: 'المكتبة', description: 'مكتبة الكتب الإسلامية على منارة' });
     const { token } = useAuth();
     const readingProgress = useReadingProgressMap(!!token);
-    const { data: books = [], isLoading } = useBooks();
+    const {
+        data,
+        isLoading,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+    } = useBooks(PAGE_SIZE);
+    const books = useMemo(() => data?.pages.flatMap((page) => page.content) || [], [data]);
 
     const [search, setSearch] = useState('');
     const [category, setCategory] = useState('');
     const [sortBy, setSortBy] = useState('newest');
-    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
     const categories = useMemo(
         () => [...new Set(books.map((b) => b.category).filter(Boolean))],
@@ -44,8 +50,6 @@ function Books() {
         return result;
     }, [books, category, search, sortBy]);
 
-    const visible = filtered.slice(0, visibleCount);
-
     return (
         <PageShell sidebar={false} contentClassName="max-w-[1100px] mx-auto px-4 sm:px-6 py-8">
             <h1 className="text-2xl font-bold mb-6">المكتبة</h1>
@@ -56,14 +60,14 @@ function Books() {
                         <Input
                             placeholder="ابحث عن كتاب..."
                             value={search}
-                            onChange={(e) => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE); }}
+                            onChange={(e) => setSearch(e.target.value)}
                         />
                     </div>
 
                     {categories.length > 0 && (
                         <select
                             value={category}
-                            onChange={(e) => { setCategory(e.target.value); setVisibleCount(PAGE_SIZE); }}
+                            onChange={(e) => setCategory(e.target.value)}
                             className="px-3.5 py-2.5 rounded-md border border-border bg-surface text-sm"
                         >
                             <option value="">كل التصنيفات</option>
@@ -89,18 +93,19 @@ function Books() {
                 emptyDescription={books.length === 0 ? 'سيتم إضافة الكتب قريباً' : 'جرّب كلمة بحث أو تصنيفاً آخر'}
             >
                 <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-5">
-                    {visible.map((book) => (
+                    {filtered.map((book) => (
                         <BookCard key={book.id} book={book} currentPage={readingProgress[book.id]} />
                     ))}
                 </div>
 
-                {visibleCount < filtered.length && (
+                {hasNextPage && (
                     <div className="text-center mt-6">
                         <button
-                            onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
-                            className="px-8 py-2.5 bg-primary text-white rounded-md font-semibold"
+                            onClick={() => fetchNextPage()}
+                            disabled={isFetchingNextPage}
+                            className="px-8 py-2.5 bg-primary text-white rounded-md font-semibold disabled:opacity-60"
                         >
-                            تحميل المزيد
+                            {isFetchingNextPage ? 'جاري التحميل...' : 'تحميل المزيد'}
                         </button>
                     </div>
                 )}

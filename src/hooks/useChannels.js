@@ -38,35 +38,40 @@ export const useChannelContents = (slug, size = 24, enabled = true) => {
     });
 };
 
-export const useChannelBooks = (slug, enabled = true) => {
-    return useQuery({
-        queryKey: ['channel-books', slug],
-        queryFn: async () => {
-            const res = await api.get(`/channels/${slug}/books`);
-            return res.data?.content || res.data || [];
+// "Load more" pagination, same accumulating-pages shape as useChannelContents — a channel's
+// books tab used to fetch its whole (unpaginated) list in one response.
+export const useChannelBooks = (slug, size = 50, enabled = true) => {
+    return useInfiniteQuery({
+        queryKey: ['channel-books', slug, size],
+        queryFn: async ({ pageParam = 0 }) => {
+            const res = await api.get(`/channels/${slug}/books?page=${pageParam}&size=${size}`);
+            return res.data;
         },
+        getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.currentPage + 1 : undefined),
         enabled: enabled && !!slug,
     });
 };
 
-export const useChannelArticles = (slug, enabled = true) => {
-    return useQuery({
-        queryKey: ['channel-articles', slug],
-        queryFn: async () => {
-            const res = await api.get(`/channels/${slug}/articles`);
-            return res.data?.content || res.data || [];
+export const useChannelArticles = (slug, size = 50, enabled = true) => {
+    return useInfiniteQuery({
+        queryKey: ['channel-articles', slug, size],
+        queryFn: async ({ pageParam = 0 }) => {
+            const res = await api.get(`/channels/${slug}/articles?page=${pageParam}&size=${size}`);
+            return res.data;
         },
+        getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.currentPage + 1 : undefined),
         enabled: enabled && !!slug,
     });
 };
 
-export const useChannelPosts = (slug, enabled = true) => {
-    return useQuery({
-        queryKey: ['channel-posts', slug],
-        queryFn: async () => {
-            const res = await api.get(`/channels/${slug}/posts`);
-            return res.data?.content || res.data || [];
+export const useChannelPosts = (slug, size = 50, enabled = true) => {
+    return useInfiniteQuery({
+        queryKey: ['channel-posts', slug, size],
+        queryFn: async ({ pageParam = 0 }) => {
+            const res = await api.get(`/channels/${slug}/posts?page=${pageParam}&size=${size}`);
+            return res.data;
         },
+        getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.currentPage + 1 : undefined),
         enabled: enabled && !!slug,
     });
 };
