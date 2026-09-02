@@ -5,6 +5,7 @@ import { QueryState } from '../components/ui';
 import { VideoCard } from '../components/content';
 import { useSeriesDetail } from '../hooks/useSeries';
 import { useWatchProgressMap } from '../hooks/useVideos';
+import { useChannel } from '../hooks/useChannels';
 import { useAuth } from '../contexts/AuthContext';
 import { usePageMeta } from '../hooks/usePageMeta';
 
@@ -17,6 +18,13 @@ function SeriesDetail() {
 
     const series = data?.series;
     const content = data?.content || [];
+    // A series always belongs to exactly one channel — that's its natural "back to" destination
+    // (there's no standalone /series listing page the way Articles/Books have one), so this goes
+    // back to the owning channel rather than always to Home regardless of where the visitor came
+    // from (a channel's "سلاسل" tab, or a video's "part X of Y" block).
+    const { data: channel } = useChannel(series?.channelId, !!series?.channelId);
+    const backTo = channel ? `/channel/${channel.slug}` : '/';
+    const backLabel = channel ? `العودة إلى قناة ${channel.name}` : 'العودة للرئيسية';
 
     usePageMeta({ title: series?.title, description: series?.description?.slice(0, 200) });
 
@@ -36,6 +44,12 @@ function SeriesDetail() {
     return (
         <PageShell sidebar={false}>
             <div className="max-w-[1100px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
+                <div className="mb-4">
+                    <Link to={backTo} className="flex items-center gap-1.5 text-primary font-semibold w-fit">
+                        <ArrowRight size={16} /> {backLabel}
+                    </Link>
+                </div>
+
                 <div className="bg-surface p-5 sm:p-6 rounded-lg border border-border-light mb-6">
                     <div className="flex items-center gap-2 text-primary font-semibold text-sm mb-2">
                         <Tv size={16} /> سلسلة
@@ -65,8 +79,8 @@ function SeriesDetail() {
                 </QueryState>
 
                 <div className="mt-6">
-                    <Link to="/" className="flex items-center gap-1.5 text-primary font-semibold w-fit">
-                        <ArrowRight size={16} /> العودة للرئيسية
+                    <Link to={backTo} className="flex items-center gap-1.5 text-primary font-semibold w-fit">
+                        <ArrowRight size={16} /> {backLabel}
                     </Link>
                 </div>
             </div>
