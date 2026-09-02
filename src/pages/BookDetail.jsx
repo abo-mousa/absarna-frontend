@@ -6,7 +6,7 @@ import { flushOnUnload } from '@/lib/api/beacon';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
 import { QueryState } from '../components/ui';
-import { CommentsSection } from '../components/content';
+import { CommentsSection, BookmarkButton } from '../components/content';
 import { useBook, useBookReadProgress, useSaveReadProgress } from '../hooks/useBooks';
 import { usePageMeta } from '../hooks/usePageMeta';
 
@@ -92,7 +92,10 @@ function BookDetail() {
                             </span>
                         )}
 
-                        <h1 className="text-xl sm:text-2xl font-bold mb-3">{book.title}</h1>
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                            <h1 className="text-xl sm:text-2xl font-bold">{book.title}</h1>
+                            <BookmarkButton type="book" id={book.id} className="flex-shrink-0 mt-1" />
+                        </div>
 
                         <div className="flex gap-4 flex-wrap text-sm text-text-secondary mb-4">
                             {book.pages && <span>{book.pages} صفحة</span>}

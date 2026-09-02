@@ -17,12 +17,14 @@ const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const UserProfile = lazy(() => import('./pages/UserProfile'));
 const Subscriptions = lazy(() => import('./pages/Subscriptions'));
 const History = lazy(() => import('./pages/History'));
+const Bookmarks = lazy(() => import('./pages/Bookmarks'));
 const SearchPage = lazy(() => import('./pages/SearchPage'));
 const Books = lazy(() => import('./pages/Books'));
 const BookDetail = lazy(() => import('./pages/BookDetail'));
 const Articles = lazy(() => import('./pages/Articles'));
 const ArticleDetail = lazy(() => import('./pages/ArticleDetail'));
 const Biography = lazy(() => import('./pages/Biography'));
+const SeriesDetail = lazy(() => import('./pages/SeriesDetail'));
 const VideoDetail = lazy(() => import('./pages/VideoDetail'));
 const AdminChannels = lazy(() => import('./pages/AdminChannels'));
 const CreateChannel = lazy(() => import('./pages/CreateChannel'));
@@ -92,6 +94,7 @@ function AppRoutes() {
                 <Route path="/articles" element={<Articles />} />
                 <Route path="/articles/:id" element={<ArticleDetail />} />
                 <Route path="/biography" element={<Biography />} />
+                <Route path="/series/:id" element={<SeriesDetail />} />
 
                 {/* Auth */}
                 <Route path="/login" element={<Login />} />
@@ -109,6 +112,9 @@ function AppRoutes() {
                 } />
                 <Route path="/history" element={
                     <ProtectedRoute><History /></ProtectedRoute>
+                } />
+                <Route path="/bookmarks" element={
+                    <ProtectedRoute><Bookmarks /></ProtectedRoute>
                 } />
                 <Route path="/admin" element={
                     <ProtectedRoute adminOnly><Admin /></ProtectedRoute>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Upload, Video, BookOpen, FileText, MessageSquare, Settings, Save, ArrowRight, Eye, EyeOff, Trash2 } from 'lucide-react';
+import { Upload, Video, BookOpen, FileText, MessageSquare, Settings, Save, ArrowRight, Eye, EyeOff, Trash2, Tv, Plus, Pin, PinOff } from 'lucide-react';
 import api from '@/lib/api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -16,6 +16,8 @@ import {
     useToggleContentVisibility,
     useDeleteContent,
 } from '../hooks/useChannels';
+import { useChannelSeriesManage, useCreateSeries, useDeleteSeries } from '../hooks/useSeries';
+import { useChannelComments, useModerateComment } from '../hooks/useCommentModeration';
 
 const TABS = [
     { id: 'overview', label: 'نظرة عامة', icon: Settings },
@@ -23,6 +25,8 @@ const TABS = [
     { id: 'books', label: 'الكتب', icon: BookOpen },
     { id: 'articles', label: 'المقالات', icon: FileText },
     { id: 'posts', label: 'المنشورات', icon: MessageSquare },
+    { id: 'series', label: 'السلاسل', icon: Tv },
+    { id: 'comments', label: 'التعليقات', icon: MessageSquare },
 ];
 
 function ErrorScreen({ emoji, title, description, onBack }) {
@@ -110,7 +114,7 @@ function ChannelManage() {
 
     const [videoForm, setVideoForm] = useState({
         title: '', description: '', sourceType: 'LOCAL', sourceUrl: '',
-        category: '', series: '', publishDate: '',
+        category: '', seriesId: '', orderInSeries: '', publishDate: '',
     });
     const [videoUploading, setVideoUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
@@ -131,6 +135,10 @@ function ChannelManage() {
     const { data: bookList = [], isLoading: bookListLoading } = useChannelContentList(slug, 'books', activeTab === 'books');
     const { data: articleList = [], isLoading: articleListLoading } = useChannelContentList(slug, 'articles', activeTab === 'articles');
     const { data: postList = [], isLoading: postListLoading } = useChannelContentList(slug, 'posts', activeTab === 'posts');
+    const { data: seriesList = [], isLoading: seriesListLoading } = useChannelSeriesManage(
+        slug, activeTab === 'videos' || activeTab === 'series'
+    );
+    const { data: channelComments = [], isLoading: commentsLoading } = useChannelComments(slug, activeTab === 'comments');
 
     const updateChannel = useUpdateChannel(slug, channel?.id);
     const createVideo = useCreateChannelContent(slug, 'videos');
@@ -145,6 +153,11 @@ function ChannelManage() {
     const deleteBook = useDeleteContent(slug, 'books');
     const deleteArticle = useDeleteContent(slug, 'articles');
     const deletePost = useDeleteContent(slug, 'posts');
+    const createSeries = useCreateSeries(slug);
+    const deleteSeriesMutation = useDeleteSeries(slug);
+    const moderateComment = useModerateComment(slug);
+
+    const [seriesForm, setSeriesForm] = useState({ title: '', description: '' });
 
     // Call sites below still pass the original "type:text" string shape — kept as-is to
     // avoid touching all twelve call sites; this just forwards to the shared toast now
@@ -230,11 +243,39 @@ function ChannelManage() {
         e.preventDefault();
         try {
             await createVideo.mutateAsync({ ...stripEmpty(videoForm), channelId: channel.id, speaker: channel.name });
-            setVideoForm({ title: '', description: '', sourceType: 'LOCAL', sourceUrl: '', category: '', series: '', publishDate: '' });
+            setVideoForm({
+                title: '', description: '', sourceType: 'LOCAL', sourceUrl: '',
+                category: '', seriesId: '', orderInSeries: '', publishDate: '',
+            });
             showMessage('success:تم نشر الفيديو');
         } catch (err) {
             showMessage(`error:فشل في نشر الفيديو: ${err.response?.data?.message || err.message}`);
         }
+    };
+
+    const handleSeriesSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            await createSeries.mutateAsync(stripEmpty(seriesForm));
+            setSeriesForm({ title: '', description: '' });
+            showMessage('success:تم إنشاء السلسلة');
+        } catch (err) {
+            showMessage(`error:فشل في إنشاء السلسلة: ${err.response?.data?.message || err.message}`);
+        }
+    };
+
+    const handleDeleteSeries = (series) => {
+        if (!window.confirm(`هل تريد حذف سلسلة "${series.title}"؟ ستبقى الفيديوهات نفسها، فقط تُفصل عن السلسلة.`)) return;
+        deleteSeriesMutation.mutate(series.id, {
+            onSuccess: () => showMessage('success:تم حذف السلسلة'),
+            onError: () => showMessage('error:فشل في حذف السلسلة'),
+        });
+    };
+
+    const handleModerate = (comment, changes) => {
+        moderateComment.mutate({ id: comment.id, ...changes }, {
+            onError: () => showMessage('error:فشل في تحديث التعليق'),
+        });
     };
 
     const handleBookFileSelect = async (e) => {
@@ -386,9 +427,31 @@ function ChannelManage() {
                             <Input label="العنوان" value={videoForm.title} onChange={(e) => setVideoForm({ ...videoForm, title: e.target.value })} required />
                             <Input label="الوصف" textarea rows={3} value={videoForm.description} onChange={(e) => setVideoForm({ ...videoForm, description: e.target.value })} />
 
+                            <Input label="التصنيف" value={videoForm.category} onChange={(e) => setVideoForm({ ...videoForm, category: e.target.value })} />
+
                             <div className="grid grid-cols-1 xs:grid-cols-2 gap-4">
-                                <Input label="التصنيف" value={videoForm.category} onChange={(e) => setVideoForm({ ...videoForm, category: e.target.value })} />
-                                <Input label="السلسلة" value={videoForm.series} onChange={(e) => setVideoForm({ ...videoForm, series: e.target.value })} />
+                                <div>
+                                    <label className="block mb-1.5 font-semibold text-sm text-text-secondary">السلسلة (اختياري)</label>
+                                    <select
+                                        value={videoForm.seriesId}
+                                        onChange={(e) => setVideoForm({ ...videoForm, seriesId: e.target.value })}
+                                        className="w-full px-3.5 py-2.5 rounded-md border border-border outline-none focus:border-primary transition-colors bg-surface"
+                                    >
+                                        <option value="">بدون سلسلة</option>
+                                        {seriesList.map((s) => (
+                                            <option key={s.id} value={s.id}>{s.title}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                {videoForm.seriesId && (
+                                    <Input
+                                        label="الترتيب داخل السلسلة"
+                                        type="number"
+                                        min="1"
+                                        value={videoForm.orderInSeries}
+                                        onChange={(e) => setVideoForm({ ...videoForm, orderInSeries: e.target.value })}
+                                    />
+                                )}
                             </div>
                             <Input label="تاريخ النشر" type="date" value={videoForm.publishDate} onChange={(e) => setVideoForm({ ...videoForm, publishDate: e.target.value })} />
 
@@ -502,6 +565,114 @@ function ChannelManage() {
                                 onDelete={(item) => deleteItem(deletePost, item)}
                             />
                         </div>
+                    </div>
+                )}
+
+                {activeTab === 'series' && (
+                    <div className="grid gap-6">
+                        <form onSubmit={handleSeriesSubmit} className={formCardClass}>
+                            <h3 className="text-lg font-bold">سلسلة جديدة</h3>
+                            <Input
+                                label="عنوان السلسلة"
+                                value={seriesForm.title}
+                                onChange={(e) => setSeriesForm({ ...seriesForm, title: e.target.value })}
+                                required
+                            />
+                            <Input
+                                label="الوصف"
+                                textarea
+                                rows={2}
+                                value={seriesForm.description}
+                                onChange={(e) => setSeriesForm({ ...seriesForm, description: e.target.value })}
+                            />
+                            <Button type="submit" icon={<Plus size={18} />}>إنشاء السلسلة</Button>
+                        </form>
+
+                        <div>
+                            <h3 className="text-lg font-bold mb-3">سلاسلي ({seriesList.length})</h3>
+                            {seriesListLoading ? (
+                                <p className="text-sm text-text-muted py-2">جاري التحميل...</p>
+                            ) : seriesList.length === 0 ? (
+                                <p className="text-sm text-text-muted py-4">لا توجد سلاسل بعد</p>
+                            ) : (
+                                <div className="grid gap-2">
+                                    {seriesList.map((s) => (
+                                        <div
+                                            key={s.id}
+                                            className="flex items-center justify-between gap-3 p-3 rounded-md border border-border-light bg-surface"
+                                        >
+                                            <div className="min-w-0">
+                                                <strong className="block truncate">{s.title}</strong>
+                                                <span className="text-xs text-text-muted">{s.contentCount ?? 0} فيديو</span>
+                                            </div>
+                                            <button
+                                                onClick={() => handleDeleteSeries(s)}
+                                                title="حذف السلسلة"
+                                                aria-label="حذف السلسلة"
+                                                className="p-2 rounded-md text-red-600 hover:bg-red-50 transition-colors flex-shrink-0"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'comments' && (
+                    <div>
+                        <h3 className="text-lg font-bold mb-3">تعليقات على محتوى قناتك ({channelComments.length})</h3>
+                        {commentsLoading ? (
+                            <p className="text-sm text-text-muted py-2">جاري التحميل...</p>
+                        ) : channelComments.length === 0 ? (
+                            <p className="text-sm text-text-muted py-4">لا توجد تعليقات بعد</p>
+                        ) : (
+                            <div className="grid gap-2">
+                                {channelComments.map((comment) => (
+                                    <div
+                                        key={comment.id}
+                                        className={`p-3 rounded-md border border-border-light ${
+                                            comment.hidden ? 'bg-surface-hover' : 'bg-surface'
+                                        }`}
+                                    >
+                                        <div className="flex items-start justify-between gap-3 mb-1.5">
+                                            <div className="min-w-0">
+                                                <strong className="text-primary text-sm">{comment.userName}</strong>
+                                                {comment.hidden && (
+                                                    <span className="mr-2 text-xs text-text-muted">(مخفي)</span>
+                                                )}
+                                                {comment.pinned && (
+                                                    <span className="mr-2 text-xs text-gold">مثبّت</span>
+                                                )}
+                                            </div>
+                                            <div className="flex gap-1 flex-shrink-0">
+                                                <button
+                                                    onClick={() => handleModerate(comment, { pinned: !comment.pinned })}
+                                                    title={comment.pinned ? 'إلغاء التثبيت' : 'تثبيت'}
+                                                    aria-label={comment.pinned ? 'إلغاء التثبيت' : 'تثبيت'}
+                                                    className="p-1.5 rounded-md text-text-secondary hover:bg-surface-hover hover:text-primary transition-colors"
+                                                >
+                                                    {comment.pinned ? <PinOff size={14} /> : <Pin size={14} />}
+                                                </button>
+                                                <button
+                                                    onClick={() => handleModerate(comment, { hidden: !comment.hidden })}
+                                                    title={comment.hidden ? 'إظهار' : 'إخفاء'}
+                                                    aria-label={comment.hidden ? 'إظهار' : 'إخفاء'}
+                                                    className="p-1.5 rounded-md text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors"
+                                                >
+                                                    {comment.hidden ? <Eye size={14} /> : <EyeOff size={14} />}
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <p className={`text-sm ${comment.hidden ? 'text-text-muted' : 'text-text-secondary'}`}>
+                                            {comment.content}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

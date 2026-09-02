@@ -2,9 +2,10 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowRight, Clock, Folder, Tv, User, Calendar } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
 import { QueryState, Avatar } from '../components/ui';
-import { VideoPlayer, CommentsSection, VideoCard } from '../components/content';
+import { VideoPlayer, CommentsSection, VideoCard, BookmarkButton } from '../components/content';
 import { useContent, useRelatedContent, useWatchProgressMap } from '../hooks/useContents';
 import { useChannel } from '../hooks/useChannels';
+import { useSeriesDetail } from '../hooks/useSeries';
 import { useAuth } from '../contexts/AuthContext';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { resolveMediaUrl, youtubeThumbnail } from '@/lib/media';
@@ -15,6 +16,7 @@ function VideoDetail() {
     const { data: video, isLoading, isError } = useContent(id);
     const { data: related = [] } = useRelatedContent(id);
     const { data: channel } = useChannel(video?.channelId, !!video?.channelId);
+    const { data: seriesData } = useSeriesDetail(video?.seriesId, !!video?.seriesId);
     const { token } = useAuth();
     const watchProgress = useWatchProgressMap(!!token);
 
@@ -43,7 +45,6 @@ function VideoDetail() {
     const meta = [
         video.duration && { icon: Clock, text: video.duration },
         video.category && { icon: Folder, text: video.category },
-        video.series && { icon: Tv, text: video.series },
         video.speaker && { icon: User, text: video.speaker },
         video.publishDate && { icon: Calendar, text: video.publishDate },
     ].filter(Boolean);
@@ -56,7 +57,19 @@ function VideoDetail() {
                 </div>
 
                 <div className="bg-surface p-5 sm:p-6 rounded-lg border border-border-light mb-6">
-                    <h1 className="text-xl sm:text-2xl font-bold mb-3">{video.title}</h1>
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                        <h1 className="text-xl sm:text-2xl font-bold">{video.title}</h1>
+                        <BookmarkButton type="video" id={video.id} className="flex-shrink-0 mt-1" />
+                    </div>
+
+                    {seriesData?.series && (
+                        <Link
+                            to={`/series/${seriesData.series.id}`}
+                            className="flex items-center gap-1.5 w-fit mb-3 text-sm text-primary font-semibold hover:underline"
+                        >
+                            <Tv size={14} /> جزء من سلسلة: {seriesData.series.title}
+                        </Link>
+                    )}
 
                     {channel && (
                         <Link

@@ -20,10 +20,14 @@ src/
   components/
     ui/         Button, Card, Input, Modal, Badge, Grid, Spinner, EmptyState, QueryState, Avatar — barrel export via index.js
     layout/     Navbar, SideBar, PageShell, SearchBar — barrel export via index.js
-    content/    VideoCard, BookCard, ArticleCard, VideoPlayer, CommentsSection — barrel export via index.js
+    content/    VideoCard, BookCard, ArticleCard, VideoPlayer, CommentsSection, BookmarkButton —
+                barrel export via index.js
     auth/       EmailVerificationNotice — barrel export via index.js, see "Email verification" below
-  pages/        route-level components, each lazy-loaded per route in App.jsx (see "Build / verify" below)
+  pages/        route-level components, each lazy-loaded per route in App.jsx (see "Build / verify" below).
+                Bookmarks.jsx (`/bookmarks`) and SeriesDetail.jsx (`/series/:id`) are the newest —
+                see "Bookmarks" and "Series" below.
   hooks/        useContents, useBooks, useArticles, useBiography, useChannels, useComments,
+                useBookmarks, useSeries, useCommentModeration,
                 useAdminData, useParallelUpload, useDebouncedValue, useOutsideClick —
                 see "Data fetching: React Query" below and "Search suggestions" below
   contexts/     AuthContext
@@ -110,6 +114,26 @@ Redesigned from a static label-above-the-box to a Material/Hetzner-style floatin
 - Sidebar has a distinct "قنواتي" (My Channels) section (via `GET /channels/my-channels`) separate from subscriptions and "اكتشف قنوات أخرى" (discover) — each list excludes items already shown in the others.
 - `Home.jsx` fetches the viewer's owned channels and builds a `channelId → slug` map. `VideoCard` receives `isOwner`/`onToggleVisibility`/`onDelete` props and, when the viewer owns that video's channel, shows an eye/eye-off and delete icon directly on the thumbnail (always-visible, not hover-gated — this was raised as a possible UX concern but the hover-only change was never actually implemented, so don't assume it happened). A hidden video also shows a "مخفي" badge.
 - `ChannelManage.jsx`'s Videos/Books/Articles tabs each show a full list of that channel's content (visible + hidden) with the same toggle/delete controls — this is the one place all three content types get this treatment; Books/Articles don't have it on their own public listing pages the way Home does for videos.
+
+## Bookmarks (`hooks/useBookmarks.js`, `components/content/BookmarkButton.jsx`, `pages/Bookmarks.jsx`)
+
+"Read/watch later", backed by the backend's `content/bookmark` package (see backend `CLAUDE.md`). `BookmarkButton` (barrel-exported from `components/content`) is a reusable toggle — `<BookmarkButton type="video"|"book"|"article" id={item.id} />` — dropped into `VideoDetail`/`BookDetail`/`ArticleDetail`'s header next to the title. Anonymous click routes to `/login` rather than silently no-op-ing (same as `ChannelPage`'s subscribe button already did) — bookmarking is exactly the kind of action worth prompting login for, and `useBookmarkStatus` stays `enabled: !!token` so a logged-out viewer never fires the per-item status request at all.
+
+- `useBookmarkStatus(type, id, enabled)` / `useToggleBookmark(type, id)` — per-item toggle state; `useBookmarks(enabled)` — the full list for the `/bookmarks` page (`Bookmarks.jsx`, protected route, linked from `SideBar`'s "المحفوظات" entry next to "سجل المشاهدة"), same bounded/non-paginated shape as `History.jsx`'s watch/reading tabs, three tabs (`VIDEO`/`BOOK`/`ARTICLE`) instead of two. `useClearBookmarks()` backs its "مسح الكل" button.
+- Each `BookmarkDTO` from the list endpoint carries exactly one of `content`/`book`/`article` populated (matching `itemType`) — `Bookmarks.jsx` filters the flat list per active tab and hands the right one straight to `VideoCard`/`BookCard`/`ArticleCard`, no reshaping needed.
+
+## Series (`hooks/useSeries.js`, `pages/SeriesDetail.jsx`)
+
+Backed by the backend's `content/series` package — see backend `CLAUDE.md` for the full model (a `Series` replaced `Content`'s old free-text `series` field; `ContentDTO.series` is gone, replaced by `seriesId`/`orderInSeries`). `SeriesDetail.jsx` (`/series/:id`, public) is the series' own page: title/description plus its videos in a `VideoCard` grid, same layout conventions as `VideoDetail`'s related-videos row. `VideoDetail.jsx` shows a "جزء من سلسلة: {title}" link (replacing the old plain-text `video.series` line, which would otherwise silently render nothing now that field doesn't exist) only when `video.seriesId` is set, fetched via a dedicated `useSeriesDetail(video.seriesId, enabled)` call rather than assuming the series title is already in hand. `ChannelPage.jsx` gained a "سلاسل" tab (`useChannelSeries(slug)`) listing the channel's series as link cards to `/series/{id}`, same tab-bar pattern as its other four tabs.
+
+- Owner management lives on `ChannelManage.jsx`'s new "السلاسل" tab (`useChannelSeriesManage`/`useCreateSeries`/`useDeleteSeries`): a create form (title/description) plus a list of the channel's series with a delete button — deleting only detaches its videos server-side (`ON DELETE SET NULL`), doesn't touch them, so no extra confirmation copy beyond the standard `window.confirm`.
+- The video upload form's old free-text "السلسلة" `Input` is now a `<select>` populated from `useChannelSeriesManage(slug, ...)` (bound to `videoForm.seriesId`) plus a conditional "الترتيب داخل السلسلة" number input (`videoForm.orderInSeries`, only shown once a series is picked) — sent through the same `stripEmpty` helper as every other form field here, unconverted (a `type="number"` input's `e.target.value` is still a string; this already worked for `bookForm.pages` the same way before this change, so no new coercion concern).
+
+## Comment moderation (`hooks/useCommentModeration.js`, `ChannelManage.jsx`'s "التعليقات" tab)
+
+Channel-owner hide/pin (not approve — see backend `CLAUDE.md`'s "Comment moderation" section for why), surfaced as a dedicated moderation dashboard rather than inline controls on `CommentsSection.jsx` — `CommentsSection` only ever shows non-hidden comments (that's the backend contract), so there'd be nothing to un-hide from inside it anyway; the owner needs the separate `GET /channels/{slug}/content/comments` listing (`useChannelComments`), which returns every comment on the channel's content regardless of state. `useModerateComment(slug)` wraps `PATCH /comments/{id}/moderate`. Pinned comments sorting first on the actual public `CommentsSection` needed no frontend change at all — that ordering comes from the backend query, for free.
+
+- Deliberately **not** wired into `CommentsSection.jsx` itself (no inline hide/pin icons next to a comment on `VideoDetail`/`BookDetail`/`ArticleDetail`) — would need each of those three pages to additionally fetch the content's owning channel just to compute `canManageChannel`, for a control that (for "hide") would immediately remove its own target from the list it's rendered in anyway. Revisit as a real feature (not a drive-by addition) if the dashboard-only flow turns out to be too indirect for actual channel owners.
 
 ## Watch/reading progress: reliability on refresh & tab-close (`lib/api/beacon.js`)
 
@@ -303,11 +327,12 @@ once that rewrite lands, and pair it with the identical duplication on the backe
 Matching the backend's list; these follow the "surface useful content, don't optimise for
 time-on-site" principle rather than fighting it.
 
-- **Bookmarks / "read later"** as an explicit, user-owned list — the honest alternative to
-  behavioural recommendation.
-- **Series navigation**: a lecture that knows it's part 3 of 12, with previous/next and a
-  progress indicator. This is the feature that turns the library into a course, and it's the
-  strongest argument for the non-addictive feed — people come back for a reason they chose.
+- **Series previous/next + progress indicator on `VideoDetail`.** Series browsing exists now
+  (see "Series" above — a series' own page, a link from a video that's part of one, a channel
+  tab), but a video that's part of a series doesn't yet say "part 3 of 12" or offer inline
+  previous/next controls on its own detail page. This is what would turn the library into an
+  actually-followable course, and it's the strongest argument for the non-addictive feed —
+  people come back for a reason they chose.
 - **A share sheet with proper link previews** (depends on the meta-tag work above) plus copy-
   link-at-timestamp for videos.
 - **Reader improvements on `PdfReader`**: text search inside the PDF, page-number jump,
@@ -320,5 +345,3 @@ time-on-site" principle rather than fighting it.
   last visit, which you can clear, instead of an implicit ranked feed.
 - **Dark mode.** The Tailwind theme is already fully tokenised; a `dark:` variant pass is
   mostly mechanical and it matters for long-form reading at night.
-- **Arabic search normalization on the client's typeahead display** (alef/hamza forms,
-  diacritics) to match the backend fix.

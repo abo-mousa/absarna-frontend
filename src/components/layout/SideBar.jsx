@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Bell, History, Plus, Settings } from 'lucide-react';
+import { Home, Bell, History, Bookmark, Plus, Settings } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAllChannels, useSubscriptions, useMyChannels } from '../../hooks/useChannels';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
@@ -109,6 +109,13 @@ function SideBar({ currentChannel, open = false, onClose }) {
                         <Link to="/history" onClick={onClose} className={navLinkClass(isActive('/history'))}>
                             <History size={18} />
                             سجل المشاهدة
+                        </Link>
+                    )}
+
+                    {token && (
+                        <Link to="/bookmarks" onClick={onClose} className={navLinkClass(isActive('/bookmarks'))}>
+                            <Bookmark size={18} />
+                            المحفوظات
                         </Link>
                     )}
                 </div>

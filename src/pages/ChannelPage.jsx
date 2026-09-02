@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Bell, Check, Video, BookOpen, FileText, MessageSquare, Settings } from 'lucide-react';
+import { Bell, Check, Video, BookOpen, FileText, MessageSquare, Settings, Tv } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
 import { QueryState, Avatar } from '../components/ui';
@@ -18,6 +18,7 @@ import {
     useSubscriptionStatus,
     useToggleSubscription,
 } from '../hooks/useChannels';
+import { useChannelSeries } from '../hooks/useSeries';
 
 function ChannelPage() {
     const { slug } = useParams();
@@ -64,6 +65,7 @@ function ChannelPage() {
     const postCount = postPages?.pages[0]?.totalItems ?? posts.length;
     const { data: subscriptionStatus } = useSubscriptionStatus(channel?.id, !!token && !!channel);
     const toggleSubscription = useToggleSubscription(channel?.id);
+    const { data: series = [] } = useChannelSeries(slug, !!channel);
 
     const subscribed = subscriptionStatus?.subscribed || false;
     const subscriberCount = subscriptionStatus?.subscriberCount || 0;
@@ -89,6 +91,7 @@ function ChannelPage() {
         { id: 'books', label: 'كتب', icon: BookOpen, count: bookCount },
         { id: 'articles', label: 'مقالات', icon: FileText, count: articleCount },
         { id: 'posts', label: 'منشورات', icon: MessageSquare, count: postCount },
+        { id: 'series', label: 'سلاسل', icon: Tv, count: series.length },
     ];
 
     if (channelLoading || !channel) {
@@ -259,6 +262,29 @@ function ChannelPage() {
                             </button>
                         </div>
                     )}
+                </QueryState>
+            )}
+
+            {activeTab === 'series' && (
+                <QueryState isEmpty={series.length === 0} emptyTitle="لا توجد سلاسل بعد">
+                    <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-4">
+                        {series.map((s) => (
+                            <Link
+                                key={s.id}
+                                to={`/series/${s.id}`}
+                                className="block bg-surface rounded-lg p-5 border border-border-light shadow-sm hover:shadow-md transition-shadow"
+                            >
+                                <div className="flex items-center gap-2 text-primary font-semibold text-xs mb-2">
+                                    <Tv size={14} /> سلسلة
+                                </div>
+                                <h3 className="text-base font-semibold mb-2 leading-snug line-clamp-2">{s.title}</h3>
+                                {s.description && (
+                                    <p className="text-text-secondary text-sm leading-relaxed line-clamp-2 mb-2">{s.description}</p>
+                                )}
+                                <span className="text-xs text-text-muted">{s.contentCount ?? 0} فيديو</span>
+                            </Link>
+                        ))}
+                    </div>
                 </QueryState>
             )}
         </PageShell>
