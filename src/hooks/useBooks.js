@@ -55,6 +55,15 @@ export const useSaveReadProgress = (id) => {
         onMutate: (currentPage) => {
             queryClient.setQueryData(['book-read-progress', id], currentPage);
         },
+        onSuccess: () => {
+            // The optimistic setQueryData above only covers this one book's own resume position
+            // (used when reopening it) — it doesn't touch the separate ['reading-history'] query
+            // that backs the History page and BookCard's progress bar everywhere else, and the
+            // app-wide QueryClient has refetchOnMount disabled, so those would otherwise keep
+            // showing the pre-read snapshot until something else forced a refetch. Same fix as
+            // VideoPlayer's watch-progress reporting.
+            queryClient.invalidateQueries({ queryKey: ['reading-history'] });
+        },
     });
 };
 

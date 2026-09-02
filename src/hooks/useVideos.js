@@ -135,6 +135,15 @@ export const useWatchHistory = (enabled = true) => {
         },
         enabled,
         staleTime: 60 * 1000,
+        // Overrides the app-wide refetchOnMount: false (same reasoning as useMediaToken's own
+        // override) — VideoPlayer invalidates this query the moment it reports progress, but
+        // that almost never happens while History/Home/Bookmarks is the mounted page (you're on
+        // VideoDetail while watching), so the invalidation only marks the query stale for
+        // *next* mount rather than refetching it immediately. With refetchOnMount left at the
+        // app-wide false, React Query ignores that staleness on mount too (it only compares
+        // against staleTime, not the isInvalidated flag) and keeps serving the pre-watch
+        // snapshot — so a watch that just happened would never show up without a full reload.
+        refetchOnMount: true,
     });
 };
 
@@ -158,6 +167,9 @@ export const useReadingHistory = (enabled = true) => {
         },
         enabled,
         staleTime: 60 * 1000,
+        // Same refetchOnMount override as useWatchHistory above, for the same reason —
+        // useSaveReadProgress invalidates this on every successful page-turn write.
+        refetchOnMount: true,
     });
 };
 

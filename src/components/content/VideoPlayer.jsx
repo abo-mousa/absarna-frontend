@@ -1,4 +1,5 @@
-import { useEffect, useRef, useId, forwardRef, useImperativeHandle } from 'react';
+import { useCallback, useEffect, useRef, useId, forwardRef, useImperativeHandle } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { resolveMediaUrl, safeExternalUrl, extractYouTubeId } from '@/lib/media';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMediaToken } from '@/hooks/useMediaToken';
@@ -15,7 +16,27 @@ const PROGRESS_REPORT_INTERVAL_MS = 60000;
 // Below this, a play doesn't count as a "watch" for history purposes — otherwise clicking a
 // thumbnail by accident and backing out immediately would still create/bump a watch-history
 // row, pushing an actually-watched video out of the per-user cap.
+//
+// A flat 5s is only the right floor for long-form content. On a 13-second clip it silently
+// swallows the first 38% of the video, so watching a few seconds and navigating away recorded
+// nothing at all — which is what "the video is never added to my watch history" turned out to
+// be. The floor is therefore also capped at a fraction of the video's real duration whenever
+// the player knows it: unchanged (5s) for a 45-minute lecture, ~1.3s for a 13-second clip.
+// Nothing here autoplays — the viewer has to press play — so the accidental-watch case this
+// guards against is narrower than it looks, and a short clip needs a proportionally small floor.
 const MIN_WATCH_SECONDS = 5;
+const SHORT_VIDEO_WATCH_FRACTION = 0.1;
+const ABSOLUTE_MIN_WATCH_SECONDS = 1;
+
+// `durationSeconds` is whatever the player reports, which is NaN/0/Infinity for a source whose
+// metadata hasn't loaded (or a live stream) — anything non-finite falls back to the flat floor.
+const watchThreshold = (durationSeconds) => {
+    if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) return MIN_WATCH_SECONDS;
+    return Math.min(
+        MIN_WATCH_SECONDS,
+        Math.max(ABSOLUTE_MIN_WATCH_SECONDS, durationSeconds * SHORT_VIDEO_WATCH_FRACTION),
+    );
+};
 
 // Lazily injects the YouTube IFrame Player API script (once per page) so embedded YouTube
 // videos can report watch progress the same way native <video> elements do via onTimeUpdate —
@@ -46,12 +67,25 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
     // axios, which sends it as an Authorization header). It is NOT what goes in the media URL —
     // see useMediaToken.
     const { token } = useAuth();
+    const queryClient = useQueryClient();
 
     // Only a locally-hosted file that's currently hidden needs a token to fetch at all; a public
     // video, and anything hosted elsewhere, never does.
     const needsMediaToken = visible === false && (sourceType === 'LOCAL' || sourceType === 'STREAM');
     const { mediaToken, isLoading: mediaTokenLoading } = useMediaToken(needsMediaToken);
+    // Attached via the `setVideoEl` callback ref below rather than `ref={videoRef}`, and it
+    // deliberately ignores the null write: React nulls a `ref={...}` out during the same unmount
+    // pass that runs the flush effect's cleanup, so the element would already be gone by the time
+    // the final progress report tries to read its position. `currentTime` is still readable off
+    // the detached node itself, so holding onto it is what makes that last write possible.
     const videoRef = useRef(null);
+    // Stable identity so React doesn't detach/reattach it on every render (which, with the
+    // ignore-null rule, would be harmless but pointless churn).
+    const setVideoEl = useCallback((el) => {
+        if (el) videoRef.current = el;
+    }, []);
+    // The video's length once the player knows it — feeds watchThreshold above.
+    const durationRef = useRef(NaN);
     const lastReportedAtRef = useRef(0);
     // Mirrors token/videoId into refs so the unmount effect below always reports against
     // the latest values without re-subscribing (and re-flushing) on every render.
@@ -61,10 +95,21 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
     const reportProgress = (seconds, { token: authToken, videoId: authVideoId } = authRef.current) => {
         if (!authToken || !authVideoId) return;
         const progressSeconds = Math.floor(seconds);
-        if (progressSeconds < MIN_WATCH_SECONDS) return;
-        api.post(`/videos/${authVideoId}/watch`, { progressSeconds }).catch(() => {
-            // Best-effort: never let a failed watch-history write disrupt playback.
-        });
+        if (progressSeconds < watchThreshold(durationRef.current)) return;
+        api.post(`/videos/${authVideoId}/watch`, { progressSeconds })
+            .then(() => {
+                // This write goes straight through axios, bypassing React Query entirely, so
+                // nothing else marks the cached ['watch-history'] query stale — and the app-wide
+                // QueryClient has refetchOnMount disabled, so History/Home/Bookmarks would
+                // otherwise keep serving the pre-watch snapshot for up to its 60s staleTime (or
+                // until something else happens to refetch it) instead of reflecting a watch that
+                // just happened. Invalidating here is what makes a partial watch show up without
+                // needing a full page reload.
+                queryClient.invalidateQueries({ queryKey: ['watch-history'] });
+            })
+            .catch(() => {
+                // Best-effort: never let a failed watch-history write disrupt playback.
+            });
     };
 
     const handleTimeUpdate = (e) => {
@@ -82,6 +127,12 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
     // Flush the last-seen position on unmount — navigating away mid-playback doesn't
     // reliably fire onPause first. Covers in-app (SPA) navigation only: a real unmount never
     // happens on a hard refresh/tab-close, since the whole JS context is discarded first.
+    //
+    // Reading `videoRef.current` inside the cleanup is only safe because it's a callback ref
+    // that ignores React's null-out on unmount (see its definition above). Capturing the element
+    // when the effect is *set up* instead would look equivalent but isn't: this effect runs once,
+    // on first render, and the hidden-item path renders a placeholder rather than the <video>
+    // on that render while the media token loads — so it would capture `null` for good.
     useEffect(() => {
         return () => {
             const el = videoRef.current;
@@ -99,7 +150,7 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
             const el = videoRef.current;
             const { videoId } = authRef.current;
             const progressSeconds = el ? Math.floor(el.currentTime) : 0;
-            if (progressSeconds < MIN_WATCH_SECONDS || !videoId) return;
+            if (!videoId || progressSeconds < watchThreshold(durationRef.current)) return;
             flushOnUnload(`/videos/${videoId}/watch`, { progressSeconds });
         };
         window.addEventListener('pagehide', handlePageHide);
@@ -135,6 +186,9 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
                 playerVars: startTime > 0 ? { rel: 0, start: Math.floor(startTime) } : { rel: 0 },
                 events: {
                     onStateChange: (e) => {
+                        // Only known once the embed has actually loaded the video, so it's read
+                        // here rather than at construction time.
+                        durationRef.current = youtubePlayerRef.current?.getDuration?.() ?? NaN;
                         clearInterval(youtubeIntervalRef.current);
                         if (e.data === YT.PlayerState.PLAYING) {
                             youtubeIntervalRef.current = setInterval(() => {
@@ -166,7 +220,7 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
             const player = youtubePlayerRef.current;
             const { videoId } = authRef.current;
             const progressSeconds = player?.getCurrentTime ? Math.floor(player.getCurrentTime()) : 0;
-            if (progressSeconds < MIN_WATCH_SECONDS || !videoId) return;
+            if (!videoId || progressSeconds < watchThreshold(durationRef.current)) return;
             flushOnUnload(`/videos/${videoId}/watch`, { progressSeconds });
         };
         window.addEventListener('pagehide', handlePageHide);
@@ -176,6 +230,7 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
     // Seeking needs the element's duration/metadata loaded first — setting `currentTime` any
     // earlier is silently ignored by the browser.
     const handleLoadedMetadata = (e) => {
+        durationRef.current = e.currentTarget.duration;
         if (startTime > 0) e.currentTarget.currentTime = startTime;
     };
 
@@ -193,7 +248,7 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
 
         return (
             <video
-                ref={videoRef}
+                ref={setVideoEl}
                 controls
                 playsInline
                 preload="metadata"
@@ -215,7 +270,7 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
         }
         return (
             <video
-                ref={videoRef}
+                ref={setVideoEl}
                 controls
                 onLoadedMetadata={handleLoadedMetadata}
                 onTimeUpdate={handleTimeUpdate}
