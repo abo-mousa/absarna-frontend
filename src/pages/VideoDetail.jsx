@@ -70,6 +70,7 @@ function VideoDetail() {
                         sourceType={video.sourceType}
                         sourceUrl={video.sourceUrl}
                         title={video.title}
+                        visible={video.visible}
                         startTime={startTime}
                     />
                 </div>
