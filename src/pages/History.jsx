@@ -6,7 +6,7 @@ import api from '@/lib/api/client';
 import PageShell from '../components/layout/PageShell';
 import { QueryState } from '../components/ui';
 import { VideoCard, BookCard } from '../components/content';
-import { useWatchHistory, useReadingHistory } from '../hooks/useContents';
+import { useWatchHistory, useReadingHistory } from '../hooks/useVideos';
 import { useToast } from '../contexts/ToastContext';
 import { usePageMeta } from '../hooks/usePageMeta';
 
@@ -87,8 +87,8 @@ function History() {
                         ? history.map((entry) => (
                               <VideoCard
                                   key={entry.id}
-                                  video={entry.content}
-                                  onClick={() => navigate(`/video/${entry.contentId}`)}
+                                  video={entry.video}
+                                  onClick={() => navigate(`/video/${entry.videoId}`)}
                                   watchedSeconds={entry.progressSeconds}
                               />
                           ))

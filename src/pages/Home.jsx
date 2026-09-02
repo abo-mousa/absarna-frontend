@@ -5,7 +5,7 @@ import { useToast } from '../contexts/ToastContext';
 import PageShell from '../components/layout/PageShell';
 import { QueryState, Modal } from '../components/ui';
 import { VideoCard } from '../components/content';
-import { useInfiniteContents, useCategories, useFeed, useWatchProgressMap } from '../hooks/useContents';
+import { useInfiniteVideos, useCategories, useFeed, useWatchProgressMap } from '../hooks/useVideos';
 import { useMyChannels, useToggleVideoVisibilityByChannelId, useDeleteVideoByChannelId } from '../hooks/useChannels';
 
 function Home() {
@@ -36,7 +36,7 @@ function Home() {
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
-    } = useInfiniteContents('', selectedCategory, 12, !isDefaultView);
+    } = useInfiniteVideos('', selectedCategory, 12, !isDefaultView);
 
     const toggleVisibility = useToggleVideoVisibilityByChannelId();
     const deleteVideo = useDeleteVideoByChannelId();

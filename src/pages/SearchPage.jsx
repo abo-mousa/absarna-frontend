@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
 import { QueryState } from '../components/ui';
 import { VideoCard } from '../components/content';
-import { useInfiniteSearch, useWatchProgressMap } from '../hooks/useContents';
+import { useInfiniteSearch, useWatchProgressMap } from '../hooks/useVideos';
 import { usePageMeta } from '../hooks/usePageMeta';
 
 function SearchPage() {

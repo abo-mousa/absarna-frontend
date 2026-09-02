@@ -41,7 +41,7 @@ function loadYouTubeIframeApi() {
 // this timestamp") can read the playhead on demand without this component re-rendering on
 // every tick — the alternative (lifting currentTime into state) would fire a render several
 // times a second for something only ever read once, at share-click time.
-const VideoPlayer = forwardRef(function VideoPlayer({ contentId, sourceType, sourceUrl, title, visible, startTime = 0 }, ref) {
+const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourceUrl, title, visible, startTime = 0 }, ref) {
     // Session token: still the right thing for the watch-progress writes below (they go through
     // axios, which sends it as an Authorization header). It is NOT what goes in the media URL —
     // see useMediaToken.
@@ -53,16 +53,16 @@ const VideoPlayer = forwardRef(function VideoPlayer({ contentId, sourceType, sou
     const { mediaToken, isLoading: mediaTokenLoading } = useMediaToken(needsMediaToken);
     const videoRef = useRef(null);
     const lastReportedAtRef = useRef(0);
-    // Mirrors token/contentId into refs so the unmount effect below always reports against
+    // Mirrors token/videoId into refs so the unmount effect below always reports against
     // the latest values without re-subscribing (and re-flushing) on every render.
-    const authRef = useRef({ token, contentId });
-    authRef.current = { token, contentId };
+    const authRef = useRef({ token, videoId });
+    authRef.current = { token, videoId };
 
-    const reportProgress = (seconds, { token: authToken, contentId: authContentId } = authRef.current) => {
-        if (!authToken || !authContentId) return;
+    const reportProgress = (seconds, { token: authToken, videoId: authVideoId } = authRef.current) => {
+        if (!authToken || !authVideoId) return;
         const progressSeconds = Math.floor(seconds);
         if (progressSeconds < MIN_WATCH_SECONDS) return;
-        api.post(`/contents/${authContentId}/watch`, { progressSeconds }).catch(() => {
+        api.post(`/videos/${authVideoId}/watch`, { progressSeconds }).catch(() => {
             // Best-effort: never let a failed watch-history write disrupt playback.
         });
     };
@@ -97,10 +97,10 @@ const VideoPlayer = forwardRef(function VideoPlayer({ contentId, sourceType, sou
     useEffect(() => {
         const handlePageHide = () => {
             const el = videoRef.current;
-            const { contentId } = authRef.current;
+            const { videoId } = authRef.current;
             const progressSeconds = el ? Math.floor(el.currentTime) : 0;
-            if (progressSeconds < MIN_WATCH_SECONDS || !contentId) return;
-            flushOnUnload(`/contents/${contentId}/watch`, { progressSeconds });
+            if (progressSeconds < MIN_WATCH_SECONDS || !videoId) return;
+            flushOnUnload(`/videos/${videoId}/watch`, { progressSeconds });
         };
         window.addEventListener('pagehide', handlePageHide);
         return () => window.removeEventListener('pagehide', handlePageHide);
@@ -164,10 +164,10 @@ const VideoPlayer = forwardRef(function VideoPlayer({ contentId, sourceType, sou
         if (!isYouTube) return;
         const handlePageHide = () => {
             const player = youtubePlayerRef.current;
-            const { contentId } = authRef.current;
+            const { videoId } = authRef.current;
             const progressSeconds = player?.getCurrentTime ? Math.floor(player.getCurrentTime()) : 0;
-            if (progressSeconds < MIN_WATCH_SECONDS || !contentId) return;
-            flushOnUnload(`/contents/${contentId}/watch`, { progressSeconds });
+            if (progressSeconds < MIN_WATCH_SECONDS || !videoId) return;
+            flushOnUnload(`/videos/${videoId}/watch`, { progressSeconds });
         };
         window.addEventListener('pagehide', handlePageHide);
         return () => window.removeEventListener('pagehide', handlePageHide);

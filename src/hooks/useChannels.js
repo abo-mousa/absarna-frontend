@@ -5,7 +5,7 @@ import api from '@/lib/api/client';
 // shared by the owner-management mutations below so a publish/toggle/delete on
 // ChannelManage.jsx invalidates the same list ChannelPage.jsx's visitors see.
 const PUBLIC_LIST_KEY = {
-    videos: 'channel-contents',
+    videos: 'channel-videos',
     books: 'channel-books',
     articles: 'channel-articles',
     posts: 'channel-posts',
@@ -24,13 +24,13 @@ export const useChannel = (slug, enabled = true) => {
     });
 };
 
-// "Load more" pagination, same accumulating-pages shape as useInfiniteContents — a channel's
+// "Load more" pagination, same accumulating-pages shape as useInfiniteVideos — a channel's
 // video tab used to hard-cap at one 50-item page with no way to see older videos past that.
-export const useChannelContents = (slug, size = 24, enabled = true) => {
+export const useChannelVideos = (slug, size = 24, enabled = true) => {
     return useInfiniteQuery({
-        queryKey: ['channel-contents', slug, size],
+        queryKey: ['channel-videos', slug, size],
         queryFn: async ({ pageParam = 0 }) => {
-            const res = await api.get(`/channels/${slug}/contents?page=${pageParam}&size=${size}`);
+            const res = await api.get(`/channels/${slug}/videos?page=${pageParam}&size=${size}`);
             return res.data;
         },
         getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.currentPage + 1 : undefined),
@@ -38,7 +38,7 @@ export const useChannelContents = (slug, size = 24, enabled = true) => {
     });
 };
 
-// "Load more" pagination, same accumulating-pages shape as useChannelContents — a channel's
+// "Load more" pagination, same accumulating-pages shape as useChannelVideos — a channel's
 // books tab used to fetch its whole (unpaginated) list in one response.
 export const useChannelBooks = (slug, size = 50, enabled = true) => {
     return useInfiniteQuery({
@@ -194,7 +194,7 @@ const invalidateChannelContent = (queryClient, slug, type) => {
     if (publicKey) queryClient.invalidateQueries({ queryKey: [publicKey, slug] });
     if (type === 'videos') {
         queryClient.invalidateQueries({ queryKey: ['feed'] });
-        queryClient.invalidateQueries({ queryKey: ['contents'] });
+        queryClient.invalidateQueries({ queryKey: ['videos'] });
     }
 };
 

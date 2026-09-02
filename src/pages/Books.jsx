@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
 import { QueryState, Input } from '../components/ui';
 import { BookCard } from '../components/content';
-import { useReadingProgressMap } from '../hooks/useContents';
+import { useReadingProgressMap } from '../hooks/useVideos';
 import { useBooks } from '../hooks/useBooks';
 import { usePageMeta } from '../hooks/usePageMeta';
 

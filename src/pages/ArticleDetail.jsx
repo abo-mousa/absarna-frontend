@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { ArrowRight, Type, Clock, Calendar } from 'lucide-react';
+import { ArrowRight, Type, Clock, Calendar, Eye } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
 import { QueryState } from '../components/ui';
 import { CommentsSection, BookmarkButton, ShareButton } from '../components/content';
@@ -52,6 +52,14 @@ function ArticleDetail() {
                         {article.publishDate && (
                             <span className="flex items-center gap-1.5"><Calendar size={14} /> {article.publishDate}</span>
                         )}
+                        {article.originalPublishDate && article.originalPublishDate !== article.publishDate && (
+                            <span className="flex items-center gap-1.5">
+                                <Calendar size={14} /> تاريخ النشر الأصلي: {article.originalPublishDate}
+                            </span>
+                        )}
+                        <span className="flex items-center gap-1.5">
+                            <Eye size={14} /> {(article.viewCount ?? 0).toLocaleString('ar')} مشاهدة
+                        </span>
                     </div>
 
                     <div className="whitespace-pre-wrap leading-[2.2] text-[1.05rem] text-text-primary">

@@ -114,22 +114,22 @@ function ChannelManage() {
 
     const [videoForm, setVideoForm] = useState({
         title: '', description: '', sourceType: 'LOCAL', sourceUrl: '',
-        category: '', seriesId: '', orderInSeries: '', publishDate: '',
+        category: '', seriesId: '', orderInSeries: '', originalPublishDate: '',
     });
     const [videoUploading, setVideoUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
 
     const [bookForm, setBookForm] = useState({
         title: '', description: '', pdfUrl: '', previewImageUrl: '',
-        category: '', publishDate: '', pages: '',
+        category: '', originalPublishDate: '', pages: '',
     });
     const [bookUploading, setBookUploading] = useState(false);
 
     const [articleForm, setArticleForm] = useState({
-        title: '', content: '', category: '', publishDate: '',
+        title: '', content: '', category: '', originalPublishDate: '',
     });
 
-    const [postForm, setPostForm] = useState({ content: '', publishDate: '' });
+    const [postForm, setPostForm] = useState({ content: '' });
 
     const { data: videoList = [], isLoading: videoListLoading } = useChannelContentList(slug, 'videos', activeTab === 'videos');
     const { data: bookList = [], isLoading: bookListLoading } = useChannelContentList(slug, 'books', activeTab === 'books');
@@ -253,7 +253,7 @@ function ChannelManage() {
             await createVideo.mutateAsync({ ...stripEmpty(videoForm), channelId: channel.id, speaker: channel.name });
             setVideoForm({
                 title: '', description: '', sourceType: 'LOCAL', sourceUrl: '',
-                category: '', seriesId: '', orderInSeries: '', publishDate: '',
+                category: '', seriesId: '', orderInSeries: '', originalPublishDate: '',
             });
             showMessage('success:تم نشر الفيديو');
         } catch (err) {
@@ -324,7 +324,7 @@ function ChannelManage() {
         e.preventDefault();
         try {
             await createBook.mutateAsync({ ...stripEmpty(bookForm), channelId: channel.id });
-            setBookForm({ title: '', description: '', pdfUrl: '', previewImageUrl: '', category: '', publishDate: '', pages: '' });
+            setBookForm({ title: '', description: '', pdfUrl: '', previewImageUrl: '', category: '', originalPublishDate: '', pages: '' });
             showMessage('success:تم نشر الكتاب');
         } catch (err) {
             showMessage(`error:فشل في نشر الكتاب: ${err.response?.data?.message || err.message}`);
@@ -335,7 +335,7 @@ function ChannelManage() {
         e.preventDefault();
         try {
             await createArticle.mutateAsync({ ...stripEmpty(articleForm), channelId: channel.id });
-            setArticleForm({ title: '', content: '', category: '', publishDate: '' });
+            setArticleForm({ title: '', content: '', category: '', originalPublishDate: '' });
             showMessage('success:تم نشر المقال');
         } catch (err) {
             showMessage(`error:فشل في نشر المقال: ${err.response?.data?.message || err.message}`);
@@ -346,7 +346,7 @@ function ChannelManage() {
         e.preventDefault();
         try {
             await createPost.mutateAsync({ ...stripEmpty(postForm), channelId: channel.id });
-            setPostForm({ content: '', publishDate: '' });
+            setPostForm({ content: '' });
             showMessage('success:تم نشر التحديث');
         } catch (err) {
             showMessage(`error:فشل في نشر التحديث: ${err.response?.data?.message || err.message}`);
@@ -461,7 +461,7 @@ function ChannelManage() {
                                     />
                                 )}
                             </div>
-                            <Input label="تاريخ النشر" type="date" value={videoForm.publishDate} onChange={(e) => setVideoForm({ ...videoForm, publishDate: e.target.value })} />
+                            <Input label="تاريخ النشر الأصلي (اختياري)" type="date" value={videoForm.originalPublishDate} onChange={(e) => setVideoForm({ ...videoForm, originalPublishDate: e.target.value })} />
 
                             <Button type="submit" icon={<Upload size={18} />}>نشر الفيديو</Button>
                         </form>
@@ -496,6 +496,7 @@ function ChannelManage() {
                                 <Input label="التصنيف" value={bookForm.category} onChange={(e) => setBookForm({ ...bookForm, category: e.target.value })} />
                                 <Input label="عدد الصفحات" type="number" value={bookForm.pages} onChange={(e) => setBookForm({ ...bookForm, pages: e.target.value })} />
                             </div>
+                            <Input label="تاريخ النشر الأصلي (اختياري)" type="date" value={bookForm.originalPublishDate} onChange={(e) => setBookForm({ ...bookForm, originalPublishDate: e.target.value })} />
 
                             <Button type="submit">نشر الكتاب</Button>
                         </form>
@@ -522,7 +523,7 @@ function ChannelManage() {
 
                             <div className="grid grid-cols-1 xs:grid-cols-2 gap-4">
                                 <Input label="التصنيف" value={articleForm.category} onChange={(e) => setArticleForm({ ...articleForm, category: e.target.value })} />
-                                <Input label="تاريخ النشر" type="date" value={articleForm.publishDate} onChange={(e) => setArticleForm({ ...articleForm, publishDate: e.target.value })} />
+                                <Input label="تاريخ النشر الأصلي (اختياري)" type="date" value={articleForm.originalPublishDate} onChange={(e) => setArticleForm({ ...articleForm, originalPublishDate: e.target.value })} />
                             </div>
 
                             <Button type="submit">نشر المقال</Button>
@@ -552,12 +553,6 @@ function ChannelManage() {
                                 value={postForm.content}
                                 onChange={(e) => setPostForm({ ...postForm, content: e.target.value })}
                                 required
-                            />
-                            <Input
-                                label="تاريخ النشر"
-                                type="date"
-                                value={postForm.publishDate}
-                                onChange={(e) => setPostForm({ ...postForm, publishDate: e.target.value })}
                             />
 
                             <Button type="submit">نشر</Button>

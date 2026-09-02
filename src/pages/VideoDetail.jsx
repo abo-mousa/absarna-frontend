@@ -1,10 +1,10 @@
 import { useRef } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { ArrowRight, ChevronRight, ChevronLeft, Clock, Folder, Tv, User, Calendar } from 'lucide-react';
+import { ArrowRight, ChevronRight, ChevronLeft, Clock, Folder, Tv, User, Calendar, Eye } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
 import { QueryState, Avatar } from '../components/ui';
 import { VideoPlayer, CommentsSection, VideoCard, BookmarkButton, ShareButton } from '../components/content';
-import { useContent, useRelatedContent, useWatchProgressMap } from '../hooks/useContents';
+import { useVideo, useRelatedVideo, useWatchProgressMap } from '../hooks/useVideos';
 import { useChannel } from '../hooks/useChannels';
 import { useSeriesDetail } from '../hooks/useSeries';
 import { useAuth } from '../contexts/AuthContext';
@@ -17,8 +17,8 @@ function VideoDetail() {
     const [searchParams] = useSearchParams();
     const startTime = Number(searchParams.get('t')) || 0;
     const playerRef = useRef(null);
-    const { data: video, isLoading, isError } = useContent(id);
-    const { data: related = [] } = useRelatedContent(id);
+    const { data: video, isLoading, isError } = useVideo(id);
+    const { data: related = [] } = useRelatedVideo(id);
     const { data: channel } = useChannel(video?.channelId, !!video?.channelId);
     const { data: seriesData } = useSeriesDetail(video?.seriesId, !!video?.seriesId);
     const { token } = useAuth();
@@ -58,6 +58,9 @@ function VideoDetail() {
         video.category && { icon: Folder, text: video.category },
         video.speaker && { icon: User, text: video.speaker },
         video.publishDate && { icon: Calendar, text: video.publishDate },
+        video.originalPublishDate && video.originalPublishDate !== video.publishDate &&
+            { icon: Calendar, text: `تاريخ النشر الأصلي: ${video.originalPublishDate}` },
+        { icon: Eye, text: `${(video.viewCount ?? 0).toLocaleString('ar')} مشاهدة` },
     ].filter(Boolean);
 
     return (
@@ -66,7 +69,7 @@ function VideoDetail() {
                 <div className="bg-surface rounded-lg overflow-hidden border border-border-light shadow-sm mb-6">
                     <VideoPlayer
                         ref={playerRef}
-                        contentId={video.id}
+                        videoId={video.id}
                         sourceType={video.sourceType}
                         sourceUrl={video.sourceUrl}
                         title={video.title}

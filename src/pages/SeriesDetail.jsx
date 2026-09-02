@@ -4,7 +4,7 @@ import PageShell from '../components/layout/PageShell';
 import { QueryState } from '../components/ui';
 import { VideoCard } from '../components/content';
 import { useSeriesDetail } from '../hooks/useSeries';
-import { useWatchProgressMap } from '../hooks/useContents';
+import { useWatchProgressMap } from '../hooks/useVideos';
 import { useAuth } from '../contexts/AuthContext';
 import { usePageMeta } from '../hooks/usePageMeta';
 

@@ -3,10 +3,10 @@ import { useInfiniteQuery, useQuery, keepPreviousData } from '@tanstack/react-qu
 import api from '@/lib/api/client';
 import { useDebouncedValue } from './useDebouncedValue';
 
-export const fetchContents = async ({ pageParam = 0, queryKey }) => {
+export const fetchVideos = async ({ pageParam = 0, queryKey }) => {
     const [, { search, category, size }] = queryKey;
 
-    let url = `/contents?page=${pageParam}&size=${size || 12}`;
+    let url = `/videos?page=${pageParam}&size=${size || 12}`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
     if (category) url += `&category=${encodeURIComponent(category)}`;
 
@@ -14,10 +14,10 @@ export const fetchContents = async ({ pageParam = 0, queryKey }) => {
     return res.data;
 };
 
-export const useInfiniteContents = (search = '', category = '', size = 12, enabled = true) => {
+export const useInfiniteVideos = (search = '', category = '', size = 12, enabled = true) => {
     return useInfiniteQuery({
-        queryKey: ['contents', { search, category, size }],
-        queryFn: fetchContents,
+        queryKey: ['videos', { search, category, size }],
+        queryFn: fetchVideos,
         getNextPageParam: (lastPage) => {
             return lastPage.hasNext ? lastPage.currentPage + 1 : undefined;
         },
@@ -53,7 +53,7 @@ export const useSearch = (query, page = 0, size = 12) => {
     });
 };
 
-// SearchPage's "load more" pagination — same accumulating-pages shape as useInfiniteContents.
+// SearchPage's "load more" pagination — same accumulating-pages shape as useInfiniteVideos.
 export const useInfiniteSearch = (query, size = 12, enabled = true) => {
     return useInfiniteQuery({
         queryKey: ['search-infinite', query, size],
@@ -101,22 +101,22 @@ export const useFeed = (enabled = true) => {
     });
 };
 
-export const useContent = (id) => {
+export const useVideo = (id) => {
     return useQuery({
-        queryKey: ['content', id],
+        queryKey: ['video', id],
         queryFn: async () => {
-            const res = await api.get(`/contents/${id}`);
+            const res = await api.get(`/videos/${id}`);
             return res.data;
         },
         enabled: !!id,
     });
 };
 
-export const useRelatedContent = (id, limit = 6) => {
+export const useRelatedVideo = (id, limit = 6) => {
     return useQuery({
-        queryKey: ['related-content', id, limit],
+        queryKey: ['related-video', id, limit],
         queryFn: async () => {
-            const res = await api.get(`/contents/${id}/related?limit=${limit}`);
+            const res = await api.get(`/videos/${id}/related?limit=${limit}`);
             return res.data;
         },
         enabled: !!id,
@@ -138,11 +138,11 @@ export const useWatchHistory = (enabled = true) => {
     });
 };
 
-// contentId -> progressSeconds, for VideoCard's watched-progress bar.
+// videoId -> progressSeconds, for VideoCard's watched-progress bar.
 export const useWatchProgressMap = (enabled = true) => {
     const { data: history = [] } = useWatchHistory(enabled);
     return useMemo(
-        () => Object.fromEntries(history.map((entry) => [entry.contentId, entry.progressSeconds])),
+        () => Object.fromEntries(history.map((entry) => [entry.videoId, entry.progressSeconds])),
         [history]
     );
 };

@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
-import { useSearchSuggestions } from '@/hooks/useContents';
+import { useSearchSuggestions } from '@/hooks/useVideos';
 import { useOutsideClick } from '@/hooks/useOutsideClick';
 
 function SearchBar() {

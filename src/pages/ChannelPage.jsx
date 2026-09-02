@@ -5,13 +5,13 @@ import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
 import { QueryState, Avatar } from '../components/ui';
 import { VideoCard, BookCard, ArticleCard, PostCard } from '../components/content';
-import { useWatchProgressMap } from '../hooks/useContents';
+import { useWatchProgressMap } from '../hooks/useVideos';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { resolveMediaUrl } from '@/lib/media';
 import { isChannelOwner } from '@/lib/user';
 import {
     useChannel,
-    useChannelContents,
+    useChannelVideos,
     useChannelBooks,
     useChannelArticles,
     useChannelPosts,
@@ -33,7 +33,7 @@ function ChannelPage() {
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
-    } = useChannelContents(slug, 24, !!channel);
+    } = useChannelVideos(slug, 24, !!channel);
     const videos = videoPages?.pages.flatMap((page) => page.content) || [];
     const videoCount = videoPages?.pages[0]?.totalItems ?? videos.length;
 

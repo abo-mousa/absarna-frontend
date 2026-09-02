@@ -14,55 +14,11 @@ export const useStats = () => {
     });
 };
 
-// ============ VIDEOS ============
-
-export const useVideos = () => {
-    return useQuery({
-        queryKey: ['admin-videos'],
-        queryFn: async () => {
-            const res = await api.get('/contents?page=0&size=100');
-            return res.data?.content || res.data || [];
-        },
-        staleTime: 10 * 60 * 1000,
-    });
-};
-
-export const useCreateVideo = () => {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: async (video) => {
-            const res = await api.post('/admin/contents', video);
-            return res.data;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['admin-videos'] });
-            queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
-            queryClient.invalidateQueries({ queryKey: ['contents'] });
-        },
-    });
-};
-
-export const useDeleteVideo = () => {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: async (id) => {
-            await api.delete(`/admin/contents/${id}`);
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['admin-videos'] });
-            queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
-            queryClient.invalidateQueries({ queryKey: ['contents'] });
-        },
-    });
-};
-
 // ============ BOOKS ============
 
 // /admin/books is now paginated (it used to return every book in one response) — same
-// bounded-first-page approach useVideos above already uses rather than adding "load more" to
-// the admin table.
+// bounded-first-page approach admin listings use rather than adding "load more" to the admin
+// table.
 export const useBooks = () => {
     return useQuery({
         queryKey: ['admin-books'],
