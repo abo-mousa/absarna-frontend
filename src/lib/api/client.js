@@ -74,6 +74,13 @@ api.interceptors.response.use(
                     // this to clear its in-memory state and navigate via the router.
                     window.dispatchEvent(new Event('auth:session-expired'));
                 }
+            } else if (localStorage.getItem('token')) {
+                // A 401 with an access token present but no refresh token to try — e.g. the
+                // refresh token was cleared/expired independently — used to fall straight
+                // through to Promise.reject below with no signal at all, leaving the app's
+                // in-memory auth state stuck "logged in" while every request kept 401ing.
+                localStorage.removeItem('token');
+                window.dispatchEvent(new Event('auth:session-expired'));
             }
         }
 
