@@ -1,6 +1,7 @@
 import { useEffect, useRef, useId, forwardRef, useImperativeHandle } from 'react';
-import { resolveMediaUrl, extractYouTubeId } from '@/lib/media';
+import { resolveMediaUrl, safeExternalUrl, extractYouTubeId } from '@/lib/media';
 import { useAuth } from '@/contexts/AuthContext';
+import { useMediaToken } from '@/hooks/useMediaToken';
 import api from '@/lib/api/client';
 import { flushOnUnload } from '@/lib/api/beacon';
 
@@ -40,8 +41,16 @@ function loadYouTubeIframeApi() {
 // this timestamp") can read the playhead on demand without this component re-rendering on
 // every tick — the alternative (lifting currentTime into state) would fire a render several
 // times a second for something only ever read once, at share-click time.
-const VideoPlayer = forwardRef(function VideoPlayer({ contentId, sourceType, sourceUrl, title, startTime = 0 }, ref) {
+const VideoPlayer = forwardRef(function VideoPlayer({ contentId, sourceType, sourceUrl, title, visible, startTime = 0 }, ref) {
+    // Session token: still the right thing for the watch-progress writes below (they go through
+    // axios, which sends it as an Authorization header). It is NOT what goes in the media URL —
+    // see useMediaToken.
     const { token } = useAuth();
+
+    // Only a locally-hosted file that's currently hidden needs a token to fetch at all; a public
+    // video, and anything hosted elsewhere, never does.
+    const needsMediaToken = visible === false && (sourceType === 'LOCAL' || sourceType === 'STREAM');
+    const { mediaToken, isLoading: mediaTokenLoading } = useMediaToken(needsMediaToken);
     const videoRef = useRef(null);
     const lastReportedAtRef = useRef(0);
     // Mirrors token/contentId into refs so the unmount effect below always reports against
@@ -170,7 +179,18 @@ const VideoPlayer = forwardRef(function VideoPlayer({ contentId, sourceType, sou
         if (startTime > 0) e.currentTarget.currentTime = startTime;
     };
 
+    // An external URL is rendered as-is, so it goes through the scheme allowlist first — a
+    // stored `javascript:` value would otherwise become a live href on a page holding the
+    // session token in localStorage (React warns about it but renders it anyway).
+    const externalUrl = safeExternalUrl(sourceUrl);
+
     if (sourceType === 'LOCAL' || sourceType === 'STREAM') {
+        // Rendering before the token arrives would fire one request that 404s and leave the
+        // player showing a permanent error for what is really just a not-yet-authorized fetch.
+        if (mediaTokenLoading) {
+            return <div className="w-full h-[300px] rounded-lg bg-black/80 animate-pulse" />;
+        }
+
         return (
             <video
                 ref={videoRef}
@@ -183,13 +203,16 @@ const VideoPlayer = forwardRef(function VideoPlayer({ contentId, sourceType, sou
                 onEnded={handlePauseOrEnded}
                 className="w-full max-h-[500px] rounded-lg bg-black"
             >
-                <source src={resolveMediaUrl(sourceUrl, token)} type="video/mp4" />
+                <source src={resolveMediaUrl(sourceUrl, mediaToken)} type="video/mp4" />
                 متصفحك لا يدعم تشغيل الفيديو
             </video>
         );
     }
 
     if (sourceType === 'TELEGRAM') {
+        if (!externalUrl) {
+            return <p className="text-text-muted text-sm">رابط الفيديو غير صالح</p>;
+        }
         return (
             <video
                 ref={videoRef}
@@ -200,15 +223,18 @@ const VideoPlayer = forwardRef(function VideoPlayer({ contentId, sourceType, sou
                 onEnded={handlePauseOrEnded}
                 className="w-full max-h-[500px] rounded-lg bg-black"
             >
-                <source src={sourceUrl} type="video/mp4" />
+                <source src={externalUrl} type="video/mp4" />
             </video>
         );
     }
 
     if (isYouTube) {
         if (!youtubeVideoId) {
+            if (!externalUrl) {
+                return <p className="text-text-muted text-sm">رابط الفيديو غير صالح</p>;
+            }
             return (
-                <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="text-primary font-semibold">
+                <a href={externalUrl} target="_blank" rel="noopener noreferrer" className="text-primary font-semibold">
                     شاهد على يوتيوب
                 </a>
             );
@@ -221,8 +247,12 @@ const VideoPlayer = forwardRef(function VideoPlayer({ contentId, sourceType, sou
         );
     }
 
+    if (!externalUrl) {
+        return <p className="text-text-muted text-sm">رابط الفيديو غير صالح</p>;
+    }
+
     return (
-        <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="text-primary font-semibold">
+        <a href={externalUrl} target="_blank" rel="noopener noreferrer" className="text-primary font-semibold">
             شاهد الفيديو
         </a>
     );

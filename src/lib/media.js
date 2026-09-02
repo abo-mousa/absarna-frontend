@@ -9,6 +9,11 @@ import { API_BASE_URL } from './env';
 // Authorization header, so the token is passed as a query param instead (see JwtFilter's
 // matching fallback, scoped to just these two paths). Never appended to an external URL
 // (e.g. a YouTube thumbnail) — only our own API host understands it.
+//
+// Pass the **media token** from hooks/useMediaToken, never the session token from useAuth():
+// a query param ends up in the API's access logs, every proxy's logs, and browser history, so
+// what goes in it must be short-lived and useless for anything but fetching a file. See that
+// hook, and JwtUtil.generateMediaToken on the backend.
 export const resolveMediaUrl = (url, token) => {
     if (!url) return null;
     let resolved;
@@ -23,6 +28,31 @@ export const resolveMediaUrl = (url, token) => {
         resolved += `${resolved.includes('?') ? '&' : '?'}token=${encodeURIComponent(token)}`;
     }
     return resolved;
+};
+
+// A URL that came out of the database and is about to become an <a href> or a media <src>.
+//
+// The backend now allowlists schemes at write time (core/validation/SafeUrl), but that only
+// covers rows written after the constraint landed — anything stored before it is still whatever
+// someone typed. React 18 only *warns* about a `javascript:` href, it renders it anyway, and
+// clicking it runs script on a page whose localStorage holds the session token. Returns null
+// for anything that isn't an absolute http(s) URL so the caller can render plain text instead
+// of a link.
+//
+// Deliberately parsed with no base URL: a scheme-less value like "www.example.com" is rejected
+// rather than silently resolved against the frontend's own origin. For our *own* API-hosted
+// files (relative /uploads and /stream paths) use resolveMediaUrl above, not this.
+export const safeExternalUrl = (url) => {
+    if (!url || typeof url !== 'string') return null;
+    let parsed;
+    try {
+        parsed = new URL(url);
+    } catch (e) {
+        return null;
+    }
+    // parsed.href, not the original string: the URL parser strips embedded tabs/newlines, and
+    // returning the raw input would put them back into the href for the browser to re-parse.
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? parsed.href : null;
 };
 
 const YOUTUBE_HOSTNAMES = new Set(['youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtu.be']);

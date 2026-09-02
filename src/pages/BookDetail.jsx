@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowRight, BookOpen, Download, X } from 'lucide-react';
 import { resolveMediaUrl } from '@/lib/media';
+import { useMediaToken } from '@/hooks/useMediaToken';
 import { flushOnUnload } from '@/lib/api/beacon';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
@@ -15,9 +16,12 @@ const PdfReader = lazy(() => import('../components/content/PdfReader'));
 
 function BookDetail() {
     const { id } = useParams();
+    // Session token: for the read-progress calls below, which axios sends as a header. It is
+    // never what goes into a media URL — that's the media token further down. See useMediaToken.
     const { token } = useAuth();
     const [showPdf, setShowPdf] = useState(false);
     const { data: book, isLoading, isError } = useBook(id);
+    const { mediaToken, isLoading: mediaTokenLoading } = useMediaToken(book?.visible === false);
     const { data: savedPage } = useBookReadProgress(id, !!token);
     const saveReadProgress = useSaveReadProgress(id);
     const lastPageRef = useRef(null);
@@ -63,12 +67,16 @@ function BookDetail() {
         );
     }
 
-    // Token needed whenever the caller isn't guaranteed public access — a hidden book, or one
-    // whose channel got suspended after this page loaded it as the owner (see
-    // resolveMediaUrl's comment). Unlike BookCard/VideoCard's list view, this is a single item
-    // per page load, so passing it unconditionally isn't worth gating on book.visible.
-    const pdfUrl = resolveMediaUrl(book.pdfUrl, token);
-    const previewUrl = resolveMediaUrl(book.previewImageUrl, token);
+    // Token needed only for a book the caller isn't guaranteed public access to — a hidden one,
+    // or one whose channel got suspended after this page loaded it as the owner (see
+    // resolveMediaUrl's comment). This used to pass the session token unconditionally on the
+    // grounds that a single item per page load isn't worth gating; now that the token is a
+    // separate fetch (useMediaToken), gating it saves that request on every public book too.
+    // Held back until the token arrives, so a hidden book's reader doesn't mount against a URL
+    // that's certain to 404 and show a load error the user would have to retry out of.
+    const authToken = book.visible === false ? mediaToken : null;
+    const pdfUrl = mediaTokenLoading ? null : resolveMediaUrl(book.pdfUrl, authToken);
+    const previewUrl = mediaTokenLoading ? null : resolveMediaUrl(book.previewImageUrl, authToken);
 
     return (
         <PageShell sidebar={false}>

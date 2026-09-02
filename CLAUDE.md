@@ -26,24 +26,25 @@ Fully migrated from hand-rolled inline `style={{}}` objects to Tailwind (`tailwi
 src/
   assets/       logo.svg
   components/
+    ErrorBoundary.jsx — top-level class component, wraps <App/> in main.jsx (not in a barrel)
     ui/         Button, Card, Input, Modal, Badge, Grid, Spinner, EmptyState, QueryState, Avatar — barrel export via index.js
     layout/     Navbar, SideBar, PageShell, SearchBar — barrel export via index.js
-    content/    VideoCard, BookCard, ArticleCard, VideoPlayer, CommentsSection, BookmarkButton, ShareButton —
-                barrel export via index.js (PdfReader is the deliberate exception, see its own
-                barrel comment)
+    content/    VideoCard, BookCard, ArticleCard, PostCard, VideoPlayer, CommentsSection,
+                BookmarkButton, ShareButton — barrel export via index.js (PdfReader is the
+                deliberate exception, see its own barrel comment)
     auth/       EmailVerificationNotice — barrel export via index.js, see "Email verification" below
   pages/        route-level components, each lazy-loaded per route in App.jsx (see "Build / verify" below).
                 Bookmarks.jsx (`/bookmarks`) and SeriesDetail.jsx (`/series/:id`) are the newest —
                 see "Bookmarks" and "Series" below.
   hooks/        useContents, useBooks, useArticles, useBiography, useChannels, useComments,
-                useBookmarks, useSeries, useCommentModeration,
-                useAdminData, useParallelUpload, useDebouncedValue, useOutsideClick —
+                useBookmarks, useSeries, useCommentModeration, useAdminData, useParallelUpload,
+                useDebouncedValue, useOutsideClick, useFocusTrap, usePageMeta —
                 see "Data fetching: React Query" below and "Search suggestions" below
-  contexts/     AuthContext
+  contexts/     AuthContext, ThemeContext (see "Dark mode"), ToastContext (see "Toast notifications")
   lib/
     api/        client.js (axios instance + interceptors), auth.js, contents.js (thin per-domain wrappers)
     env.js       API_BASE_URL / STREAM_BASE_URL, from VITE_API_BASE_URL env var (no more hardcoded localhost:8080)
-    media.js     resolveMediaUrl(), extractYouTubeId(), youtubeThumbnail() — shared, don't reimplement per-component
+    media.js     resolveMediaUrl(), safeExternalUrl(), extractYouTubeId(), youtubeThumbnail() — shared, don't reimplement per-component
     user.js      isPlatformAdmin(user), isChannelOwner(user, channel), canManageChannel(user, channel) —
                  the `user`/`channel` shape is still implicit (no TypeScript), but role/ownership checks go
                  through these instead of comparing `user.role === 'PLATFORM_ADMIN'` inline
@@ -80,6 +81,8 @@ Backend gates two actions on `user.emailVerified` (login itself is never blocked
 - `hooks/useBooks.js` — public `useBooks`/`useBook`, plus `useBookReadProgress`/`useSaveReadProgress` (the latter updates its cache optimistically in `onMutate`, not `onSuccess`, matching the reader's original never-block-on-network behavior for a best-effort progress write).
 - `hooks/useArticles.js`, `hooks/useBiography.js` — same shape, straightforward.
 - `hooks/useBiography.js`'s query key (`['biography']`) is deliberately the same key `useUpdateBiography` (`hooks/useAdminData.js`) invalidates on save — an admin edit shows up on the public page with no extra wiring.
+- `hooks/useMediaToken.js` — `useMediaToken(required)`, the credential for a gated media URL's
+  `?token=` param. See "Media tokens" below.
 - `hooks/useComments.js` — `useComments(type, id)` plus `useCreateComment`/`useReplyComment` mutations that invalidate that same key.
 - `hooks/useChannels.js` — the big one: public channel page data (`useChannel`, `useChannelContents`/`Books`/`Articles`/`Posts`, `useSubscriptionStatus`, `useToggleSubscription`), sidebar/subscriptions data (`useAllChannels`, `useSubscriptions`, `useUnsubscribe`, `useMyChannels`), owner management (`useChannelContentList`, `useUpdateChannel`, `useCreateChannelContent`, `useToggleContentVisibility`, `useDeleteContent` — these last three share an `invalidateChannelContent` helper keyed off a `type → public query key` map, so a publish/toggle/delete on `ChannelManage.jsx` refreshes the same list `ChannelPage.jsx`'s visitors see), and admin channel moderation (`usePendingChannels`, `useAllAdminChannels`, `useApproveChannel`/`useRejectChannel`/`useSuspendChannel` — shared by both `Admin.jsx`'s dashboard and `AdminChannels.jsx`).
 - Video visibility/delete toggled from `Home.jsx`'s feed (owner's own videos, mixed into the feed) can't use the fixed-`(slug, type)` hooks above since the slug varies per video — it stays a direct `api.patch`/`api.delete`, but its `refreshFeed(slug)` helper invalidates that specific channel's `channel-contents`/`channel-manage` cache keys too, not just `['feed']`/`['contents']`.
@@ -123,6 +126,41 @@ Redesigned from a static label-above-the-box to a Material/Hetzner-style floatin
 - Sidebar has a distinct "قنواتي" (My Channels) section (via `GET /channels/my-channels`) separate from subscriptions and "اكتشف قنوات أخرى" (discover) — each list excludes items already shown in the others.
 - `Home.jsx` fetches the viewer's owned channels and builds a `channelId → slug` map. `VideoCard` receives `isOwner`/`onToggleVisibility`/`onDelete` props and, when the viewer owns that video's channel, shows an eye/eye-off and delete icon directly on the thumbnail (always-visible, not hover-gated — this was raised as a possible UX concern but the hover-only change was never actually implemented, so don't assume it happened). A hidden video also shows a "مخفي" badge.
 - `ChannelManage.jsx`'s Videos/Books/Articles tabs each show a full list of that channel's content (visible + hidden) with the same toggle/delete controls — this is the one place all three content types get this treatment; Books/Articles don't have it on their own public listing pages the way Home does for videos.
+
+## Media tokens (`hooks/useMediaToken.js`)
+
+A hidden (or suspended-channel) item's own file is gated by the backend's
+`MediaAccessInterceptor`, but `<img>`/`<video>`/`<a>` tags can't send an `Authorization` header,
+so the credential goes in the URL as `?token=`. That part is unchanged. What changed is **what**
+goes there: this used to be the session token from `useAuth()` — the same JWT that authenticates
+every API call, valid for a day — and a query param is not a private place, since it reaches the
+API's own access logs, every proxy log in between, and the browser's history. `useMediaToken`
+fetches a separate credential from `GET /api/user/media-token`: media-only (the backend rejects
+it on every other route and from the `Authorization` header — see `MediaTokenIT` there) and
+bounded to an hour.
+
+Three things about using it, each of which is load-bearing:
+
+- **Pass `required`.** Only a hidden item's file needs a token at all, so
+  `useMediaToken(video.visible === false)` keeps the request from firing for the ordinary public
+  case. `VideoPlayer` narrows it further (`visible === false` *and* a `LOCAL`/`STREAM` source) —
+  a YouTube-hosted video never needs one whatever its visibility.
+- **Don't render the media until it arrives.** The hook returns `isLoading` for exactly this:
+  painting a tokenless `<img>`/`<video>` first fires a request that's certain to 404, and
+  `VideoCard`'s `onError` handler latches that failure for the life of the page, so the
+  thumbnail would stay blank even after the token showed up. `VideoCard`/`BookCard`/`BookDetail`
+  hold their URLs back while it's loading; `VideoPlayer` renders a placeholder.
+- **The token is deliberately not refreshed on a timer.** A new token means a new URL, and
+  swapping a `<video>`'s `src` mid-playback restarts it from zero — so it's fetched once and
+  held for as long as the component is mounted. That's why the backend's TTL is an hour rather
+  than the few minutes a single request would need: it has to outlast playing a full-length
+  lecture. Staleness is handled on the next mount instead (`staleTime` derived from the
+  response's own `expiresInSeconds`, minus a minute of margin, with `refetchOnMount: true` to
+  override the app-wide `refetchOnMount: false`).
+
+Note the split inside `VideoPlayer`/`BookDetail`: they still take the session token from
+`useAuth()`, because the watch/read-progress writes go through axios and want a real
+`Authorization` header. The media token is only ever for a URL.
 
 ## Bookmarks (`hooks/useBookmarks.js`, `components/content/BookmarkButton.jsx`, `pages/Bookmarks.jsx`)
 
@@ -366,3 +404,69 @@ Shipped since this list was written (2026-09-02): series previous/next + "part X
 `VideoDetail` (see "Series" above), the share sheet + copy-link-at-timestamp (see "Share sheet"
 above), PdfReader's search/TOC/page-jump (see "Reader improvements" above), and dark mode (see
 "Dark mode" under "Styling: Tailwind CSS" above).
+
+---
+
+# Review findings — 2026-09-02
+
+Second full read-through (frontend + backend), no code changed. Everything below is **open**;
+delete an entry when it's actually fixed. The backend's `CLAUDE.md` has a matching section under
+the same heading — the first two items here are two halves of one fix and should be done together.
+
+## Bugs / security
+
+Fixed 2026-09-02: **stored XSS via a video's `sourceUrl`**, on both sides as the finding
+required. Here: `lib/media.js`'s new `safeExternalUrl(url)` returns `null` for anything that
+isn't an absolute `http(s)` URL, and every place that renders a stored URL as-is now goes
+through it — `VideoPlayer.jsx`'s two `<a href>` fallbacks and its `TELEGRAM` `<source src>`
+(which render "رابط الفيديو غير صالح" instead of a live link when it returns null), plus
+`Biography.jsx`'s three social links, which had exactly the same exposure. There: a `@Pattern`
+allowlist on every user-supplied URL field (backend `core/validation/SafeUrl`).
+`safeExternalUrl` parses with **no base URL**, so a scheme-less `www.example.com` is rejected
+rather than silently resolved against our own origin, and it returns `parsed.href` rather than
+the input, since the URL parser strips embedded tabs/newlines that would otherwise go straight
+back into the href.
+- **`client.js`: a 401 with no stored refresh token never signals expiry.** The
+  `auth:session-expired` dispatch lives inside `if (refreshToken) { … } catch`, so when
+  `localStorage.refreshToken` is missing (cleared, another tab logged out, first-party storage
+  eviction) the request just rejects — `AuthContext` never hears about it, and the user is left in
+  a logged-in-looking UI where every authenticated call 401s. Dispatch the event on the
+  no-refresh-token path too.
+- **`validation.js` is missing the backend's 72-byte password cap.** `PasswordValidator` rejects
+  any password over 72 **UTF-8 bytes** (BCrypt truncates past that), which a mixed-script password
+  hits at ~36 characters — well inside what `getPasswordRules` reports as valid. A user typing one
+  gets a server-side rejection the client said would pass.
+Fixed 2026-09-02 (backend side): hidden content no longer shows up in `/history` or
+`/bookmarks` — those endpoints gate on visibility now, both when recording and when listing, so
+a card in either list can no longer be for an item whose own detail page 404s.
+- **`durationToSeconds` returns `0`, not `null`, for an empty string** (`"".split(':')` → `[""]` →
+  `Number("") === 0`), so a video with no duration reads as a 0-second video rather than "unknown"
+  in the watched-percentage calculation.
+
+## Notes
+
+- `resolveMediaUrl(url, token)` appends `?token=` to **any** URL on the API host, not only
+  `/uploads`/`/stream` ones — harmless today (only media URLs are passed to it) but it makes the
+  function's contract wider than its comment claims.
+- The `token` it takes is now the **media token** (`hooks/useMediaToken`), never the session
+  token — see "Media tokens" below.
+- `<html lang="ar" dir="rtl">`, per-page `usePageMeta`, `ErrorBoundary`, focus trapping and the
+  skip link are all in place; no `dangerouslySetInnerHTML` anywhere in `src/` — the XSS item above
+  is the only injection path found.
+
+## Feature ideas beyond the existing list
+
+The existing list (offline/PWA, transcript view, digest/inbox page, PdfReader notes/highlights)
+still stands. Additional ones that fit the same values:
+
+- **A per-channel "takeout"/export view** for the backend export idea — a channel owner can
+  download everything they've published. Reinforces the not-locked-in stance the platform's
+  design already implies.
+- **Show progress on cards, not just on the history page.** `WatchHistory.progressSeconds` and
+  `BookReadingHistory.currentPage` already exist; a thin progress bar on `VideoCard`/`BookCard`
+  for items the viewer has started is honest resume UI, not engagement bait.
+- **Series completion state on `ChannelPage`'s "سلاسل" tab** — "4 of 11" per series card, from the
+  same data `VideoDetail`'s Previous/Next block already computes client-side.
+- **Print/clean-reading stylesheet for articles and biography.** The Medium-style reading column is
+  already there; a `@media print` pass makes the material usable offline on paper, which matters
+  for this audience.

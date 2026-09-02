@@ -1,6 +1,7 @@
 import { Play, Send, Heart, Mail } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
 import { QueryState } from '../components/ui';
+import { safeExternalUrl } from '@/lib/media';
 import { useBiography } from '../hooks/useBiography';
 import { usePageMeta } from '../hooks/usePageMeta';
 
@@ -48,20 +49,20 @@ function Biography() {
                         )}
 
                         <div className="flex gap-3 justify-center mt-8 flex-wrap">
-                            {bio.youtubeUrl && (
-                                <a href={bio.youtubeUrl} target="_blank" rel="noopener noreferrer"
+                            {safeExternalUrl(bio.youtubeUrl) && (
+                                <a href={safeExternalUrl(bio.youtubeUrl)} target="_blank" rel="noopener noreferrer"
                                    className={socialLinkClass} style={{ background: '#FF0000' }}>
                                     <Play size={16} /> يوتيوب
                                 </a>
                             )}
-                            {bio.telegramUrl && (
-                                <a href={bio.telegramUrl} target="_blank" rel="noopener noreferrer"
+                            {safeExternalUrl(bio.telegramUrl) && (
+                                <a href={safeExternalUrl(bio.telegramUrl)} target="_blank" rel="noopener noreferrer"
                                    className={socialLinkClass} style={{ background: '#0088cc' }}>
                                     <Send size={16} /> تيليجرام
                                 </a>
                             )}
-                            {bio.patreonUrl && (
-                                <a href={bio.patreonUrl} target="_blank" rel="noopener noreferrer"
+                            {safeExternalUrl(bio.patreonUrl) && (
+                                <a href={safeExternalUrl(bio.patreonUrl)} target="_blank" rel="noopener noreferrer"
                                    className={`${socialLinkClass} text-[#8B6914]`} style={{ background: '#FEF9E7' }}>
                                     <Heart size={16} /> Patreon
                                 </a>
