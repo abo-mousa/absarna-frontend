@@ -102,7 +102,7 @@ Replaces `Navbar.jsx`'s old inline `<form>` — shows suggestions on focus (befo
 ## Password reset & change password
 
 - `src/pages/ForgotPassword.jsx` (`/forgot-password`, public) and `src/pages/ResetPassword.jsx` (`/reset-password?token=...`, public) mirror `VerifyEmail.jsx`'s status-state pattern (form → success/error). `ForgotPassword` always renders the same success state after a successful request — the backend's response is deliberately identical whether or not the email is registered (see backend `CLAUDE.md`), so there's no separate "email not found" branch to build.
-- `lib/api/auth.js` exports `forgotPassword(email)`, `resetPassword(token, newPassword)`, `changePassword(currentPassword, newPassword)`. None of these go through `AuthContext` — they don't touch the token/localStorage — called directly the same way `VerifyEmail.jsx` calls `verifyEmail`.
+- `lib/api/auth.js` exports `forgotPassword(email)`, `resetPassword(token, newPassword)`, `changePassword(currentPassword, newPassword)`. All three are called directly, the same way `VerifyEmail.jsx` calls `verifyEmail`, rather than being wrapped by `AuthContext` — but `changePassword` is **not** token-neutral the way the other two are: its response carries a replacement `{token, refreshToken}` pair (the backend's `tokenVersion` bump invalidates the one this session is holding), and its caller has to hand that to `AuthContext`'s `applySession` or it logs itself out. See the change-password entry under History.
 - `UserProfile.jsx` has a second card, `ChangePasswordCard`, below the profile-save form — its own local state and submit handler, deliberately not merged into the profile form (different validation, different endpoint).
 - `Login.jsx` links to `/forgot-password` ("نسيت كلمة المرور؟") under the password field.
 
@@ -193,7 +193,7 @@ Channel-owner hide/pin (not approve — see backend `CLAUDE.md`'s "Comment moder
 
 None of this adds request volume — layer 1 actually got *less* frequent for video (60s vs. 15s); layer 3 is a reliability fix for a write that was already attempted via layer 2 but silently lost on refresh, not a new one.
 
-- `VideoPlayer.jsx`'s `MIN_WATCH_SECONDS` (5s) gate: a play under 5 seconds never creates/bumps a watch-history row — otherwise an accidental click-and-immediately-back-out would count as "watched" and could push a genuinely-watched video out of the backend's per-user 200-row cap (see backend `CLAUDE.md`'s watch-history section).
+- `VideoPlayer.jsx`'s minimum-watch gate: a very short play never creates/bumps a watch-history row — otherwise an accidental click-and-immediately-back-out would count as "watched" and could push a genuinely-watched video out of the backend's per-user 200-row cap (see backend `CLAUDE.md`'s watch-history section). The floor is **duration-aware** (`watchThreshold(durationSeconds)`), not the flat `MIN_WATCH_SECONDS` (5s) it started as: `min(5s, max(1s, 10% of duration))`, falling back to the flat 5s whenever the player doesn't know the duration yet (non-finite/zero — an unloaded source or a live stream). 5s is right for a 45-minute lecture and wrong for a 13-second clip, where it silently swallowed the first 38% of the video — see the watch-history entry under History. Duration comes from the native element's `onLoadedMetadata` or the YouTube player's `getDuration()` on its first state change, held in `durationRef`; all four report paths (throttled `onTimeUpdate`, pause/ended, unmount flush, `pagehide` flush, both native and YouTube) share the one helper.
 - `PdfReader.jsx` exposes a second callback, `onPageChangeImmediate(page, total)`, fired synchronously on every page turn (unlike the debounced `onPageChange`) at zero network cost — `BookDetail.jsx` uses it to keep a ref of the *true* latest page for its own `pagehide` flush, since the debounced network write (1s) might not have fired yet.
 
 ## Reader improvements (`components/content/PdfReader.jsx`)
@@ -237,14 +237,102 @@ Backend must be running (see its own `CLAUDE.md`) on `localhost:8080` for the ap
 
 ---
 
-# Review findings — 2026-09-01
+# Open items
+
+Everything still outstanding, consolidated from all three review passes. This is the list to work
+from; completed work and the verification record behind it live under "History" at the bottom.
+Delete an entry here when it's actually fixed rather than moving it up — History is where
+finished work goes.
+
+## Bugs
+
+Nothing open. The change-password logout was closed on 2026-09-02 — see History.
+
+## Refactoring / structure
+
+- **`ChannelManage.jsx`'s four create handlers send a `channelId` the backend deliberately drops.**
+  All four do `{ ...stripEmpty(form), channelId: channel.id }`, but none of `VideoCreateRequest`/
+  `BookCreateRequest`/`ArticleCreateRequest`/`PostCreateRequest` has that field — omitting it *is*
+  the documented mass-assignment fix, and `ChannelContentController` sets it server-side after
+  mapping. Spring Boot's Jackson defaults ignore unknown properties, so it's silently discarded on
+  arrival. Harmless, but it reads as though the client picks the channel, which is precisely what
+  the server was changed to stop trusting — same category as the dead `isFeatured`/`speaker` state
+  already removed from these forms.
+- Still open from the previous pass: `ChannelManage.jsx` is now ~700 lines holding five tabs and
+  four near-identical content forms. The 2026-09-01 section parked the
+  `<ContentPublishForm type=… />` + `useChannelContentTab(slug, type)` extraction until the
+  upload-service rewrite landed so the work wouldn't be thrown away — **upload has since moved to
+  its own service, so that reason has expired** and the extraction is now just open work. Its two
+  file-upload handlers (`handleVideoFileSelect`/`handleBookFileSelect`) still `api.post` to this
+  backend's `/channels/{slug}/content/{videos,books}/upload`; repointing them at the new service
+  belongs to the same pass.
+
+## UX
+
+- **Comment reporting.** Author-only comment edit/delete exist, but a reader still has no way to
+  report someone else's comment — there's no backend endpoint for it yet.
+- **The Navbar's "رفع" link points at `/upload`, which is not a route** — the `*` fallback catches
+  it and renders `NotFound`. It was parked pending the upload-service rewrite; that has since
+  landed, so this now just needs pointing somewhere real.
+
+## Feature ideas
+
+Matching the backend's list; these follow the "surface useful content, don't optimise for
+time-on-site" principle rather than fighting it.
+
+- **Offline/PWA for downloaded books and articles** — genuinely useful for an audience with
+  intermittent connectivity, and it doesn't require any engagement machinery.
+- **Transcript view alongside the video player** (needs the backend transcript work), with
+  click-to-seek. Biggest accessibility and skimmability win available.
+- **A "من القنوات التي تتابعها" digest/inbox page** — an explicit list of what's new since your
+  last visit, which you can clear, instead of an implicit ranked feed.
+- **Per-page notes/highlights on `PdfReader`**, keyed to the existing reading history — the rest
+  of that idea (search, TOC, page-jump) shipped, see "Reader improvements" above; this piece was
+  deliberately left out of that pass and is still open.
+
+Shipped since this list was written (2026-09-02): series previous/next + "part X of Y" on
+`VideoDetail` (see "Series" above), the share sheet + copy-link-at-timestamp (see "Share sheet"
+above), PdfReader's search/TOC/page-jump (see "Reader improvements" above), and dark mode (see
+"Dark mode" under "Styling: Tailwind CSS" above).
+
+- **A per-channel "takeout"/export view** for the backend export idea — a channel owner can
+  download everything they've published. Reinforces the not-locked-in stance the platform's
+  design already implies.
+- **Series completion state on `ChannelPage`'s "سلاسل" tab** — "4 of 11" per series card, from the
+  same data `VideoDetail`'s Previous/Next block already computes client-side.
+
+Shipped since this list was written (2026-09-02): **progress bars on cards beyond the history
+page** — `VideoCard`/`BookCard` already accepted `watchedSeconds`/`currentPage` props (wired into
+`Home`, `SearchPage`, `ChannelPage`'s videos tab, `VideoDetail`'s related row, `SeriesDetail`,
+`Books`), but `ChannelPage`'s books tab and `Bookmarks.jsx` (both video and book tabs) weren't
+passing them — now wired via the existing `useWatchProgressMap`/`useReadingProgressMap` hooks,
+same pattern as everywhere else. **Print/clean-reading stylesheet for articles and biography** —
+`index.css` gained a hand-written `@media print` block (not per-page `print:` utilities alone,
+since forcing real black-on-white over the dark-mode CSS-variable tokens needs `!important` to
+reliably win — see the block's own comment) hiding `nav`/`aside` globally and resetting
+`.max-w-reading` content to black-on-white/no-shadow; `ArticleDetail.jsx` and `Biography.jsx` use
+`print:hidden`/`print:p-0`/`print:shadow-none`/`print:border-0` on their own share/bookmark
+buttons, metadata bar, comments section, and card chrome. Verified via `npm run build`'s compiled
+CSS (both the hand-written block and the `print:` utilities are present); not verified against a
+real printed article, since no article content is seeded in the local backend to load
+`ArticleDetail` with.
+
+---
+
+# History — completed work, verifications, and decisions
+
+Three review passes with the fixes that came out of each. Nothing here is outstanding — it's kept
+because the *why* is expensive to re-derive, and because several entries record things
+deliberately **not** done. Open items live under "Open items" above.
+
+## Review findings — 2026-09-01
 
 Full read-through of the frontend (no code changed). Everything below is **open**; delete an
 entry when it's actually fixed rather than leaving it here as history. Backend-side findings
 live in the backend's own `CLAUDE.md` under the same heading — several items here have a
 matching entry there and are best fixed on both sides at once.
 
-## Bugs
+### Bugs
 
 Fixed 2026-09-01 (session after the review that logged this list): the React Query v4→v5
 option renames (`cacheTime`→`gcTime` in `App.jsx`, `keepPreviousData: true`→`placeholderData:
@@ -285,11 +373,8 @@ a hidden item is visible to *this* caller, not manage actions) still call the 2-
 overload, but each already has its own explicit `isAdmin` early-return before that call, so
 there's no gap there either.
 
-**Still postponed**: the Navbar's "رفع" link points at `/upload`, which is not a route — the `*`
-fallback silently redirects to Home. Already listed under "Known gaps"; leave as-is until the new
-upload service defines where this should point.
 
-## UX / UI
+### UX / UI
 
 Fixed 2026-09-01: `<html lang="ar" dir="rtl">` set on the root element (per-page `dir="rtl"`
 wrappers deleted — `Input.jsx`'s label `dir="rtl"` is unrelated and stays); per-page `<title>` +
@@ -326,12 +411,8 @@ the only categories endpoint) already filters to `visible = true` and active-cha
 only; `/books`/`/articles` derive their chips client-side from the already-fetched, already-
 filtered list, so there was never a separate risk there either.
 
-Still open:
 
-- **Comment reporting.** Author-only edit/delete now exist (see above), but there's still no way
-  for a reader to report someone else's comment — no backend endpoint for it yet.
-
-## Accessibility
+### Accessibility
 
 Fixed 2026-09-02: `VideoCard`'s outer clickable `<div>` now has `role="button"`/`tabIndex={0}`/
 an Enter-Space `onKeyDown` handler/a focus ring, and `BookCard`'s clickable cover/title `<div>`/
@@ -352,7 +433,7 @@ Checked and turned out not to be an issue: colour-only state signalling on the v
 toggle and the subscribe button — both already pair an icon change (`Eye`/`EyeOff`, `Bell`/
 `Check`) with a text label (`مخفي عن الزوار`, `اشترك`/`مشترك`), not colour alone.
 
-## Refactoring / structure
+### Refactoring / structure
 
 Resolved 2026-09-01: `PageShell` is now used by every page, including the ones that used to
 hand-roll `<div className="min-h-screen bg-bg"><Navbar/>…` (`ChannelPage`, `VideoDetail`,
@@ -376,44 +457,13 @@ per route behind one `<Suspense>` (mirroring the existing `PdfReader` pattern), 
 gaps"). Checked and turned out not to be an issue: `.DS_Store` was never actually git-tracked
 (already covered by `.gitignore`), and the repo does have a git history now.
 
-**Still open, deliberately not touched in the same pass**: `ChannelManage.jsx` is still ~500
-lines holding five tabs, four content forms, and per-type logic copy-pasted four times — the
-`<ContentPublishForm type=… fields=… />` + `useChannelContentTab(slug, type)` extraction
-described in earlier notes here is real, but this file (along with `Navbar.jsx`'s upload link)
-is the one getting a rewrite alongside a dedicated upload backend service per the "Bugs"
-section below — restructuring its internals now would be thrown away. Revisit this extraction
-once that rewrite lands, and pair it with the identical duplication on the backend's
-`ChannelContentController`.
-
-## Feature ideas that fit the platform's values
-
-Matching the backend's list; these follow the "surface useful content, don't optimise for
-time-on-site" principle rather than fighting it.
-
-- **Offline/PWA for downloaded books and articles** — genuinely useful for an audience with
-  intermittent connectivity, and it doesn't require any engagement machinery.
-- **Transcript view alongside the video player** (needs the backend transcript work), with
-  click-to-seek. Biggest accessibility and skimmability win available.
-- **A "من القنوات التي تتابعها" digest/inbox page** — an explicit list of what's new since your
-  last visit, which you can clear, instead of an implicit ranked feed.
-- **Per-page notes/highlights on `PdfReader`**, keyed to the existing reading history — the rest
-  of that idea (search, TOC, page-jump) shipped, see "Reader improvements" above; this piece was
-  deliberately left out of that pass and is still open.
-
-Shipped since this list was written (2026-09-02): series previous/next + "part X of Y" on
-`VideoDetail` (see "Series" above), the share sheet + copy-link-at-timestamp (see "Share sheet"
-above), PdfReader's search/TOC/page-jump (see "Reader improvements" above), and dark mode (see
-"Dark mode" under "Styling: Tailwind CSS" above).
-
----
-
-# Review findings — 2026-09-02
+## Review findings — 2026-09-02
 
 Second full read-through (frontend + backend), no code changed. Everything below is **open**;
 delete an entry when it's actually fixed. The backend's `CLAUDE.md` has a matching section under
 the same heading — the first two items here are two halves of one fix and should be done together.
 
-## Bugs / security
+### Bugs / security
 
 Fixed 2026-09-02: **stored XSS via a video's `sourceUrl`**, on both sides as the finding
 required. Here: `lib/media.js`'s new `safeExternalUrl(url)` returns `null` for anything that
@@ -447,40 +497,142 @@ returning `0` instead of `null` for an empty string** — it already guards `if 
 return null` before ever reaching `.split(':')`, and an empty string is falsy, so this path was
 never actually reachable.
 
-## Notes
+### Notes
 
-- `resolveMediaUrl(url, token)` appends `?token=` to **any** URL on the API host, not only
-  `/uploads`/`/stream` ones — harmless today (only media URLs are passed to it) but it makes the
-  function's contract wider than its comment claims.
+- `resolveMediaUrl(url, token)` now appends `?token=` only to `/uploads` and `/stream` paths on
+  our own origin — it used to append to any URL whose string merely *started with* the API base,
+  which turned out to be a real leak, not just a wide contract. Fixed 2026-09-02; see the third-
+  pass section at the end of this file.
 - The `token` it takes is now the **media token** (`hooks/useMediaToken`), never the session
   token — see "Media tokens" below.
 - `<html lang="ar" dir="rtl">`, per-page `usePageMeta`, `ErrorBoundary`, focus trapping and the
   skip link are all in place; no `dangerouslySetInnerHTML` anywhere in `src/` — the XSS item above
   is the only injection path found.
 
-## Feature ideas beyond the existing list
+## Review findings — 2026-09-02 (third pass)
 
-The existing list (offline/PWA, transcript view, digest/inbox page, PdfReader notes/highlights)
-still stands. Additional ones that fit the same values:
+Third full read-through (frontend + backend), no code changed. Everything below is **open**;
+delete an entry when it's actually fixed. The backend's `CLAUDE.md` has a matching section under
+the same heading — the media-token item below is the frontend half of a fix that is *entirely*
+frontend-side (the backend's own credential separation was probed and is sound), and the
+change-password item is one half of a fix that needs both sides.
 
-- **A per-channel "takeout"/export view** for the backend export idea — a channel owner can
-  download everything they've published. Reinforces the not-locked-in stance the platform's
-  design already implies.
-- **Series completion state on `ChannelPage`'s "سلاسل" tab** — "4 of 11" per series card, from the
-  same data `VideoDetail`'s Previous/Next block already computes client-side.
+### Bugs / security
 
-Shipped since this list was written (2026-09-02): **progress bars on cards beyond the history
-page** — `VideoCard`/`BookCard` already accepted `watchedSeconds`/`currentPage` props (wired into
-`Home`, `SearchPage`, `ChannelPage`'s videos tab, `VideoDetail`'s related row, `SeriesDetail`,
-`Books`), but `ChannelPage`'s books tab and `Bookmarks.jsx` (both video and book tabs) weren't
-passing them — now wired via the existing `useWatchProgressMap`/`useReadingProgressMap` hooks,
-same pattern as everywhere else. **Print/clean-reading stylesheet for articles and biography** —
-`index.css` gained a hand-written `@media print` block (not per-page `print:` utilities alone,
-since forcing real black-on-white over the dark-mode CSS-variable tokens needs `!important` to
-reliably win — see the block's own comment) hiding `nav`/`aside` globally and resetting
-`.max-w-reading` content to black-on-white/no-shadow; `ArticleDetail.jsx` and `Biography.jsx` use
-`print:hidden`/`print:p-0`/`print:shadow-none`/`print:border-0` on their own share/bookmark
-buttons, metadata bar, comments section, and card chrome. Verified via `npm run build`'s compiled
-CSS (both the hand-written block and the `print:` utilities are present); not verified against a
-real printed article, since no article content is seeded in the local backend to load
-`ArticleDetail` with.
+Fixed 2026-09-02 (same day as this review): **changing your password no longer logs you out of
+the session you changed it from.** The backend's `tokenVersion` bump invalidates every JWT
+issued before the change — correctly, that's what kills a pre-change stolen token — but it also
+kills the pair this session holds, and `POST /api/user/change-password` returned nothing but
+`{"changed": true}`, so the next request 401'd, the refresh 401'd, `auth:session-expired` fired,
+and `ChangePasswordCard` dropped the user at `/login` moments after a successful change. The
+backend now returns a fresh `{changed, token, refreshToken}` (see its `CLAUDE.md`); this side
+adopts it. `AuthContext` gained **`applySession({token, refreshToken})`** — the one place a
+fresh pair is written to `localStorage` and to `token` state — and `login`/`register` were
+rewritten to use it rather than each repeating the same three lines, so no caller can set one of
+the two keys and forget the other. `UserProfile.jsx`'s `ChangePasswordCard` now pulls
+`applySession` from `useAuth()` and passes it the response. Note this makes `changePassword` the
+one function in `lib/api/auth.js` whose result must reach `AuthContext` — the bullet under
+"Password reset" above says so.
+
+Fixed 2026-09-02 (same day as this review): **`resolveMediaUrl` appended the media token on a
+string-prefix match, not an origin match.** `lib/media.js` guarded the `?token=` append with
+`resolved.startsWith(API_BASE_URL)` — a prefix test on a URL *string*, so it also passed for any
+host whose name merely begins with ours (`https://api.example.com.evil.tld/…`) and for userinfo
+syntax (`https://api.example.com@evil.tld/…`, which the browser sends to evil.tld). That was
+reachable, not theoretical: the backend's `SafeUrl` allowlist admits any absolute `https` URL, so
+a channel owner could store such a value as a hidden video's `sourceUrl` and collect the media
+token of anyone able to view it — a platform admin moderating that channel included, whose token
+is good for an hour against any gated file on the platform. `VideoPlayer.jsx` renders
+`<source src={resolveMediaUrl(sourceUrl, mediaToken)}>` for exactly the hidden + `LOCAL`/`STREAM`
+case; `BookCard.jsx`/`BookDetail.jsx` had the same shape via `pdfUrl`/`previewImageUrl`.
+
+The guard is now a new `isOwnMediaUrl(resolved)` helper comparing **parsed origins**
+(`new URL(resolved, window.location.href).origin === apiOrigin`, the latter parsed once at module
+load), *and* narrowed to the two paths `MediaAccessInterceptor` actually gates — the token
+authenticates nothing else, since `JwtFilter` only accepts it from `?token=` on `/uploads` and
+`/stream`, so sending it anywhere else was pure leak surface. That also closes the
+"`resolveMediaUrl` appends `?token=` to **any** URL on the API host" note under "Notes" in the
+2026-09-02 section above, which can be deleted with it. Verified across all seven shapes: the two
+attack URLs and an on-origin `/api/user/profile` get no token; `/stream/…`, `/uploads/…` and a
+bare filename still do.
+
+Fixed 2026-09-02 (reported live: "when I click on the home page logo or refresh the watch history
+isn't saved; only saved when I press pause"): **two separate bugs in watch/reading-progress
+reporting, one write-side and one read-side.**
+
+Write-side — `VideoPlayer.jsx`'s unmount-flush effect read `videoRef.current` *inside* its
+cleanup function:
+```js
+useEffect(() => {
+    return () => {
+        const el = videoRef.current; // already null here
+        if (el && el.currentTime > 0) reportProgress(el.currentTime, authRef.current);
+    };
+}, []);
+```
+React nulls a `ref={...}`-attached ref for a removed host element as part of the *same* unmount
+pass that runs this cleanup, so by the time the closure ran, `videoRef.current` was already
+`null` and the guard silently skipped the report — meaning any in-app navigation away from a
+locally-hosted video (clicking the navbar logo, any other `<Link>`, `navigate()`) never sent the
+final progress write. YouTube playback was unaffected — its player lives in a plain `useRef` we
+set ourselves (`youtubePlayerRef.current = new YT.Player(...)`), which React has no special
+unmount behavior for. Fixed by capturing `videoRef.current` into a local variable when the effect
+is *set up*, not read fresh at cleanup time — the standard fix for this exact class of React bug.
+
+Read-side — even with the write landing, the UI still wouldn't show it. `VideoPlayer` posts
+progress via a raw `api.post(...)`, entirely outside React Query, so nothing marked the cached
+`['watch-history']` query (which backs History/Home/Bookmarks/`VideoCard`'s progress bar) stale.
+A same-day fix added `queryClient.invalidateQueries({ queryKey: ['watch-history'] })` after each
+successful write — necessary but, on its own, insufficient: `invalidateQueries` only forces an
+*immediate* refetch for queries with an active (currently-mounted) observer, which `['watch-
+history']` almost never has at the moment a watch is reported (you're on `VideoDetail`, not
+History). For an inactive query, invalidation just sets `state.isInvalidated = true` and waits for
+the next mount — but the app-wide `QueryClientProvider` sets `refetchOnMount: false`, and (checked
+directly against the installed `@tanstack/query-core` source, `queryObserver.js`'s
+`shouldFetchOnMount`/`shouldFetchOn`) that option short-circuits *before* the invalidated-check
+ever runs when there's already cached data — so a query invalidated while inactive still doesn't
+refetch on its next mount. Net effect: the backend row was correct the whole time (confirmed
+directly via `curl` against `/api/videos/{id}/watch` and `/api/user/history`, bypassing the
+frontend entirely) and only the cache serving History/the progress bars was stale. Fixed by
+overriding `refetchOnMount: true` on `useWatchHistory` (and, for the identical gap, on
+`useReadingHistory`, which `useSaveReadProgress` invalidates on every page-turn write) — same
+precedent as `useMediaToken`'s own override of the app-wide default, for the same reason: an
+explicitly-invalidated query has to be allowed to actually refetch on its next mount, not just
+get flagged and ignored.
+
+Fixed 2026-09-02 (reported live: "when I watch a couple of seconds of any video and then click
+on the logo to go to home page the video is not added to my watch history"): **the flat 5-second
+`MIN_WATCH_SECONDS` floor, not the flush plumbing.** The three-layer reporting fixed earlier the
+same day is working — `watch_history` in the local DB holds rows written by it — but every row's
+`progress_seconds` is ≥ 5 and none is 1–4, because `reportProgress` drops anything below the
+floor before it ever reaches axios. Every video seeded locally is 13 seconds long, so the floor
+was eating the first 38% of the clip: watching "a couple of seconds" and navigating away was
+correctly flushed on unmount and then correctly discarded, indistinguishably (from the outside)
+from not being flushed at all. Replaced with the duration-aware `watchThreshold()` described
+under "Watch/reading progress" above; the accidental-click protection it exists for is also
+narrower than it looks, since nothing in the player autoplays — the viewer has to press play.
+
+Fixed in the same pass, found while reading that path: **the unmount flush captured a `null`
+element for any hidden video.** The effect took `const el = videoRef.current` at *setup* time to
+dodge React's null-out-on-unmount, but it's a `[]` effect, so it runs on the first render — and
+on the hidden-item path the first render is the media-token placeholder `<div>`, not the
+`<video>`. `el` was therefore `null` for the life of the component and the final progress write
+never fired at all for a hidden video (the `pagehide` layer was unaffected — it reads the ref at
+event time). `videoRef` is now populated by a `useCallback`'d callback ref that ignores the null
+write, so the last real element stays readable at cleanup time whichever render produced it.
+
+### Checked and holding
+
+Probed specifically this pass, not assumed from this file's changelog:
+
+- **No injection sinks anywhere in `src/`.** No `dangerouslySetInnerHTML`, no `innerHTML`, no
+  `eval`. Every external `href` goes through `safeExternalUrl` (`VideoPlayer`'s two fallbacks and
+  its `TELEGRAM` `<source>`, `Biography`'s three social links) or is a `mailto:` with a fixed
+  scheme prefix that can't be escaped. Every `target="_blank"` carries `rel="noopener noreferrer"`.
+- **`useMediaToken`'s `required` gating, hold-back-until-loaded, and no-refetch-on-a-timer
+  behavior all work as documented** — the only media-token problem is `resolveMediaUrl`'s host
+  check above, not the hook.
+- **`client.js`'s deduped refresh, rotated-refresh-token storage, and both `auth:session-expired`
+  paths are correct**, including the no-refresh-token branch fixed in `e3f13c3`.
+- **`validation.js` mirrors the backend's real rules**, including the 72-**byte** BCrypt cap
+  measured with `TextEncoder` rather than `String.length`.
