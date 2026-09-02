@@ -60,11 +60,14 @@ export const useDeleteVideo = () => {
 
 // ============ BOOKS ============
 
+// /admin/books is now paginated (it used to return every book in one response) — same
+// bounded-first-page approach useVideos above already uses rather than adding "load more" to
+// the admin table.
 export const useBooks = () => {
     return useQuery({
         queryKey: ['admin-books'],
         queryFn: async () => {
-            const res = await api.get('/admin/books');
+            const res = await api.get('/admin/books?page=0&size=100');
             return res.data?.content || res.data || [];
         },
         staleTime: 10 * 60 * 1000,
@@ -103,11 +106,12 @@ export const useDeleteBook = () => {
 
 // ============ ARTICLES ============
 
+// Same pagination change as useBooks above.
 export const useArticles = () => {
     return useQuery({
         queryKey: ['admin-articles'],
         queryFn: async () => {
-            const res = await api.get('/admin/articles');
+            const res = await api.get('/admin/articles?page=0&size=100');
             return res.data?.content || res.data || [];
         },
         staleTime: 10 * 60 * 1000,

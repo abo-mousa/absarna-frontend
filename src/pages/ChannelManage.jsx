@@ -138,7 +138,15 @@ function ChannelManage() {
     const { data: seriesList = [], isLoading: seriesListLoading } = useChannelSeriesManage(
         slug, activeTab === 'videos' || activeTab === 'series'
     );
-    const { data: channelComments = [], isLoading: commentsLoading } = useChannelComments(slug, activeTab === 'comments');
+    const {
+        data: commentPages,
+        isLoading: commentsLoading,
+        fetchNextPage: fetchNextCommentsPage,
+        hasNextPage: hasNextCommentsPage,
+        isFetchingNextPage: isFetchingNextCommentsPage,
+    } = useChannelComments(slug, 50, activeTab === 'comments');
+    const channelComments = commentPages?.pages.flatMap((page) => page.content) || [];
+    const channelCommentsCount = commentPages?.pages[0]?.totalItems ?? channelComments.length;
 
     const updateChannel = useUpdateChannel(slug, channel?.id);
     const createVideo = useCreateChannelContent(slug, 'videos');
@@ -623,7 +631,7 @@ function ChannelManage() {
 
                 {activeTab === 'comments' && (
                     <div>
-                        <h3 className="text-lg font-bold mb-3">تعليقات على محتوى قناتك ({channelComments.length})</h3>
+                        <h3 className="text-lg font-bold mb-3">تعليقات على محتوى قناتك ({channelCommentsCount})</h3>
                         {commentsLoading ? (
                             <p className="text-sm text-text-muted py-2">جاري التحميل...</p>
                         ) : channelComments.length === 0 ? (
@@ -671,6 +679,18 @@ function ChannelManage() {
                                         </p>
                                     </div>
                                 ))}
+                            </div>
+                        )}
+
+                        {hasNextCommentsPage && (
+                            <div className="text-center mt-6">
+                                <button
+                                    onClick={() => fetchNextCommentsPage()}
+                                    disabled={isFetchingNextCommentsPage}
+                                    className="px-8 py-2.5 bg-primary text-white rounded-md font-semibold disabled:opacity-60"
+                                >
+                                    {isFetchingNextCommentsPage ? 'جاري التحميل...' : 'تحميل المزيد'}
+                                </button>
                             </div>
                         )}
                     </div>

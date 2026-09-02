@@ -107,12 +107,15 @@ export const useToggleSubscription = (channelId) => {
 
 // ============ Sidebar / Subscriptions page ============
 
+// GET /channels is now paginated (it used to return every active channel in one response) —
+// the sidebar's "discover" list only ever needs a bounded first page, not full pagination UI,
+// so this just requests the max page size rather than adding "load more" to a nav rail.
 export const useAllChannels = (enabled = true) => {
     return useQuery({
         queryKey: ['all-channels'],
         queryFn: async () => {
-            const res = await api.get('/channels');
-            return res.data || [];
+            const res = await api.get('/channels?page=0&size=100');
+            return res.data?.content || res.data || [];
         },
         enabled,
         staleTime: 5 * 60 * 1000,
