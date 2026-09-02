@@ -35,25 +35,25 @@ function Navbar({ onMenuClick }) {
                     {token ? (
                         <>
                             {['CREATOR', 'CHANNEL_ADMIN', 'PLATFORM_ADMIN'].includes(user?.role) && (
-                                <Link to="/upload" title="رفع محتوى" className={iconButtonClass}>
+                                <Link to="/upload" title="رفع محتوى" aria-label="رفع محتوى" className={iconButtonClass}>
                                     <Upload size={18} />
                                     <span className={iconLabelClass}>رفع</span>
                                 </Link>
                             )}
 
-                            <Link to="/profile" title="الملف الشخصي" className={iconButtonClass}>
+                            <Link to="/profile" title="الملف الشخصي" aria-label="الملف الشخصي" className={iconButtonClass}>
                                 <User size={18} />
                                 <span className={iconLabelClass}>حسابي</span>
                             </Link>
 
                             {isPlatformAdmin(user) && (
-                                <Link to="/admin" title="لوحة التحكم" className={`${iconButtonClass} bg-primary-dark text-white hover:bg-primary-dark/90`}>
+                                <Link to="/admin" title="لوحة التحكم" aria-label="لوحة التحكم" className={`${iconButtonClass} bg-primary-dark text-white hover:bg-primary-dark/90`}>
                                     <Shield size={18} />
                                     <span className="hidden sm:block text-[0.65rem] font-medium text-white">الإدارة</span>
                                 </Link>
                             )}
 
-                            <button onClick={logout} title="تسجيل الخروج" className={`${iconButtonClass} bg-surface-hover border border-border`}>
+                            <button onClick={logout} title="تسجيل الخروج" aria-label="تسجيل الخروج" className={`${iconButtonClass} bg-surface-hover border border-border`}>
                                 <LogOut size={18} />
                                 <span className={iconLabelClass}>خروج</span>
                             </button>

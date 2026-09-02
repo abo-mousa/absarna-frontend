@@ -173,32 +173,34 @@ reload, `extractYouTubeId` now checks an exact hostname set instead of `.include
 `VideoCard`'s broken-thumbnail `onError` now falls back to the 🎬 placeholder instead of
 leaving an empty box.
 
-**Postponed — all below are in `ChannelManage.jsx`/`Navbar.jsx`'s content-publish path, which
-is getting a rewrite alongside a dedicated upload backend service; fixing them now would be
-wasted work.** Revisit once that lands.
+Fixed 2026-09-02: `ChannelManage.jsx`'s video/book/article/post submit handlers now run the
+form object through a `stripEmpty` helper before sending, so an untouched `publishDate`/`pages`
+is omitted from the payload instead of going over the wire as `""`; the video form gained a
+`publishDate` input (previously only books/articles had one, so every video was created with
+`publishDate = null` — the backend already defaults it to `LocalDate.now()` on create, matching
+books/articles, so leaving the new field blank behaves the same as before); the still-missing
+`NULLS LAST` on `ContentRepository.findDiscoverByCategoriesExcludingChannels` (the feed's
+"اقتراحات لك" discover query — every other `publishDate DESC` query already had it) was fixed on
+the backend, which would otherwise have kept pinning NULL-date videos to the top of that section
+even after the form fix; and `videoForm`'s dead `speaker`/`isFeatured` state (neither had an
+input, and `handleVideoSubmit` overrode `speaker` with `channel.name` anyway) was dropped, along
+with the same dead `isFeatured` on `bookForm`/`articleForm` — the backend's create DTOs already
+exclude `isFeatured` entirely by design (see `ContentCreateRequest`'s comment), so sending it was
+always a no-op.
 
-1. **Empty date/number form fields are sent as `""`.** `ChannelManage`'s video/book/article/post
-   payloads always spread the whole form object, so an untouched `publishDate` or `pages` goes
-   over the wire as an empty string rather than being omitted. Jackson's coercion of `""` into
-   `LocalDate`/`Integer` is version- and config-dependent — verify what the API actually does
-   with it, and strip empty strings from the payload either way.
-2. **The video publish form has no publish-date input at all** (books and articles do), so every
-   video is created with `publishDate = null` — and because every backend list sorts
-   `ORDER BY publish_date DESC` and Postgres sorts NULLs first, **newly published videos pin
-   themselves to the top of the home feed and channel pages forever**. Add the field (and see
-   the backend note about `NULLS LAST`). **Needs a BE-side look too** (the `NULLS LAST` sort
-   fix) even once the form gets the field, for any existing NULL rows.
-3. **`videoForm.speaker` and `videoForm.isFeatured` are dead state** — neither has an input, and
-   `handleVideoSubmit` overrides `speaker` with `channel.name` after the spread anyway. Drop
-   them or render them.
-4. **Platform admins get a channel-management page where every action 403s.**
-   `ChannelManage` admits `isOwner || isAdmin`, but the backend's `canManageChannel` is
-   owner-only for all content operations (only `PUT /api/channels/{id}` has an admin bypass).
-   **Needs a BE decision**: either give admins real access server-side (extend
-   `canManageChannel`'s bypass) or drop `isAdmin` from the frontend guard to match reality.
-5. **The Navbar's "رفع" link points at `/upload`, which is not a route** — the `*` fallback
-   silently redirects to Home. Already listed under "Known gaps"; leave as-is until the new
-   upload service defines where this should point.
+Turned out to already be fixed, this list just hadn't been updated: platform admins getting
+403'd on channel-management actions. `ChannelContentController`'s `requireManageableChannel`/
+`verifyOwnership` helpers — used by every video/book/article/post list/create/visibility-toggle/
+delete/upload endpoint — already call `ChannelService.canManageChannel(userId, channelId,
+isAdmin)`, the 3-arg admin-bypass overload; the frontend's `canManageChannel` (`lib/user.js`)
+already matches. Only the four controllers' unrelated `isVisibleToCaller` helpers (gating whether
+a hidden item is visible to *this* caller, not manage actions) still call the 2-arg owner-only
+overload, but each already has its own explicit `isAdmin` early-return before that call, so
+there's no gap there either.
+
+**Still postponed**: the Navbar's "رفع" link points at `/upload`, which is not a route — the `*`
+fallback silently redirects to Home. Already listed under "Known gaps"; leave as-is until the new
+upload service defines where this should point.
 
 ## UX / UI
 
@@ -231,25 +233,37 @@ now played through the IFrame Player API (`youtube-nocookie.com`, `rel=0`) inste
 needing `onStateChange`/`getCurrentTime` for the embed anyway — closes the "watch history never
 records for YouTube videos" gap from the same list.
 
+Turned out to already be fixed, this list just hadn't been updated: **category chips leading to
+empty result grids** — `ContentRepository.findAllCategories` (backing `GET /api/categories`,
+the only categories endpoint) already filters to `visible = true` and active-channel content
+only; `/books`/`/articles` derive their chips client-side from the already-fetched, already-
+filtered list, so there was never a separate risk there either.
+
 Still open:
 
 - **Comment reporting.** Author-only edit/delete now exist (see above), but there's still no way
   for a reader to report someone else's comment — no backend endpoint for it yet.
-- **Category chips can lead to empty result grids** — `/api/categories` includes categories that
-  only hidden content uses (backend issue, but it surfaces here).
 
 ## Accessibility
 
-- Six `aria-*` attributes in the entire app. The most concrete gaps:
-- **`VideoCard`/`BookCard` are clickable `<div>`s** with nested `<button>`s — not focusable,
-  not keyboard-activatable, no `role`. Every card grid in the app is mouse-only.
-- **No focus management on route change** and no skip-to-content link; focus stays wherever it
-  was, so keyboard and screen-reader users restart from the top of the DOM on every navigation.
-- **The mobile sidebar drawer** doesn't trap focus, isn't marked `role="dialog"`/`aria-modal`,
-  and doesn't restore focus on close. Same for `Modal`.
-- Icon-only buttons rely on `title` rather than `aria-label` in most places (`Navbar`'s menu
-  button is the exception that does it right).
-- Colour-only state signalling on the visible/hidden toggle and the subscribe button.
+Fixed 2026-09-02: `VideoCard`'s outer clickable `<div>` now has `role="button"`/`tabIndex={0}`/
+an Enter-Space `onKeyDown` handler/a focus ring, and `BookCard`'s clickable cover/title `<div>`/
+`<h3>` became a real `<Link>` — both card grids are keyboard-operable now; route changes move
+focus to a new `#main-content` landmark (`App.jsx`'s `AppRoutes`, skipped on first render) and
+`PageShell` gained a skip-to-content link as the first focusable element on every page; `Modal`
+and the mobile sidebar drawer (`SideBar.jsx`, only when its `open` prop is true — the same
+`<aside>` is a persistent, non-modal nav rail on desktop) now use a shared `useFocusTrap` hook
+(`hooks/useFocusTrap.js`): focus moves into the panel on open, Tab/Shift+Tab cycles within it,
+Escape closes it, and focus is restored to whatever opened it on close; both also gained
+`role="dialog"`/`aria-modal`, and `Modal`'s title is wired to the dialog via `aria-labelledby`;
+icon-only buttons that relied on `title` alone now also have a matching `aria-label` (`Navbar`'s
+upload/profile/admin/logout, `SideBar`'s manage-channel link, `VideoCard`'s visibility-toggle/
+delete/channel-link, `ChannelManage`'s `ContentManageList` visibility-toggle/delete,
+`CommentsSection`'s edit/delete, `Modal`'s close button, which previously had neither).
+
+Checked and turned out not to be an issue: colour-only state signalling on the visible/hidden
+toggle and the subscribe button — both already pair an icon change (`Eye`/`EyeOff`, `Bell`/
+`Check`) with a text label (`مخفي عن الزوار`, `اشترك`/`مشترك`), not colour alone.
 
 ## Refactoring / structure
 

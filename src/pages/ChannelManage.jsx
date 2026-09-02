@@ -59,6 +59,7 @@ function ContentManageList({ items, loading, onToggleVisibility, onDelete, getLa
                         <button
                             onClick={() => onToggleVisibility(item)}
                             title={item.visible ? 'إخفاء عن الزوار' : 'إظهار للزوار'}
+                            aria-label={item.visible ? 'إخفاء عن الزوار' : 'إظهار للزوار'}
                             className="p-2 rounded-md text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors"
                         >
                             {item.visible ? <Eye size={16} /> : <EyeOff size={16} />}
@@ -66,6 +67,7 @@ function ContentManageList({ items, loading, onToggleVisibility, onDelete, getLa
                         <button
                             onClick={() => onDelete(item)}
                             title="حذف"
+                            aria-label="حذف"
                             className="p-2 rounded-md text-red-600 hover:bg-red-50 transition-colors"
                         >
                             <Trash2 size={16} />
@@ -108,19 +110,19 @@ function ChannelManage() {
 
     const [videoForm, setVideoForm] = useState({
         title: '', description: '', sourceType: 'LOCAL', sourceUrl: '',
-        category: '', series: '', speaker: '', publishDate: '', isFeatured: false,
+        category: '', series: '', publishDate: '',
     });
     const [videoUploading, setVideoUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
 
     const [bookForm, setBookForm] = useState({
         title: '', description: '', pdfUrl: '', previewImageUrl: '',
-        category: '', publishDate: '', pages: '', isFeatured: false,
+        category: '', publishDate: '', pages: '',
     });
     const [bookUploading, setBookUploading] = useState(false);
 
     const [articleForm, setArticleForm] = useState({
-        title: '', content: '', category: '', publishDate: '', isFeatured: false,
+        title: '', content: '', category: '', publishDate: '',
     });
 
     const [postForm, setPostForm] = useState({ content: '', publishDate: '' });
@@ -160,6 +162,11 @@ function ChannelManage() {
             onError: () => showMessage('error:فشل في الحذف'),
         });
     };
+
+    // An untouched date/number field is '' in form state; Jackson's coercion of "" into a
+    // LocalDate/Integer on the backend is version-dependent, so strip empty strings rather
+    // than send them and hope.
+    const stripEmpty = (obj) => Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== ''));
 
     const toggleVisibility = (mutation, item) => {
         mutation.mutate(item, {
@@ -222,8 +229,8 @@ function ChannelManage() {
     const handleVideoSubmit = async (e) => {
         e.preventDefault();
         try {
-            await createVideo.mutateAsync({ ...videoForm, channelId: channel.id, speaker: channel.name });
-            setVideoForm({ title: '', description: '', sourceType: 'LOCAL', sourceUrl: '', category: '', series: '', speaker: '', publishDate: '', isFeatured: false });
+            await createVideo.mutateAsync({ ...stripEmpty(videoForm), channelId: channel.id, speaker: channel.name });
+            setVideoForm({ title: '', description: '', sourceType: 'LOCAL', sourceUrl: '', category: '', series: '', publishDate: '' });
             showMessage('success:تم نشر الفيديو');
         } catch (err) {
             showMessage(`error:فشل في نشر الفيديو: ${err.response?.data?.message || err.message}`);
@@ -267,8 +274,8 @@ function ChannelManage() {
     const handleBookSubmit = async (e) => {
         e.preventDefault();
         try {
-            await createBook.mutateAsync({ ...bookForm, channelId: channel.id });
-            setBookForm({ title: '', description: '', pdfUrl: '', previewImageUrl: '', category: '', publishDate: '', pages: '', isFeatured: false });
+            await createBook.mutateAsync({ ...stripEmpty(bookForm), channelId: channel.id });
+            setBookForm({ title: '', description: '', pdfUrl: '', previewImageUrl: '', category: '', publishDate: '', pages: '' });
             showMessage('success:تم نشر الكتاب');
         } catch (err) {
             showMessage(`error:فشل في نشر الكتاب: ${err.response?.data?.message || err.message}`);
@@ -278,8 +285,8 @@ function ChannelManage() {
     const handleArticleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await createArticle.mutateAsync({ ...articleForm, channelId: channel.id });
-            setArticleForm({ title: '', content: '', category: '', publishDate: '', isFeatured: false });
+            await createArticle.mutateAsync({ ...stripEmpty(articleForm), channelId: channel.id });
+            setArticleForm({ title: '', content: '', category: '', publishDate: '' });
             showMessage('success:تم نشر المقال');
         } catch (err) {
             showMessage(`error:فشل في نشر المقال: ${err.response?.data?.message || err.message}`);
@@ -289,7 +296,7 @@ function ChannelManage() {
     const handlePostSubmit = async (e) => {
         e.preventDefault();
         try {
-            await createPost.mutateAsync({ ...postForm, channelId: channel.id });
+            await createPost.mutateAsync({ ...stripEmpty(postForm), channelId: channel.id });
             setPostForm({ content: '', publishDate: '' });
             showMessage('success:تم نشر التحديث');
         } catch (err) {
@@ -383,6 +390,7 @@ function ChannelManage() {
                                 <Input label="التصنيف" value={videoForm.category} onChange={(e) => setVideoForm({ ...videoForm, category: e.target.value })} />
                                 <Input label="السلسلة" value={videoForm.series} onChange={(e) => setVideoForm({ ...videoForm, series: e.target.value })} />
                             </div>
+                            <Input label="تاريخ النشر" type="date" value={videoForm.publishDate} onChange={(e) => setVideoForm({ ...videoForm, publishDate: e.target.value })} />
 
                             <Button type="submit" icon={<Upload size={18} />}>نشر الفيديو</Button>
                         </form>

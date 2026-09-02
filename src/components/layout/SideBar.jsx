@@ -1,7 +1,9 @@
+import { useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, Bell, History, Plus, Settings } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAllChannels, useSubscriptions, useMyChannels } from '../../hooks/useChannels';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 const navLinkClass = (active) =>
     `flex items-center gap-3 px-3 py-2 rounded-md text-sm mb-0.5 transition-colors ${
@@ -40,6 +42,7 @@ function ChannelRow({ channel, slug, name, color, currentChannel, onClose, manag
                     to={`/channel/${slug}/manage`}
                     onClick={onClose}
                     title="إدارة القناة"
+                    aria-label="إدارة القناة"
                     className="p-1.5 rounded-md text-text-muted hover:bg-surface-hover hover:text-text-secondary flex-shrink-0"
                 >
                     <Settings size={14} />
@@ -52,9 +55,15 @@ function ChannelRow({ channel, slug, name, color, currentChannel, onClose, manag
 function SideBar({ currentChannel, open = false, onClose }) {
     const { token } = useAuth();
     const location = useLocation();
+    const asideRef = useRef(null);
     const { data: channels = [], isLoading: loading } = useAllChannels();
     const { data: subscriptions = [] } = useSubscriptions(!!token);
     const { data: myChannels = [] } = useMyChannels(!!token);
+
+    // `open` is only ever true for the mobile drawer (the hamburger that sets it is
+    // `lg:hidden`) — on desktop this same <aside> is a persistent, non-modal nav rail, so the
+    // trap/dialog semantics below only ever engage in the drawer case.
+    useFocusTrap(open, asideRef, onClose);
 
     const isActive = (path) => location.pathname === path;
 
@@ -74,8 +83,13 @@ function SideBar({ currentChannel, open = false, onClose }) {
             )}
 
             <aside
+                ref={asideRef}
+                role={open ? 'dialog' : undefined}
+                aria-modal={open ? 'true' : undefined}
+                aria-label={open ? 'القائمة الجانبية' : undefined}
+                tabIndex={-1}
                 className={`w-[240px] bg-surface border-l border-border-light py-3 overflow-y-auto flex-shrink-0
-                    fixed right-0 top-0 bottom-0 lg:sticky lg:top-[60px] lg:h-[calc(100vh-60px)] z-[1000]
+                    fixed right-0 top-0 bottom-0 lg:sticky lg:top-[60px] lg:h-[calc(100vh-60px)] z-[1000] outline-none
                     transition-transform duration-200 ${open ? 'translate-x-0' : 'translate-x-full'} lg:translate-x-0`}
             >
                 <div className="px-2 mb-4">

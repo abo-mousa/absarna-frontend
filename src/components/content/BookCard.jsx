@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { BookOpen, Download } from 'lucide-react';
 import { resolveMediaUrl } from '@/lib/media';
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,9 +22,9 @@ function BookCard({ book, currentPage }) {
 
     return (
         <div className="flex flex-col h-full bg-surface rounded-lg overflow-hidden border border-border-light shadow-sm hover:shadow-md transition-shadow">
-            <div
-                onClick={() => navigate(`/books/${book.id}`)}
-                className="relative h-[200px] bg-surface-hover overflow-hidden cursor-pointer"
+            <Link
+                to={`/books/${book.id}`}
+                className="relative h-[200px] bg-surface-hover overflow-hidden block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
             >
                 {previewUrl ? (
                     <img src={previewUrl} alt={book.title} className="w-full h-full object-cover" />
@@ -39,7 +39,7 @@ function BookCard({ book, currentPage }) {
                         <div className="h-full bg-primary/40" style={{ width: `${readPercent}%` }} />
                     </div>
                 )}
-            </div>
+            </Link>
 
             <div className="p-4 flex flex-col flex-1">
                 {book.category && (
@@ -48,11 +48,10 @@ function BookCard({ book, currentPage }) {
                     </span>
                 )}
 
-                <h3
-                    onClick={() => navigate(`/books/${book.id}`)}
-                    className="text-[0.95rem] font-semibold mb-2 leading-snug cursor-pointer line-clamp-2"
-                >
-                    {book.title}
+                <h3 className="text-[0.95rem] font-semibold mb-2 leading-snug line-clamp-2">
+                    <Link to={`/books/${book.id}`} className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm">
+                        {book.title}
+                    </Link>
                 </h3>
 
                 <div className="flex gap-3 text-xs text-text-muted mb-3">

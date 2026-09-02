@@ -1,5 +1,5 @@
-import { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { lazy, Suspense, useEffect, useRef } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
@@ -65,6 +65,20 @@ const RouteFallback = () => (
 );
 
 function AppRoutes() {
+    const location = useLocation();
+    const isFirstRender = useRef(true);
+
+    useEffect(() => {
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            return;
+        }
+        // Without this, focus stays wherever it was on the previous page (e.g. a nav link) —
+        // keyboard/screen-reader users get no indication a new page loaded and have to
+        // manually navigate back to the top of the DOM every time.
+        document.getElementById('main-content')?.focus();
+    }, [location.pathname]);
+
     return (
         <Suspense fallback={<RouteFallback />}>
             <Routes>

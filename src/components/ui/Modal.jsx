@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { X } from 'lucide-react';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 // Kept as a constant so the exit timeout below always matches the CSS `duration-200`
 // classes — drifting the two apart would either cut the fade short or leave a mounted-but
@@ -11,6 +12,8 @@ function Modal({ open, onClose, title, children, maxWidth = '800px' }) {
     // Stay mounted (`rendered`) through the exit transition, then unmount.
     const [rendered, setRendered] = useState(open);
     const [visible, setVisible] = useState(false);
+    const dialogRef = useRef(null);
+    const titleId = useId();
 
     useEffect(() => {
         if (open) {
@@ -23,6 +26,8 @@ function Modal({ open, onClose, title, children, maxWidth = '800px' }) {
         return () => clearTimeout(timeout);
     }, [open]);
 
+    useFocusTrap(open, dialogRef, onClose);
+
     if (!rendered) return null;
 
     return (
@@ -32,15 +37,21 @@ function Modal({ open, onClose, title, children, maxWidth = '800px' }) {
             onClick={onClose}
         >
             <div
-                className={`bg-surface rounded-xl w-full max-h-[90vh] overflow-auto shadow-lg
+                ref={dialogRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={titleId}
+                tabIndex={-1}
+                className={`bg-surface rounded-xl w-full max-h-[90vh] overflow-auto shadow-lg outline-none
                     transition-all duration-200 ${visible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
                 style={{ maxWidth }}
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex justify-between items-center p-6 border-b border-border-light">
-                    <h3 className="m-0">{title}</h3>
+                    <h3 id={titleId} className="m-0">{title}</h3>
                     <button
                         onClick={onClose}
+                        aria-label="إغلاق"
                         className="text-text-muted hover:text-text-primary transition-colors"
                     >
                         <X size={22} />

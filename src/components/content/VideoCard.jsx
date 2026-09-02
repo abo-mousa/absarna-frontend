@@ -33,11 +33,27 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
     const watchedPercent = getWatchedPercent(video, watchedSeconds);
     const { data: channel } = useChannel(video.channelId, showChannel && !!video.channelId);
 
+    // Nested icon buttons (visibility/delete/channel) already stopPropagation on click; for
+    // keyboard, only treat Enter/Space as "activate the card" when the card itself is
+    // focused, not when it bubbles up from one of those nested buttons' own activation.
+    const handleKeyDown = (e) => {
+        if (e.target !== e.currentTarget) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onClick(video);
+        }
+    };
+
     return (
         <div
             onClick={() => onClick(video)}
+            onKeyDown={handleKeyDown}
+            role="button"
+            tabIndex={0}
+            aria-label={`مشاهدة فيديو: ${video.title}`}
             className={`group bg-surface rounded-lg overflow-hidden border shadow-sm
                 hover:shadow-md hover:-translate-y-1 transition-all cursor-pointer
+                focus:outline-none focus-visible:ring-2 focus-visible:ring-primary
                 ${video.visible === false ? 'border-dashed border-border' : 'border-border-light'}`}
         >
             <div className="relative aspect-video bg-surface-hover overflow-hidden">
@@ -77,6 +93,7 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                         <button
                             onClick={(e) => { e.stopPropagation(); onToggleVisibility(video); }}
                             title={video.visible === false ? 'إظهار للزوار' : 'إخفاء عن الزوار'}
+                            aria-label={video.visible === false ? 'إظهار للزوار' : 'إخفاء عن الزوار'}
                             className="p-1.5 rounded-md bg-black/60 text-white hover:bg-black/80 transition-colors"
                         >
                             {video.visible === false ? <Eye size={14} /> : <EyeOff size={14} />}
@@ -84,6 +101,7 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                         <button
                             onClick={(e) => { e.stopPropagation(); onDelete(video); }}
                             title="حذف"
+                            aria-label="حذف الفيديو"
                             className="p-1.5 rounded-md bg-black/60 text-white hover:bg-red-600 transition-colors"
                         >
                             <Trash2 size={14} />
@@ -110,6 +128,7 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                 {channel && (
                     <button
                         onClick={(e) => { e.stopPropagation(); navigate(`/channel/${channel.slug}`); }}
+                        aria-label={`الذهاب إلى قناة ${channel.name}`}
                         className="flex items-center gap-1.5 mb-1.5 text-xs text-text-secondary hover:text-primary transition-colors"
                     >
                         <Avatar src={resolveMediaUrl(channel.logoUrl)} name={channel.name} size="sm" className="!w-5 !h-5 !text-[0.65rem]" />

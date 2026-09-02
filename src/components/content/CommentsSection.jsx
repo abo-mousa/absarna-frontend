@@ -113,6 +113,7 @@ function CommentsSection({ type, id }) {
                 <button
                     onClick={() => startEdit(comment)}
                     title="تعديل"
+                    aria-label="تعديل التعليق"
                     className="p-1 text-text-muted hover:text-primary transition-colors"
                 >
                     <Pencil size={14} />
@@ -120,6 +121,7 @@ function CommentsSection({ type, id }) {
                 <button
                     onClick={() => setDeletingId(comment.id)}
                     title="حذف"
+                    aria-label="حذف التعليق"
                     className="p-1 text-text-muted hover:text-red-600 transition-colors"
                 >
                     <Trash2 size={14} />
