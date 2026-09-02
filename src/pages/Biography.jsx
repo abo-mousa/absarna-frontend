@@ -17,7 +17,7 @@ function Biography() {
 
             <QueryState isLoading={isLoading} isEmpty={!bio} emptyTitle="لا توجد معلومات">
                 {bio && (
-                    <div className="bg-surface p-6 sm:p-10 rounded-xl shadow-sm border border-border-light">
+                    <div className="bg-surface p-6 sm:p-10 rounded-xl shadow-sm border border-border-light print:p-0 print:shadow-none print:border-0">
                         {bio.photoUrl && (
                             <img
                                 src={bio.photoUrl}
@@ -48,7 +48,7 @@ function Biography() {
                             </div>
                         )}
 
-                        <div className="flex gap-3 justify-center mt-8 flex-wrap">
+                        <div className="flex gap-3 justify-center mt-8 flex-wrap print:hidden">
                             {safeExternalUrl(bio.youtubeUrl) && (
                                 <a href={safeExternalUrl(bio.youtubeUrl)} target="_blank" rel="noopener noreferrer"
                                    className={socialLinkClass} style={{ background: '#FF0000' }}>

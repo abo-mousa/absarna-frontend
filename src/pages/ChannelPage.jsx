@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
 import { QueryState, Avatar } from '../components/ui';
 import { VideoCard, BookCard, ArticleCard, PostCard } from '../components/content';
-import { useWatchProgressMap } from '../hooks/useVideos';
+import { useWatchProgressMap, useReadingProgressMap } from '../hooks/useVideos';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { resolveMediaUrl } from '@/lib/media';
 import { isChannelOwner } from '@/lib/user';
@@ -26,6 +26,7 @@ function ChannelPage() {
     const { token, user } = useAuth();
     const [activeTab, setActiveTab] = useState('videos');
     const watchProgress = useWatchProgressMap(!!token);
+    const readingProgress = useReadingProgressMap(!!token);
 
     const { data: channel, isLoading: channelLoading } = useChannel(slug);
     const {
@@ -203,7 +204,7 @@ function ChannelPage() {
                 <QueryState isEmpty={books.length === 0} emptyTitle="لا توجد كتب بعد">
                     <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-4">
                         {books.map((book) => (
-                            <BookCard key={book.id} book={book} />
+                            <BookCard key={book.id} book={book} currentPage={readingProgress[book.id]} />
                         ))}
                     </div>
 

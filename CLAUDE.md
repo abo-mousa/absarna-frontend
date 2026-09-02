@@ -466,11 +466,21 @@ still stands. Additional ones that fit the same values:
 - **A per-channel "takeout"/export view** for the backend export idea — a channel owner can
   download everything they've published. Reinforces the not-locked-in stance the platform's
   design already implies.
-- **Show progress on cards, not just on the history page.** `WatchHistory.progressSeconds` and
-  `BookReadingHistory.currentPage` already exist; a thin progress bar on `VideoCard`/`BookCard`
-  for items the viewer has started is honest resume UI, not engagement bait.
 - **Series completion state on `ChannelPage`'s "سلاسل" tab** — "4 of 11" per series card, from the
   same data `VideoDetail`'s Previous/Next block already computes client-side.
-- **Print/clean-reading stylesheet for articles and biography.** The Medium-style reading column is
-  already there; a `@media print` pass makes the material usable offline on paper, which matters
-  for this audience.
+
+Shipped since this list was written (2026-09-02): **progress bars on cards beyond the history
+page** — `VideoCard`/`BookCard` already accepted `watchedSeconds`/`currentPage` props (wired into
+`Home`, `SearchPage`, `ChannelPage`'s videos tab, `VideoDetail`'s related row, `SeriesDetail`,
+`Books`), but `ChannelPage`'s books tab and `Bookmarks.jsx` (both video and book tabs) weren't
+passing them — now wired via the existing `useWatchProgressMap`/`useReadingProgressMap` hooks,
+same pattern as everywhere else. **Print/clean-reading stylesheet for articles and biography** —
+`index.css` gained a hand-written `@media print` block (not per-page `print:` utilities alone,
+since forcing real black-on-white over the dark-mode CSS-variable tokens needs `!important` to
+reliably win — see the block's own comment) hiding `nav`/`aside` globally and resetting
+`.max-w-reading` content to black-on-white/no-shadow; `ArticleDetail.jsx` and `Biography.jsx` use
+`print:hidden`/`print:p-0`/`print:shadow-none`/`print:border-0` on their own share/bookmark
+buttons, metadata bar, comments section, and card chrome. Verified via `npm run build`'s compiled
+CSS (both the hand-written block and the `print:` utilities are present); not verified against a
+real printed article, since no article content is seeded in the local backend to load
+`ArticleDetail` with.

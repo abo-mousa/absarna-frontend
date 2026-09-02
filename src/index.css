@@ -88,3 +88,41 @@
 .content-transition.fading {
   opacity: 0.5;
 }
+
+/* Print stylesheet — a hand-written `@media print` block rather than page-scoped Tailwind
+   `print:` utilities, because this needs to force real black-on-white regardless of dark mode:
+   most browsers skip printing background colors by default (no "print backgrounds" option), and
+   dark mode's near-white text (`--color-text-primary` under `.dark`) would then be invisible on
+   the plain white page that's left. A `print:text-black` utility on the theme-token class would
+   have the same source-order reliability problem Input.jsx's padding gotcha above documents, so
+   these use real `!important` instead. Nav/sidebar are hidden globally (no page benefits from
+   printing them); the rest is scoped to the Medium-style reading column (`.max-w-reading`, used
+   by Articles/ArticleDetail/Biography/BookDetail) since the YouTube-style browsing pages have
+   nothing worth printing. Page-specific chrome (share/bookmark buttons, comments, tab bars,
+   "load more") is opted out per call site with `print:hidden`. */
+@media print {
+  nav,
+  aside {
+    display: none !important;
+  }
+
+  body,
+  main {
+    background: #fff !important;
+  }
+
+  .max-w-reading {
+    max-width: 100% !important;
+  }
+
+  .max-w-reading * {
+    color: #000 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border-color: #ccc !important;
+  }
+
+  .max-w-reading a {
+    text-decoration: underline;
+  }
+}

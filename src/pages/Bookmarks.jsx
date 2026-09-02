@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Trash2, Video, BookOpen, FileText } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
 import { QueryState } from '../components/ui';
 import { VideoCard, BookCard, ArticleCard } from '../components/content';
 import { useBookmarks, useClearBookmarks } from '../hooks/useBookmarks';
+import { useWatchProgressMap, useReadingProgressMap } from '../hooks/useVideos';
 import { useToast } from '../contexts/ToastContext';
 import { usePageMeta } from '../hooks/usePageMeta';
 
@@ -17,10 +19,13 @@ const TABS = [
 function Bookmarks() {
     usePageMeta({ title: 'المحفوظات' });
     const navigate = useNavigate();
+    const { token } = useAuth();
     const { showToast } = useToast();
     const [activeTab, setActiveTab] = useState('VIDEO');
 
     const { data: bookmarks = [], isLoading, isError } = useBookmarks();
+    const watchProgress = useWatchProgressMap(!!token);
+    const readingProgress = useReadingProgressMap(!!token);
     const clearBookmarks = useClearBookmarks();
 
     const itemsForTab = bookmarks.filter((b) => b.itemType === activeTab);
@@ -79,10 +84,17 @@ function Bookmarks() {
                         itemsForTab
                             .filter((b) => b.content)
                             .map((b) => (
-                                <VideoCard key={b.id} video={b.content} onClick={() => navigate(`/video/${b.content.id}`)} />
+                                <VideoCard
+                                    key={b.id}
+                                    video={b.content}
+                                    onClick={() => navigate(`/video/${b.content.id}`)}
+                                    watchedSeconds={watchProgress[b.content.id]}
+                                />
                             ))}
                     {activeTab === 'BOOK' &&
-                        itemsForTab.filter((b) => b.book).map((b) => <BookCard key={b.id} book={b.book} />)}
+                        itemsForTab
+                            .filter((b) => b.book)
+                            .map((b) => <BookCard key={b.id} book={b.book} currentPage={readingProgress[b.book.id]} />)}
                     {activeTab === 'ARTICLE' &&
                         itemsForTab.filter((b) => b.article).map((b) => <ArticleCard key={b.id} article={b.article} />)}
                 </div>
