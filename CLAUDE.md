@@ -426,22 +426,26 @@ allowlist on every user-supplied URL field (backend `core/validation/SafeUrl`).
 rather than silently resolved against our own origin, and it returns `parsed.href` rather than
 the input, since the URL parser strips embedded tabs/newlines that would otherwise go straight
 back into the href.
-- **`client.js`: a 401 with no stored refresh token never signals expiry.** The
-  `auth:session-expired` dispatch lives inside `if (refreshToken) { … } catch`, so when
-  `localStorage.refreshToken` is missing (cleared, another tab logged out, first-party storage
-  eviction) the request just rejects — `AuthContext` never hears about it, and the user is left in
-  a logged-in-looking UI where every authenticated call 401s. Dispatch the event on the
-  no-refresh-token path too.
-- **`validation.js` is missing the backend's 72-byte password cap.** `PasswordValidator` rejects
-  any password over 72 **UTF-8 bytes** (BCrypt truncates past that), which a mixed-script password
-  hits at ~36 characters — well inside what `getPasswordRules` reports as valid. A user typing one
-  gets a server-side rejection the client said would pass.
+Fixed 2026-09-02 (session after the review that logged this list): **`client.js`'s 401-with-no-
+refresh-token gap** — a 401 with an access token present but no refresh token to try (cleared,
+another tab logged out, first-party storage eviction) now dispatches `auth:session-expired` on
+that path too, not just inside the refresh-attempt branch (see `e3f13c3`).
+
+Fixed 2026-09-02: **`validation.js` was missing the backend's 72-byte password cap.**
+`PasswordValidator` rejects any password over 72 **UTF-8 bytes** (BCrypt truncates past that),
+which a mixed-script password hits well under 72 characters. `getPasswordRules` now has a
+`maxBytes` rule measured via `TextEncoder`, not `password.length` — rendered automatically by
+`Register.jsx`/`ResetPassword.jsx`/`UserProfile.jsx`'s `ChangePasswordCard`, which already `.map()`
+over the rules array generically.
+
 Fixed 2026-09-02 (backend side): hidden content no longer shows up in `/history` or
 `/bookmarks` — those endpoints gate on visibility now, both when recording and when listing, so
 a card in either list can no longer be for an item whose own detail page 404s.
-- **`durationToSeconds` returns `0`, not `null`, for an empty string** (`"".split(':')` → `[""]` →
-  `Number("") === 0`), so a video with no duration reads as a 0-second video rather than "unknown"
-  in the watched-percentage calculation.
+
+Turned out to already be fixed, this list just hadn't been updated: **`durationToSeconds`
+returning `0` instead of `null` for an empty string** — it already guards `if (!duration ...)
+return null` before ever reaching `.split(':')`, and an empty string is falsy, so this path was
+never actually reachable.
 
 ## Notes
 

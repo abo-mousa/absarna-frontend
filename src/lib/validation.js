@@ -2,9 +2,15 @@
 // com/manara/authentication/{service/AuthService,validation/PasswordValidator}.java) so the
 // client rejects an invalid username/password before hitting the API instead of after.
 export const PASSWORD_MIN_LENGTH = 8;
+// BCrypt (PasswordValidator) silently truncates past 72 UTF-8 bytes, not 72 characters — a
+// mixed-script password can hit that cap at well under 72 characters, so this must be measured
+// with TextEncoder, not `password.length`.
+export const PASSWORD_MAX_BYTES = 72;
 export const USERNAME_MIN_LENGTH = 3;
 export const USERNAME_PATTERN = /^[a-zA-Z0-9_]+$/;
 const SPECIAL_CHAR_PATTERN = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/;
+
+const utf8ByteLength = (str) => new TextEncoder().encode(str).length;
 
 export const validateUsername = (username) => {
     const trimmed = (username || '').trim();
@@ -21,6 +27,7 @@ export const getPasswordRules = (password) => ([
     { key: 'lowercase', label: 'حرف صغير (a-z)', valid: /[a-z]/.test(password) },
     { key: 'digit', label: 'رقم واحد على الأقل', valid: /\d/.test(password) },
     { key: 'special', label: 'رمز خاص (!@#$...)', valid: SPECIAL_CHAR_PATTERN.test(password) },
+    { key: 'maxBytes', label: `${PASSWORD_MAX_BYTES} حرف كحد أقصى`, valid: utf8ByteLength(password) <= PASSWORD_MAX_BYTES },
 ]);
 
 export const isPasswordValid = (password) => getPasswordRules(password).every((rule) => rule.valid);
