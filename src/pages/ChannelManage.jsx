@@ -72,7 +72,7 @@ function ContentManageList({ items, loading, onToggleVisibility, onDelete, getLa
                             onClick={() => onDelete(item)}
                             title="حذف"
                             aria-label="حذف"
-                            className="p-2 rounded-md text-red-600 hover:bg-red-50 transition-colors"
+                            className="p-2 rounded-md text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40 transition-colors"
                         >
                             <Trash2 size={16} />
                         </button>
@@ -609,7 +609,7 @@ function ChannelManage() {
                                                 onClick={() => handleDeleteSeries(s)}
                                                 title="حذف السلسلة"
                                                 aria-label="حذف السلسلة"
-                                                className="p-2 rounded-md text-red-600 hover:bg-red-50 transition-colors flex-shrink-0"
+                                                className="p-2 rounded-md text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40 transition-colors flex-shrink-0"
                                             >
                                                 <Trash2 size={16} />
                                             </button>

@@ -68,7 +68,7 @@ function ResetPassword() {
 
                 {status === 'error' && (
                     <div className="text-center">
-                        <XCircle className="mx-auto text-red-600" size={48} />
+                        <XCircle className="mx-auto text-red-600 dark:text-red-400" size={48} />
                         <h2 className="text-xl font-bold mt-4">تعذرت إعادة التعيين</h2>
                         <p className="text-text-muted mt-2">{error}</p>
                         <Link to="/forgot-password" className="block mt-6">
@@ -85,7 +85,7 @@ function ResetPassword() {
                         </div>
 
                         {!token ? (
-                            <p className="text-red-600 text-sm bg-red-100 p-2.5 rounded-md text-center">
+                            <p className="text-red-600 dark:text-red-400 text-sm bg-red-100 dark:bg-red-950/40 p-2.5 rounded-md text-center">
                                 رابط إعادة التعيين غير صالح
                             </p>
                         ) : (
@@ -140,15 +140,15 @@ function ResetPassword() {
                                         required
                                         placeholder="••••••••"
                                         dir="ltr"
-                                        className={confirmPassword && confirmPassword !== password ? '!border-red-600' : ''}
+                                        className={confirmPassword && confirmPassword !== password ? '!border-red-600 dark:!border-red-500' : ''}
                                     />
                                     {confirmPassword && confirmPassword !== password && (
-                                        <p className="text-red-600 text-xs mt-1">كلمتا المرور غير متطابقتين</p>
+                                        <p className="text-red-600 dark:text-red-400 text-xs mt-1">كلمتا المرور غير متطابقتين</p>
                                     )}
                                 </div>
 
                                 {error && (
-                                    <p className="text-red-600 text-sm bg-red-100 p-2.5 rounded-md">{error}</p>
+                                    <p className="text-red-600 dark:text-red-400 text-sm bg-red-100 dark:bg-red-950/40 p-2.5 rounded-md">{error}</p>
                                 )}
 
                                 <Button type="submit" disabled={loading} fullWidth>

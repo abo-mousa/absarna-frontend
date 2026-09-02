@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { isPlatformAdmin } from '@/lib/user';
 import { Spinner } from './components/ui';
 
@@ -139,13 +140,15 @@ function AppRoutes() {
 function App() {
     return (
         <QueryClientProvider client={queryClient}>
-            <BrowserRouter>
-                <ToastProvider>
-                    <AuthProvider>
-                        <AppRoutes />
-                    </AuthProvider>
-                </ToastProvider>
-            </BrowserRouter>
+            <ThemeProvider>
+                <BrowserRouter>
+                    <ToastProvider>
+                        <AuthProvider>
+                            <AppRoutes />
+                        </AuthProvider>
+                    </ToastProvider>
+                </BrowserRouter>
+            </ThemeProvider>
         </QueryClientProvider>
     );
 }

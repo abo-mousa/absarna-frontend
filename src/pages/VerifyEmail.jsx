@@ -62,7 +62,7 @@ function VerifyEmail() {
 
                 {status === 'error' && (
                     <>
-                        <XCircle className="mx-auto text-red-600" size={48} />
+                        <XCircle className="mx-auto text-red-600 dark:text-red-400" size={48} />
                         <h2 className="text-xl font-bold mt-4">تعذر التوثيق</h2>
                         <p className="text-text-muted mt-2">{errorMessage}</p>
                         <Link to="/login" className="block mt-6">

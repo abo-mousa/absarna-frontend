@@ -35,7 +35,7 @@ function EmailVerificationNotice({ message }) {
             )}
 
             {status === 'error' && (
-                <span className="text-red-600 text-xs w-full">تعذر إرسال الرابط، حاول لاحقاً</span>
+                <span className="text-red-600 dark:text-red-400 text-xs w-full">تعذر إرسال الرابط، حاول لاحقاً</span>
             )}
         </div>
     );

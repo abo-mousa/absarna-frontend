@@ -69,10 +69,10 @@ function Register() {
                             required
                             placeholder="username"
                             dir="ltr"
-                            className={usernameError ? '!border-red-600' : ''}
+                            className={usernameError ? '!border-red-600 dark:!border-red-500' : ''}
                         />
                         {usernameError && (
-                            <p className="text-red-600 text-xs mt-1">{usernameError}</p>
+                            <p className="text-red-600 dark:text-red-400 text-xs mt-1">{usernameError}</p>
                         )}
                     </div>
 
@@ -142,15 +142,15 @@ function Register() {
                             required
                             placeholder="••••••••"
                             dir="ltr"
-                            className={form.confirmPassword && form.confirmPassword !== form.password ? '!border-red-600' : ''}
+                            className={form.confirmPassword && form.confirmPassword !== form.password ? '!border-red-600 dark:!border-red-500' : ''}
                         />
                         {form.confirmPassword && form.confirmPassword !== form.password && (
-                            <p className="text-red-600 text-xs mt-1">كلمتا المرور غير متطابقتين</p>
+                            <p className="text-red-600 dark:text-red-400 text-xs mt-1">كلمتا المرور غير متطابقتين</p>
                         )}
                     </div>
 
                     {error && (
-                        <p className="text-red-600 text-sm bg-red-100 p-2.5 rounded-md">{error}</p>
+                        <p className="text-red-600 dark:text-red-400 text-sm bg-red-100 dark:bg-red-950/40 p-2.5 rounded-md">{error}</p>
                     )}
 
                     <Button type="submit" disabled={loading} fullWidth>

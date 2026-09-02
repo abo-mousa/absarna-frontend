@@ -12,6 +12,14 @@ Fully migrated from hand-rolled inline `style={{}}` objects to Tailwind (`tailwi
 
 **Design language**: YouTube-style for browsing (Home, Search, ChannelPage's video tab — thumbnail grid, sticky top nav, collapsible sidebar). Medium-style for reading (Books, Articles, Biography — centered `max-w-reading` column, generous whitespace). Logo is a hand-authored SVG lighthouse mark (`منارة` = "lighthouse/beacon") at `src/assets/logo.svg`, also used as `public/favicon.svg`.
 
+### Dark mode
+
+`tailwind.config.js` sets `darkMode: 'class'`, and every brand color token (`primary`/`primary-dark`/`primary-light`, `gold`/`gold-light`, `surface`/`surface-hover`, `bg`, `border`/`border-light`, `text-primary`/`secondary`/`muted`) resolves through a CSS custom property (`rgb(var(--color-x) / <alpha-value>)`) instead of a literal hex, with light values on `:root` and dark values under `.dark` in `src/index.css`. That's what makes this a two-file change instead of a `dark:`-variant pass across every component: any existing `bg-surface`/`text-text-secondary`/etc. call site already repaints correctly the moment the `dark` class is toggled on `<html>` — nothing else needed changing. Dark-mode values are chosen independently per token, not a mechanical "invert" (e.g. `primary` is *brighter* in dark mode — emerald-500 — since it doubles as `text-primary` link/accent color against a near-black page, not just a button fill; `primary-light`/`gold-light` become dark tinted backgrounds rather than lightened primaries).
+
+- `src/contexts/ThemeContext.jsx` (`ThemeProvider`/`useTheme()`, wraps the app in `App.jsx` outside `BrowserRouter`) owns the toggle: flips the `dark` class on `document.documentElement` and persists to `localStorage['theme']`. An inline script in `index.html`'s `<head>` applies the stored (or system-preference-derived) theme *before* React mounts, so there's no flash of the wrong theme on load — `ThemeProvider`'s initial state is read back from the DOM class that script already set, so the two can't disagree.
+- Toggle lives in `Navbar.jsx` (sun/moon icon, same `iconButtonClass` as the other nav icons), visible whether or not the visitor is logged in.
+- **What still needed a manual `dark:` variant**: only the handful of spots using a raw Tailwind stock color instead of a brand token — mainly the `bg-red-100 text-red-600` light-pink error-banner pattern (auth pages, `ChannelManage`'s delete buttons, `Badge`'s `success`/`danger` variants) and Input's required-field asterisk. Anything pairing `text-white`/`bg-black/NN` with an explicitly-colored surface (a primary/red button, a video-thumbnail hover overlay, `ChannelPage`'s banner using `channel.primaryColor`) was deliberately left alone — those aren't part of the light/dark surface hierarchy, they're colored regardless of theme.
+
 ## File structure
 
 ```
@@ -20,8 +28,9 @@ src/
   components/
     ui/         Button, Card, Input, Modal, Badge, Grid, Spinner, EmptyState, QueryState, Avatar — barrel export via index.js
     layout/     Navbar, SideBar, PageShell, SearchBar — barrel export via index.js
-    content/    VideoCard, BookCard, ArticleCard, VideoPlayer, CommentsSection, BookmarkButton —
-                barrel export via index.js
+    content/    VideoCard, BookCard, ArticleCard, VideoPlayer, CommentsSection, BookmarkButton, ShareButton —
+                barrel export via index.js (PdfReader is the deliberate exception, see its own
+                barrel comment)
     auth/       EmailVerificationNotice — barrel export via index.js, see "Email verification" below
   pages/        route-level components, each lazy-loaded per route in App.jsx (see "Build / verify" below).
                 Bookmarks.jsx (`/bookmarks`) and SeriesDetail.jsx (`/series/:id`) are the newest —
@@ -124,10 +133,11 @@ Redesigned from a static label-above-the-box to a Material/Hetzner-style floatin
 
 ## Series (`hooks/useSeries.js`, `pages/SeriesDetail.jsx`)
 
-Backed by the backend's `content/series` package — see backend `CLAUDE.md` for the full model (a `Series` replaced `Content`'s old free-text `series` field; `ContentDTO.series` is gone, replaced by `seriesId`/`orderInSeries`). `SeriesDetail.jsx` (`/series/:id`, public) is the series' own page: title/description plus its videos in a `VideoCard` grid, same layout conventions as `VideoDetail`'s related-videos row. `VideoDetail.jsx` shows a "جزء من سلسلة: {title}" link (replacing the old plain-text `video.series` line, which would otherwise silently render nothing now that field doesn't exist) only when `video.seriesId` is set, fetched via a dedicated `useSeriesDetail(video.seriesId, enabled)` call rather than assuming the series title is already in hand. `ChannelPage.jsx` gained a "سلاسل" tab (`useChannelSeries(slug)`) listing the channel's series as link cards to `/series/{id}`, same tab-bar pattern as its other four tabs.
+Backed by the backend's `content/series` package — see backend `CLAUDE.md` for the full model (a `Series` replaced `Content`'s old free-text `series` field; `ContentDTO.series` is gone, replaced by `seriesId`/`orderInSeries`). `SeriesDetail.jsx` (`/series/:id`, public) is the series' own page: title/description plus its videos in a `VideoCard` grid, same layout conventions as `VideoDetail`'s related-videos row. `ChannelPage.jsx` gained a "سلاسل" tab (`useChannelSeries(slug)`) listing the channel's series as link cards to `/series/{id}`, same tab-bar pattern as its other four tabs.
 
 - Owner management lives on `ChannelManage.jsx`'s new "السلاسل" tab (`useChannelSeriesManage`/`useCreateSeries`/`useDeleteSeries`): a create form (title/description) plus a list of the channel's series with a delete button — deleting only detaches its videos server-side (`ON DELETE SET NULL`), doesn't touch them, so no extra confirmation copy beyond the standard `window.confirm`.
 - The video upload form's old free-text "السلسلة" `Input` is now a `<select>` populated from `useChannelSeriesManage(slug, ...)` (bound to `videoForm.seriesId`) plus a conditional "الترتيب داخل السلسلة" number input (`videoForm.orderInSeries`, only shown once a series is picked) — sent through the same `stripEmpty` helper as every other form field here, unconverted (a `type="number"` input's `e.target.value` is still a string; this already worked for `bookForm.pages` the same way before this change, so no new coercion concern).
+- **`VideoDetail.jsx`'s series block** (only when `video.seriesId` is set, via the same `useSeriesDetail(video.seriesId, enabled)` call) now shows "الجزء X من Y" plus Previous/Next buttons, not just a "جزء من سلسلة" link — computed client-side from `seriesData.content` (the same ordered array `SeriesDetail.jsx` renders from) by `findIndex`ing the current video's id, no separate endpoint. Previous/Next are disabled (not hidden) at the series' boundaries, and — matching the RTL convention `PdfReader.jsx`'s pager already used — "التالي" (forward) points `ChevronLeft`, "السابق" (back) points `ChevronRight`.
 
 ## Comment moderation (`hooks/useCommentModeration.js`, `ChannelManage.jsx`'s "التعليقات" tab)
 
@@ -147,6 +157,21 @@ None of this adds request volume — layer 1 actually got *less* frequent for vi
 
 - `VideoPlayer.jsx`'s `MIN_WATCH_SECONDS` (5s) gate: a play under 5 seconds never creates/bumps a watch-history row — otherwise an accidental click-and-immediately-back-out would count as "watched" and could push a genuinely-watched video out of the backend's per-user 200-row cap (see backend `CLAUDE.md`'s watch-history section).
 - `PdfReader.jsx` exposes a second callback, `onPageChangeImmediate(page, total)`, fired synchronously on every page turn (unlike the debounced `onPageChange`) at zero network cost — `BookDetail.jsx` uses it to keep a ref of the *true* latest page for its own `pagehide` flush, since the debounced network write (1s) might not have fired yet.
+
+## Reader improvements (`components/content/PdfReader.jsx`)
+
+Table of contents, in-document search, and direct page-jump, all client-side against the already-loaded PDF — none of this touches the reading-progress plumbing above (`onPageChange`/`onPageChangeImmediate`/the beacon flush); every new entry point (TOC row, search result, typed page number) just calls the existing `goToPage()`, so a jump from any of them reports progress exactly like a Prev/Next click always has. Deliberately no notes/highlights — that's still open, see "Feature ideas" below.
+
+- **Table of contents**: `Document`'s `onLoadSuccess` now keeps the whole `PDFDocumentProxy` (not just `numPages`) in `pdfRef`, so opening the "المحتويات" panel can lazily call `pdf.getOutline()`. A `dest` entry is either a named destination (string — needs an extra `pdf.getDestination()` round trip) or an explicit destination array either way; `resolveOutline()` recursively resolves each to a 1-based page number via `pdf.getPageIndex()`, so nested outlines render nested (`OutlineList`, indented per depth). A PDF with no outline just shows "لا توجد قائمة محتويات" rather than hiding the button — the button itself is always there once the document has a known page count.
+- **Search**: no `FindController` is available outside pdf.js's full viewer widget (which `react-pdf` doesn't ship), so this isn't highlight-in-place — it extracts every page's text via `page.getTextContent()` on first search (cached per-document in `pageTextCacheRef`, so a second search against the same file is instant) and returns a clickable list of matching page numbers. Explicit submit (button/Enter), not per-keystroke — the first search is an O(pages) walk and isn't worth re-running on every character typed.
+- **Page jump**: the old static "صفحة X من Y" label is now a small `<input>` (submit-on-Enter) alongside the existing Prev/Next buttons — typing an out-of-range number gets clamped the same way `goToPage()` already clamped Prev/Next.
+
+## Share sheet (`components/content/ShareButton.jsx`)
+
+Dropped into `VideoDetail`/`BookDetail`/`ArticleDetail`'s header next to `BookmarkButton` (`<ShareButton title={...} path={...} />`). Link previews need no work here — `usePageMeta` (see below) already sets per-page OG/Twitter tags before this ever ships a link out; this component is only the "get the link out" UI: a copy-link input, the native share sheet (`navigator.share`, feature-detected — not every browser has it) and three plain-text quick-share links (WhatsApp/Telegram/X share-intent URLs). Text-only, no brand icons — `lucide-react` ships no brand marks, and this matches `SearchBar`'s existing "no logos" call for the same reason.
+
+- **Copy-link-at-timestamp (video only)**: `ShareButton` takes an optional `getCurrentTime` prop — `VideoDetail.jsx` passes `() => playerRef.current?.getCurrentTime()`. `VideoPlayer.jsx` is now `forwardRef` and exposes `getCurrentTime()` via `useImperativeHandle` (native `<video>`'s `currentTime`, or the YouTube IFrame API player's `getCurrentTime()`) — read once, on share-sheet open, not tracked as React state, so it costs nothing on every playback tick the way lifting it into state would. Checking "مشاركة من الدقيقة" appends `?t={seconds}` to the copied/shared URL.
+- **`?t=` on load**: `VideoDetail.jsx` reads the `t` search param and passes it to `VideoPlayer` as `startTime`. Native/Telegram `<video>` seeks via `onLoadedMetadata` (setting `currentTime` before metadata loads is silently ignored by the browser); YouTube uses the IFrame API's `playerVars.start` instead, since seeking only takes effect at initial load either way.
 
 ## Toast notifications (`contexts/ToastContext.jsx`)
 
@@ -327,21 +352,17 @@ once that rewrite lands, and pair it with the identical duplication on the backe
 Matching the backend's list; these follow the "surface useful content, don't optimise for
 time-on-site" principle rather than fighting it.
 
-- **Series previous/next + progress indicator on `VideoDetail`.** Series browsing exists now
-  (see "Series" above — a series' own page, a link from a video that's part of one, a channel
-  tab), but a video that's part of a series doesn't yet say "part 3 of 12" or offer inline
-  previous/next controls on its own detail page. This is what would turn the library into an
-  actually-followable course, and it's the strongest argument for the non-addictive feed —
-  people come back for a reason they chose.
-- **A share sheet with proper link previews** (depends on the meta-tag work above) plus copy-
-  link-at-timestamp for videos.
-- **Reader improvements on `PdfReader`**: text search inside the PDF, page-number jump,
-  a table of contents, and per-page notes/highlights keyed to the existing reading history.
 - **Offline/PWA for downloaded books and articles** — genuinely useful for an audience with
   intermittent connectivity, and it doesn't require any engagement machinery.
 - **Transcript view alongside the video player** (needs the backend transcript work), with
   click-to-seek. Biggest accessibility and skimmability win available.
 - **A "من القنوات التي تتابعها" digest/inbox page** — an explicit list of what's new since your
   last visit, which you can clear, instead of an implicit ranked feed.
-- **Dark mode.** The Tailwind theme is already fully tokenised; a `dark:` variant pass is
-  mostly mechanical and it matters for long-form reading at night.
+- **Per-page notes/highlights on `PdfReader`**, keyed to the existing reading history — the rest
+  of that idea (search, TOC, page-jump) shipped, see "Reader improvements" above; this piece was
+  deliberately left out of that pass and is still open.
+
+Shipped since this list was written (2026-09-02): series previous/next + "part X of Y" on
+`VideoDetail` (see "Series" above), the share sheet + copy-link-at-timestamp (see "Share sheet"
+above), PdfReader's search/TOC/page-jump (see "Reader improvements" above), and dark mode (see
+"Dark mode" under "Styling: Tailwind CSS" above).

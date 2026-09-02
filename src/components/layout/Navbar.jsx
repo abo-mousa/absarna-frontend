@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
-import { Upload, User, Shield, LogOut, Menu } from 'lucide-react';
+import { Upload, User, Shield, LogOut, Menu, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { isPlatformAdmin } from '@/lib/user';
 import logo from '../../assets/logo.svg';
 import SearchBar from './SearchBar';
@@ -10,6 +11,7 @@ const iconLabelClass = 'hidden sm:block text-[0.65rem] font-medium text-text-mut
 
 function Navbar({ onMenuClick }) {
     const { token, user, logout } = useAuth();
+    const { theme, toggleTheme } = useTheme();
 
     return (
         <nav className="sticky top-0 z-[1000] bg-bg/95 backdrop-blur-md border-b border-border-light">
@@ -32,6 +34,16 @@ function Navbar({ onMenuClick }) {
                 </div>
 
                 <div className="flex items-center gap-1 flex-shrink-0">
+                    <button
+                        onClick={toggleTheme}
+                        title={theme === 'dark' ? 'الوضع الفاتح' : 'الوضع الداكن'}
+                        aria-label={theme === 'dark' ? 'الوضع الفاتح' : 'الوضع الداكن'}
+                        className={iconButtonClass}
+                    >
+                        {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                        <span className={iconLabelClass}>{theme === 'dark' ? 'فاتح' : 'داكن'}</span>
+                    </button>
+
                     {token ? (
                         <>
                             {['CREATOR', 'CHANNEL_ADMIN', 'PLATFORM_ADMIN'].includes(user?.role) && (

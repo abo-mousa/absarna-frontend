@@ -1,34 +1,39 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {
       screens: {
         xs: '480px',
       },
+      // Brand palette lives in CSS custom properties (see index.css's `:root`/`.dark`
+      // blocks), not literal hex here — that's what lets every existing `bg-surface`/
+      // `text-text-primary`/etc. call site repaint for dark mode with zero per-component
+      // changes, instead of needing a `dark:` variant added at every usage.
       colors: {
         primary: {
-          DEFAULT: '#0D6B4D',
-          dark: '#0A523B',
-          light: '#E8F5F0',
+          DEFAULT: 'rgb(var(--color-primary) / <alpha-value>)',
+          dark: 'rgb(var(--color-primary-dark) / <alpha-value>)',
+          light: 'rgb(var(--color-primary-light) / <alpha-value>)',
         },
         gold: {
-          DEFAULT: '#D4AF37',
-          light: '#FEF9E7',
+          DEFAULT: 'rgb(var(--color-gold) / <alpha-value>)',
+          light: 'rgb(var(--color-gold-light) / <alpha-value>)',
         },
         surface: {
-          DEFAULT: '#FFFFFF',
-          hover: '#F5F5F2',
+          DEFAULT: 'rgb(var(--color-surface) / <alpha-value>)',
+          hover: 'rgb(var(--color-surface-hover) / <alpha-value>)',
         },
-        bg: '#FAF9F6',
+        bg: 'rgb(var(--color-bg) / <alpha-value>)',
         border: {
-          DEFAULT: '#E5E7EB',
-          light: '#F0F0ED',
+          DEFAULT: 'rgb(var(--color-border) / <alpha-value>)',
+          light: 'rgb(var(--color-border-light) / <alpha-value>)',
         },
         text: {
-          primary: '#1A1A1A',
-          secondary: '#6B7280',
-          muted: '#9CA3AF',
+          primary: 'rgb(var(--color-text-primary) / <alpha-value>)',
+          secondary: 'rgb(var(--color-text-secondary) / <alpha-value>)',
+          muted: 'rgb(var(--color-text-muted) / <alpha-value>)',
         },
       },
       fontFamily: {

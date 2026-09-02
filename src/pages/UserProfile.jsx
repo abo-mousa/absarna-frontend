@@ -105,7 +105,7 @@ function ChangePasswordCard() {
                     required
                     placeholder="••••••••"
                     dir="ltr"
-                    className={form.confirmPassword && form.confirmPassword !== form.newPassword ? '!border-red-600' : ''}
+                    className={form.confirmPassword && form.confirmPassword !== form.newPassword ? '!border-red-600 dark:!border-red-500' : ''}
                 />
 
                 <Button type="submit" disabled={saving} fullWidth>

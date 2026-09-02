@@ -94,7 +94,7 @@ function CreateChannel() {
                             <EmailVerificationNotice message="يجب توثيق بريدك الإلكتروني قبل إنشاء قناة" />
                         )}
 
-                        {error && <p className="text-red-600 text-sm bg-red-100 p-2.5 rounded-md">{error}</p>}
+                        {error && <p className="text-red-600 dark:text-red-400 text-sm bg-red-100 dark:bg-red-950/40 p-2.5 rounded-md">{error}</p>}
 
                         <Button type="submit" disabled={loading || needsVerification} fullWidth>
                             {loading ? 'جاري الإنشاء...' : 'إنشاء القناة'}

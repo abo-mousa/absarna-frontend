@@ -2,7 +2,7 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowRight, Type, Clock, Calendar } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
 import { QueryState } from '../components/ui';
-import { CommentsSection, BookmarkButton } from '../components/content';
+import { CommentsSection, BookmarkButton, ShareButton } from '../components/content';
 import { useArticle } from '../hooks/useArticles';
 import { usePageMeta } from '../hooks/usePageMeta';
 
@@ -36,7 +36,10 @@ function ArticleDetail() {
 
                     <div className="flex items-start justify-between gap-3 mb-4">
                         <h1 className="text-2xl sm:text-3xl font-bold leading-snug">{article.title}</h1>
-                        <BookmarkButton type="article" id={article.id} className="flex-shrink-0 mt-1" />
+                        <div className="flex items-center gap-3 flex-shrink-0 mt-1">
+                            <ShareButton title={article.title} path={`/articles/${article.id}`} />
+                            <BookmarkButton type="article" id={article.id} />
+                        </div>
                     </div>
 
                     <div className="flex gap-5 flex-wrap py-3 border-y border-border-light mb-6 text-sm text-text-secondary">

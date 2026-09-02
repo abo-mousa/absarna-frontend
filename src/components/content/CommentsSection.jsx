@@ -122,7 +122,7 @@ function CommentsSection({ type, id }) {
                     onClick={() => setDeletingId(comment.id)}
                     title="حذف"
                     aria-label="حذف التعليق"
-                    className="p-1 text-text-muted hover:text-red-600 transition-colors"
+                    className="p-1 text-text-muted hover:text-red-600 dark:hover:text-red-400 transition-colors"
                 >
                     <Trash2 size={14} />
                 </button>

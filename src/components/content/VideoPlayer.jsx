@@ -1,4 +1,4 @@
-import { useEffect, useRef, useId } from 'react';
+import { useEffect, useRef, useId, forwardRef, useImperativeHandle } from 'react';
 import { resolveMediaUrl, extractYouTubeId } from '@/lib/media';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api/client';
@@ -36,7 +36,11 @@ function loadYouTubeIframeApi() {
     return youtubeApiPromise;
 }
 
-function VideoPlayer({ contentId, sourceType, sourceUrl, title }) {
+// `ref` exposes getCurrentTime() so a parent (VideoDetail's share sheet, for "copy link at
+// this timestamp") can read the playhead on demand without this component re-rendering on
+// every tick — the alternative (lifting currentTime into state) would fire a render several
+// times a second for something only ever read once, at share-click time.
+const VideoPlayer = forwardRef(function VideoPlayer({ contentId, sourceType, sourceUrl, title, startTime = 0 }, ref) {
     const { token } = useAuth();
     const videoRef = useRef(null);
     const lastReportedAtRef = useRef(0);
@@ -103,6 +107,13 @@ function VideoPlayer({ contentId, sourceType, sourceUrl, title }) {
     const isYouTube = sourceType === 'YOUTUBE';
     const youtubeVideoId = isYouTube ? extractYouTubeId(sourceUrl) : '';
 
+    useImperativeHandle(ref, () => ({
+        getCurrentTime: () => {
+            if (isYouTube) return youtubePlayerRef.current?.getCurrentTime?.() || 0;
+            return videoRef.current?.currentTime || 0;
+        },
+    }), [isYouTube]);
+
     useEffect(() => {
         if (!isYouTube || !youtubeVideoId) return;
         let destroyed = false;
@@ -112,7 +123,7 @@ function VideoPlayer({ contentId, sourceType, sourceUrl, title }) {
             youtubePlayerRef.current = new YT.Player(youtubeContainerId, {
                 videoId: youtubeVideoId,
                 host: 'https://www.youtube-nocookie.com',
-                playerVars: { rel: 0 },
+                playerVars: startTime > 0 ? { rel: 0, start: Math.floor(startTime) } : { rel: 0 },
                 events: {
                     onStateChange: (e) => {
                         clearInterval(youtubeIntervalRef.current);
@@ -153,6 +164,12 @@ function VideoPlayer({ contentId, sourceType, sourceUrl, title }) {
         return () => window.removeEventListener('pagehide', handlePageHide);
     }, [isYouTube]);
 
+    // Seeking needs the element's duration/metadata loaded first — setting `currentTime` any
+    // earlier is silently ignored by the browser.
+    const handleLoadedMetadata = (e) => {
+        if (startTime > 0) e.currentTarget.currentTime = startTime;
+    };
+
     if (sourceType === 'LOCAL' || sourceType === 'STREAM') {
         return (
             <video
@@ -160,6 +177,7 @@ function VideoPlayer({ contentId, sourceType, sourceUrl, title }) {
                 controls
                 playsInline
                 preload="metadata"
+                onLoadedMetadata={handleLoadedMetadata}
                 onTimeUpdate={handleTimeUpdate}
                 onPause={handlePauseOrEnded}
                 onEnded={handlePauseOrEnded}
@@ -176,6 +194,7 @@ function VideoPlayer({ contentId, sourceType, sourceUrl, title }) {
             <video
                 ref={videoRef}
                 controls
+                onLoadedMetadata={handleLoadedMetadata}
                 onTimeUpdate={handleTimeUpdate}
                 onPause={handlePauseOrEnded}
                 onEnded={handlePauseOrEnded}
@@ -207,6 +226,6 @@ function VideoPlayer({ contentId, sourceType, sourceUrl, title }) {
             شاهد الفيديو
         </a>
     );
-}
+});
 
 export default VideoPlayer;

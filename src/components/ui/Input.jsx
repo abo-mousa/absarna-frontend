@@ -54,7 +54,7 @@ function Input({
                 {cleanLabel && (
                     <label htmlFor={id} className="block mb-1.5 font-semibold text-sm text-text-secondary">
                         {cleanLabel}
-                        {required && <span className="text-red-600"> *</span>}
+                        {required && <span className="text-red-600 dark:text-red-500"> *</span>}
                     </label>
                 )}
                 <input
@@ -110,7 +110,7 @@ function Input({
     const floatingLabel = cleanLabel ? (
         <>
             {cleanLabel}
-            {required && <span className="text-red-600"> *</span>}
+            {required && <span className="text-red-600 dark:text-red-500"> *</span>}
         </>
     ) : (
         placeholder
