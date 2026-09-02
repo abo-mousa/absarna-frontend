@@ -10,6 +10,7 @@ import { usePageMeta } from '../hooks/usePageMeta';
 
 function ChangePasswordCard() {
     const { showToast } = useToast();
+    const { applySession } = useAuth();
     const [form, setForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
     const [saving, setSaving] = useState(false);
 
@@ -31,7 +32,13 @@ function ChangePasswordCard() {
 
         setSaving(true);
         try {
-            await changePassword(form.currentPassword, form.newPassword);
+            // The backend bumps User.tokenVersion, which invalidates every JWT issued before
+            // the change — the pair this session is holding included. It hands back a
+            // replacement pair for exactly that reason; without adopting it here, the next
+            // request 401s, the refresh 401s, and client.js bounces the user to the login
+            // screen moments after a successful password change.
+            const res = await changePassword(form.currentPassword, form.newPassword);
+            applySession(res.data);
             showToast('تم تغيير كلمة المرور بنجاح', 'success');
             setForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
         } catch (err) {

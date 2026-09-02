@@ -45,12 +45,20 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    // Every place a fresh token pair arrives — login, register, and a password change (whose
+    // tokenVersion bump invalidates the pair the caller is currently holding, so it has to
+    // adopt the replacement or it logs itself out) — goes through here, so none of them can
+    // forget one of the two keys.
+    const applySession = ({ token: newToken, refreshToken }) => {
+        localStorage.setItem('token', newToken);
+        localStorage.setItem('refreshToken', refreshToken);
+        setToken(newToken);
+    };
+
     const login = async (username, password) => {
         try {
             const res = await api.post('/auth/login', { username, password });
-            localStorage.setItem('token', res.data.token);
-            localStorage.setItem('refreshToken', res.data.refreshToken);
-            setToken(res.data.token);
+            applySession(res.data);
             setUser(res.data.user);
             return { success: true };
         } catch (error) {
@@ -66,9 +74,7 @@ export const AuthProvider = ({ children }) => {
             const res = await api.post('/auth/register', {
                 username, email, password, fullName
             });
-            localStorage.setItem('token', res.data.token);
-            localStorage.setItem('refreshToken', res.data.refreshToken);
-            setToken(res.data.token);
+            applySession(res.data);
             setUser(res.data.user);
             return { success: true };
         } catch (error) {
@@ -88,7 +94,7 @@ export const AuthProvider = ({ children }) => {
 
     return (
         <AuthContext.Provider value={{
-            token, user, loading, login, register, logout, refreshUser: fetchUserProfile
+            token, user, loading, login, register, logout, applySession, refreshUser: fetchUserProfile
         }}>
             {children}
         </AuthContext.Provider>

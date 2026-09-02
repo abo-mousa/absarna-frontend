@@ -1,5 +1,40 @@
 import { API_BASE_URL } from './env';
 
+// Our own API's origin, parsed once — see isOwnMediaUrl.
+const apiOrigin = (() => {
+    try {
+        return new URL(API_BASE_URL, window.location.href).origin;
+    } catch {
+        return null;
+    }
+})();
+
+// Whether `resolved` is one of *our* gated media URLs, and so somewhere the media token may go.
+//
+// This used to be `resolved.startsWith(API_BASE_URL)` — a prefix test on a URL string, not an
+// origin check. It therefore also passed for any host whose name merely begins with ours
+// (`https://api.example.com.evil.tld/…`) and for userinfo syntax
+// (`https://api.example.com@evil.tld/…`, which the browser sends to evil.tld). That was
+// reachable, not theoretical: the backend's SafeUrl allowlist admits any absolute https URL, so
+// a channel owner could store such a value as a hidden video's sourceUrl and collect the media
+// token of anyone able to view it — a platform admin moderating that channel included.
+//
+// Also narrowed to the two paths MediaAccessInterceptor actually gates. The token authenticates
+// nothing else (JwtFilter only accepts it from ?token= on /uploads and /stream), so sending it
+// anywhere else was pure leak surface — and it closes the "wider contract than its comment
+// claims" note in CLAUDE.md at the same time.
+const isOwnMediaUrl = (resolved) => {
+    if (!apiOrigin) return false;
+    let parsed;
+    try {
+        parsed = new URL(resolved, window.location.href);
+    } catch {
+        return false;
+    }
+    return parsed.origin === apiOrigin
+        && (parsed.pathname.startsWith('/uploads/') || parsed.pathname.startsWith('/stream/'));
+};
+
 // Resolves a file URL coming back from the BE (which may be a full URL, or a
 // relative /uploads or /stream path, or a bare filename) against the API host.
 //
@@ -7,8 +42,10 @@ import { API_BASE_URL } from './env';
 // the backend's MediaAccessInterceptor 404s a hidden item's /uploads or /stream URL unless the
 // caller proves they're the owner/admin, but <img>/<video>/<a> tags never attach an
 // Authorization header, so the token is passed as a query param instead (see JwtFilter's
-// matching fallback, scoped to just these two paths). Never appended to an external URL
-// (e.g. a YouTube thumbnail) — only our own API host understands it.
+// matching fallback, scoped to just these two paths). Only ever appended to an /uploads or
+// /stream path on our own origin — never to an external URL (e.g. a YouTube thumbnail), and
+// never to another route on our own host; see isOwnMediaUrl below for why that check is an
+// origin comparison rather than a string prefix.
 //
 // Pass the **media token** from hooks/useMediaToken, never the session token from useAuth():
 // a query param ends up in the API's access logs, every proxy's logs, and browser history, so
@@ -24,7 +61,7 @@ export const resolveMediaUrl = (url, token) => {
     } else {
         resolved = `${API_BASE_URL}/uploads/${url}`;
     }
-    if (token && resolved.startsWith(API_BASE_URL)) {
+    if (token && isOwnMediaUrl(resolved)) {
         resolved += `${resolved.includes('?') ? '&' : '?'}token=${encodeURIComponent(token)}`;
     }
     return resolved;
