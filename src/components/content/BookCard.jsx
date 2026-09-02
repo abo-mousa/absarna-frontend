@@ -38,8 +38,14 @@ function BookCard({ book, currentPage }) {
                 )}
 
                 {readPercent !== null && (
-                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/40">
-                        <div className="h-full bg-primary/40" style={{ width: `${readPercent}%` }} />
+                    <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-black/50">
+                        {/* A literal stock gradient, not the `primary` token — see VideoCard's
+                            identical bar for why a plain fill on `primary` only read clearly in
+                            dark mode. */}
+                        <div
+                            className="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 shadow-[0_0_6px_rgba(16,185,129,0.7)]"
+                            style={{ width: `${readPercent}%` }}
+                        />
                     </div>
                 )}
             </Link>

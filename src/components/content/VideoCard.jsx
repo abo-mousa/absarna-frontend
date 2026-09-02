@@ -117,8 +117,15 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                 )}
 
                 {watchedPercent !== null && (
-                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/40">
-                        <div className="h-full bg-primary/40" style={{ width: `${watchedPercent}%` }} />
+                    <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-black/50">
+                        {/* A literal stock gradient, not the `primary` token — `primary` is a
+                            muted dark green in light mode but a bright emerald in dark mode (see
+                            index.css), so a fill on it read clearly only in dark mode. A fixed
+                            gradient reads the same, with a bit of pop, in both. */}
+                        <div
+                            className="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 shadow-[0_0_6px_rgba(16,185,129,0.7)]"
+                            style={{ width: `${watchedPercent}%` }}
+                        />
                     </div>
                 )}
             </div>
