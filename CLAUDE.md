@@ -252,14 +252,17 @@ Nothing open. The change-password logout was closed on 2026-09-02 — see Histor
 
 ## Refactoring / structure
 
-- Still open from the previous pass: `ChannelManage.jsx` is now ~700 lines holding five tabs and
-  four near-identical content forms. The 2026-09-01 section parked the
-  `<ContentPublishForm type=… />` + `useChannelContentTab(slug, type)` extraction until the
-  upload-service rewrite landed so the work wouldn't be thrown away — **upload has since moved to
-  its own service, so that reason has expired** and the extraction is now just open work. Its two
-  file-upload handlers (`handleVideoFileSelect`/`handleBookFileSelect`) still `api.post` to this
-  backend's `/channels/{slug}/content/{videos,books}/upload`; repointing them at the new service
-  belongs to the same pass.
+- Still open, still parked: `ChannelManage.jsx` is now ~700 lines holding five tabs and four
+  near-identical content forms. The 2026-09-01 section parked the `<ContentPublishForm type=… />`
+  + `useChannelContentTab(slug, type)` extraction until an upload-service rewrite lands, so the
+  extraction wouldn't need redoing once the upload endpoints change underneath it — **checked
+  2026-09-03, that rewrite has not happened**: `ChannelManage.jsx`'s `handleVideoFileSelect`/
+  `handleBookFileSelect` still `api.post` to `ChannelContentController`'s `/channels/{slug}/
+  content/{videos,books}/upload` (backend `content` module), unchanged since the previous pass.
+  A separate `upload` module exists in the backend (`ChunkUploadController` at `/api/upload`,
+  chunked-upload check/chunk/status/complete; `FileUploadController` at `/api/admin`) but nothing
+  currently routes channel video/book uploads through it — don't assume it's the "new service" or
+  treat this as unblocked without re-checking which endpoints `ChannelManage.jsx` actually calls.
 
 ## UX
 
