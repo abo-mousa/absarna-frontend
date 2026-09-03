@@ -250,7 +250,7 @@ function ChannelManage() {
     const handleVideoSubmit = async (e) => {
         e.preventDefault();
         try {
-            await createVideo.mutateAsync({ ...stripEmpty(videoForm), channelId: channel.id, speaker: channel.name });
+            await createVideo.mutateAsync({ ...stripEmpty(videoForm), speaker: channel.name });
             setVideoForm({
                 title: '', description: '', sourceType: 'LOCAL', sourceUrl: '',
                 category: '', seriesId: '', orderInSeries: '', originalPublishDate: '',
@@ -323,7 +323,7 @@ function ChannelManage() {
     const handleBookSubmit = async (e) => {
         e.preventDefault();
         try {
-            await createBook.mutateAsync({ ...stripEmpty(bookForm), channelId: channel.id });
+            await createBook.mutateAsync(stripEmpty(bookForm));
             setBookForm({ title: '', description: '', pdfUrl: '', previewImageUrl: '', category: '', originalPublishDate: '', pages: '' });
             showMessage('success:تم نشر الكتاب');
         } catch (err) {
@@ -334,7 +334,7 @@ function ChannelManage() {
     const handleArticleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await createArticle.mutateAsync({ ...stripEmpty(articleForm), channelId: channel.id });
+            await createArticle.mutateAsync(stripEmpty(articleForm));
             setArticleForm({ title: '', content: '', category: '', originalPublishDate: '' });
             showMessage('success:تم نشر المقال');
         } catch (err) {
@@ -345,7 +345,7 @@ function ChannelManage() {
     const handlePostSubmit = async (e) => {
         e.preventDefault();
         try {
-            await createPost.mutateAsync({ ...stripEmpty(postForm), channelId: channel.id });
+            await createPost.mutateAsync(stripEmpty(postForm));
             setPostForm({ content: '' });
             showMessage('success:تم نشر التحديث');
         } catch (err) {

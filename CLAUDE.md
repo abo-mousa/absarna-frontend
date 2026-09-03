@@ -225,7 +225,7 @@ Dropped into `VideoDetail`/`BookDetail`/`ArticleDetail`'s header next to `Bookma
 
 ## Known gaps
 
-- The Navbar's "رفع" (Upload) link points to `/upload`, which isn't a registered route — the `*` fallback (`NotFound`) catches it. There used to be 5 unrouted admin CMS tab components under `components/admin/` meant to eventually back this; they were deleted 2026-09-01 (dead code, fully duplicated by `ChannelManage.jsx`) rather than wired up. If per-type CMS tabs come back, build them as part of the `ChannelManage` rewrite mentioned under "Bugs" below, not as a second implementation.
+- The Navbar's "رفع" (Upload) link (see "Navbar upload link" under History) now routes to the viewer's own channel-manage page rather than the old unrouted `/upload`. There used to be 5 unrouted admin CMS tab components under `components/admin/` meant to eventually back a dedicated upload page; they were deleted 2026-09-01 (dead code, fully duplicated by `ChannelManage.jsx`) rather than wired up. If per-type CMS tabs come back, build them as part of the `ChannelManage` rewrite mentioned under "Refactoring / structure" below, not as a second implementation.
 
 ## Build / verify
 
@@ -252,14 +252,6 @@ Nothing open. The change-password logout was closed on 2026-09-02 — see Histor
 
 ## Refactoring / structure
 
-- **`ChannelManage.jsx`'s four create handlers send a `channelId` the backend deliberately drops.**
-  All four do `{ ...stripEmpty(form), channelId: channel.id }`, but none of `VideoCreateRequest`/
-  `BookCreateRequest`/`ArticleCreateRequest`/`PostCreateRequest` has that field — omitting it *is*
-  the documented mass-assignment fix, and `ChannelContentController` sets it server-side after
-  mapping. Spring Boot's Jackson defaults ignore unknown properties, so it's silently discarded on
-  arrival. Harmless, but it reads as though the client picks the channel, which is precisely what
-  the server was changed to stop trusting — same category as the dead `isFeatured`/`speaker` state
-  already removed from these forms.
 - Still open from the previous pass: `ChannelManage.jsx` is now ~700 lines holding five tabs and
   four near-identical content forms. The 2026-09-01 section parked the
   `<ContentPublishForm type=… />` + `useChannelContentTab(slug, type)` extraction until the
@@ -273,9 +265,6 @@ Nothing open. The change-password logout was closed on 2026-09-02 — see Histor
 
 - **Comment reporting.** Author-only comment edit/delete exist, but a reader still has no way to
   report someone else's comment — there's no backend endpoint for it yet.
-- **The Navbar's "رفع" link points at `/upload`, which is not a route** — the `*` fallback catches
-  it and renders `NotFound`. It was parked pending the upload-service rewrite; that has since
-  landed, so this now just needs pointing somewhere real.
 
 ## Feature ideas
 
@@ -761,3 +750,21 @@ page.
   shared `formatPublishDate()` (`lib/dayjsAr.js`) — relative ("منذ يومين") under a week old, an
   absolute date past that, date-only (no time-of-day, unlike `CommentsSection`'s own
   timestamp formatter, since a publish date has none).
+
+## Two quick cleanups — 2026-09-03
+
+- **`ChannelManage.jsx`'s four create handlers no longer send a `channelId`.** They previously did
+  `{ ...stripEmpty(form), channelId: channel.id }`; none of `VideoCreateRequest`/
+  `BookCreateRequest`/`ArticleCreateRequest`/`PostCreateRequest` has that field, so it was always
+  silently discarded by Jackson's default unknown-property handling on arrival —
+  `ChannelContentController` sets the real `channelId` server-side after mapping, which *is* the
+  mass-assignment fix, so the client was never trusted with it. Harmless, but it read as though
+  the client picks the channel. Dropped from all four `mutateAsync` calls; `handleVideoSubmit`'s
+  `speaker: channel.name` is unrelated (still genuinely sent) and stays.
+- **Navbar's "رفع" (Upload) link no longer points at the unrouted `/upload`.** It now uses
+  `useMyChannels()` (already the hook `SideBar.jsx` uses for its own "قنواتي" list) to route to
+  the viewer's first owned channel's `/channel/{slug}/manage` — the only place uploading actually
+  happens, per "Owner content management" above — falling back to `/create-channel` for a
+  CREATOR/CHANNEL_ADMIN who hasn't created a channel yet. No new page was built; multi-channel
+  owners land on their first channel's manage tab and can switch via `SideBar`'s channel list, same
+  as before this fix. Verified via `npm run build`.

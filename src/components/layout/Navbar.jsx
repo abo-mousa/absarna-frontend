@@ -3,6 +3,7 @@ import { Upload, User, Shield, LogOut, Menu, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { isPlatformAdmin } from '@/lib/user';
+import { useMyChannels } from '../../hooks/useChannels';
 import logo from '../../assets/logo.svg';
 import SearchBar from './SearchBar';
 
@@ -12,6 +13,8 @@ const iconLabelClass = 'hidden sm:block text-[0.65rem] font-medium text-text-mut
 function Navbar({ onMenuClick }) {
     const { token, user, logout } = useAuth();
     const { theme, toggleTheme } = useTheme();
+    const { data: myChannels = [] } = useMyChannels(!!token);
+    const uploadLink = myChannels.length > 0 ? `/channel/${myChannels[0].slug}/manage` : '/create-channel';
 
     return (
         <nav className="sticky top-0 z-[1000] bg-bg/95 backdrop-blur-md border-b border-border-light">
@@ -47,7 +50,7 @@ function Navbar({ onMenuClick }) {
                     {token ? (
                         <>
                             {['CREATOR', 'CHANNEL_ADMIN', 'PLATFORM_ADMIN'].includes(user?.role) && (
-                                <Link to="/upload" title="رفع محتوى" aria-label="رفع محتوى" className={iconButtonClass}>
+                                <Link to={uploadLink} title="رفع محتوى" aria-label="رفع محتوى" className={iconButtonClass}>
                                     <Upload size={18} />
                                     <span className={iconLabelClass}>رفع</span>
                                 </Link>
