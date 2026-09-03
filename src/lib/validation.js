@@ -1,5 +1,5 @@
 // Mirrors backend AuthService/PasswordValidator's actual rules (authentication/src/main/java/
-// com/manara/authentication/{service/AuthService,validation/PasswordValidator}.java) so the
+// com/absarna/authentication/{service/AuthService,validation/PasswordValidator}.java) so the
 // client rejects an invalid username/password before hitting the API instead of after.
 export const PASSWORD_MIN_LENGTH = 8;
 // BCrypt (PasswordValidator) silently truncates past 72 UTF-8 bytes, not 72 characters — a

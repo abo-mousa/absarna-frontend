@@ -57,7 +57,7 @@ function Register() {
             <div className="max-w-[400px] mx-auto my-10 sm:my-16 p-6 sm:p-8 bg-surface rounded-lg shadow-md border border-border-light">
                 <div className="text-center mb-6">
                     <h2 className="text-xl font-bold">إنشاء حساب</h2>
-                    <p className="text-text-muted mt-2">انضم إلى منارة</p>
+                    <p className="text-text-muted mt-2">انضم إلى أَبْصَرْنا</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="grid gap-4">

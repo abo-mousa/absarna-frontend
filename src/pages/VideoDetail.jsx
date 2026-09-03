@@ -1,21 +1,22 @@
 import { useRef } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { ArrowRight, ChevronRight, ChevronLeft, Clock, Folder, Tv, User, Calendar, Eye } from 'lucide-react';
+import { ArrowRight, ChevronRight, ChevronLeft, Clock, Folder, Tv, User, Calendar } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
-import { QueryState, Avatar } from '../components/ui';
+import { QueryState, Avatar, Spinner } from '../components/ui';
 import { VideoPlayer, CommentsSection, VideoCard, BookmarkButton, ShareButton } from '../components/content';
-import { useVideo, useRelatedVideo, useWatchProgressMap } from '../hooks/useVideos';
+import { useVideo, useRelatedVideo, useWatchProgressMap, useWatchHistory } from '../hooks/useVideos';
 import { useChannel } from '../hooks/useChannels';
 import { useSeriesDetail } from '../hooks/useSeries';
 import { useAuth } from '../contexts/AuthContext';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { resolveMediaUrl, youtubeThumbnail } from '@/lib/media';
+import { formatPublishDate } from '@/lib/dayjsAr';
 
 function VideoDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const startTime = Number(searchParams.get('t')) || 0;
+    const sharedTime = Number(searchParams.get('t')) || 0;
     const playerRef = useRef(null);
     const { data: video, isLoading, isError } = useVideo(id);
     const { data: related = [] } = useRelatedVideo(id);
@@ -23,6 +24,15 @@ function VideoDetail() {
     const { data: seriesData } = useSeriesDetail(video?.seriesId, !!video?.seriesId);
     const { token } = useAuth();
     const watchProgress = useWatchProgressMap(!!token);
+    // Same cached `['watch-history']` query `useWatchProgressMap` reads internally — called
+    // again here only for its `isLoading`, to gate mounting the player below (React Query
+    // dedupes by key, so this isn't a second request).
+    const { isLoading: historyLoading } = useWatchHistory(!!token);
+    // An explicit `?t=` (share-at-timestamp) always wins; otherwise resume from this video's
+    // own saved watch progress — the same `watchProgress` map already used below for the
+    // related-videos row's progress bars, just never consulted for the player's own start
+    // point before, so a video always restarted from 0 regardless of watch history.
+    const startTime = sharedTime || Math.floor(watchProgress[video?.id] || 0);
 
     const thumbnail = video?.thumbnailUrl
         ? resolveMediaUrl(video.thumbnailUrl)
@@ -57,25 +67,42 @@ function VideoDetail() {
         video.duration && { icon: Clock, text: video.duration },
         video.category && { icon: Folder, text: video.category },
         video.speaker && { icon: User, text: video.speaker },
-        video.publishDate && { icon: Calendar, text: video.publishDate },
         video.originalPublishDate && video.originalPublishDate !== video.publishDate &&
             { icon: Calendar, text: `تاريخ النشر الأصلي: ${video.originalPublishDate}` },
-        { icon: Eye, text: `${(video.viewCount ?? 0).toLocaleString('ar')} مشاهدة` },
     ].filter(Boolean);
+
+    // Views · comments · publish date — sits opposite the channel name instead of buried in
+    // the meta row below, so it reads as this video's own stats rather than one more attribute
+    // alongside duration/category.
+    const stats = [
+        video.viewCount != null && `${video.viewCount.toLocaleString('ar')} مشاهدات`,
+        video.commentCount != null && `${video.commentCount.toLocaleString('ar')} تعليقات`,
+        video.publishDate && formatPublishDate(video.publishDate),
+    ].filter(Boolean).join(' · ');
 
     return (
         <PageShell sidebar={false}>
             <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
                 <div className="bg-surface rounded-lg overflow-hidden border border-border-light shadow-sm mb-6">
-                    <VideoPlayer
-                        ref={playerRef}
-                        videoId={video.id}
-                        sourceType={video.sourceType}
-                        sourceUrl={video.sourceUrl}
-                        title={video.title}
-                        visible={video.visible}
-                        startTime={startTime}
-                    />
+                    {historyLoading ? (
+                        // Holds the player back until we know the real resume point — the
+                        // YouTube branch below only ever seeks once, at player-creation time,
+                        // so starting it with `startTime` still 0 (history not loaded yet) would
+                        // silently lose the resume for good, not just delay it.
+                        <div className="aspect-video flex items-center justify-center">
+                            <Spinner />
+                        </div>
+                    ) : (
+                        <VideoPlayer
+                            ref={playerRef}
+                            videoId={video.id}
+                            sourceType={video.sourceType}
+                            sourceUrl={video.sourceUrl}
+                            title={video.title}
+                            visible={video.visible}
+                            startTime={startTime}
+                        />
+                    )}
                 </div>
 
                 <div className="bg-surface p-5 sm:p-6 rounded-lg border border-border-light mb-6">
@@ -91,15 +118,18 @@ function VideoDetail() {
                         </div>
                     </div>
 
-                    {channel && (
-                        <Link
-                            to={`/channel/${channel.slug}`}
-                            className="flex items-center gap-2 w-fit mb-4 text-text-primary hover:text-primary transition-colors"
-                        >
-                            <Avatar src={resolveMediaUrl(channel.logoUrl)} name={channel.name} size="sm" />
-                            <span className="font-semibold text-sm">{channel.name}</span>
-                        </Link>
-                    )}
+                    <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
+                        {channel ? (
+                            <Link
+                                to={`/channel/${channel.slug}`}
+                                className="flex items-center gap-2 w-fit text-text-primary hover:text-primary transition-colors"
+                            >
+                                <Avatar src={resolveMediaUrl(channel.logoUrl)} name={channel.name} size="sm" />
+                                <span className="font-semibold text-sm">{channel.name}</span>
+                            </Link>
+                        ) : <span />}
+                        {stats && <span className="text-xs text-text-muted">{stats}</span>}
+                    </div>
 
                     <div className="flex gap-4 flex-wrap text-sm text-text-secondary mb-4">
                         {meta.map(({ icon: Icon, text }, i) => (

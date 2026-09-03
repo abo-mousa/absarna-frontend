@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowRight, BookOpen, Download, X } from 'lucide-react';
 import { resolveMediaUrl } from '@/lib/media';
+import { formatPublishDate } from '@/lib/dayjsAr';
 import { useMediaToken } from '@/hooks/useMediaToken';
 import { flushOnUnload } from '@/lib/api/beacon';
 import { useAuth } from '../contexts/AuthContext';
@@ -110,11 +111,11 @@ function BookDetail() {
 
                         <div className="flex gap-4 flex-wrap text-sm text-text-secondary mb-4">
                             {book.pages && <span>{book.pages} صفحة</span>}
-                            {book.publishDate && <span>{book.publishDate}</span>}
+                            {book.publishDate && <span>{formatPublishDate(book.publishDate)}</span>}
                             {book.originalPublishDate && book.originalPublishDate !== book.publishDate && (
                                 <span>تاريخ النشر الأصلي: {book.originalPublishDate}</span>
                             )}
-                            <span>{(book.viewCount ?? 0).toLocaleString('ar')} مشاهدة</span>
+                            <span>{(book.viewCount ?? 0).toLocaleString('ar')} مشاهدات</span>
                         </div>
 
                         {book.description && (

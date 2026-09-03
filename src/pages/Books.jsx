@@ -15,7 +15,7 @@ const SORTS = [
 ];
 
 function Books() {
-    usePageMeta({ title: 'المكتبة', description: 'مكتبة الكتب الإسلامية على منارة' });
+    usePageMeta({ title: 'المكتبة', description: 'مكتبة الكتب الإسلامية على أَبْصَرْنا' });
     const { token } = useAuth();
     const readingProgress = useReadingProgressMap(!!token);
     const {

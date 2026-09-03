@@ -24,9 +24,9 @@ function Navbar({ onMenuClick }) {
                     <Menu size={22} />
                 </button>
 
-                <Link to="/" className="flex items-center gap-2 text-xl font-bold text-primary flex-shrink-0">
-                    <img src={logo} alt="منارة" className="w-7 h-7" />
-                    <span>منارة</span>
+                <Link to="/" className="flex items-center gap-1 text-2xl sm:text-3xl font-bold text-primary flex-shrink-0">
+                    <img src={logo} alt="أبصرنا" className="w-9 h-9 sm:w-10 sm:h-10" />
+                    <span className="font-serif">أَبْصَرْنا</span>
                 </Link>
 
                 <div className="flex-1 flex justify-center">

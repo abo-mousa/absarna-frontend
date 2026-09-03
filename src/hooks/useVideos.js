@@ -125,7 +125,7 @@ export const useRelatedVideo = (id, limit = 6) => {
 };
 
 // The caller's own "continue watching" list — bounded/non-paginated per the backend's design
-// (see manara-platform's CLAUDE.md), never used to drive ranking, only to show progress.
+// (see absarna-backend's CLAUDE.md), never used to drive ranking, only to show progress.
 export const useWatchHistory = (enabled = true) => {
     return useQuery({
         queryKey: ['watch-history'],

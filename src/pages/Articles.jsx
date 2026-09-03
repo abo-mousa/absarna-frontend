@@ -5,6 +5,7 @@ import PageShell from '../components/layout/PageShell';
 import { QueryState, Input } from '../components/ui';
 import { useArticles } from '../hooks/useArticles';
 import { usePageMeta } from '../hooks/usePageMeta';
+import { formatPublishDate } from '@/lib/dayjsAr';
 
 const PAGE_SIZE = 15;
 
@@ -14,7 +15,7 @@ const SORTS = [
 ];
 
 function Articles() {
-    usePageMeta({ title: 'المقالات', description: 'مقالات إسلامية على منارة' });
+    usePageMeta({ title: 'المقالات', description: 'مقالات إسلامية على أَبْصَرْنا' });
     const {
         data,
         isLoading,
@@ -105,7 +106,7 @@ function Articles() {
                                     <span className="flex items-center gap-1"><Clock size={13} /> {article.readingTimeMinutes} دقائق</span>
                                 )}
                                 {article.publishDate && (
-                                    <span className="flex items-center gap-1"><Calendar size={13} /> {article.publishDate}</span>
+                                    <span className="flex items-center gap-1"><Calendar size={13} /> {formatPublishDate(article.publishDate)}</span>
                                 )}
                             </div>
                             {article.content && (

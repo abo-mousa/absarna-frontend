@@ -1,20 +1,22 @@
-# Manara Platform — Frontend
+# أَبْصَرْنا (Absarna) Platform — Frontend
 
-React 18 + Vite frontend for the Manara media platform (videos/books/articles). Plain JavaScript (`.jsx`, not TypeScript). RTL (Arabic) throughout. Backend lives at `/Users/kareemismail/IdeaProjects/manara-platform` (separate repo, has its own `CLAUDE.md`).
+React 18 + Vite frontend for the أَبْصَرْنا (Absarna) media platform (videos/books/articles) — renamed 2026-09-03 from its original "منارة" (Manara, "lighthouse/beacon") branding; see "Rebrand: منارة → أَبْصَرْنا" under History for the full rationale and what changed. Plain JavaScript (`.jsx`, not TypeScript). RTL (Arabic) throughout. Backend lives at `/Users/kareemismail/IdeaProjects/absarna-backend` (separate repo, has its own `CLAUDE.md`; renamed from `manara-platform`/`com.manara.*` on 2026-09-03 — see "Rename: Manara → Absarna" under History).
 
-The repo directory is still named `elhamy-frontend-enhanced` (old project name) and `.idea/` project files still reference it — cosmetic leftovers, not renamed. `package.json`'s `name` field is `manara-frontend`.
+The repo directory is `/Users/kareemismail/IdeaProjects/absarna-frontend` (renamed 2026-09-03 from `elhamy-frontend-enhanced` and moved out of `~/Desktop` to sit alongside the backend under `~/IdeaProjects` — see "Rename: Manara → Absarna" under History; `.idea/` project files need reopening from the new path). `package.json`'s `name` field is `absarna-frontend` (updated as part of the rebrand; `package-lock.json` resynced via `npm install --package-lock-only`).
 
 Keep this file updated when architecture/conventions change — not a changelog for every commit, just what a fresh session would otherwise have to re-derive by reading everything.
 
 ## Styling: Tailwind CSS
 
-Fully migrated from hand-rolled inline `style={{}}` objects to Tailwind (`tailwind.config.js`). Brand palette is defined as Tailwind theme tokens — primary green `#0D6B4D`, gold `#D4AF37` — under `colors.primary`/`colors.gold`/etc. Don't reintroduce inline style objects for anything Tailwind can express; the one legitimate exception is a handful of components with genuinely runtime-variable values Tailwind's JIT can't see (`Grid.jsx`'s `minWidth`/`gap`, `Spinner.jsx`'s `size`) — those stay inline on purpose, commented as such.
+Fully migrated from hand-rolled inline `style={{}}` objects to Tailwind (`tailwind.config.js`). Brand palette is defined as Tailwind theme tokens under `colors.primary`/`colors.gold`/etc — primary turquoise `#17A398`, gold `#F2AE30`, both resolved through the CSS-variable indirection described under "Dark mode" below (see that section, and the rebrand History entry, for the light/dark values and why they changed from the original green/brass palette). Don't reintroduce inline style objects for anything Tailwind can express; the one legitimate exception is a handful of components with genuinely runtime-variable values Tailwind's JIT can't see (`Grid.jsx`'s `minWidth`/`gap`, `Spinner.jsx`'s `size`) — those stay inline on purpose, commented as such.
+
+**Wordmark font**: `fontFamily.serif` (`Markazi Text`, an Arabic-and-Latin serif from Google Fonts, loaded in `index.html`) is used only for the "أَبْصَرْنا" wordmark in `Navbar.jsx` (`font-serif` class) — not a general body/heading font swap. `fontFamily.sans` (IBM Plex Sans Arabic) stays the UI-wide default everywhere else.
 
 **Design language**: YouTube-style for browsing (Home, Search, ChannelPage's video tab — thumbnail grid, sticky top nav, collapsible sidebar). Medium-style for reading (Books, Articles, Biography — centered `max-w-reading` column, generous whitespace). Logo is a hand-authored SVG lighthouse mark (`منارة` = "lighthouse/beacon") at `src/assets/logo.svg`, also used as `public/favicon.svg`.
 
 ### Dark mode
 
-`tailwind.config.js` sets `darkMode: 'class'`, and every brand color token (`primary`/`primary-dark`/`primary-light`, `gold`/`gold-light`, `surface`/`surface-hover`, `bg`, `border`/`border-light`, `text-primary`/`secondary`/`muted`) resolves through a CSS custom property (`rgb(var(--color-x) / <alpha-value>)`) instead of a literal hex, with light values on `:root` and dark values under `.dark` in `src/index.css`. That's what makes this a two-file change instead of a `dark:`-variant pass across every component: any existing `bg-surface`/`text-text-secondary`/etc. call site already repaints correctly the moment the `dark` class is toggled on `<html>` — nothing else needed changing. Dark-mode values are chosen independently per token, not a mechanical "invert" (e.g. `primary` is *brighter* in dark mode — emerald-500 — since it doubles as `text-primary` link/accent color against a near-black page, not just a button fill; `primary-light`/`gold-light` become dark tinted backgrounds rather than lightened primaries).
+`tailwind.config.js` sets `darkMode: 'class'`, and every brand color token (`primary`/`primary-dark`/`primary-light`, `gold`/`gold-light`, `surface`/`surface-hover`, `bg`, `border`/`border-light`, `text-primary`/`secondary`/`muted`) resolves through a CSS custom property (`rgb(var(--color-x) / <alpha-value>)`) instead of a literal hex, with light values on `:root` and dark values under `.dark` in `src/index.css`. That's what makes this a two-file change instead of a `dark:`-variant pass across every component: any existing `bg-surface`/`text-text-secondary`/etc. call site already repaints correctly the moment the `dark` class is toggled on `<html>` — nothing else needed changing. Dark-mode values are chosen independently per token, not a mechanical "invert" (e.g. `primary` is *brighter* in dark mode — `#22C4BC` vs. light mode's `#17A398` — since it doubles as `text-primary` link/accent color against a near-black page, not just a button fill; `primary-light`/`gold-light` become dark tinted backgrounds rather than lightened primaries). Background/surface/border/text neutrals also shifted with the rebrand — light mode is a warm parchment (`#FBF7EE` page, `#FEFDF9` surface) rather than a neutral off-white, and dark mode is an indigo-tinted near-black (`#10141C`) rather than a neutral charcoal — see the rebrand History entry for the reasoning.
 
 - `src/contexts/ThemeContext.jsx` (`ThemeProvider`/`useTheme()`, wraps the app in `App.jsx` outside `BrowserRouter`) owns the toggle: flips the `dark` class on `document.documentElement` and persists to `localStorage['theme']`. An inline script in `index.html`'s `<head>` applies the stored (or system-preference-derived) theme *before* React mounts, so there's no flash of the wrong theme on load — `ThemeProvider`'s initial state is read back from the DOM class that script already set, so the two can't disagree.
 - Toggle lives in `Navbar.jsx` (sun/moon icon, same `iconButtonClass` as the other nav icons), visible whether or not the visitor is logged in.
@@ -636,3 +638,126 @@ Probed specifically this pass, not assumed from this file's changelog:
   paths are correct**, including the no-refresh-token branch fixed in `e3f13c3`.
 - **`validation.js` mirrors the backend's real rules**, including the 72-**byte** BCrypt cap
   measured with `TextEncoder` rather than `String.length`.
+
+## Rebrand: منارة → أَبْصَرْنا — 2026-09-03
+
+Platform renamed from "منارة" (Manara, "lighthouse/beacon") to "أَبْصَرْنا" (Absarna) — a real
+change in meaning, not just a new word: "منارة" describes a fixed guiding light, "أَبْصَرْنا"
+("we perceived / we gained insight/sight", from the root بصر) describes the act of seeing itself.
+Direction was worked out iteratively against a design canvas (Islamic-Andalusian/Cairo geometric
+reference, several logo concepts tried and rejected — an eye motif, a pierced-brass lantern, a
+lantern-in-star hybrid — before landing on the current mark) before touching any code; only the
+final approved direction is described here.
+
+- **Logo/favicon** (`src/assets/logo.svg`, copied to `public/favicon.svg`): two overlapping
+  squares, one turquoise (`#17A398`→`#0A4A45` gradient) and one gold (`#F2AE30`→`#A66E14`
+  gradient) rotated 45° from each other — a literal construction from Islamic geometric
+  ornament (the intersection of two squares gives a regular octagon; their eight combined
+  corners give the classic 8-point star), not a stock "8-point star" glyph. Deliberately **not**
+  a lantern or an eye — both were explored and rejected (lantern read as visually busy/cluttered
+  at favicon size and is a fairly generic Middle-Eastern-branding trope; an eye motif was
+  explicitly ruled out for feeling too literal about "sight"). A richer malachite-textured
+  octagon-on-square "showcase" variant (gold-engraved star medallion, backlit glow, built with an
+  SVG `feTurbulence` filter for the stone texture rather than a raster asset) exists in the design
+  canvas for splash-screen/marketing use but was **not** shipped as the in-app icon — its fine
+  lattice detail doesn't hold up below hero size, same reason the lantern was dropped.
+- **Color tokens** (`src/index.css`'s `:root`/`.dark`, see "Dark mode" above): primary shifted
+  from a muted forest green (`#0D6B4D`) to a more saturated zellige turquoise (`#17A398` light /
+  `#22C4BC` dark), gold shifted from a muted brass (`#D4AF37`) to a warmer, more saturated gold
+  (`#F2AE30` light / `#F5C15A` dark) — both pushed more vivid than the first pass, which read as
+  "dull" against the Islamic-ornament reference material. Light-mode neutrals also moved from a
+  cool off-white to a warm parchment (`#FBF7EE` page / `#FEFDF9` surface / `#E5DFD3` border), and
+  dark-mode neutrals from a neutral charcoal to an indigo-tinted near-black (`#10141C`) — matching
+  the design canvas's full palette, not just the two brand accent tokens.
+- **Wordmark**: `Navbar.jsx` now renders "أَبْصَرْنا" (fully vocalized with tashkeel — hamza,
+  sukūn, fatha — since a bare `ابصرنا` is ambiguous/harder to read as a fresh brand name) in the
+  new `font-serif` token (`Markazi Text`, added to `tailwind.config.js`'s `fontFamily` and loaded
+  in `index.html`'s Google Fonts link) — used only for the wordmark, not a body/heading font swap.
+- **Copy**: every user-facing "منارة" string replaced with "أَبْصَرْنا" —
+  `index.html`'s title/OG/Twitter meta, `usePageMeta.js`'s defaults and per-page suffix,
+  `Register.jsx`'s post-registration line, and the `usePageMeta` description strings in
+  `Articles.jsx`/`Books.jsx`.
+- **`package.json`'s `name`** changed from `manara-frontend` to `absarna-frontend`;
+  `package-lock.json` resynced via `npm install --package-lock-only`. The repo directory
+  (`elhamy-frontend-enhanced`) and `.idea/` project files stay as they were before this rebrand —
+  already-documented cosmetic leftovers, unaffected by this change. The **backend** repo
+  (`/Users/kareemismail/IdeaProjects/manara-platform`) is untouched — its directory name and
+  `com.manara.*` Java package naming are that repo's own decision, out of this session's scope.
+- Not changed (at the time): comment in `src/hooks/useVideos.js` and `src/lib/validation.js`
+  referencing "manara-platform"/"com/manara/..." — these named the actual backend repo/package,
+  not the product brand, and stayed accurate only as long as the backend itself wasn't renamed.
+  It was, six days later — see "Rename: Manara → Absarna" below.
+
+## Rename: Manara → Absarna (repo/folder/backend cross-refs) — 2026-09-03
+
+The rebrand above changed user-facing copy and `package.json`'s `name`, but deliberately left the
+repo directory, GitHub repo, and the backend untouched (both scoped out at the time — see the
+bullet above). All three closed today, together with the matching backend-side rename (see the
+backend's own `CLAUDE.md`, "Rename: Manara → Absarna" entry, for the Java-package/DB/SQL-function
+side of it — that repo's rename is out of this repo's scope to describe in detail, same as before).
+
+- Local directory: `~/Desktop/elhamy-frontend-enhanced` → `~/Desktop/absarna-frontend` → (same
+  day) `~/IdeaProjects/absarna-frontend`, moved a second time to sit next to the backend under
+  `~/IdeaProjects` rather than `~/Desktop` — see the intro paragraph above, now updated. GitHub
+  repo: `abo-mousa/manara-fe` → `abo-mousa/absarna-frontend` (the GitHub repo name had already
+  drifted from the local folder name pre-rename — it was never actually
+  `elhamy-frontend-enhanced` on GitHub, just locally).
+- Backend path references updated to match its own rename: the intro paragraph above, and the
+  two source comments (`src/hooks/useVideos.js`'s `useWatchHistory` comment,
+  `src/lib/validation.js`'s header comment) that name the backend repo/package by its old name —
+  see the bullet directly above this entry for why those were deliberately left alone the first
+  time.
+- Nothing else in this repo's own code changed — the frontend has no runtime dependency on the
+  backend's package names, DB name, or SQL function name (those only matter inside the backend's
+  own JVM/DB), so this was purely a documentation/comment-accuracy pass on this side.
+
+## Video resume-playback — 2026-09-03
+
+Opening a video (from History or anywhere else) always restarted from 0, never resuming from a
+previously saved watch position — reported live ("when I open a video that I already opened
+before it doesn't continue from where it stopped").
+
+Two separate bugs, found in sequence:
+
+- **Never wired up at all.** `VideoDetail.jsx` computed `startTime` only from the `?t=`
+  share-timestamp query param — it never looked at `useWatchProgressMap`, even though that data
+  was already being fetched on the same page (for the related-videos row's progress bars).
+  Fixed: `startTime = sharedTime || Math.floor(watchProgress[video.id] || 0)`.
+- **A race, found while fixing the above.** `VideoPlayer.jsx`'s YouTube branch bakes its start
+  position into `playerVars.start` once, at player-creation time, and its creation `useEffect`
+  doesn't depend on `startTime` (deliberately, to avoid recreating the player on every seek) — so
+  if the ~200-item `/user/history` request hadn't resolved yet by the time the video's own
+  (single-row) fetch completed, the player got created with `start: undefined` and never resumed,
+  silently, not just late. Native `<video>` had the same theoretical exposure via
+  `onLoadedMetadata`, just less likely to actually lose the race.
+  Fixed by holding `<VideoPlayer>` itself back — a `Spinner` in its place — until
+  `useWatchHistory`'s `isLoading` clears, so the player is only ever constructed once the true
+  resume point is known; every entry point (Home, Search, ChannelPage, Bookmarks, History,
+  SeriesDetail, the navbar search bar) benefits automatically since they all just navigate to
+  `/video/{id}` and this fix lives at the destination.
+- Checked and already correct by comparison: `BookDetail.jsx`/`PdfReader.jsx`'s reading-progress
+  resume has no equivalent race — `PdfReader` has an explicit effect that applies `initialPage`
+  even if it "arrives asynchronously," precisely the robustness `VideoPlayer`'s one-shot YouTube
+  player creation lacked.
+
+## Comment counts on `VideoCard`/`VideoDetail` — 2026-09-03
+
+`video.commentCount` is now a real field on every video DTO the backend returns (see backend
+`CLAUDE.md`'s matching entry for how — a computed `COUNT()` per response, not a stored/synced
+counter). Counts both top-level comments and replies, matching `CommentsSection`'s own
+"التعليقات (N)" total exactly, so the number never disagrees between a card and the video's own
+page.
+
+- `VideoCard.jsx`'s info area is now two columns: title → channel name → category on one side,
+  publish date · views · comments stacked on the other (`min-w-0` on the title column — without
+  it a flex item won't shrink below its content's natural width, which silently breaks
+  `line-clamp-2`).
+- `VideoDetail.jsx` reads `video.commentCount` directly now instead of separately fetching every
+  comment via `useComments` just to run them through `countComments` — that workaround predated
+  the backend field and is gone; `CommentsSection` still does its own full fetch, for the actual
+  comment list, unrelated to this count.
+- Publish dates across every card/detail page (`VideoCard`, `VideoDetail`, `BookCard`,
+  `ArticleCard`, `PostCard`, `BookDetail`, `ArticleDetail`, `Articles.jsx`) now render through a
+  shared `formatPublishDate()` (`lib/dayjsAr.js`) — relative ("منذ يومين") under a week old, an
+  absolute date past that, date-only (no time-of-day, unlike `CommentsSection`'s own
+  timestamp formatter, since a publish date has none).

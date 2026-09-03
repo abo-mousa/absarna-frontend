@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 
-const DEFAULT_TITLE = 'منارة | Manara';
-const DEFAULT_DESCRIPTION = 'منارة — منصة إسلامية للفيديوهات والكتب والمقالات';
+const DEFAULT_TITLE = 'أَبْصَرْنا | Absarna';
+const DEFAULT_DESCRIPTION = 'أَبْصَرْنا — منصة إسلامية للفيديوهات والكتب والمقالات';
 const DEFAULT_IMAGE = '/favicon.svg';
 
 function setMeta(attr, key, value) {
@@ -25,12 +25,12 @@ function applyMeta(title, description, image) {
 }
 
 // Sets document.title plus OG/Twitter meta for the current page, restoring the app-wide
-// default on unmount — every page other than the fallback 404 renders "منارة | Manara" for
+// default on unmount — every page other than the fallback 404 renders "أَبْصَرْنا | Absarna" for
 // every route/history entry/shared link otherwise (see CLAUDE.md's UX review).
 export function usePageMeta({ title, description, image } = {}) {
     useEffect(() => {
         applyMeta(
-            title ? `${title} | منارة` : DEFAULT_TITLE,
+            title ? `${title} | أَبْصَرْنا` : DEFAULT_TITLE,
             description || DEFAULT_DESCRIPTION,
             image || DEFAULT_IMAGE
         );

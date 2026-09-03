@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Play, Eye, EyeOff, Trash2 } from 'lucide-react';
 import { resolveMediaUrl, youtubeThumbnail, durationToSeconds } from '@/lib/media';
+import { formatPublishDate } from '@/lib/dayjsAr';
 import { useChannel } from '@/hooks/useChannels';
 import { useMediaToken } from '@/hooks/useMediaToken';
 import Avatar from '../ui/Avatar';
@@ -117,40 +118,49 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                 )}
 
                 {watchedPercent !== null && (
-                    <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-black/50">
-                        {/* A literal stock gradient, not the `primary` token — `primary` is a
-                            muted dark green in light mode but a bright emerald in dark mode (see
-                            index.css), so a fill on it read clearly only in dark mode. A fixed
-                            gradient reads the same, with a bit of pop, in both. */}
-                        <div
-                            className="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 shadow-[0_0_6px_rgba(16,185,129,0.7)]"
-                            style={{ width: `${watchedPercent}%` }}
-                        />
+                    <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-black/70">
+                        {/* A fixed, muted (not saturated/neon) turquoise, not the `primary` token —
+                            `primary` is deliberately deep/muted for button fills (see index.css)
+                            and read as barely-there here. Brighter in light mode via `dark:` —
+                            the deeper shade alone already read clearly in dark mode, but got lost
+                            against a lighter light-mode page even with the darkened track above. */}
+                        <div className="h-full bg-[#45A296] dark:bg-[#337F77]" style={{ width: `${watchedPercent}%` }} />
                     </div>
                 )}
             </div>
 
-            <div className="p-4">
-                {video.category && (
-                    <span className="inline-block px-2.5 py-0.5 bg-primary-light text-primary rounded-full text-xs font-semibold mb-2">
-                        {video.category}
-                    </span>
-                )}
-                <h3 className="text-[0.95rem] font-semibold mb-1.5 leading-snug line-clamp-2">
-                    {video.title}
-                </h3>
-                {channel && (
-                    <button
-                        onClick={(e) => { e.stopPropagation(); navigate(`/channel/${channel.slug}`); }}
-                        aria-label={`الذهاب إلى قناة ${channel.name}`}
-                        className="flex items-center gap-1.5 mb-1.5 text-xs text-text-secondary hover:text-primary transition-colors"
-                    >
-                        <Avatar src={resolveMediaUrl(channel.logoUrl)} name={channel.name} size="sm" className="!w-5 !h-5 !text-[0.65rem]" />
-                        {channel.name}
-                    </button>
-                )}
-                {video.publishDate && (
-                    <div className="text-xs text-text-muted">{video.publishDate}</div>
+            <div className="p-4 flex items-start justify-between gap-3">
+                {/* `min-w-0` — without it, a flex item won't shrink below its content's natural
+                    width, which silently breaks the title's `line-clamp-2` truncation. */}
+                <div className="min-w-0">
+                    <h3 className="text-[0.95rem] font-semibold mb-1.5 leading-snug line-clamp-2">
+                        {video.title}
+                    </h3>
+                    {channel && (
+                        <button
+                            onClick={(e) => { e.stopPropagation(); navigate(`/channel/${channel.slug}`); }}
+                            aria-label={`الذهاب إلى قناة ${channel.name}`}
+                            className="flex items-center gap-1.5 mb-1.5 text-xs text-text-secondary hover:text-primary transition-colors"
+                        >
+                            <Avatar src={resolveMediaUrl(channel.logoUrl)} name={channel.name} size="sm" className="!w-5 !h-5 !text-[0.65rem]" />
+                            {channel.name}
+                        </button>
+                    )}
+                    {video.category && (
+                        <span className="inline-block px-2.5 py-0.5 bg-primary-light text-primary rounded-full text-xs font-semibold">
+                            {video.category}
+                        </span>
+                    )}
+                </div>
+                {/* commentCount is now a real DTO field, computed server-side by a single grouped
+                    COUNT query per list response — not fetched per card, see backend CLAUDE.md's
+                    "Comment counts on video lists" entry. */}
+                {(video.publishDate || video.viewCount != null || video.commentCount != null) && (
+                    <div className="flex-shrink-0 text-xs text-text-muted space-y-1 whitespace-nowrap">
+                        {video.publishDate && <div>{formatPublishDate(video.publishDate)}</div>}
+                        {video.viewCount != null && <div>{video.viewCount.toLocaleString('ar')} مشاهدات</div>}
+                        {video.commentCount != null && <div>{video.commentCount.toLocaleString('ar')} تعليقات</div>}
+                    </div>
                 )}
             </div>
         </div>

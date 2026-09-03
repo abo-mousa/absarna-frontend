@@ -38,6 +38,8 @@ export default {
       },
       fontFamily: {
         sans: ['IBM Plex Sans Arabic', 'Rubik', 'Inter', 'sans-serif'],
+        // Wordmark and reading-page headings only — see CLAUDE.md's rebrand note.
+        serif: ['Markazi Text', 'Amiri', 'serif'],
       },
       borderRadius: {
         sm: '6px',

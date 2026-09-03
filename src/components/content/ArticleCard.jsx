@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Clock } from 'lucide-react';
+import { formatPublishDate } from '@/lib/dayjsAr';
 
 function ArticleCard({ article }) {
     return (
@@ -26,7 +27,7 @@ function ArticleCard({ article }) {
                         <Clock size={12} /> {article.readingTimeMinutes} دقائق
                     </span>
                 )}
-                {article.publishDate && <span>{article.publishDate}</span>}
+                {article.publishDate && <span>{formatPublishDate(article.publishDate)}</span>}
             </div>
         </Link>
     );

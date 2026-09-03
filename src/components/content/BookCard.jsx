@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { BookOpen, Download } from 'lucide-react';
 import { resolveMediaUrl } from '@/lib/media';
+import { formatPublishDate } from '@/lib/dayjsAr';
 import { useMediaToken } from '@/hooks/useMediaToken';
 
 // Percent read, for the small progress bar on the cover — same idea as VideoCard's
@@ -38,14 +39,10 @@ function BookCard({ book, currentPage }) {
                 )}
 
                 {readPercent !== null && (
-                    <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-black/50">
-                        {/* A literal stock gradient, not the `primary` token — see VideoCard's
-                            identical bar for why a plain fill on `primary` only read clearly in
-                            dark mode. */}
-                        <div
-                            className="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 shadow-[0_0_6px_rgba(16,185,129,0.7)]"
-                            style={{ width: `${readPercent}%` }}
-                        />
+                    <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-black/70">
+                        {/* A fixed, muted turquoise, brighter in light mode — see VideoCard's
+                            identical bar for the full reasoning. */}
+                        <div className="h-full bg-[#45A296] dark:bg-[#337F77]" style={{ width: `${readPercent}%` }} />
                     </div>
                 )}
             </Link>
@@ -65,7 +62,7 @@ function BookCard({ book, currentPage }) {
 
                 <div className="flex gap-3 text-xs text-text-muted mb-3">
                     {book.pages && <span>{book.pages} صفحة</span>}
-                    {book.publishDate && <span>{book.publishDate}</span>}
+                    {book.publishDate && <span>{formatPublishDate(book.publishDate)}</span>}
                 </div>
 
                 <div className="flex gap-2 mt-auto">

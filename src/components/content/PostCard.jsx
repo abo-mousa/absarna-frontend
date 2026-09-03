@@ -1,4 +1,5 @@
 import { Calendar } from 'lucide-react';
+import { formatPublishDate } from '@/lib/dayjsAr';
 
 function PostCard({ post }) {
     return (
@@ -6,7 +7,7 @@ function PostCard({ post }) {
             <p className="text-text-primary leading-relaxed whitespace-pre-wrap">{post.content}</p>
             {post.publishDate && (
                 <div className="flex items-center gap-1.5 text-xs text-text-muted mt-3">
-                    <Calendar size={12} /> {post.publishDate}
+                    <Calendar size={12} /> {formatPublishDate(post.publishDate)}
                 </div>
             )}
         </div>

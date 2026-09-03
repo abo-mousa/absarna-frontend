@@ -1,5 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { ArrowRight, Type, Clock, Calendar, Eye } from 'lucide-react';
+import { formatPublishDate } from '@/lib/dayjsAr';
 import PageShell from '../components/layout/PageShell';
 import { QueryState } from '../components/ui';
 import { CommentsSection, BookmarkButton, ShareButton } from '../components/content';
@@ -50,7 +51,7 @@ function ArticleDetail() {
                             <span className="flex items-center gap-1.5"><Clock size={14} /> {article.readingTimeMinutes} دقائق قراءة</span>
                         )}
                         {article.publishDate && (
-                            <span className="flex items-center gap-1.5"><Calendar size={14} /> {article.publishDate}</span>
+                            <span className="flex items-center gap-1.5"><Calendar size={14} /> {formatPublishDate(article.publishDate)}</span>
                         )}
                         {article.originalPublishDate && article.originalPublishDate !== article.publishDate && (
                             <span className="flex items-center gap-1.5">
@@ -58,7 +59,7 @@ function ArticleDetail() {
                             </span>
                         )}
                         <span className="flex items-center gap-1.5">
-                            <Eye size={14} /> {(article.viewCount ?? 0).toLocaleString('ar')} مشاهدة
+                            <Eye size={14} /> {(article.viewCount ?? 0).toLocaleString('ar')} مشاهدات
                         </span>
                     </div>
 

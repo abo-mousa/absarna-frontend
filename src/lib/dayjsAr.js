@@ -35,4 +35,16 @@ dayjs.locale(
     true
 );
 
+// Shared "2 days ago" / "1 month ago" convention for date-only fields (publishDate, a `LocalDate`
+// with no time-of-day) across every card/detail page that shows one — relative under a week old,
+// an absolute date past that, same threshold CommentsSection already uses for comment timestamps
+// (that one keeps a time-of-day since comments have one; this doesn't, since publish dates don't).
+export function formatPublishDate(dateStr) {
+    if (!dateStr) return '';
+    const date = dayjs(dateStr);
+    if (!date.isValid()) return '';
+    if (dayjs().diff(date, 'day') < 7) return date.locale('ar-latn').fromNow();
+    return date.format('D MMMM YYYY');
+}
+
 export default dayjs;
