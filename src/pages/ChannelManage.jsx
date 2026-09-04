@@ -17,6 +17,7 @@ import {
     useDeleteContent,
 } from '../hooks/useChannels';
 import { useChannelSeriesManage, useCreateSeries, useDeleteSeries } from '../hooks/useSeries';
+import { usePresignedUpload } from '../hooks/usePresignedUpload';
 import { useChannelComments, useModerateComment } from '../hooks/useCommentModeration';
 
 const TABS = [
@@ -112,17 +113,24 @@ function ChannelManage() {
         if (!authLoading && !user) navigate('/');
     }, [authLoading, user, navigate]);
 
+    // sourceType/sourceUrl stay for the external-URL path (a YouTube link, say); a
+    // presigned upload sets uploadSessionId instead. The create endpoint requires exactly one of
+    // the two shapes, which is why neither is pre-filled any more.
     const [videoForm, setVideoForm] = useState({
-        title: '', description: '', sourceType: 'LOCAL', sourceUrl: '',
+        title: '', description: '', sourceType: '', sourceUrl: '', uploadSessionId: '',
         category: '', seriesId: '', orderInSeries: '', originalPublishDate: '',
     });
     const [videoUploading, setVideoUploading] = useState(false);
-    const [uploadProgress, setUploadProgress] = useState(0);
+    const videoUpload = usePresignedUpload();
+    // Progress now comes from the hook, which counts bytes actually accepted by object storage
+    // rather than bytes handed to axios.
+    const uploadProgress = videoUpload.progress;
 
     const [bookForm, setBookForm] = useState({
-        title: '', description: '', pdfUrl: '', previewImageUrl: '',
+        title: '', description: '', pdfUrl: '', uploadSessionId: '', previewImageUrl: '',
         category: '', originalPublishDate: '', pages: '',
     });
+    const bookUpload = usePresignedUpload();
     const [bookUploading, setBookUploading] = useState(false);
 
     const [articleForm, setArticleForm] = useState({
@@ -208,36 +216,27 @@ function ChannelManage() {
         }
     };
 
+    // Presigned direct-to-storage upload: bytes go from the browser to object storage and never
+    // through the backend, which only signs part URLs. Nothing exists as content until
+    // handleVideoSubmit sends the resulting uploadSessionId to the create endpoint — so an
+    // abandoned upload leaves no row behind, and the "upload" step no longer returns a URL to
+    // stuff into the form. It returns a session id instead.
     const handleVideoFileSelect = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
         setVideoUploading(true);
-        setUploadProgress(0);
-
-        const formData = new FormData();
-        formData.append('file', file);
 
         try {
-            const res = await api.post(`/channels/${slug}/content/videos/upload`, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-                onUploadProgress: (progressEvent) => {
-                    setUploadProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
-                },
-            });
-
-            let thumbnailUrl = res.data.thumbnailUrl || '';
-            if (thumbnailUrl && !thumbnailUrl.startsWith('http') && !thumbnailUrl.startsWith('/uploads/')) {
-                thumbnailUrl = `/uploads/${thumbnailUrl}`;
-            }
-
+            const uploadSessionId = await videoUpload.upload(file, { kind: 'videos', slug });
             setVideoForm({
                 ...videoForm,
-                sourceType: 'LOCAL',
-                sourceUrl: res.data.fileUrl,
-                thumbnailUrl,
-                duration: res.data.duration || '',
-                title: file.name.replace(/\.[^/.]+$/, ''),
+                // sourceType/sourceUrl are the server's to set on this path — the create request
+                // rejects a payload carrying both a sourceUrl and an uploadSessionId.
+                sourceType: '',
+                sourceUrl: '',
+                uploadSessionId,
+                title: videoForm.title || file.name.replace(/\.[^/.]+$/, ''),
             });
             showMessage('success:تم رفع الفيديو');
         } catch (err) {
@@ -252,7 +251,7 @@ function ChannelManage() {
         try {
             await createVideo.mutateAsync({ ...stripEmpty(videoForm), speaker: channel.name });
             setVideoForm({
-                title: '', description: '', sourceType: 'LOCAL', sourceUrl: '',
+                title: '', description: '', sourceType: '', sourceUrl: '', uploadSessionId: '',
                 category: '', seriesId: '', orderInSeries: '', originalPublishDate: '',
             });
             showMessage('success:تم نشر الفيديو');
@@ -292,25 +291,20 @@ function ChannelManage() {
 
         setBookUploading(true);
 
-        const formData = new FormData();
-        formData.append('file', file);
-
         try {
-            const res = await api.post(`/channels/${slug}/content/books/upload`, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-            });
-
-            let previewUrl = res.data.previewUrl || '';
-            if (previewUrl && !previewUrl.startsWith('http') && !previewUrl.startsWith('/uploads/')) {
-                previewUrl = `/uploads/${previewUrl}`;
-            }
-
+            // Same presigned direct-to-storage path as video, through the shared front door —
+            // the backend only differs by allowlist and size cap. Unlike video there is no
+            // transcode afterwards: the PDF is readable the moment the create call confirms it.
+            const uploadSessionId = await bookUpload.upload(file, { kind: 'books', slug });
             setBookForm({
                 ...bookForm,
-                pdfUrl: res.data.fileUrl,
-                previewImageUrl: previewUrl,
-                pages: res.data.pages || '',
-                title: file.name.replace(/\.[^/.]+$/, ''),
+                // pdfUrl stays empty — the create request rejects a payload carrying both a
+                // pdfUrl and an uploadSessionId. Preview image and page count came from the old
+                // server-side PDF processing, which went away with the upload module; a book
+                // reads fine without either.
+                pdfUrl: '',
+                uploadSessionId,
+                title: bookForm.title || file.name.replace(/\.[^/.]+$/, ''),
             });
             showMessage('success:تم رفع الكتاب');
         } catch (err) {
@@ -324,7 +318,7 @@ function ChannelManage() {
         e.preventDefault();
         try {
             await createBook.mutateAsync(stripEmpty(bookForm));
-            setBookForm({ title: '', description: '', pdfUrl: '', previewImageUrl: '', category: '', originalPublishDate: '', pages: '' });
+            setBookForm({ title: '', description: '', pdfUrl: '', uploadSessionId: '', previewImageUrl: '', category: '', originalPublishDate: '', pages: '' });
             showMessage('success:تم نشر الكتاب');
         } catch (err) {
             showMessage(`error:فشل في نشر الكتاب: ${err.response?.data?.message || err.message}`);

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useId, forwardRef, useImperativeHandle 
 import { useQueryClient } from '@tanstack/react-query';
 import { resolveMediaUrl, safeExternalUrl, extractYouTubeId } from '@/lib/media';
 import { useAuth } from '@/contexts/AuthContext';
-import { useMediaToken } from '@/hooks/useMediaToken';
+import { useVideoPlaybackUrl } from '@/hooks/useMediaUrl';
 import api from '@/lib/api/client';
 import { flushOnUnload } from '@/lib/api/beacon';
 
@@ -64,15 +64,17 @@ function loadYouTubeIframeApi() {
 // times a second for something only ever read once, at share-click time.
 const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourceUrl, title, visible, startTime = 0 }, ref) {
     // Session token: still the right thing for the watch-progress writes below (they go through
-    // axios, which sends it as an Authorization header). It is NOT what goes in the media URL —
-    // see useMediaToken.
+    // axios, which sends it as an Authorization header). Nothing goes into the media URL any
+    // more — it arrives already signed from the backend. See useVideoPlaybackUrl.
     const { token } = useAuth();
     const queryClient = useQueryClient();
 
-    // Only a locally-hosted file that's currently hidden needs a token to fetch at all; a public
-    // video, and anything hosted elsewhere, never does.
-    const needsMediaToken = visible === false && (sourceType === 'LOCAL' || sourceType === 'STREAM');
-    const { mediaToken, isLoading: mediaTokenLoading } = useMediaToken(needsMediaToken);
+    // Our own uploads are fetched through a presigned URL the backend mints after running its
+    // visibility check. Anything hosted elsewhere (a YouTube embed, an external link) never
+    // touches this. Note the check is now on every playback, not only a hidden video: the object
+    // is private regardless, so even a public video needs a signature.
+    const isOwnUpload = sourceType === 'UPLOAD' || sourceType === 'LOCAL' || sourceType === 'STREAM';
+    const { data: playbackUrl, isLoading: playbackUrlLoading } = useVideoPlaybackUrl(videoId, isOwnUpload);
     // Attached via the `setVideoEl` callback ref below rather than `ref={videoRef}`, and it
     // deliberately ignores the null write: React nulls a `ref={...}` out during the same unmount
     // pass that runs the flush effect's cleanup, so the element would already be gone by the time
@@ -239,10 +241,10 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
     // session token in localStorage (React warns about it but renders it anyway).
     const externalUrl = safeExternalUrl(sourceUrl);
 
-    if (sourceType === 'LOCAL' || sourceType === 'STREAM') {
-        // Rendering before the token arrives would fire one request that 404s and leave the
-        // player showing a permanent error for what is really just a not-yet-authorized fetch.
-        if (mediaTokenLoading) {
+    if (isOwnUpload) {
+        // Rendering before the signed URL arrives would fire one unsigned request that 403s and
+        // leave the player stuck showing an error for what is really just a pending fetch.
+        if (playbackUrlLoading || !playbackUrl) {
             return <div className="w-full h-[300px] rounded-lg bg-black/80 animate-pulse" />;
         }
 
@@ -258,7 +260,7 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
                 onEnded={handlePauseOrEnded}
                 className="w-full max-h-[500px] rounded-lg bg-black"
             >
-                <source src={resolveMediaUrl(sourceUrl, mediaToken)} type="video/mp4" />
+                <source src={playbackUrl} type="video/mp4" />
                 متصفحك لا يدعم تشغيل الفيديو
             </video>
         );

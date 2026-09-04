@@ -39,9 +39,9 @@ src/
                 Bookmarks.jsx (`/bookmarks`) and SeriesDetail.jsx (`/series/:id`) are the newest —
                 see "Bookmarks" and "Series" below.
   hooks/        useVideos, useBooks, useArticles, useBiography, useChannels, useComments,
-                useBookmarks, useSeries, useCommentModeration, useAdminData, useParallelUpload,
-                useDebouncedValue, useOutsideClick, useFocusTrap, usePageMeta —
-                see "Data fetching: React Query" below and "Search suggestions" below
+                useBookmarks, useSeries, useCommentModeration, useAdminData, useMediaUrl,
+                usePresignedUpload, useDebouncedValue, useOutsideClick, useFocusTrap,
+                usePageMeta — see "Data fetching: React Query" and "Media URLs" below
   contexts/     AuthContext, ThemeContext (see "Dark mode"), ToastContext (see "Toast notifications")
   lib/
     api/        client.js (axios instance + interceptors), auth.js, contents.js (thin per-domain wrappers)
@@ -83,12 +83,13 @@ Backend gates two actions on `user.emailVerified` (login itself is never blocked
 - `hooks/useBooks.js` — public `useBooks`/`useBook`, plus `useBookReadProgress`/`useSaveReadProgress` (the latter updates its cache optimistically in `onMutate`, not `onSuccess`, matching the reader's original never-block-on-network behavior for a best-effort progress write).
 - `hooks/useArticles.js`, `hooks/useBiography.js` — same shape, straightforward.
 - `hooks/useBiography.js`'s query key (`['biography']`) is deliberately the same key `useUpdateBiography` (`hooks/useAdminData.js`) invalidates on save — an admin edit shows up on the public page with no extra wiring.
-- `hooks/useMediaToken.js` — `useMediaToken(required)`, the credential for a gated media URL's
-  `?token=` param. See "Media tokens" below.
+- `hooks/useMediaUrl.js` — `useVideoPlaybackUrl`/`useBookReadUrl`, presigned URLs for media in
+  object storage. `hooks/usePresignedUpload.js` — direct-to-storage multipart upload. See
+  "Media URLs" below. (Replaced `useMediaToken`/`useParallelUpload`, both deleted.)
 - `hooks/useComments.js` — `useComments(type, id)` plus `useCreateComment`/`useReplyComment` mutations that invalidate that same key.
 - `hooks/useChannels.js` — the big one: public channel page data (`useChannel`, `useChannelContents`/`Books`/`Articles`/`Posts`, `useSubscriptionStatus`, `useToggleSubscription`), sidebar/subscriptions data (`useAllChannels`, `useSubscriptions`, `useUnsubscribe`, `useMyChannels`), owner management (`useChannelContentList`, `useUpdateChannel`, `useCreateChannelContent`, `useToggleContentVisibility`, `useDeleteContent` — these last three share an `invalidateChannelContent` helper keyed off a `type → public query key` map, so a publish/toggle/delete on `ChannelManage.jsx` refreshes the same list `ChannelPage.jsx`'s visitors see), and admin channel moderation (`usePendingChannels`, `useAllAdminChannels`, `useApproveChannel`/`useRejectChannel`/`useSuspendChannel` — shared by both `Admin.jsx`'s dashboard and `AdminChannels.jsx`).
 - Video visibility/delete toggled from `Home.jsx`'s feed (owner's own videos, mixed into the feed) can't use the fixed-`(slug, type)` hooks above since the slug varies per video — it stays a direct `api.patch`/`api.delete`, but its `refreshFeed(slug)` helper invalidates that specific channel's `channel-contents`/`channel-manage` cache keys too, not just `['feed']`/`['contents']`.
-- `ChannelManage.jsx`'s two file-upload handlers (`handleVideoFileSelect`/`handleBookFileSelect`) stay plain `api.post` with `onUploadProgress` — they populate a form with a returned URL, not something cacheable, and `useMutation` doesn't have a clean spot for upload-progress callbacks.
+- `ChannelManage.jsx`'s two file-upload handlers (`handleVideoFileSelect`/`handleBookFileSelect`) call `usePresignedUpload` rather than a mutation: the file goes straight to object storage, and what lands in the form is an `uploadSessionId`, not a cacheable resource. Progress comes from the hook, which counts bytes object storage actually accepted rather than bytes handed to axios.
 
 ## Search suggestions (`components/layout/SearchBar.jsx`)
 
@@ -129,40 +130,75 @@ Redesigned from a static label-above-the-box to a Material/Hetzner-style floatin
 - `Home.jsx` fetches the viewer's owned channels and builds a `channelId → slug` map. `VideoCard` receives `isOwner`/`onToggleVisibility`/`onDelete` props and, when the viewer owns that video's channel, shows an eye/eye-off and delete icon directly on the thumbnail (always-visible, not hover-gated — this was raised as a possible UX concern but the hover-only change was never actually implemented, so don't assume it happened). A hidden video also shows a "مخفي" badge.
 - `ChannelManage.jsx`'s Videos/Books/Articles tabs each show a full list of that channel's content (visible + hidden) with the same toggle/delete controls — this is the one place all three content types get this treatment; Books/Articles don't have it on their own public listing pages the way Home does for videos.
 
-## Media tokens (`hooks/useMediaToken.js`)
+## Media URLs (`hooks/useMediaUrl.js`, `hooks/usePresignedUpload.js`)
 
-A hidden (or suspended-channel) item's own file is gated by the backend's
-`MediaAccessInterceptor`, but `<img>`/`<video>`/`<a>` tags can't send an `Authorization` header,
-so the credential goes in the URL as `?token=`. That part is unchanged. What changed is **what**
-goes there: this used to be the session token from `useAuth()` — the same JWT that authenticates
-every API call, valid for a day — and a query param is not a private place, since it reaches the
-API's own access logs, every proxy log in between, and the browser's history. `useMediaToken`
-fetches a separate credential from `GET /api/user/media-token`: media-only (the backend rejects
-it on every other route and from the `Authorization` header — see `MediaTokenIT` there) and
-bounded to an hour.
+**The media token is gone** (2026-09-04), along with `useMediaToken`, `useParallelUpload`, and
+`resolveMediaUrl`'s `token` parameter. The backend no longer serves media bytes at all — no
+`/uploads`, no `/stream`, no `MediaAccessInterceptor`. Media lives in object storage.
 
-Three things about using it, each of which is load-bearing:
+### Reading media
 
-- **Pass `required`.** Only a hidden item's file needs a token at all, so
-  `useMediaToken(video.visible === false)` keeps the request from firing for the ordinary public
-  case. `VideoPlayer` narrows it further (`visible === false` *and* a `LOCAL`/`STREAM` source) —
-  a YouTube-hosted video never needs one whatever its visibility.
-- **Don't render the media until it arrives.** The hook returns `isLoading` for exactly this:
-  painting a tokenless `<img>`/`<video>` first fires a request that's certain to 404, and
-  `VideoCard`'s `onError` handler latches that failure for the life of the page, so the
-  thumbnail would stay blank even after the token showed up. `VideoCard`/`BookCard`/`BookDetail`
-  hold their URLs back while it's loading; `VideoPlayer` renders a placeholder.
-- **The token is deliberately not refreshed on a timer.** A new token means a new URL, and
-  swapping a `<video>`'s `src` mid-playback restarts it from zero — so it's fetched once and
-  held for as long as the component is mounted. That's why the backend's TTL is an hour rather
-  than the few minutes a single request would need: it has to outlast playing a full-length
-  lecture. Staleness is handled on the next mount instead (`staleTime` derived from the
-  response's own `expiresInSeconds`, minus a minute of margin, with `refetchOnMount: true` to
-  override the app-wide `refetchOnMount: false`).
+`useVideoPlaybackUrl(videoId, enabled)` / `useBookReadUrl(bookId, enabled)` fetch a short-lived
+**presigned URL** from `GET /api/videos/{id}/playback-url` / `GET /api/books/{id}/read-url`. The
+backend runs its visibility check and, if it passes, signs a URL. **The URL is the access grant** —
+a caller who may not see the item simply never receives one (404, matching the detail endpoint so
+a gated item is indistinguishable from a missing one).
 
-Note the split inside `VideoPlayer`/`BookDetail`: they still take the session token from
-`useAuth()`, because the watch/read-progress writes go through axios and want a real
-`Authorization` header. The media token is only ever for a URL.
+- **Don't render the media until it arrives.** Same reasoning as the old token: painting an
+  unsigned `<video>` first fires a request certain to 403, and `VideoCard`'s `onError` latches
+  that failure for the life of the page. `VideoPlayer` renders a placeholder while loading.
+- **Not refetched on a timer.** A new signature means a new URL, and swapping a `<video>`'s `src`
+  mid-playback restarts it from zero. The backend's TTL (12h by default) is set to outlast a full
+  lecture *including seeks* — a player re-requests on every scrub, so an expired URL mid-playback
+  is an opaque 403.
+- **`retry: false`.** A 404 here means "not visible to you", which retrying cannot change.
+- The session token from `useAuth()` is still right for watch/read-progress writes — those go
+  through axios with a real `Authorization` header. Nothing goes into a media URL any more.
+
+`resolveMediaUrl(url)` now only resolves things that are *already* URLs (an external channel logo,
+a YouTube thumbnail). It **returns null for an object key**, and callers fall back to their
+placeholder. That is correct rather than degraded: an uploaded video has no thumbnail until a
+worker produces one, and no worker exists yet.
+
+### Uploading media
+
+`usePresignedUpload()` uploads a file **straight to object storage** — bytes never transit the
+backend, which only mints presigned part URLs. Four backend endpoints (shared by videos and
+books), then the returned `sessionId` goes to the create endpoint as `uploadSessionId`, which is
+what actually finalises the upload. Nothing exists as content until then, so an abandoned upload
+leaves no row behind.
+
+Three things that are load-bearing:
+
+- **The presigned `PUT` uses raw `fetch`, never the shared axios client.** That client's
+  interceptor attaches the user's JWT to every call; sending it to object storage would leak a
+  session token to a third-party host, and the presigned signature covers the URL and host only —
+  extra headers can invalidate it outright. The signature is the entire credential.
+- **Resume is server-driven.** Progress comes from `GET .../upload-url/{sessionId}/parts`, which
+  returns `partSizeBytes`/`totalParts` alongside what already landed — deliberately, so a resume
+  works from another tab, after a cleared cache, or on a different device, none of which have
+  local state to consult.
+- **URLs arrive in bounded windows.** A 10 GB file is ~1,280 parts and the server caps how many
+  it signs at once; later windows come through the same reissue endpoint resume uses. Parts
+  upload with a concurrency limit of 3.
+
+Book uploads use the same hook (`kind: 'books'`). Note the old server-side PDF preview image and
+page count are gone with the upload module — a book reads fine without either.
+
+## Testing (`vitest`)
+
+Added 2026-09-04 — this repo had **no test framework at all** before that, and most of it still
+has no tests. `npm test` (`vitest run`) / `npm run test:watch`.
+
+Currently covers only `hooks/__tests__/usePresignedUpload.test.js`: the pure upload logic —
+byte-range arithmetic including the short final part, resume diffing with out-of-order gaps,
+batching, the concurrency cap, and error propagation. The network calls themselves are
+deliberately not mocked here; they're covered on the backend, whose ITs upload real parts through
+real presigned URLs against MinIO.
+
+If you add tests, prefer this shape: export the pure functions and test those, rather than
+standing up React Testing Library for logic that doesn't need a DOM. There is no jsdom
+environment configured, on purpose — nothing has needed one yet.
 
 ## Bookmarks (`hooks/useBookmarks.js`, `components/content/BookmarkButton.jsx`, `pages/Bookmarks.jsx`)
 
@@ -497,7 +533,7 @@ never actually reachable.
   our own origin — it used to append to any URL whose string merely *started with* the API base,
   which turned out to be a real leak, not just a wide contract. Fixed 2026-09-02; see the third-
   pass section at the end of this file.
-- The `token` it takes is now the **media token** (`hooks/useMediaToken`), never the session
+- (Historical — the token parameter no longer exists.) The `token` it took was the **media token**, never the session
   token — see "Media tokens" below.
 - `<html lang="ar" dir="rtl">`, per-page `usePageMeta`, `ErrorBoundary`, focus trapping and the
   skip link are all in place; no `dangerouslySetInnerHTML` anywhere in `src/` — the XSS item above
@@ -590,7 +626,7 @@ directly via `curl` against `/api/videos/{id}/watch` and `/api/user/history`, by
 frontend entirely) and only the cache serving History/the progress bars was stale. Fixed by
 overriding `refetchOnMount: true` on `useWatchHistory` (and, for the identical gap, on
 `useReadingHistory`, which `useSaveReadProgress` invalidates on every page-turn write) — same
-precedent as `useMediaToken`'s own override of the app-wide default, for the same reason: an
+precedent as the old `useMediaToken`'s override of the app-wide default, for the same reason: an
 explicitly-invalidated query has to be allowed to actually refetch on its next mount, not just
 get flagged and ignored.
 
@@ -623,8 +659,8 @@ Probed specifically this pass, not assumed from this file's changelog:
   `eval`. Every external `href` goes through `safeExternalUrl` (`VideoPlayer`'s two fallbacks and
   its `TELEGRAM` `<source>`, `Biography`'s three social links) or is a `mailto:` with a fixed
   scheme prefix that can't be escaped. Every `target="_blank"` carries `rel="noopener noreferrer"`.
-- **`useMediaToken`'s `required` gating, hold-back-until-loaded, and no-refetch-on-a-timer
-  behavior all work as documented** — the only media-token problem is `resolveMediaUrl`'s host
+- (Historical, code since deleted.) **`useMediaToken`'s `required` gating, hold-back-until-loaded, and no-refetch-on-a-timer
+  behavior all worked as documented** — the only media-token problem was `resolveMediaUrl`'s host
   check above, not the hook.
 - **`client.js`'s deduped refresh, rotated-refresh-token storage, and both `auth:session-expired`
   paths are correct**, including the no-refresh-token branch fixed in `e3f13c3`.

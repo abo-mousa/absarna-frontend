@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { BookOpen, Download } from 'lucide-react';
 import { resolveMediaUrl } from '@/lib/media';
 import { formatPublishDate } from '@/lib/dayjsAr';
-import { useMediaToken } from '@/hooks/useMediaToken';
+import { useBookReadUrl } from '@/hooks/useMediaUrl';
 
 // Percent read, for the small progress bar on the cover — same idea as VideoCard's
 // watched-percent, hidden below 1% so a barely-opened book doesn't show a sliver.
@@ -14,14 +14,13 @@ function getReadPercent(book, currentPage) {
 
 function BookCard({ book, currentPage }) {
     const navigate = useNavigate();
-    // Token only needed for the owner's own hidden book — see resolveMediaUrl's comment. While
-    // it's still loading, hold both URLs back rather than rendering a cover request that's
-    // certain to 404 (same reasoning as VideoCard's thumbnail).
-    const needsMediaToken = book.visible === false;
-    const { mediaToken, isLoading: mediaTokenLoading } = useMediaToken(needsMediaToken);
-    const authToken = needsMediaToken ? mediaToken : null;
-    const previewUrl = mediaTokenLoading ? null : resolveMediaUrl(book.previewImageUrl, authToken);
-    const pdfUrl = mediaTokenLoading ? null : resolveMediaUrl(book.pdfUrl, authToken);
+    // The PDF is fetched through a presigned URL the backend mints after its visibility check —
+    // so the URL is the access grant, and a caller who may not see this book simply never gets
+    // one. No token, and no separate "is it hidden" branch: the object is private either way.
+    const { data: pdfUrl } = useBookReadUrl(book?.id, Boolean(book?.id));
+    // Preview images are not presigned; resolveMediaUrl returns null for an object key and the
+    // caller falls back to its placeholder.
+    const previewUrl = resolveMediaUrl(book.previewImageUrl);
     const readPercent = getReadPercent(book, currentPage);
 
     return (

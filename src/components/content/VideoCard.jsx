@@ -4,20 +4,14 @@ import { Play, Eye, EyeOff, Trash2 } from 'lucide-react';
 import { resolveMediaUrl, youtubeThumbnail, durationToSeconds } from '@/lib/media';
 import { formatPublishDate } from '@/lib/dayjsAr';
 import { useChannel } from '@/hooks/useChannels';
-import { useMediaToken } from '@/hooks/useMediaToken';
 import Avatar from '../ui/Avatar';
 
-// A token is only needed (and only fetched) for a hidden video — see resolveMediaUrl's comment
-// for why: a public thumbnail never needs one, so this keeps the token out of every ordinary
-// feed/search thumbnail request.
-//
-// Returns null while a hidden video's token is still loading rather than rendering a tokenless
-// <img> that's certain to 404 — the onError handler below latches that failure permanently, so
-// one early request would blank the thumbnail for the rest of the page's life.
-function getThumbnail(video, mediaToken, tokenPending) {
+function getThumbnail(video) {
     if (video.thumbnailUrl) {
         if (tokenPending) return null;
-        return resolveMediaUrl(video.thumbnailUrl, video.visible === false ? mediaToken : null);
+        // Returns null for an object key — an uploaded video has no thumbnail until a
+        // worker produces one, so the caller's placeholder is the correct state.
+        return resolveMediaUrl(video.thumbnailUrl);
     }
     if (video.sourceType === 'YOUTUBE') return youtubeThumbnail(video.sourceUrl);
     return null;
@@ -35,9 +29,8 @@ function getWatchedPercent(video, watchedSeconds) {
 
 function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watchedSeconds, showChannel = true }) {
     const navigate = useNavigate();
-    const { mediaToken, isLoading: mediaTokenLoading } = useMediaToken(video.visible === false);
     const [thumbnailFailed, setThumbnailFailed] = useState(false);
-    const thumbnail = thumbnailFailed ? null : getThumbnail(video, mediaToken, mediaTokenLoading);
+    const thumbnail = thumbnailFailed ? null : getThumbnail(video);
     const watchedPercent = getWatchedPercent(video, watchedSeconds);
     const { data: channel } = useChannel(video.channelId, showChannel && !!video.channelId);
 

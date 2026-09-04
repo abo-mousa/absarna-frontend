@@ -1,70 +1,27 @@
 import { API_BASE_URL } from './env';
 
-// Our own API's origin, parsed once — see isOwnMediaUrl.
-const apiOrigin = (() => {
-    try {
-        return new URL(API_BASE_URL, window.location.href).origin;
-    } catch {
-        return null;
-    }
-})();
-
-// Whether `resolved` is one of *our* gated media URLs, and so somewhere the media token may go.
+// Resolves a URL that came back from the backend as something a browser can load.
 //
-// This used to be `resolved.startsWith(API_BASE_URL)` — a prefix test on a URL string, not an
-// origin check. It therefore also passed for any host whose name merely begins with ours
-// (`https://api.example.com.evil.tld/…`) and for userinfo syntax
-// (`https://api.example.com@evil.tld/…`, which the browser sends to evil.tld). That was
-// reachable, not theoretical: the backend's SafeUrl allowlist admits any absolute https URL, so
-// a channel owner could store such a value as a hidden video's sourceUrl and collect the media
-// token of anyone able to view it — a platform admin moderating that channel included.
+// Only handles URLs that are *already* URLs: an absolute http(s) link (a channel logo, a
+// YouTube thumbnail, an externally hosted PDF) or a site-rooted path. Anything else — notably an
+// object-storage key like `videos/3/7/v1/1080p.mp4` — returns null, because such a key is not
+// addressable by the browser at all. Media in object storage is fetched through a presigned URL
+// minted by the backend instead: see useVideoPlaybackUrl / useBookReadUrl.
 //
-// Also narrowed to the two paths MediaAccessInterceptor actually gates. The token authenticates
-// nothing else (JwtFilter only accepts it from ?token= on /uploads and /stream), so sending it
-// anywhere else was pure leak surface — and it closes the "wider contract than its comment
-// claims" note in CLAUDE.md at the same time.
-const isOwnMediaUrl = (resolved) => {
-    if (!apiOrigin) return false;
-    let parsed;
-    try {
-        parsed = new URL(resolved, window.location.href);
-    } catch {
-        return false;
-    }
-    return parsed.origin === apiOrigin
-        && (parsed.pathname.startsWith('/uploads/') || parsed.pathname.startsWith('/stream/'));
-};
-
-// Resolves a file URL coming back from the BE (which may be a full URL, or a
-// relative /uploads or /stream path, or a bare filename) against the API host.
-//
-// `token` is optional and only needed for a hidden (or suspended-channel) item's own file —
-// the backend's MediaAccessInterceptor 404s a hidden item's /uploads or /stream URL unless the
-// caller proves they're the owner/admin, but <img>/<video>/<a> tags never attach an
-// Authorization header, so the token is passed as a query param instead (see JwtFilter's
-// matching fallback, scoped to just these two paths). Only ever appended to an /uploads or
-// /stream path on our own origin — never to an external URL (e.g. a YouTube thumbnail), and
-// never to another route on our own host; see isOwnMediaUrl below for why that check is an
-// origin comparison rather than a string prefix.
-//
-// Pass the **media token** from hooks/useMediaToken, never the session token from useAuth():
-// a query param ends up in the API's access logs, every proxy's logs, and browser history, so
-// what goes in it must be short-lived and useless for anything but fetching a file. See that
-// hook, and JwtUtil.generateMediaToken on the backend.
-export const resolveMediaUrl = (url, token) => {
-    if (!url) return null;
-    let resolved;
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-        resolved = url;
-    } else if (url.startsWith('/')) {
-        resolved = `${API_BASE_URL}${url}`;
-    } else {
-        resolved = `${API_BASE_URL}/uploads/${url}`;
-    }
-    if (token && isOwnMediaUrl(resolved)) {
-        resolved += `${resolved.includes('?') ? '&' : '?'}token=${encodeURIComponent(token)}`;
-    }
-    return resolved;
+// The `token` parameter is gone, along with the whole media-token mechanism. It existed because
+// the backend served gated bytes from its own /uploads and /stream URLs and an <img>/<video> tag
+// cannot send an Authorization header, so a short-lived credential rode in the query string.
+// Presigned URLs carry their own signature, so there is no longer a credential to place there —
+// which is strictly better than having a bounded one in a place that reaches access logs and
+// browser history.
+export const resolveMediaUrl = (url) => {
+    if (!url || typeof url !== 'string') return null;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    if (url.startsWith('/')) return `${API_BASE_URL}${url}`;
+    // A bare object key. Not loadable directly, and deliberately not guessed at — callers render
+    // their placeholder instead. (An uploaded video has no thumbnail at all until a worker
+    // produces one, so a placeholder here is the correct state, not a degradation.)
+    return null;
 };
 
 // A URL that came out of the database and is about to become an <a href> or a media <src>.
@@ -77,8 +34,8 @@ export const resolveMediaUrl = (url, token) => {
 // of a link.
 //
 // Deliberately parsed with no base URL: a scheme-less value like "www.example.com" is rejected
-// rather than silently resolved against the frontend's own origin. For our *own* API-hosted
-// files (relative /uploads and /stream paths) use resolveMediaUrl above, not this.
+// rather than silently resolved against the frontend's own origin. For media held in object storage,
+// use the presigned URL from useVideoPlaybackUrl / useBookReadUrl, not this.
 export const safeExternalUrl = (url) => {
     if (!url || typeof url !== 'string') return null;
     let parsed;
