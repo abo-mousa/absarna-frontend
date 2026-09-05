@@ -26,6 +26,91 @@ const MAX_PARALLEL = 3;
 const REISSUE_BATCH = 50;
 
 /**
+ * Extensions this front door accepts, mirroring the backend's `UploadType` allowlist.
+ *
+ * Duplicated here for the same reason `lib/validation.js` mirrors the password rules: so the
+ * rejection happens in the file dialog and before a session is created, rather than as a server
+ * error after the user has already committed. The backend's copy is still the enforcement — this
+ * one only decides what the picker offers and what is worth attempting.
+ */
+export const ALLOWED_EXTENSIONS = {
+    videos: ['mp4', 'mov', 'm4v'],
+    books: ['pdf'],
+};
+
+/** The `accept` attribute for a kind's file input, straight from the allowlist above. */
+export const acceptAttribute = (kind) =>
+    (ALLOWED_EXTENSIONS[kind] ?? []).map((extension) => `.${extension}`).join(',');
+
+/** A file the backend would refuse, caught before a session (and a quota slot) is spent on it. */
+export class UnsupportedFileTypeError extends Error {}
+
+/** Attempts per network call, including the first. */
+const MAX_ATTEMPTS = 4;
+const RETRY_BASE_MS = 1000;
+
+/**
+ * Statuses worth trying again. 429 is the one that matters most here: a batch of 50 reissued part
+ * URLs covers ~400 MB, so a fast connection can outrun the backend's per-minute limit partway
+ * through a large upload — a case where waiting a moment is exactly the right answer and failing
+ * discards everything already transferred.
+ */
+const RETRYABLE_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504]);
+
+const isRetryable = (error) => {
+    if (error?.name === 'AbortError') return false;
+    const status = error?.status ?? error?.response?.status;
+    if (status != null) return RETRYABLE_STATUSES.has(status);
+    // No status at all: `fetch` rejects with a TypeError on a transport failure (connection
+    // reset, DNS, a phone changing networks mid-upload) and axios sets `request` with no
+    // `response` for the same. Those are the cases retrying exists for. Anything else without a
+    // status is a bug in this file, and retrying a bug only delays the report.
+    return error instanceof TypeError || error?.code === 'ECONNABORTED' || error?.request != null;
+};
+
+const cancelled = () => {
+    const e = new Error('Upload cancelled');
+    e.name = 'AbortError';
+    return e;
+};
+
+/** Waits, but wakes on cancellation — otherwise a cancel during a backoff sits out the delay. */
+export const sleep = (ms, signal) => new Promise((resolve, reject) => {
+    if (signal?.aborted) return reject(cancelled());
+    const timer = setTimeout(() => {
+        signal?.removeEventListener('abort', abort);
+        resolve();
+    }, ms);
+    function abort() {
+        clearTimeout(timer);
+        reject(cancelled());
+    }
+    signal?.addEventListener('abort', abort, { once: true });
+});
+
+/**
+ * Retries one network call with exponential backoff.
+ *
+ * A 1,280-part upload makes 1,280 independent requests over a connection that only has to blink
+ * once; without this, a single transient failure anywhere in that sequence threw away every byte
+ * already sent. Resume made that recoverable — this makes it not happen. Jittered so three
+ * concurrent workers that fail together don't retry in lockstep.
+ *
+ * `sleepFn` is injectable for the same reason `uploadParts` takes `put`: so tests exercise the
+ * retry decisions without waiting out the backoff.
+ */
+export const withRetry = async (attempt, { signal, attempts = MAX_ATTEMPTS, sleepFn = sleep } = {}) => {
+    for (let n = 1; ; n += 1) {
+        try {
+            return await attempt();
+        } catch (e) {
+            if (n >= attempts || !isRetryable(e)) throw e;
+            await sleepFn(RETRY_BASE_MS * 2 ** (n - 1) + Math.random() * 250, signal);
+        }
+    }
+};
+
+/**
  * Thrown when a remembered session cannot be resumed — it was swept, cancelled, already
  * published, or the file no longer matches it. Callers restart from scratch rather than surface
  * it: from the user's side "resume did not apply" is not a failure, it is an ordinary upload.
@@ -60,6 +145,17 @@ export const chunk = (items, size) => {
 };
 
 /**
+ * Bytes already in storage, summed from the sizes storage itself reports.
+ *
+ * Resume progress used to be derived as `file.size - missingParts * partSizeBytes`, which assumes
+ * every missing part is full-sized. The final part is the one part allowed to be short, so
+ * whenever *it* was among the missing the bar started too high. The real number is in the
+ * response already — `ListParts` returns a size per part — so it is read rather than inferred.
+ */
+export const uploadedBytes = (uploadedParts) =>
+    (uploadedParts ?? []).reduce((total, part) => total + (part.sizeBytes ?? 0), 0);
+
+/**
  * Raw fetch, deliberately NOT the shared axios client.
  *
  * That client's request interceptor attaches the user's JWT to every call. Sending it to object
@@ -68,11 +164,18 @@ export const chunk = (items, size) => {
  */
 const putPart = async (url, blob, signal) => {
     const response = await fetch(url, { method: 'PUT', body: blob, signal });
-    if (!response.ok) throw new Error(`Part upload failed (${response.status})`);
+    if (!response.ok) {
+        const error = new Error(`Part upload failed (${response.status})`);
+        // Carried explicitly so `isRetryable` can tell a rate limit from a dead signature: a 403
+        // means this URL is expired or wrong, and re-sending the same bytes to it forever cannot
+        // fix that — the resume path re-signs instead.
+        error.status = response.status;
+        throw error;
+    }
 };
 
-/** Uploads a batch of presigned parts with bounded concurrency. */
-export const uploadParts = async (file, parts, partSizeBytes, { signal, onPartDone, put } = {}) => {
+/** Uploads a batch of presigned parts with bounded concurrency, retrying transient failures. */
+export const uploadParts = async (file, parts, partSizeBytes, { signal, onPartDone, put, sleepFn } = {}) => {
     const send = put ?? putPart;
     const queue = [...parts];
 
@@ -81,7 +184,9 @@ export const uploadParts = async (file, parts, partSizeBytes, { signal, onPartDo
             const part = queue.shift();
             if (!part) return;
             const { start, end } = partRange(part.partNumber, partSizeBytes, file.size);
-            await send(part.url, file.slice(start, end), signal);
+            // Per part, not per upload: a retry re-sends one 8 MB slice, and every other part
+            // already sent stays sent.
+            await withRetry(() => send(part.url, file.slice(start, end), signal), { signal, sleepFn });
             onPartDone?.(end - start);
         }
     };
@@ -119,8 +224,13 @@ export const usePresignedUpload = () => {
         abortRef.current = controller;
 
         try {
+            requireSupportedType(file, kind);
+
             let session;
             let outstanding;
+            // Bytes already in storage. Set per branch rather than inferred from the part count:
+            // see `uploadedBytes`.
+            let done;
 
             if (resumeSessionId) {
                 // Progress comes from object storage via the backend, never from anything this
@@ -131,6 +241,8 @@ export const usePresignedUpload = () => {
                 session = data;
                 setSessionId(session.sessionId);
                 outstanding = missingPartNumbers(data.parts, data.totalParts);
+                done = uploadedBytes(data.parts);
+                setProgress(Math.min(99, Math.round((done / file.size) * 100)));
             } else {
                 const { data } = await api.post(`/channels/${slug}/content/${kind}/upload-url`, {
                     extension: extensionOf(file),
@@ -143,7 +255,7 @@ export const usePresignedUpload = () => {
                 setSessionId(session.sessionId);
                 onSessionStart?.(session.sessionId);
                 // The first window arrives already signed; everything past it is requested below.
-                await uploadWindow(file, data.parts, data, controller, setProgress, 0);
+                done = await uploadWindow(file, data.parts, data, controller, setProgress, 0);
                 outstanding = [];
                 for (let n = (data.parts?.length ?? 0) + 1; n <= data.totalParts; n += 1) {
                     outstanding.push(n);
@@ -153,12 +265,13 @@ export const usePresignedUpload = () => {
             // Signed in batches rather than all at once: the server caps how many URLs one
             // response may carry, and a URL signed now would expire before a slow upload of a
             // large file reached it anyway.
-            let done = file.size - outstanding.length * session.partSizeBytes;
             for (const batch of chunk(outstanding, REISSUE_BATCH)) {
-                const { data } = await api.post(
+                // Retried like a part: this is the call the backend rate-limits per minute, and a
+                // 429 here used to end an upload that was already 90% transferred.
+                const { data } = await withRetry(() => api.post(
                     `/channels/${slug}/content/${kind}/upload-url/${session.sessionId}/parts`,
                     { partNumbers: batch }
-                );
+                ), { signal: controller.signal });
                 done = await uploadWindow(file, data.parts, session, controller, setProgress, done);
             }
 
@@ -201,6 +314,21 @@ const resumeProgress = async (slug, kind, resumeSessionId) => {
             throw new ResumeUnavailableError('This upload can no longer be resumed');
         }
         throw e;
+    }
+};
+
+/**
+ * Rejects a file the backend's allowlist would refuse, before a session exists.
+ *
+ * The `accept` attribute narrows the file dialog but does not bind it — every platform offers
+ * some way past it, and drag-and-drop ignores it entirely. Checking here means a `.webm` fails
+ * immediately with a message naming what is accepted, instead of consuming one of the channel's
+ * five concurrent session slots to produce a server error.
+ */
+const requireSupportedType = (file, kind) => {
+    const allowed = ALLOWED_EXTENSIONS[kind] ?? [];
+    if (!allowed.includes(extensionOf(file))) {
+        throw new UnsupportedFileTypeError(`الملفات المسموح بها: ${allowed.join('، ')}`);
     }
 };
 

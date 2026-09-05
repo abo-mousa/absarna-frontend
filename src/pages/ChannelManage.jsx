@@ -17,7 +17,7 @@ import {
     useDeleteContent,
 } from '../hooks/useChannels';
 import { useChannelSeriesManage, useCreateSeries, useDeleteSeries } from '../hooks/useSeries';
-import { usePresignedUpload, ResumeUnavailableError } from '../hooks/usePresignedUpload';
+import { usePresignedUpload, ResumeUnavailableError, acceptAttribute } from '../hooks/usePresignedUpload';
 import { rememberSession, forgetSession, resumableSessionId, rememberedSession } from '@/lib/uploadResume';
 import { useChannelComments, useModerateComment } from '../hooks/useCommentModeration';
 
@@ -133,6 +133,24 @@ function ChannelManage() {
     });
     const bookUpload = usePresignedUpload();
     const [bookUploading, setBookUploading] = useState(false);
+
+    // Leaving the page stops the transfer — it does NOT give up the session.
+    //
+    // Three parallel PUTs would otherwise keep saturating the connection for an upload whose
+    // session id has nowhere left to go: the form that would carry it to the create call is
+    // unmounted with the page. A hard refresh already behaves this way (the browser kills the
+    // fetches), so this only makes SPA navigation consistent with it.
+    //
+    // Deliberately not `discard()` here, though the original finding said "cancel on unmount":
+    // that predates resume. Aborting the multipart session would throw away every byte already
+    // transferred and turn the remembered session id into a dead one — destroying precisely the
+    // upload that resume exists to pick back up. The quota this was meant to protect is bounded
+    // on the backend now (24h for counting, a 7-day sweep), and the sessions worth releasing
+    // early — declined resumes and replaced files — are released where the user actually says so.
+    useEffect(() => () => {
+        videoUpload.cancel();
+        bookUpload.cancel();
+    }, []);
 
     const [articleForm, setArticleForm] = useState({
         title: '', content: '', category: '', originalPublishDate: '',
@@ -307,7 +325,11 @@ function ChannelManage() {
             });
             showMessage('success:تم رفع الفيديو');
         } catch (err) {
-            showMessage(`error:فشل في رفع الفيديو: ${err.response?.data?.message || err.message}`);
+            // An abort is the page being left, not a failure — and the session survives it, so
+            // there is nothing to report even if anything were still mounted to show it.
+            if (err.name !== 'AbortError') {
+                showMessage(`error:فشل في رفع الفيديو: ${err.response?.data?.message || err.message}`);
+            }
         } finally {
             setVideoUploading(false);
         }
@@ -377,7 +399,9 @@ function ChannelManage() {
             });
             showMessage('success:تم رفع الكتاب');
         } catch (err) {
-            showMessage(`error:فشل في رفع الكتاب: ${err.response?.data?.message || err.message}`);
+            if (err.name !== 'AbortError') {
+                showMessage(`error:فشل في رفع الكتاب: ${err.response?.data?.message || err.message}`);
+            }
         } finally {
             setBookUploading(false);
         }
@@ -485,7 +509,10 @@ function ChannelManage() {
 
                             <div>
                                 <label className="block mb-1.5 font-semibold text-sm text-text-secondary">ملف الفيديو</label>
-                                <input type="file" accept="video/*" onChange={handleVideoFileSelect} />
+                                {/* The backend's allowlist, not `video/*` — offering .webm/.avi in
+                                    the dialog only moved the rejection to a server error after the
+                                    user had committed. */}
+                                <input type="file" accept={acceptAttribute('videos')} onChange={handleVideoFileSelect} />
                                 {videoUploading && (
                                     <div className="mt-2">
                                         <div className="w-full h-2 bg-border rounded-full">
@@ -549,7 +576,7 @@ function ChannelManage() {
 
                             <div>
                                 <label className="block mb-1.5 font-semibold text-sm text-text-secondary">ملف PDF</label>
-                                <input type="file" accept=".pdf" onChange={handleBookFileSelect} />
+                                <input type="file" accept={acceptAttribute('books')} onChange={handleBookFileSelect} />
                                 {bookUploading && <p className="text-primary text-sm mt-1">جاري الرفع...</p>}
                             </div>
 

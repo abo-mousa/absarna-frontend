@@ -179,8 +179,16 @@ books), then the returned `sessionId` goes to the create endpoint as `uploadSess
 what actually finalises the upload. Nothing exists as content until then, so an abandoned upload
 leaves no row behind.
 
-Three things that are load-bearing:
+Four things that are load-bearing:
 
+- **Every network call retries, and the classification is the point** (`withRetry`, added
+  2026-09-05). A 1,280-part upload makes 1,280 independent requests over a connection that only
+  has to blink once, so 408/425/429/5xx and status-less transport failures (`fetch` rejects with
+  a `TypeError`) get four attempts with jittered exponential backoff — applied per part, and
+  around the reissue call, which is where the backend's own rate limit produces a 429. A **403 is
+  never retried**: it means the presigned URL is dead, and only a re-signed one fixes that. Nor
+  is a cancellation — `sleep` wakes on the abort signal instead of sitting out a backoff someone
+  already cancelled.
 - **The presigned `PUT` uses raw `fetch`, never the shared axios client.** That client's
   interceptor attaches the user's JWT to every call; sending it to object storage would leak a
   session token to a third-party host, and the presigned signature covers the URL and host only —
@@ -215,14 +223,14 @@ page count are gone with the upload module — a book reads fine without either.
 ## Testing (`vitest`)
 
 Added 2026-09-04; broadened 2026-09-05. `npm test` (`vitest run`) / `npm run test:watch`.
-**95 tests across 8 files**, all in the node environment — there is still no jsdom, on purpose.
+**108 tests across 8 files**, all in the node environment — there is still no jsdom, on purpose.
 `uploadResume` supplies its own `globalThis.localStorage` for the same reason, which is also why
 the module reads storage through `globalThis.localStorage?.` inside a `try` rather than assuming
 a DOM: privacy modes throw outright, and "no resume offered" is the correct answer there.
 
 | File | Covers |
 |---|---|
-| `hooks/__tests__/usePresignedUpload.test.js` | byte-range arithmetic incl. the short final part, resume diffing with out-of-order gaps, batching, the concurrency cap, error propagation |
+| `hooks/__tests__/usePresignedUpload.test.js` | byte-range arithmetic incl. the short final part, resume diffing with out-of-order gaps, batching, the concurrency cap, error propagation; and the retry rules — what is retried (429/5xx, a status-less transport failure) versus what must not be (a 403 dead signature, a cancellation), that a retried part counts its bytes once, that `sleep` wakes on abort, and that `ALLOWED_EXTENSIONS` still mirrors the backend |
 | `lib/__tests__/validation.test.js` | username/password rules **as mirrors of the backend's** — most importantly the 72-**byte** BCrypt ceiling measured with `TextEncoder`, which no character-count check can express |
 | `lib/__tests__/media.test.js` | `safeExternalUrl` as a scheme *allowlist* (`javascript:` in every spelling, scheme-less values, tab/newline smuggling), `resolveMediaUrl` returning null for a bare object key, YouTube id extraction rejecting lookalike hosts |
 | `lib/__tests__/uploadResume.test.js` | what may be resumed: same channel *and* kind, same name *and* size, the 7-day bound matching the backend's sweep, and storage that throws or is absent |
@@ -337,33 +345,44 @@ finished work goes.
 From **Review 4 — 2026-09-05**, a staff-level pass over frontend *and* backend together, focused
 on the presigned-upload/playback code that landed 2026-09-04 and had never been reviewed. The
 backend half is filed in `absarna-backend/CLAUDE.md` under "Review 5"; several items below are
-one bug with two halves and are cross-referenced. The three earlier passes remain fully closed —
-everything here is new surface.
+one bug with two halves and are cross-referenced.
 
-- **Abandoned uploads permanently lock a channel out of uploading.** The normal flow — pick a
-  file, watch it upload, then navigate away without pressing "نشر الفيديو" — leaves a `PENDING`
-  `UploadSession` on the backend forever. The backend caps a channel at 5 concurrent `PENDING`
-  sessions, counts them with no age filter, has no sweep, and exposes no cancel endpoint, so the
-  sixth abandoned upload is refused with "Finish or cancel one before starting another" and
-  there is no way to do either. The fix is mostly backend (see C1 there), but the frontend is
-  what makes it trivially reachable: `handleVideoFileSelect` uploads immediately on file
-  selection, long before the user commits to publishing, and nothing cleans up if they change
-  their mind. Worth pairing the backend fix with a cancel call on unmount/replace.
+**All six are now closed (2026-09-05), so nothing in this section is outstanding.** They are kept
+struck-through in place rather than deleted per this file's usual rule, because in three of them
+what was fixed differs from what the finding proposed — the unmount cancel, the `sizeBytes` field
+name, and the retry classification — and an entry that only said "fixed" would invite the
+original suggestion being re-applied. Fold them into History on the next pass through this file.
 
-- **A single failed part aborts the whole upload, with no retry and no way back.** `putPart`
-  throws on any non-OK response and `uploadParts` lets it propagate, so one transient blip
-  anywhere in a 1,280-part upload discards every byte already transferred — the parts are still
-  in object storage and the session is still resumable, but nothing in the UI can reach them
-  (see "resume is unreachable" below). At multi-GB sizes over real mobile/MENA connectivity this
-  is the difference between a feature that works and one that doesn't. Add bounded retry with
-  backoff around `putPart`; it is the single highest-value change to this hook.
+- ~~**Abandoned uploads permanently lock a channel out of uploading.**~~ **Closed 2026-09-05**,
+  across both repos: the backend age-bounds the quota count at 24h, sweeps at 7 days, and exposes
+  `DELETE .../upload-url/{sessionId}` (finding C1); this side calls it when a resume offer is
+  declined or a different file is picked, and `ChannelManage` now aborts the in-flight transfer
+  when the page unmounts.
+  - **Unmount aborts the transfer, it does not discard the session** — and the difference is the
+    whole point, so don't "finish the job" later by adding a `discard()` there. This entry
+    originally read "a cancel call on unmount/replace", written before resume existed; giving up
+    the session on unmount would abort the multipart upload, throw away every byte transferred,
+    and leave the remembered session id pointing at nothing — destroying exactly the upload that
+    resume was built to pick back up. What is worth stopping is the transfer itself: three
+    parallel `PUT`s otherwise keep saturating the connection for a session id that has nowhere
+    left to go, since the form that would carry it to the create call unmounted with the page. A
+    hard refresh already behaves this way, so this only makes SPA navigation consistent with it.
+  - An `AbortError` is not reported to the user in either file-select handler. It means the page
+    was left, the session survives it, and by then there is nothing mounted to show a toast to.
 
-- **A 429 mid-upload kills the upload.** The backend's `RateLimitFilter` still carries a
-  `uri.contains("/upload") && POST → 5/min` rule written for the deleted chunked uploader, and
-  it catches `POST .../upload-url/{sessionId}/parts`. Every reissue batch for one session shares
-  a bucket, and this hook re-signs 50 parts (≈400 MB) per call, so a client sustaining more than
-  roughly 270 Mbit/s runs into a hard 429 partway through. Nothing retries it. Backend fix is
-  C6; the frontend should still treat 429 as retryable-with-backoff rather than fatal.
+- ~~**A single failed part aborts the whole upload**~~ / ~~**a 429 mid-upload kills it**~~ —
+  **both fixed 2026-09-05** by one `withRetry` helper, applied per part *and* around the reissue
+  call (the 429 came from our own backend's rate limit on `POST .../parts`, not from storage).
+  Four attempts, exponential backoff with jitter so three concurrent workers that fail together
+  don't retry in lockstep. What is and isn't retried is the load-bearing part:
+  - **Retryable**: 408/425/429/5xx, and a failure carrying no status at all — `fetch` rejects
+    with a `TypeError` when the connection drops, which is the mobile case this is for.
+  - **Not retryable**: a 403. That means the presigned URL is expired or wrong, and re-sending
+    the same bytes to it cannot fix that — only a re-signed URL can, which is the resume path's
+    job. Nor a cancellation: `sleep` wakes on the abort signal rather than sitting out a backoff
+    someone already cancelled.
+  - `putPart` now attaches `.status` to the error it throws, which is what makes that
+    distinction possible at all.
 
 - ~~**`contentType` is taken from `file.type`, which browsers often leave empty.**~~ **Fixed
   2026-09-05**: the field is no longer sent at all. The backend derives the content type from the
@@ -372,17 +391,23 @@ everything here is new surface.
   and `.m4v` files — has nothing left to break. Nothing is lost: the header was client-asserted
   either way.
 
-- **`accept="video/*"` on the file input doesn't match what the backend accepts** (`mp4`, `mov`,
-  `m4v`). Picking a `.webm` or `.avi` is allowed by the picker, uploads nothing, and fails at
-  session creation with a server-side error. Narrow the `accept` to the real allowlist so the
-  rejection happens in the file dialog.
+- ~~**`accept="video/*"` doesn't match what the backend accepts**~~ — **fixed 2026-09-05.**
+  `ALLOWED_EXTENSIONS` in `usePresignedUpload.js` now mirrors the backend's `UploadType`
+  allowlist (`mp4`/`mov`/`m4v`, `pdf`), `acceptAttribute(kind)` renders the input's `accept` from
+  it, and `upload()` refuses an unlisted extension up front with `UnsupportedFileTypeError`
+  naming what *is* accepted. Both halves are needed: `accept` narrows the dialog but binds
+  nothing (drag-and-drop ignores it, and every platform offers a way past it), and the guard is
+  what stops a doomed file consuming one of the channel's five session slots. Same
+  mirror-the-backend arrangement as `lib/validation.js` and pinned by a test for the same
+  reason — drift here is a file the picker offers and the server refuses.
 
-- **Progress can exceed the file on a resume.** `let done = file.size - outstanding.length *
-  session.partSizeBytes` assumes every missing part is full-sized; when the *last* part is
-  missing (and it is smaller than `partSizeBytes`), `done` starts too high and the bar overstates
-  progress. Cosmetic, and it self-corrects at the 99% cap, but the arithmetic is worth fixing
-  since the correct value — the sum of the `size` fields the backend already returns per
-  uploaded part — is right there in the response and is being discarded.
+- ~~**Progress can exceed the file on a resume.**~~ **Fixed 2026-09-05** by reading the number
+  instead of inferring it: `uploadedBytes(parts)` sums the `sizeBytes` `ListParts` already
+  returns per uploaded part. The old `file.size - missing * partSizeBytes` assumed every missing
+  part was full-sized, which the final part is not. Note the field is **`sizeBytes`**, not the
+  `size` this entry originally claimed. The fresh-upload path had the mirror-image error — it
+  discarded the byte count `uploadWindow` returned and recomputed the same wrong expression —
+  and now keeps it, so the bar starts from a real figure on both paths.
 
 ## Refactoring / structure
 
