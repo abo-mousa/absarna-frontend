@@ -197,6 +197,16 @@ function ChannelManage() {
     // than send them and hope.
     const stripEmpty = (obj) => Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== ''));
 
+    // A confirm that times out is not a confirm that failed. The backend may still be assembling
+    // a multi-GB object, and the create endpoint is idempotent on the session — so pressing
+    // publish again returns the row the first attempt created rather than duplicating it or
+    // re-uploading a byte. The error path deliberately leaves uploadSessionId in form state so
+    // that retry is one click away; saying "فشل" here would tell the user to start over instead.
+    const publishError = (err, action) =>
+        err.code === 'ECONNABORTED'
+            ? `error:${action} يستغرق وقتًا أطول من المعتاد. لم يضِع ما رفعته — أعد المحاولة بعد قليل.`
+            : `error:فشل في ${action}: ${err.response?.data?.message || err.message}`;
+
     const toggleVisibility = (mutation, item) => {
         mutation.mutate(item, {
             onError: () => showMessage('error:فشل في تحديث الظهور'),
@@ -256,7 +266,7 @@ function ChannelManage() {
             });
             showMessage('success:تم نشر الفيديو');
         } catch (err) {
-            showMessage(`error:فشل في نشر الفيديو: ${err.response?.data?.message || err.message}`);
+            showMessage(publishError(err, 'نشر الفيديو'));
         }
     };
 
@@ -321,7 +331,7 @@ function ChannelManage() {
             setBookForm({ title: '', description: '', pdfUrl: '', uploadSessionId: '', previewImageUrl: '', category: '', originalPublishDate: '', pages: '' });
             showMessage('success:تم نشر الكتاب');
         } catch (err) {
-            showMessage(`error:فشل في نشر الكتاب: ${err.response?.data?.message || err.message}`);
+            showMessage(publishError(err, 'نشر الكتاب'));
         }
     };
 

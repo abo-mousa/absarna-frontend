@@ -3,8 +3,24 @@ import { API_BASE_URL } from '../env';
 
 const api = axios.create({
     baseURL: `${API_BASE_URL}/api`,
+    // Sized for ordinary reads and writes, which should fail fast rather than hang a screen.
+    // Anything genuinely long-running overrides it per request — see UPLOAD_CONFIRM_TIMEOUT_MS.
     timeout: 30000,
 });
+
+/**
+ * Timeout for the create call that confirms a presigned upload.
+ *
+ * <p>That call is not an ordinary write: the backend pages through `ListParts` and then runs
+ * `CompleteMultipartUpload` against an object that can be several GB, which routinely takes well
+ * over the 30s above. Axios would abort while the server went on to assemble the object and
+ * create the row — the user saw "فشل في نشر الفيديو" for an upload that had actually succeeded.
+ *
+ * <p>Deliberately a per-request override rather than a higher global timeout: the global one
+ * exists so a stalled read fails fast, and raising it to suit the slowest call in the app would
+ * make every hung request hang five minutes instead.
+ */
+export const UPLOAD_CONFIRM_TIMEOUT_MS = 5 * 60 * 1000;
 
 // Request interceptor — attach token
 api.interceptors.request.use(

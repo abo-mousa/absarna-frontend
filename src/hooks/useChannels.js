@@ -1,5 +1,5 @@
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/api/client';
+import api, { UPLOAD_CONFIRM_TIMEOUT_MS } from '@/lib/api/client';
 
 // Maps a content type to the query key its public channel-page list is cached under —
 // shared by the owner-management mutations below so a publish/toggle/delete on
@@ -198,12 +198,27 @@ const invalidateChannelContent = (queryClient, slug, type) => {
     }
 };
 
+/**
+ * Per-request axios config for a content-create call.
+ *
+ * A payload carrying an `uploadSessionId` is the confirm step of a presigned upload, and the
+ * backend does real work for it — a paginated `ListParts` plus `CompleteMultipartUpload` over an
+ * object that may be several GB. The client's 30s default aborted that mid-flight while the
+ * server carried on and created the video, so the user was told publishing failed for a video
+ * that now exists. Every other create here is an ordinary insert and keeps the default.
+ *
+ * Exported so the rule is testable on its own — the hook it feeds needs a React tree.
+ */
+export const contentCreateConfig = (payload) =>
+    payload?.uploadSessionId ? { timeout: UPLOAD_CONFIRM_TIMEOUT_MS } : undefined;
+
 export const useCreateChannelContent = (slug, type) => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: async (payload) => {
-            const res = await api.post(`/channels/${slug}/content/${type}`, payload);
+            const res = await api.post(
+                `/channels/${slug}/content/${type}`, payload, contentCreateConfig(payload));
             return res.data;
         },
         onSuccess: () => invalidateChannelContent(queryClient, slug, type),

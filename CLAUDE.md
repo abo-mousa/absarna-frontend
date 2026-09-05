@@ -187,18 +187,37 @@ page count are gone with the upload module — a book reads fine without either.
 
 ## Testing (`vitest`)
 
-Added 2026-09-04 — this repo had **no test framework at all** before that, and most of it still
-has no tests. `npm test` (`vitest run`) / `npm run test:watch`.
+Added 2026-09-04; broadened 2026-09-05. `npm test` (`vitest run`) / `npm run test:watch`.
+**87 tests across 7 files**, all in the node environment — there is still no jsdom, on purpose.
 
-Currently covers only `hooks/__tests__/usePresignedUpload.test.js`: the pure upload logic —
-byte-range arithmetic including the short final part, resume diffing with out-of-order gaps,
-batching, the concurrency cap, and error propagation. The network calls themselves are
-deliberately not mocked here; they're covered on the backend, whose ITs upload real parts through
-real presigned URLs against MinIO.
+| File | Covers |
+|---|---|
+| `hooks/__tests__/usePresignedUpload.test.js` | byte-range arithmetic incl. the short final part, resume diffing with out-of-order gaps, batching, the concurrency cap, error propagation |
+| `lib/__tests__/validation.test.js` | username/password rules **as mirrors of the backend's** — most importantly the 72-**byte** BCrypt ceiling measured with `TextEncoder`, which no character-count check can express |
+| `lib/__tests__/media.test.js` | `safeExternalUrl` as a scheme *allowlist* (`javascript:` in every spelling, scheme-less values, tab/newline smuggling), `resolveMediaUrl` returning null for a bare object key, YouTube id extraction rejecting lookalike hosts |
+| `lib/__tests__/user.test.js` | the three permission helpers, incl. every null/loading case |
+| `lib/api/__tests__/client.test.js` | the 401-refresh interceptor: one shared in-flight refresh for parallel 401s, single retry, `auth:session-expired` on each dead end, auth endpoints excluded |
+| `lib/api/__tests__/beacon.test.js` | the unload flush: no token → no request, `keepalive` set, both sync and async failures swallowed |
+| `hooks/__tests__/useChannels.test.js` | `contentCreateConfig`: only a payload carrying an `uploadSessionId` gets the long confirm timeout, everything else stays on the client default |
 
-If you add tests, prefer this shape: export the pure functions and test those, rather than
-standing up React Testing Library for logic that doesn't need a DOM. There is no jsdom
-environment configured, on purpose — nothing has needed one yet.
+**Two conventions worth keeping.**
+
+1. **Prefer exporting the pure function and testing that** over standing up React Testing Library
+   for logic that doesn't need a DOM. Nothing has needed jsdom yet, and adding it would be a
+   dependency plus a per-file environment pragma for no coverage gain.
+2. **Fake transport by replacing axios's `adapter`, not with a mocking library.** `client.test.js`
+   sets `api.defaults.adapter` (and `axios.defaults.adapter`, since the refresh call is made with
+   bare `axios.post`, not the configured instance). That keeps the real axios interceptor pipeline
+   — the thing actually under test — in play, and adds no dependency. Re-import the client per
+   test with `vi.resetModules()`: the shared refresh promise is module-level state, so it leaks
+   between tests otherwise.
+
+**One latent gap is pinned rather than fixed**, in `user.test.js`: `isChannelOwner` compares
+`channel.ownerUserId === user.id`, so two *absent* ids compare equal and it returns true. Not
+reachable today (a `ChannelDTO` always carries `ownerUserId`, a signed-in user always has an id,
+and `AuthContext` holds `null` while loading), and changing a permission helper is a decision to
+take deliberately rather than as a side effect of adding tests. If it's ever fixed, invert that
+assertion.
 
 ## Bookmarks (`hooks/useBookmarks.js`, `components/content/BookmarkButton.jsx`, `pages/Bookmarks.jsx`)
 
@@ -284,21 +303,96 @@ finished work goes.
 
 ## Bugs
 
-Nothing open. The change-password logout was closed on 2026-09-02 — see History.
+From **Review 4 — 2026-09-05**, a staff-level pass over frontend *and* backend together, focused
+on the presigned-upload/playback code that landed 2026-09-04 and had never been reviewed. The
+backend half is filed in `absarna-backend/CLAUDE.md` under "Review 5"; several items below are
+one bug with two halves and are cross-referenced. The three earlier passes remain fully closed —
+everything here is new surface.
+
+- **Abandoned uploads permanently lock a channel out of uploading.** The normal flow — pick a
+  file, watch it upload, then navigate away without pressing "نشر الفيديو" — leaves a `PENDING`
+  `UploadSession` on the backend forever. The backend caps a channel at 5 concurrent `PENDING`
+  sessions, counts them with no age filter, has no sweep, and exposes no cancel endpoint, so the
+  sixth abandoned upload is refused with "Finish or cancel one before starting another" and
+  there is no way to do either. The fix is mostly backend (see C1 there), but the frontend is
+  what makes it trivially reachable: `handleVideoFileSelect` uploads immediately on file
+  selection, long before the user commits to publishing, and nothing cleans up if they change
+  their mind. Worth pairing the backend fix with a cancel call on unmount/replace.
+
+- **A single failed part aborts the whole upload, with no retry and no way back.** `putPart`
+  throws on any non-OK response and `uploadParts` lets it propagate, so one transient blip
+  anywhere in a 1,280-part upload discards every byte already transferred — the parts are still
+  in object storage and the session is still resumable, but nothing in the UI can reach them
+  (see "resume is unreachable" below). At multi-GB sizes over real mobile/MENA connectivity this
+  is the difference between a feature that works and one that doesn't. Add bounded retry with
+  backoff around `putPart`; it is the single highest-value change to this hook.
+
+- **A 429 mid-upload kills the upload.** The backend's `RateLimitFilter` still carries a
+  `uri.contains("/upload") && POST → 5/min` rule written for the deleted chunked uploader, and
+  it catches `POST .../upload-url/{sessionId}/parts`. Every reissue batch for one session shares
+  a bucket, and this hook re-signs 50 parts (≈400 MB) per call, so a client sustaining more than
+  roughly 270 Mbit/s runs into a hard 429 partway through. Nothing retries it. Backend fix is
+  C6; the frontend should still treat 429 as retryable-with-backoff rather than fatal.
+
+- **`contentType` is taken from `file.type`, which browsers often leave empty.** The fallback is
+  `'application/octet-stream'`, which is not on the backend's allowlist, so session creation
+  400s on a perfectly valid file — `.m4v` and `.mov` are the usual offenders and both are on the
+  extension allowlist the backend *does* accept. Derive the content type from the extension
+  (already computed by `extensionOf`) instead of trusting the browser's guess; the header is
+  client-asserted either way, so nothing is lost.
+
+- **`accept="video/*"` on the file input doesn't match what the backend accepts** (`mp4`, `mov`,
+  `m4v`). Picking a `.webm` or `.avi` is allowed by the picker, uploads nothing, and fails at
+  session creation with a server-side error. Narrow the `accept` to the real allowlist so the
+  rejection happens in the file dialog.
+
+- **Progress can exceed the file on a resume.** `let done = file.size - outstanding.length *
+  session.partSizeBytes` assumes every missing part is full-sized; when the *last* part is
+  missing (and it is smaller than `partSizeBytes`), `done` starts too high and the bar overstates
+  progress. Cosmetic, and it self-corrects at the 99% cap, but the arithmetic is worth fixing
+  since the correct value — the sum of the `size` fields the backend already returns per
+  uploaded part — is right there in the response and is being discarded.
 
 ## Refactoring / structure
 
-- Still open, still parked: `ChannelManage.jsx` is now ~700 lines holding five tabs and four
-  near-identical content forms. The 2026-09-01 section parked the `<ContentPublishForm type=… />`
-  + `useChannelContentTab(slug, type)` extraction until an upload-service rewrite lands, so the
-  extraction wouldn't need redoing once the upload endpoints change underneath it — **checked
-  2026-09-03, that rewrite has not happened**: `ChannelManage.jsx`'s `handleVideoFileSelect`/
-  `handleBookFileSelect` still `api.post` to `ChannelContentController`'s `/channels/{slug}/
-  content/{videos,books}/upload` (backend `content` module), unchanged since the previous pass.
-  A separate `upload` module exists in the backend (`ChunkUploadController` at `/api/upload`,
-  chunked-upload check/chunk/status/complete; `FileUploadController` at `/api/admin`) but nothing
-  currently routes channel video/book uploads through it — don't assume it's the "new service" or
-  treat this as unblocked without re-checking which endpoints `ChannelManage.jsx` actually calls.
+- **Resume is fully built and completely unreachable.** `usePresignedUpload` accepts
+  `resumeSessionId` and implements the whole diff-and-refill algorithm against the backend's
+  `list-parts`/`reissue-parts` endpoints — and `ChannelManage.jsx` never passes it, because
+  nothing persists a session id anywhere. Resume across tabs, devices and a cleared cache is the
+  main thing the backend's `UploadSession` row and its "`ListParts` is the source of truth, not
+  browser storage" rule exist *for*; today it lives only in `usePresignedUpload.test.js`.
+  Persisting `{slug, kind, sessionId, fileName, fileSize}` in `localStorage` and offering
+  "استئناف الرفع" when a matching file is re-picked is a small change that turns three built
+  endpoints from dead weight into the feature they were designed to be. It also happens to be
+  what makes the failed-part and 429 bugs above survivable instead of fatal.
+
+- **This section's own entry was stale and is now corrected.** The previous text said, "checked
+  2026-09-03, that rewrite has not happened" and described `ChannelManage.jsx` posting to
+  `/channels/{slug}/content/{videos,books}/upload` with a separate backend `upload` module
+  (`ChunkUploadController`/`FileUploadController`) alongside it. **All of that is gone as of
+  2026-09-04**: the backend's `upload` and `streaming` modules were deleted outright, and
+  `ChannelManage.jsx` now uploads through `usePresignedUpload` straight to object storage. So
+  the condition this extraction was parked on — "wait until the upload endpoints change
+  underneath it" — **has been met**. `ChannelManage.jsx` is still ~700 lines holding five tabs
+  and four near-identical content forms, and the `<ContentPublishForm type=… />` +
+  `useChannelContentTab(slug, type)` extraction is now genuinely unblocked. Doing it is also the
+  natural place to land the resume UI above, since the video and book upload handlers are
+  near-duplicates of each other.
+
+- **`STREAM_BASE_URL` in `lib/env.js` is dead** — exported, never imported anywhere. It pointed
+  at the backend's `/stream/**` range-request endpoints, which were deleted with the `streaming`
+  module. Delete it and the `VITE_STREAM_BASE_URL` env var with it, so nobody configures a
+  variable that does nothing.
+
+- **`npm audit`: 1 critical, 1 high, 5 moderate.** The critical (vitest UI: arbitrary file read
+  and execute when its server is listening) and the high (vite dev-server path traversal via
+  optimized-deps `.map` handling, plus `server.fs.deny` bypass) are **dev-dependency only** and
+  never reach a build — but they are live for anyone running `npm run dev --host` on a shared
+  network, which is the normal way to test on a phone. Both need a major bump (vite 8 / vitest 3)
+  and should be done deliberately, not with `--force`. The one that touches shipped code is
+  `react-router-dom`'s open redirect via backslash in `<Link>`/`useNavigate` (moderate, fixed in
+  v7) — worth checking whether any route target here is ever user-supplied before deciding how
+  urgent the v6→v7 migration is.
 
 ## UX
 
@@ -354,6 +448,29 @@ real printed article, since no article content is seeded in the local backend to
 Three review passes with the fixes that came out of each. Nothing here is outstanding — it's kept
 because the *why* is expensive to re-derive, and because several entries record things
 deliberately **not** done. Open items live under "Open items" above.
+
+## Confirm timeout — 2026-09-05 (Review 4 / backend C5)
+
+**The one Review-4 item that was a pure frontend fix.** `lib/api/client.js`'s blanket
+`timeout: 30000` also governed the create call that confirms a presigned upload — where the
+backend pages through `ListParts` and runs `CompleteMultipartUpload` over an object that can be
+several GB, routinely well past 30s. Axios aborted, the user was told "فشل في نشر الفيديو", and
+the backend went on to assemble the object and create the video anyway: a failure message for a
+publish that had actually succeeded.
+
+- **A per-request override, not a higher global timeout.** `UPLOAD_CONFIRM_TIMEOUT_MS` (5 min) is
+  exported from `client.js` and applied by `contentCreateConfig(payload)` in `useChannels.js`,
+  which hands it only to a payload carrying an `uploadSessionId`. The 30s default exists so an
+  ordinary stalled read fails fast; raising it globally would make every hung request hang five
+  minutes to suit the slowest call in the app.
+- **The decision is an exported pure function** so it could be tested without standing up a React
+  tree — convention 1 of the Testing section, applied rather than restated.
+- **A timeout now says something different from a failure.** `ChannelManage`'s `publishError`
+  reports a slow confirm as "لم يضِع ما رفعته — أعد المحاولة بعد قليل" instead of "فشل". That is
+  accurate rather than merely kinder: the create endpoint is idempotent on the session, and the
+  error path deliberately leaves `uploadSessionId` in form state, so pressing publish again
+  returns the row the first attempt created without re-uploading a byte. Telling the user it
+  failed was pointing them at starting over.
 
 ## Review findings — 2026-09-01
 
