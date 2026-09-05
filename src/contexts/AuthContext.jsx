@@ -34,7 +34,10 @@ export const AuthProvider = ({ children }) => {
             const res = await api.get('/user/profile');
             setUser(res.data);
         } catch (err) {
-            console.error('Failed to fetch profile:', err);
+            // Status only, never the axios error object: its `config.headers.Authorization`
+            // carries the live session JWT, so logging it whole puts a working credential in
+            // the console for any extension, screenshot, or error-reporting hook to pick up.
+            console.error('Failed to fetch profile:', err.response?.status ?? err.code ?? 'network error');
             // Only a 401/403 means the session is actually invalid — a 500, timeout, or
             // offline blip on mount shouldn't destroy an otherwise-valid session.
             if (err.response?.status === 401 || err.response?.status === 403) {

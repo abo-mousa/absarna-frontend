@@ -45,7 +45,9 @@ src/
   contexts/     AuthContext, ThemeContext (see "Dark mode"), ToastContext (see "Toast notifications")
   lib/
     api/        client.js (axios instance + interceptors), auth.js, contents.js (thin per-domain wrappers)
-    env.js       API_BASE_URL / STREAM_BASE_URL, from VITE_API_BASE_URL env var (no more hardcoded localhost:8080)
+    env.js       API_BASE_URL, from VITE_API_BASE_URL env var (no more hardcoded localhost:8080)
+    uploadResume.js  which upload session a channel has in flight, per (slug, kind), in localStorage —
+                 only the id, never progress; see "Presigned uploads" below
     media.js     resolveMediaUrl(), safeExternalUrl(), extractYouTubeId(), youtubeThumbnail() — shared, don't reimplement per-component
     user.js      isPlatformAdmin(user), isChannelOwner(user, channel), canManageChannel(user, channel) —
                  the `user`/`channel` shape is still implicit (no TypeScript), but role/ownership checks go
@@ -152,6 +154,15 @@ a gated item is indistinguishable from a missing one).
   lecture *including seeks* — a player re-requests on every scrub, so an expired URL mid-playback
   is an opaque 403.
 - **`retry: false`.** A 404 here means "not visible to you", which retrying cannot change.
+- **Mint on intent, never once per rendered card.** A presigned URL is a bearer credential for
+  its whole TTL, which is what the `enabled` flag is for: don't create one for media nobody has
+  asked for. `BookCard` used to call `useBookReadUrl` unconditionally, so a listing minted — and
+  held in the query cache — a live download credential for every book on screen, again per
+  infinite-scroll page, on `/books`, `History`, `Bookmarks` and `ChannelPage` alike. It now
+  enables the query on pointer-enter/focus/pointer-down (all of which precede a click), and the
+  rare click that lands first opens a blank tab inside the gesture and points it at the URL once
+  it arrives — a popup opened outside the gesture is blocked. Detail pages are the exception and
+  still fetch on mount: opening one *is* the intent. Fixed 2026-09-05, see History.
 - The session token from `useAuth()` is still right for watch/read-progress writes — those go
   through axios with a real `Authorization` header. Nothing goes into a media URL any more.
 
@@ -174,10 +185,26 @@ Three things that are load-bearing:
   interceptor attaches the user's JWT to every call; sending it to object storage would leak a
   session token to a third-party host, and the presigned signature covers the URL and host only —
   extra headers can invalidate it outright. The signature is the entire credential.
-- **Resume is server-driven.** Progress comes from `GET .../upload-url/{sessionId}/parts`, which
-  returns `partSizeBytes`/`totalParts` alongside what already landed — deliberately, so a resume
-  works from another tab, after a cleared cache, or on a different device, none of which have
-  local state to consult.
+- **Resume is server-driven, and wired up as of 2026-09-05** (backend finding R1). Progress comes
+  from `GET .../upload-url/{sessionId}/parts`, which returns `partSizeBytes`/`totalParts`
+  alongside what already landed — deliberately, so a resume works from another tab or after a
+  cleared cache without any local state to consult. `lib/uploadResume.js` stores **only the
+  session id**, per `(slug, kind)`; losing it costs a resume offer, not correctness, and it is
+  what bounds the honest claim (across tabs on one machine, not across devices).
+  - The id is persisted through `upload`'s new `onSessionStart` callback, **before a single byte
+    goes out** — the hook used to expose `sessionId` only after the first window finished, so an
+    upload interrupted at 3% was precisely the case a resume could not serve.
+  - A resume requires the same **name and size**, and `requireSessionFits` re-derives the part
+    count from the picked file. Missing byte ranges are computed from the file's own size, so
+    filling one upload's gaps from a different file of equal length would assemble a corrupt
+    object with nothing downstream to notice.
+  - Declining the offer — or picking a different file — **cancels the stale session** through the
+    backend's `DELETE .../upload-url/{sessionId}`, which had no caller until now. The per-channel
+    quota counts open sessions, so silently abandoning them is how a user ends up locked out
+    behind "finish or cancel one".
+  - A session that was swept, cancelled, published, or no longer matches raises
+    `ResumeUnavailableError` and falls through to an ordinary upload. "The resume did not apply"
+    is not a failure worth reporting to the user.
 - **URLs arrive in bounded windows.** A 10 GB file is ~1,280 parts and the server caps how many
   it signs at once; later windows come through the same reissue endpoint resume uses. Parts
   upload with a concurrency limit of 3.
@@ -188,13 +215,17 @@ page count are gone with the upload module — a book reads fine without either.
 ## Testing (`vitest`)
 
 Added 2026-09-04; broadened 2026-09-05. `npm test` (`vitest run`) / `npm run test:watch`.
-**87 tests across 7 files**, all in the node environment — there is still no jsdom, on purpose.
+**95 tests across 8 files**, all in the node environment — there is still no jsdom, on purpose.
+`uploadResume` supplies its own `globalThis.localStorage` for the same reason, which is also why
+the module reads storage through `globalThis.localStorage?.` inside a `try` rather than assuming
+a DOM: privacy modes throw outright, and "no resume offered" is the correct answer there.
 
 | File | Covers |
 |---|---|
 | `hooks/__tests__/usePresignedUpload.test.js` | byte-range arithmetic incl. the short final part, resume diffing with out-of-order gaps, batching, the concurrency cap, error propagation |
 | `lib/__tests__/validation.test.js` | username/password rules **as mirrors of the backend's** — most importantly the 72-**byte** BCrypt ceiling measured with `TextEncoder`, which no character-count check can express |
 | `lib/__tests__/media.test.js` | `safeExternalUrl` as a scheme *allowlist* (`javascript:` in every spelling, scheme-less values, tab/newline smuggling), `resolveMediaUrl` returning null for a bare object key, YouTube id extraction rejecting lookalike hosts |
+| `lib/__tests__/uploadResume.test.js` | what may be resumed: same channel *and* kind, same name *and* size, the 7-day bound matching the backend's sweep, and storage that throws or is absent |
 | `lib/__tests__/user.test.js` | the three permission helpers, incl. every null/loading case |
 | `lib/api/__tests__/client.test.js` | the 401-refresh interceptor: one shared in-flight refresh for parallel 401s, single retry, `auth:session-expired` on each dead end, auth endpoints excluded |
 | `lib/api/__tests__/beacon.test.js` | the unload flush: no token → no request, `keepalive` set, both sync and async failures swallowed |
@@ -334,12 +365,12 @@ everything here is new surface.
   roughly 270 Mbit/s runs into a hard 429 partway through. Nothing retries it. Backend fix is
   C6; the frontend should still treat 429 as retryable-with-backoff rather than fatal.
 
-- **`contentType` is taken from `file.type`, which browsers often leave empty.** The fallback is
-  `'application/octet-stream'`, which is not on the backend's allowlist, so session creation
-  400s on a perfectly valid file — `.m4v` and `.mov` are the usual offenders and both are on the
-  extension allowlist the backend *does* accept. Derive the content type from the extension
-  (already computed by `extensionOf`) instead of trusting the browser's guess; the header is
-  client-asserted either way, so nothing is lost.
+- ~~**`contentType` is taken from `file.type`, which browsers often leave empty.**~~ **Fixed
+  2026-09-05**: the field is no longer sent at all. The backend derives the content type from the
+  allowlisted extension (finding C7) and accepts-and-ignores the field, so the fallback to
+  `'application/octet-stream'` — which is not on the allowlist and 400'd perfectly valid `.mov`
+  and `.m4v` files — has nothing left to break. Nothing is lost: the header was client-asserted
+  either way.
 
 - **`accept="video/*"` on the file input doesn't match what the backend accepts** (`mp4`, `mov`,
   `m4v`). Picking a `.webm` or `.avi` is allowed by the picker, uploads nothing, and fails at
@@ -355,16 +386,11 @@ everything here is new surface.
 
 ## Refactoring / structure
 
-- **Resume is fully built and completely unreachable.** `usePresignedUpload` accepts
-  `resumeSessionId` and implements the whole diff-and-refill algorithm against the backend's
-  `list-parts`/`reissue-parts` endpoints — and `ChannelManage.jsx` never passes it, because
-  nothing persists a session id anywhere. Resume across tabs, devices and a cleared cache is the
-  main thing the backend's `UploadSession` row and its "`ListParts` is the source of truth, not
-  browser storage" rule exist *for*; today it lives only in `usePresignedUpload.test.js`.
-  Persisting `{slug, kind, sessionId, fileName, fileSize}` in `localStorage` and offering
-  "استئناف الرفع" when a matching file is re-picked is a small change that turns three built
-  endpoints from dead weight into the feature they were designed to be. It also happens to be
-  what makes the failed-part and 429 bugs above survivable instead of fatal.
+- ~~**Resume is fully built and completely unreachable.**~~ **Wired up 2026-09-05** (backend
+  finding R1) — `lib/uploadResume.js` + `ChannelManage`'s shared `runUpload`, details under
+  "Presigned uploads" above. Four built endpoints stopped being dead weight, and the failed-part
+  and 429 bugs above are now survivable rather than fatal: an interrupted upload can be picked up
+  where it stopped instead of started over.
 
 - **This section's own entry was stale and is now corrected.** The previous text said, "checked
   2026-09-03, that rewrite has not happened" and described `ChannelManage.jsx` posting to
@@ -379,20 +405,9 @@ everything here is new surface.
   natural place to land the resume UI above, since the video and book upload handlers are
   near-duplicates of each other.
 
-- **`STREAM_BASE_URL` in `lib/env.js` is dead** — exported, never imported anywhere. It pointed
-  at the backend's `/stream/**` range-request endpoints, which were deleted with the `streaming`
-  module. Delete it and the `VITE_STREAM_BASE_URL` env var with it, so nobody configures a
-  variable that does nothing.
-
-- **`npm audit`: 1 critical, 1 high, 5 moderate.** The critical (vitest UI: arbitrary file read
-  and execute when its server is listening) and the high (vite dev-server path traversal via
-  optimized-deps `.map` handling, plus `server.fs.deny` bypass) are **dev-dependency only** and
-  never reach a build — but they are live for anyone running `npm run dev --host` on a shared
-  network, which is the normal way to test on a phone. Both need a major bump (vite 8 / vitest 3)
-  and should be done deliberately, not with `--force`. The one that touches shipped code is
-  `react-router-dom`'s open redirect via backslash in `<Link>`/`useNavigate` (moderate, fixed in
-  v7) — worth checking whether any route target here is ever user-supplied before deciding how
-  urgent the v6→v7 migration is.
+- ~~**`STREAM_BASE_URL` in `lib/env.js` is dead**~~ — **deleted 2026-09-05** along with the
+  `VITE_STREAM_BASE_URL` env var it read. It pointed at the backend's `/stream/**` range-request
+  endpoints, which went with the `streaming` module.
 
 ## UX
 
@@ -448,6 +463,54 @@ real printed article, since no article content is seeded in the local backend to
 Three review passes with the fixes that came out of each. Nothing here is outstanding — it's kept
 because the *why* is expensive to re-derive, and because several entries record things
 deliberately **not** done. Open items live under "Open items" above.
+
+## Frontend security pass — 2026-09-05
+
+A pass over this side alone, deliberately scoped to what the frontend can fix without touching
+the backend. Three things changed; the rest of the section records what was checked and found
+sound, so the next pass doesn't re-derive it. **No backend change was needed for any of it.**
+
+- **`BookCard` minted a presigned read URL for every card it rendered.** The worst of the three,
+  and the only one that scales: a presigned URL is a bearer credential valid for hours, and a
+  listing page created one per book on screen — twelve on `/books`, twelve more per
+  infinite-scroll page, again on `History`, `Bookmarks` and `ChannelPage` — for books nobody
+  downloaded. Not a privilege escalation (the backend runs `ContentVisibility` before signing, so
+  every one of those URLs was for a book the viewer may already read), but it turned one careless
+  page view into a cache full of live download links and made the backend's
+  `playback_url_minted_total` counter — its stated proxy for concurrent viewers — measure card
+  impressions instead. Now fetched on intent; the mechanics and why a blank tab is opened inside
+  the click gesture are under "Reading media" above.
+- **`AuthContext` logged the whole axios error on a failed profile fetch**, and an axios error
+  carries `config.headers.Authorization` — the live session JWT. Console output is not a private
+  channel: extensions read it, screenshots capture it, and any error-reporting hook added later
+  would ship it. Now logs the status alone. (`ErrorBoundary`'s `console.error` is left as-is —
+  a React error and its component stack carry no credential.)
+- **Dependency advisories cleared: 7 → 0.** `vite` 5.4.21 → 6.4.3, `vitest` 2.1.9 → 3.2.7,
+  `react-router-dom` 6.30.6 → 7.18.3. The critical and high were dev-only (vitest UI arbitrary
+  file read/execute; vite dev-server path traversal and `server.fs.deny` bypass) but genuinely
+  live for anyone running `npm run dev --host` to test on a phone. The one touching shipped code
+  was React Router's open redirect via a backslash in `<Link>`/`useNavigate` — **checked as
+  unreachable here** before bumping: every `to=` in `src/` is a template literal over an id or a
+  channel slug, and the backend constrains slugs to `^[a-z0-9-]+$`, so no backslash can reach a
+  route target. Bumped anyway rather than left as an argued exception.
+  - Note the earlier entry's "needs vite 8 / vitest 3" was pessimistic: **vite 6.4.3 and vitest
+    3.2.7 are already past every advisory range**, which is why this stayed a two-major bump on
+    the tooling rather than a jump to vite 8 (whose `@vitejs/plugin-react` 6 pulls in
+    oxc/rolldown and a React-compiler babel plugin — a real migration, for no extra security).
+  - **Verified by `npm run build` and the full 95-test suite on the new toolchain, not by a
+    browser click-through** — the Chrome extension wasn't connected. Every React Router API this
+    app imports (`BrowserRouter`, `Routes`, `Route`, `Navigate`, `Link`, `useLocation`,
+    `useNavigate`, `useParams`, `useSearchParams`) was confirmed present in 7.18.3, and the app
+    uses component routes rather than a data router, so none of v7's loader/action-era breaking
+    changes apply. Worth one manual pass over the routes anyway.
+
+Checked and found sound, for the record: no `dangerouslySetInnerHTML`, `eval`, or `innerHTML`
+anywhere in `src/`; every externally-sourced URL that becomes an `href`/`src` goes through
+`safeExternalUrl` or `resolveMediaUrl` (both of which reject anything but absolute http(s), see
+`lib/media.js`); every `target="_blank"` carries `rel="noopener noreferrer"`; the presigned `PUT`
+still uses raw `fetch` so the JWT never reaches the storage host; the YouTube embed passes a
+parsed video id to `YT.Player` on the `youtube-nocookie.com` host rather than interpolating a URL;
+and no route target, redirect, or API path is built from a query parameter.
 
 ## Confirm timeout — 2026-09-05 (Review 4 / backend C5)
 

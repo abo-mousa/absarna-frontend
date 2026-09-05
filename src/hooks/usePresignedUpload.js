@@ -8,11 +8,12 @@ import api from '@/lib/api/client';
  * the backend at all. The backend mints presigned part URLs, and assembles the object
  * server-side when the create call confirms the session.
  *
- * Backend contract (four endpoints, shared by videos and books):
- *   POST .../{kind}/upload-url                → { sessionId, partSizeBytes, totalParts, parts }
- *   PUT  <presigned url>                      → one per part, direct to storage, no credentials
- *   GET  .../upload-url/{sessionId}/parts     → { sessionId, partSizeBytes, totalParts, parts }
- *   POST .../upload-url/{sessionId}/parts     → { parts } — re-signs specific part numbers
+ * Backend contract (five endpoints, shared by videos and books):
+ *   POST   .../{kind}/upload-url                → { sessionId, partSizeBytes, totalParts, parts }
+ *   PUT    <presigned url>                      → one per part, direct to storage, no credentials
+ *   GET    .../upload-url/{sessionId}/parts     → { sessionId, partSizeBytes, totalParts, parts }
+ *   POST   .../upload-url/{sessionId}/parts     → { parts } — re-signs specific part numbers
+ *   DELETE .../upload-url/{sessionId}           → gives up, freeing the channel's quota slot
  *
  * The returned `sessionId` is passed as `uploadSessionId` to the create endpoint, which is what
  * actually finalises the upload. Nothing exists as content until then, so an abandoned upload
@@ -23,6 +24,13 @@ const MAX_PARALLEL = 3;
 
 /** Presigned URLs expire, so a resume re-signs in batches rather than all at once. */
 const REISSUE_BATCH = 50;
+
+/**
+ * Thrown when a remembered session cannot be resumed — it was swept, cancelled, already
+ * published, or the file no longer matches it. Callers restart from scratch rather than surface
+ * it: from the user's side "resume did not apply" is not a failure, it is an ordinary upload.
+ */
+export class ResumeUnavailableError extends Error {}
 
 const extensionOf = (file) => {
     const parts = file.name.split('.');
@@ -97,9 +105,12 @@ export const usePresignedUpload = () => {
      * @param kind                 'videos' | 'books' — picks the backend's allowlist and size cap
      * @param slug                 channel slug; the caller must manage it
      * @param resumeSessionId      optional; resumes an interrupted upload of the same file
+     * @param onSessionStart       called with the session id the moment it exists, before any
+     *                             bytes are sent — persisting it there is what makes a resume
+     *                             possible after a crash during the very first window
      * @returns the session id to send as `uploadSessionId` when creating the content row
      */
-    const upload = useCallback(async (file, { kind, slug, resumeSessionId } = {}) => {
+    const upload = useCallback(async (file, { kind, slug, resumeSessionId, onSessionStart } = {}) => {
         setUploading(true);
         setError(null);
         setProgress(0);
@@ -113,20 +124,24 @@ export const usePresignedUpload = () => {
 
             if (resumeSessionId) {
                 // Progress comes from object storage via the backend, never from anything this
-                // browser remembered — that is what lets a resume work in another tab, after a
-                // cleared cache, or on a different device.
-                const { data } = await api.get(
-                    `/channels/${slug}/content/${kind}/upload-url/${resumeSessionId}/parts`
-                );
+                // browser remembered — which is why a resume survives a closed tab, a second tab
+                // uploading the same file, and a cleared cache. Only the session id is local.
+                const { data } = await resumeProgress(slug, kind, resumeSessionId);
+                requireSessionFits(file, data);
                 session = data;
+                setSessionId(session.sessionId);
                 outstanding = missingPartNumbers(data.parts, data.totalParts);
             } else {
                 const { data } = await api.post(`/channels/${slug}/content/${kind}/upload-url`, {
                     extension: extensionOf(file),
-                    contentType: file.type || 'application/octet-stream',
                     sizeBytes: file.size,
                 });
                 session = data;
+                // Announced before a single byte goes out: an upload interrupted halfway through
+                // the first window is exactly the case a resume is for, and a caller that only
+                // learns the id on success can never offer one.
+                setSessionId(session.sessionId);
+                onSessionStart?.(session.sessionId);
                 // The first window arrives already signed; everything past it is requested below.
                 await uploadWindow(file, data.parts, data, controller, setProgress, 0);
                 outstanding = [];
@@ -134,8 +149,6 @@ export const usePresignedUpload = () => {
                     outstanding.push(n);
                 }
             }
-
-            setSessionId(session.sessionId);
 
             // Signed in batches rather than all at once: the server caps how many URLs one
             // response may carry, and a URL signed now would expire before a slow upload of a
@@ -160,7 +173,48 @@ export const usePresignedUpload = () => {
         }
     }, []);
 
-    return { upload, cancel, progress, uploading, error, sessionId };
+    /**
+     * Gives up on a session at the backend, releasing the channel's quota slot immediately
+     * instead of letting it sit until the 24h age bound. Best-effort: the session may already be
+     * gone, and there is nothing useful to tell the user if the release fails.
+     */
+    const discard = useCallback(async (slug, kind, discardSessionId) => {
+        try {
+            await api.delete(`/channels/${slug}/content/${kind}/upload-url/${discardSessionId}`);
+        } catch {
+            /* already swept, cancelled, or published — nothing left to release */
+        }
+    }, []);
+
+    return { upload, cancel, discard, progress, uploading, error, sessionId };
+};
+
+/** A remembered session that no longer exists is an ordinary restart, not an error to report. */
+const resumeProgress = async (slug, kind, resumeSessionId) => {
+    try {
+        return await api.get(
+            `/channels/${slug}/content/${kind}/upload-url/${resumeSessionId}/parts`
+        );
+    } catch (e) {
+        const status = e.response?.status;
+        if (status === 404 || status === 400) {
+            throw new ResumeUnavailableError('This upload can no longer be resumed');
+        }
+        throw e;
+    }
+};
+
+/**
+ * The session's part arithmetic has to describe *this* file. It is checked rather than assumed
+ * because the byte range each part covers is computed from the file's own size — filling the
+ * gaps of one upload from a different file would assemble an object that is corrupt rather than
+ * merely wrong, and no later step would notice.
+ */
+const requireSessionFits = (file, session) => {
+    const expectedParts = Math.max(1, Math.ceil(file.size / session.partSizeBytes));
+    if (expectedParts !== session.totalParts) {
+        throw new ResumeUnavailableError('This upload was started for a different file');
+    }
 };
 
 const uploadWindow = async (file, parts, session, controller, setProgress, alreadyDone) => {

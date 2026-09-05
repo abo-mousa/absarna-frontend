@@ -17,7 +17,8 @@ import {
     useDeleteContent,
 } from '../hooks/useChannels';
 import { useChannelSeriesManage, useCreateSeries, useDeleteSeries } from '../hooks/useSeries';
-import { usePresignedUpload } from '../hooks/usePresignedUpload';
+import { usePresignedUpload, ResumeUnavailableError } from '../hooks/usePresignedUpload';
+import { rememberSession, forgetSession, resumableSessionId, rememberedSession } from '@/lib/uploadResume';
 import { useChannelComments, useModerateComment } from '../hooks/useCommentModeration';
 
 const TABS = [
@@ -231,6 +232,62 @@ function ChannelManage() {
     // handleVideoSubmit sends the resulting uploadSessionId to the create endpoint — so an
     // abandoned upload leaves no row behind, and the "upload" step no longer returns a URL to
     // stuff into the form. It returns a session id instead.
+    /**
+     * Runs one upload, resuming the channel's remembered session when the same file is picked
+     * again. The session id is persisted the moment the backend mints it — before any bytes go
+     * out — so an upload interrupted at 3% is as resumable as one interrupted at 97%.
+     *
+     * Declining the offer releases the old session rather than abandoning it: the per-channel
+     * quota counts open sessions, and a user who restarts three uploads by hand should not find
+     * themselves locked out behind an error telling them to cancel something.
+     */
+    const runUpload = async (file, kind, hook) => {
+        const resumeSessionId = resumableSessionId(slug, kind, file);
+        const remembered = rememberedSession(slug, kind);
+
+        if (resumeSessionId && !window.confirm(
+            `تم العثور على رفع غير مكتمل للملف "${file.name}". هل تريد إكماله؟`)) {
+            forgetSession(slug, kind);
+            await hook.discard(slug, kind, resumeSessionId);
+            return runFreshUpload(file, kind, hook);
+        }
+        if (!resumeSessionId && remembered) {
+            // A different file: the old session will never be finished, so free its slot now
+            // instead of leaving it to the 24h age bound.
+            forgetSession(slug, kind);
+            await hook.discard(slug, kind, remembered.sessionId);
+        }
+
+        if (!resumeSessionId) return runFreshUpload(file, kind, hook);
+
+        try {
+            const uploadSessionId = await hook.upload(file, { kind, slug, resumeSessionId });
+            // Deliberately still remembered: the upload is finished but the session is not spent
+            // until the create call confirms it, and that call can fail. Re-stamped so a resume
+            // that ran days after the original start isn't measured from the original start.
+            rememberSession(slug, kind, file, uploadSessionId);
+            return uploadSessionId;
+        } catch (err) {
+            if (!(err instanceof ResumeUnavailableError)) throw err;
+            // Swept, cancelled, already published, or no longer describing this file. Nothing to
+            // report: from here it is simply an ordinary upload.
+            forgetSession(slug, kind);
+            return runFreshUpload(file, kind, hook);
+        }
+    };
+
+    const runFreshUpload = async (file, kind, hook) => {
+        const uploadSessionId = await hook.upload(file, {
+            kind,
+            slug,
+            onSessionStart: (id) => rememberSession(slug, kind, file, id),
+        });
+        // Kept until the content row is created, not cleared here: the confirm call is what
+        // finishes the upload, and it is idempotent on the session, so a failed publish should
+        // still find a resumable session behind it.
+        return uploadSessionId;
+    };
+
     const handleVideoFileSelect = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -238,7 +295,7 @@ function ChannelManage() {
         setVideoUploading(true);
 
         try {
-            const uploadSessionId = await videoUpload.upload(file, { kind: 'videos', slug });
+            const uploadSessionId = await runUpload(file, 'videos', videoUpload);
             setVideoForm({
                 ...videoForm,
                 // sourceType/sourceUrl are the server's to set on this path — the create request
@@ -260,6 +317,8 @@ function ChannelManage() {
         e.preventDefault();
         try {
             await createVideo.mutateAsync({ ...stripEmpty(videoForm), speaker: channel.name });
+            // The session is spent: confirm assembled the object and created the row.
+            forgetSession(slug, 'videos');
             setVideoForm({
                 title: '', description: '', sourceType: '', sourceUrl: '', uploadSessionId: '',
                 category: '', seriesId: '', orderInSeries: '', originalPublishDate: '',
@@ -305,7 +364,7 @@ function ChannelManage() {
             // Same presigned direct-to-storage path as video, through the shared front door —
             // the backend only differs by allowlist and size cap. Unlike video there is no
             // transcode afterwards: the PDF is readable the moment the create call confirms it.
-            const uploadSessionId = await bookUpload.upload(file, { kind: 'books', slug });
+            const uploadSessionId = await runUpload(file, 'books', bookUpload);
             setBookForm({
                 ...bookForm,
                 // pdfUrl stays empty — the create request rejects a payload carrying both a
@@ -328,6 +387,7 @@ function ChannelManage() {
         e.preventDefault();
         try {
             await createBook.mutateAsync(stripEmpty(bookForm));
+            forgetSession(slug, 'books');
             setBookForm({ title: '', description: '', pdfUrl: '', uploadSessionId: '', previewImageUrl: '', category: '', originalPublishDate: '', pages: '' });
             showMessage('success:تم نشر الكتاب');
         } catch (err) {
