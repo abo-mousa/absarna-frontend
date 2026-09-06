@@ -8,7 +8,6 @@ import Avatar from '../ui/Avatar';
 
 function getThumbnail(video) {
     if (video.thumbnailUrl) {
-        if (tokenPending) return null;
         // Returns null for an object key — an uploaded video has no thumbnail until a
         // worker produces one, so the caller's placeholder is the correct state.
         return resolveMediaUrl(video.thumbnailUrl);
