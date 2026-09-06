@@ -339,6 +339,16 @@ contract".
   403**, when refused. `VideoDTO.sourceUrl`/`thumbnailUrl` are **null** for an upload-backed video
   — object keys never appear on a DTO — so render a placeholder rather than treating null as an
   error. Never construct a bucket URL here; that seam is what keeps a future CDN a backend change.
+- **`playback-url` returns `{url, quality, qualities}` and takes an optional `?quality=`.**
+  `qualities` is the rendition ladder's names (`1080p`/`720p`/`480p`, whatever the worker produced
+  for that source) — names only, never object keys — and `quality` is the rung actually served,
+  which is *not* necessarily the one asked for: with no parameter the backend picks the default
+  rung, and the player has no other way to learn which. An unknown quality is a 404, deliberately,
+  rather than a silent downgrade. Two consequences for the player, both in `VideoPlayer`:
+  swapping a `<video>` source always restarts from zero, so the playhead and play/pause state
+  must be carried across a quality switch by hand; and the query needs
+  `placeholderData: keepPreviousData`, or the hook goes undefined mid-switch, the element
+  unmounts, and the position is gone before the seek can be applied.
 - **Resume is `list-parts` → diff → `reissue-parts`.** Object storage is the source of truth, so
   persist only the session id (never progress), keyed per channel *and* kind. Persist it **before
   the first byte goes out** — an upload interrupted at 3% is exactly the case resume must serve.

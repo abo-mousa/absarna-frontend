@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useId, forwardRef, useImperativeHandle } from 'react';
+import { useCallback, useEffect, useRef, useState, useId, forwardRef, useImperativeHandle } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { resolveMediaUrl, safeExternalUrl, extractYouTubeId } from '@/lib/media';
 import { useAuth } from '@/contexts/AuthContext';
@@ -74,7 +74,16 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
     // touches this. Note the check is now on every playback, not only a hidden video: the object
     // is private regardless, so even a public video needs a signature.
     const isOwnUpload = sourceType === 'UPLOAD' || sourceType === 'LOCAL' || sourceType === 'STREAM';
-    const { data: playbackUrl, isLoading: playbackUrlLoading } = useVideoPlaybackUrl(videoId, isOwnUpload);
+
+    // null means "whatever the backend picks" — the worker nominates a default rung, and until
+    // the viewer expresses a preference that is the right answer. Kept as null rather than
+    // eagerly set to the served quality so a reload doesn't pin a choice the viewer never made.
+    const [selectedQuality, setSelectedQuality] = useState(null);
+    const { data: playback, isLoading: playbackUrlLoading } =
+        useVideoPlaybackUrl(videoId, isOwnUpload, selectedQuality);
+    const playbackUrl = playback?.url;
+    const qualities = playback?.qualities ?? [];
+    const servedQuality = playback?.quality ?? null;
     // Attached via the `setVideoEl` callback ref below rather than `ref={videoRef}`, and it
     // deliberately ignores the null write: React nulls a `ref={...}` out during the same unmount
     // pass that runs the flush effect's cleanup, so the element would already be gone by the time
@@ -88,6 +97,11 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
     }, []);
     // The video's length once the player knows it — feeds watchThreshold above.
     const durationRef = useRef(NaN);
+    // Where to resume after a quality switch, and whether to keep playing. Swapping a <video>'s
+    // source always restarts it from zero, so the playhead has to be carried across by hand —
+    // otherwise changing quality mid-lecture silently sends the viewer back to the beginning.
+    const pendingSeekRef = useRef(null);
+    const resumePlaybackRef = useRef(false);
     const lastReportedAtRef = useRef(0);
     // Mirrors token/videoId into refs so the unmount effect below always reports against
     // the latest values without re-subscribing (and re-flushing) on every render.
@@ -166,6 +180,7 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
     const youtubePlayerRef = useRef(null);
     const youtubeIntervalRef = useRef(null);
     const youtubeContainerId = `yt-player-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
+    const qualitySelectId = `quality-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
     const isYouTube = sourceType === 'YOUTUBE';
     const youtubeVideoId = isYouTube ? extractYouTubeId(sourceUrl) : '';
 
@@ -233,8 +248,41 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
     // earlier is silently ignored by the browser.
     const handleLoadedMetadata = (e) => {
         durationRef.current = e.currentTarget.duration;
+        // A pending seek is a quality switch and takes precedence over `startTime`, which is the
+        // deep-link/resume position and was already honoured on the first load.
+        if (pendingSeekRef.current != null) {
+            e.currentTarget.currentTime = pendingSeekRef.current;
+            pendingSeekRef.current = null;
+            if (resumePlaybackRef.current) {
+                resumePlaybackRef.current = false;
+                // Ignored rather than surfaced: autoplay policies can refuse this, and the
+                // viewer pressing play is a perfectly good outcome.
+                e.currentTarget.play().catch(() => {});
+            }
+            return;
+        }
         if (startTime > 0) e.currentTarget.currentTime = startTime;
     };
+
+    const handleQualityChange = (quality) => {
+        const el = videoRef.current;
+        if (el) {
+            pendingSeekRef.current = el.currentTime;
+            resumePlaybackRef.current = !el.paused && !el.ended;
+        }
+        setSelectedQuality(quality);
+    };
+
+    // Changing the `src` attribute does not itself reload the element — the browser keeps
+    // playing the old source until load() is called. This is also what makes onLoadedMetadata
+    // fire again, which is where the pending seek is applied.
+    useEffect(() => {
+        const el = videoRef.current;
+        if (el && playbackUrl && el.dataset.src !== playbackUrl) {
+            el.dataset.src = playbackUrl;
+            el.load();
+        }
+    }, [playbackUrl]);
 
     // An external URL is rendered as-is, so it goes through the scheme allowlist first — a
     // stored `javascript:` value would otherwise become a live href on a page holding the
@@ -249,20 +297,43 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
         }
 
         return (
-            <video
-                ref={setVideoEl}
-                controls
-                playsInline
-                preload="metadata"
-                onLoadedMetadata={handleLoadedMetadata}
-                onTimeUpdate={handleTimeUpdate}
-                onPause={handlePauseOrEnded}
-                onEnded={handlePauseOrEnded}
-                className="w-full max-h-[500px] rounded-lg bg-black"
-            >
-                <source src={playbackUrl} type="video/mp4" />
-                متصفحك لا يدعم تشغيل الفيديو
-            </video>
+            <div>
+                <video
+                    ref={setVideoEl}
+                    src={playbackUrl}
+                    controls
+                    playsInline
+                    preload="metadata"
+                    onLoadedMetadata={handleLoadedMetadata}
+                    onTimeUpdate={handleTimeUpdate}
+                    onPause={handlePauseOrEnded}
+                    onEnded={handlePauseOrEnded}
+                    className="w-full max-h-[500px] rounded-lg bg-black"
+                >
+                    متصفحك لا يدعم تشغيل الفيديو
+                </video>
+
+                {/* Only worth showing when there is a real choice. A source smaller than 480p
+                    produces a single rung, and a lone option is just clutter. */}
+                {qualities.length > 1 && (
+                    <div className="flex items-center justify-end gap-2 mt-2">
+                        <label htmlFor={qualitySelectId} className="text-sm text-text-muted">
+                            الجودة
+                        </label>
+                        <select
+                            id={qualitySelectId}
+                            value={selectedQuality ?? servedQuality ?? ''}
+                            onChange={(e) => handleQualityChange(e.target.value)}
+                            className="text-sm bg-surface border border-border rounded px-2 py-1
+                                focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        >
+                            {qualities.map((q) => (
+                                <option key={q} value={q}>{q}</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
+            </div>
         );
     }
 

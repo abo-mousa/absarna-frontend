@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import api from '@/lib/api/client';
 
 /**
@@ -21,14 +21,30 @@ import api from '@/lib/api/client';
 // mid-playback restarts it from zero.
 const STALE_MS = 30 * 60 * 1000;
 
-export const useVideoPlaybackUrl = (videoId, enabled = true) =>
+/**
+ * Returns the whole payload, not just the URL: `{ url, quality, qualities }`.
+ *
+ * `qualities` is the rendition ladder's names, which is everything a selector needs — object
+ * keys never leave the backend. `quality` is the rung actually being served, which is not
+ * necessarily the one asked for: with no `quality` argument the backend picks the default rung,
+ * and the player has no other way to know which that was.
+ *
+ * `quality` is part of the query key, so each rung is cached separately and switching back to
+ * one already fetched is instant. `placeholderData: keepPreviousData` is what makes switching
+ * usable at all — without it the query goes undefined mid-flight, the caller falls back to its
+ * loading state, and the <video> element unmounts, taking the playhead with it.
+ */
+export const useVideoPlaybackUrl = (videoId, enabled = true, quality = null) =>
     useQuery({
-        queryKey: ['videoPlaybackUrl', videoId],
+        queryKey: ['videoPlaybackUrl', videoId, quality],
         queryFn: async () => {
-            const { data } = await api.get(`/videos/${videoId}/playback-url`);
-            return data.url;
+            const { data } = await api.get(`/videos/${videoId}/playback-url`, {
+                params: quality ? { quality } : undefined,
+            });
+            return data;
         },
         enabled: Boolean(videoId) && enabled,
+        placeholderData: keepPreviousData,
         staleTime: STALE_MS,
         gcTime: STALE_MS,
         retry: false, // a 404 here means "not visible to you", which retrying cannot change
