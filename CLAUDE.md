@@ -337,10 +337,16 @@ contract".
   went on to assemble a multi-GB object and create the row, reporting failure for a publish that
   had succeeded (Review 5, C5). Keep the override scoped to payloads carrying an
   `uploadSessionId` — the global timeout exists so ordinary reads fail fast.
-- **`playback-url` / `read-url` are the only source of a media URL**, and they answer **404, not
-  403**, when refused. `VideoDTO.sourceUrl`/`thumbnailUrl` are **null** for an upload-backed video
-  — object keys never appear on a DTO — so render a placeholder rather than treating null as an
-  error. Never construct a bucket URL here; that seam is what keeps a future CDN a backend change.
+- **`playback-url` / `read-url` are the only source of a *playable* media URL**, and they answer
+  **404, not 403**, when refused. `VideoDTO.sourceUrl` is **null** for an upload-backed video, so
+  render a placeholder rather than treating null as an error. Never construct a bucket URL here;
+  that seam is what keeps a future CDN a backend change.
+- **`VideoDTO.thumbnailUrl` is populated again as of 2026-09-06** — it carries a presigned URL
+  once the transcode worker has produced a poster frame, and the backend caches it for an hour so
+  it is byte-identical between calls and the browser can cache the image. It is still **null**
+  while a video is transcoding and for any video with no poster, so `VideoCard`'s placeholder path
+  stays load-bearing; treat null as "not yet", never as an error. Object keys still never appear
+  on a DTO.
 - **`playback-url` returns `{url, quality, qualities}` and takes an optional `?quality=`.**
   `qualities` is the rendition ladder's names (`1080p`/`720p`/`480p`, whatever the worker produced
   for that source) — names only, never object keys — and `quality` is the rung actually served,
