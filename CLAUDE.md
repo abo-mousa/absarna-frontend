@@ -4,6 +4,8 @@ React 18 + Vite frontend for the أَبْصَرْنا (Absarna) media platform (
 
 The repo directory is `/Users/kareemismail/IdeaProjects/absarna-frontend` (renamed 2026-09-03 from `elhamy-frontend-enhanced` and moved out of `~/Desktop` to sit alongside the backend under `~/IdeaProjects` — see "Rename: Manara → Absarna" under History; `.idea/` project files need reopening from the new path). `package.json`'s `name` field is `absarna-frontend` (updated as part of the rebrand; `package-lock.json` resynced via `npm install --package-lock-only`).
 
+A third repo joined the platform on 2026-09-06: `/Users/kareemismail/IdeaProjects/absarna-worker`, the transcode worker. **Nothing here talks to it** — it has no HTTP surface at all, and reaches the backend only over Redis streams. It matters to this repo for exactly one reason: it is what produces the rendition ladder behind `playback-url`'s `qualities`, and the poster frames that will eventually fill `thumbnailUrl`. Until a rung exists, a video simply has no quality to choose.
+
 Keep this file updated when architecture/conventions change — not a changelog for every commit, just what a fresh session would otherwise have to re-derive by reading everything.
 
 ## Styling: Tailwind CSS
