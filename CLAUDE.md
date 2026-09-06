@@ -321,6 +321,49 @@ Dropped into `VideoDetail`/`BookDetail`/`ArticleDetail`'s header next to `Bookma
 
 - The Navbar's "رفع" (Upload) link (see "Navbar upload link" under History) now routes to the viewer's own channel-manage page rather than the old unrouted `/upload`. There used to be 5 unrouted admin CMS tab components under `components/admin/` meant to eventually back a dedicated upload page; they were deleted 2026-09-01 (dead code, fully duplicated by `ChannelManage.jsx`) rather than wired up. If per-type CMS tabs come back, build them as part of the `ChannelManage` rewrite mentioned under "Refactoring / structure" below, not as a second implementation.
 
+## Backend contract
+
+`absarna-backend` is a separate repo with its own `CLAUDE.md` (plus `DESIGN.md` for the
+upload/playback pipeline and `HISTORY.md` for closed findings). Neither repo's docs describe the
+other's internals — what belongs here is only what this app *relies on*, so a backend change that
+would break it is visible before it ships. The mirror of this list lives there under "Frontend
+contract".
+
+- **Confirm is idempotent on `uploadSessionId`.** This is what lets the 5-minute confirm timeout
+  report "still working, try again shortly" instead of a failure: pressing publish again returns
+  the row the first attempt created. The blanket 30s axios timeout used to abort while the backend
+  went on to assemble a multi-GB object and create the row, reporting failure for a publish that
+  had succeeded (Review 5, C5). Keep the override scoped to payloads carrying an
+  `uploadSessionId` — the global timeout exists so ordinary reads fail fast.
+- **`playback-url` / `read-url` are the only source of a media URL**, and they answer **404, not
+  403**, when refused. `VideoDTO.sourceUrl`/`thumbnailUrl` are **null** for an upload-backed video
+  — object keys never appear on a DTO — so render a placeholder rather than treating null as an
+  error. Never construct a bucket URL here; that seam is what keeps a future CDN a backend change.
+- **Resume is `list-parts` → diff → `reissue-parts`.** Object storage is the source of truth, so
+  persist only the session id (never progress), keyed per channel *and* kind. Persist it **before
+  the first byte goes out** — an upload interrupted at 3% is exactly the case resume must serve.
+  Require name *and* size to match and re-derive the part count from the picked file: a resume
+  uploads only the missing byte ranges, so filling one upload's gaps from a different file of
+  equal length assembles a corrupt object nothing downstream would catch.
+- **`DELETE .../upload-url/{sessionId}` releases the per-channel quota slot.** Call it when the
+  user declines a resume offer. The quota counts open sessions (5 per channel), so silently
+  abandoning them is how someone restarts three uploads by hand and then hits "finish or cancel
+  one". A session that was swept, cancelled or published raises `ResumeUnavailableError` — fall
+  through to an ordinary upload; "the resume did not apply" is not a failure worth reporting.
+- **Uploads are always multipart**, `{ext}` is allowlisted (`mp4`/`mov`/`pdf`), and **the backend
+  derives `contentType` from that extension** — `file.type` is accepted and ignored, because
+  browsers commonly leave it empty for `.mov`/`.m4v` and `application/octet-stream` used to 400
+  a perfectly valid file (Review 5, C7).
+- **Rate limits are per client IP and per rule**, not per URL. Since 2026-09-05 the backend keys
+  buckets on the matched rule, so hitting the same rule from many different paths shares one
+  bucket: general API reads are 300/min and writes 60/min across the whole app, with tighter
+  per-rule limits on login (5/min), register (3/min), comments (10/min) and password reset
+  (3/hour). Part reissue is 60/min, deliberately generous — it is a step inside one upload. A 429
+  body is `{error, message}`, the `message` half user-facing Arabic.
+- **An uploaded video is not immediately playable.** `status` is `UPLOADED` until the pipeline
+  finishes, and there is **no notification channel by design** — no SSE, no WebSocket, no polling
+  loop. Re-fetch `GET /videos/{id}` when the user comes back, and never imply a quick turnaround.
+
 ## Build / verify
 
 ```
