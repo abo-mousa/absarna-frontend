@@ -1,14 +1,16 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
 import { Input, Button } from '../components/ui';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { t } from '@/i18n';
+import { safeInternalPath } from '@/lib/navigation';
 
 function Login() {
     usePageMeta({ title: t('auth.login.heading') });
     const navigate = useNavigate();
+    const location = useLocation();
     const { login } = useAuth();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -21,8 +23,14 @@ function Login() {
         setLoading(true);
 
         const result = await login(username, password);
-        if (result.success) navigate('/');
-        else setError(result.message);
+        if (result.success) {
+            // Back to whatever bounced them here. ProtectedRoute and the session-expiry handler
+            // both put it in router state; without this the visitor lands on the home page and
+            // has to find their way back to the page they had already asked for. Validated
+            // rather than trusted: safeInternalPath accepts only a same-origin root-relative
+            // path, so this stays safe if the value ever comes from a query string instead.
+            navigate(safeInternalPath(location.state?.from) || '/', { replace: true });
+        } else setError(result.message);
         setLoading(false);
     };
 

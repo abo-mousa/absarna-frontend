@@ -32,7 +32,12 @@ function ContentPublishForm({ heading, onSubmit, file, submitLabel, submitIcon, 
                     {/* The backend's own allowlist, never `video/*` — offering .webm or .avi in
                         the picker only moved the rejection to a server error after the user had
                         already committed to the file. */}
-                    <input type="file" accept={file.accept} onChange={file.onChange} />
+                    <input
+                        type="file"
+                        accept={file.accept}
+                        onChange={file.onChange}
+                        disabled={file.uploading}
+                    />
                     {file.uploading && (
                         <div className="mt-2">
                             <div className="w-full h-2 bg-border rounded-full">

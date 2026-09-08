@@ -1,5 +1,7 @@
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { UPLOAD_CONFIRM_TIMEOUT_MS } from '@/lib/api/client';
+import { queryKeys } from '@/lib/queryKeys';
+import { useUserScope } from './useUserScope';
 
 // Maps a content type to the query key its public channel-page list is cached under —
 // shared by the owner-management mutations below so a publish/toggle/delete on
@@ -33,6 +35,7 @@ export const useChannelVideos = (slug, size = 24, enabled = true) => {
             const res = await api.get(`/channels/${slug}/videos?page=${pageParam}&size=${size}`);
             return res.data;
         },
+        initialPageParam: 0,
         getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.currentPage + 1 : undefined),
         enabled: enabled && !!slug,
     });
@@ -47,6 +50,7 @@ export const useChannelBooks = (slug, size = 50, enabled = true) => {
             const res = await api.get(`/channels/${slug}/books?page=${pageParam}&size=${size}`);
             return res.data;
         },
+        initialPageParam: 0,
         getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.currentPage + 1 : undefined),
         enabled: enabled && !!slug,
     });
@@ -59,6 +63,7 @@ export const useChannelArticles = (slug, size = 50, enabled = true) => {
             const res = await api.get(`/channels/${slug}/articles?page=${pageParam}&size=${size}`);
             return res.data;
         },
+        initialPageParam: 0,
         getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.currentPage + 1 : undefined),
         enabled: enabled && !!slug,
     });
@@ -71,14 +76,16 @@ export const useChannelPosts = (slug, size = 50, enabled = true) => {
             const res = await api.get(`/channels/${slug}/posts?page=${pageParam}&size=${size}`);
             return res.data;
         },
+        initialPageParam: 0,
         getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.currentPage + 1 : undefined),
         enabled: enabled && !!slug,
     });
 };
 
 export const useSubscriptionStatus = (channelId, enabled = true) => {
+    const scope = useUserScope();
     return useQuery({
-        queryKey: ['subscription-status', channelId],
+        queryKey: queryKeys.subscriptionStatus(channelId, scope),
         queryFn: async () => {
             const res = await api.get(`/channels/${channelId}/subscription-status`);
             return res.data;
@@ -99,8 +106,12 @@ export const useToggleSubscription = (channelId) => {
             }
         },
         onSuccess: () => {
+            // Prefixes: the viewer's scope is the last segment of each of these keys, so a
+            // prefix match reaches this viewer's copy without the hook needing the scope itself.
             queryClient.invalidateQueries({ queryKey: ['subscription-status', channelId] });
             queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
+            // The feed's "من القنوات التي تتابعها" section is exactly this list.
+            queryClient.invalidateQueries({ queryKey: ['feed'] });
         },
     });
 };
@@ -123,8 +134,9 @@ export const useAllChannels = (enabled = true) => {
 };
 
 export const useSubscriptions = (enabled = true) => {
+    const scope = useUserScope();
     return useQuery({
-        queryKey: ['subscriptions'],
+        queryKey: queryKeys.subscriptions(scope),
         queryFn: async () => {
             const res = await api.get('/user/subscriptions');
             return res.data || [];
@@ -148,8 +160,9 @@ export const useUnsubscribe = () => {
 };
 
 export const useMyChannels = (enabled = true) => {
+    const scope = useUserScope();
     return useQuery({
-        queryKey: ['my-channels'],
+        queryKey: queryKeys.myChannels(scope),
         queryFn: async () => {
             const res = await api.get('/channels/my-channels');
             return res.data || [];
@@ -162,8 +175,9 @@ export const useMyChannels = (enabled = true) => {
 // ============ Owner management (ChannelManage.jsx) ============
 
 export const useChannelContentList = (slug, type, enabled = true) => {
+    const scope = useUserScope();
     return useQuery({
-        queryKey: ['channel-manage', slug, type],
+        queryKey: queryKeys.channelManage(slug, type, scope),
         queryFn: async () => {
             const res = await api.get(`/channels/${slug}/content/${type}`);
             return res.data || [];
@@ -182,6 +196,18 @@ export const useUpdateChannel = (slug, channelId) => {
         },
         onSuccess: (data) => {
             queryClient.setQueryData(['channel', slug], data);
+            // TODO(backend): `VideoDTO` carries no `channelName`/`channelSlug`/`channelLogoUrl`,
+            // so every VideoCard resolves its channel with its own `useChannel(...)` query —
+            // one cached query per distinct channel, shared across the cards, but still a
+            // separate request the card cannot avoid. Until those three fields are attached to
+            // `VideoDTO` the way `seriesTitle` and `commentCount` already are (one batched query
+            // per response on the backend, see its CLAUDE.md), a rename has to reach those
+            // per-card queries some other way — which is this line.
+            //
+            // Whole `['channel']` prefix, not just this slug: a card holds `['channel', slug]`
+            // keyed by the slug it read off the DTO, and a rename may have changed the slug
+            // itself, so the stale entry is not necessarily the one just written.
+            queryClient.invalidateQueries({ queryKey: ['channel'] });
         },
     });
 };
@@ -297,8 +323,9 @@ export const useDeleteVideoByChannelId = () => {
 // ============ Admin channel moderation ============
 
 export const usePendingChannels = (enabled = true) => {
+    const scope = useUserScope();
     return useQuery({
-        queryKey: ['admin-pending-channels'],
+        queryKey: queryKeys.adminPendingChannels(scope),
         queryFn: async () => {
             const res = await api.get('/channels/admin/pending');
             return res.data || [];
@@ -309,8 +336,9 @@ export const usePendingChannels = (enabled = true) => {
 };
 
 export const useAllAdminChannels = (enabled = true) => {
+    const scope = useUserScope();
     return useQuery({
-        queryKey: ['admin-all-channels'],
+        queryKey: queryKeys.adminAllChannels(scope),
         queryFn: async () => {
             const res = await api.get('/channels/admin/all');
             return res.data || [];

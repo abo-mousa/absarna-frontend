@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
+import { safeStorage } from '@/lib/safeStorage';
 
 const ThemeContext = createContext(null);
 
@@ -14,7 +15,10 @@ export function ThemeProvider({ children }) {
 
     useEffect(() => {
         document.documentElement.classList.toggle('dark', theme === 'dark');
-        localStorage.setItem('theme', theme);
+        // safeStorage, not localStorage: this effect runs on the very first render, and a
+        // browser that blocks site data throws on the accessor itself — which used to take the
+        // whole app down into the error boundary before anything had painted.
+        safeStorage.setItem('theme', theme);
     }, [theme]);
 
     const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));

@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Bell, Check, Video, BookOpen, FileText, MessageSquare, Settings, Tv } from 'lucide-react';
+import { Video, BookOpen, FileText, MessageSquare, Settings, Tv } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
 import { QueryState, Avatar } from '../components/ui';
-import { VideoCard, BookCard, ArticleCard, PostCard } from '../components/content';
+import { VideoCard, BookCard, ArticleCard, PostCard, SubscribeButton } from '../components/content';
 import { useWatchProgressMap, useReadingProgressMap } from '../hooks/useVideos';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { resolveMediaUrl } from '@/lib/media';
@@ -16,7 +16,6 @@ import {
     useChannelArticles,
     useChannelPosts,
     useSubscriptionStatus,
-    useToggleSubscription,
 } from '../hooks/useChannels';
 import { useChannelSeries } from '../hooks/useSeries';
 import { t } from '@/i18n';
@@ -26,10 +25,11 @@ function ChannelPage() {
     const navigate = useNavigate();
     const { token, user } = useAuth();
     const [activeTab, setActiveTab] = useState('videos');
+    const [bannerFailed, setBannerFailed] = useState(false);
     const watchProgress = useWatchProgressMap(!!token);
     const readingProgress = useReadingProgressMap(!!token);
 
-    const { data: channel, isLoading: channelLoading } = useChannel(slug);
+    const { data: channel, isLoading: channelLoading, isError: channelError, error: channelErrorObject, refetch: refetchChannel } = useChannel(slug);
     const {
         data: videoPages,
         fetchNextPage,
@@ -65,11 +65,11 @@ function ChannelPage() {
     } = useChannelPosts(slug, 24, !!channel);
     const posts = postPages?.pages.flatMap((page) => page.content) || [];
     const postCount = postPages?.pages[0]?.totalItems ?? posts.length;
+    // Still read here for the subscriber count in the header; the toggle itself moved into
+    // SubscribeButton, which runs this same cached query.
     const { data: subscriptionStatus } = useSubscriptionStatus(channel?.id, !!token && !!channel);
-    const toggleSubscription = useToggleSubscription(channel?.id);
     const { data: series = [] } = useChannelSeries(slug, !!channel);
 
-    const subscribed = subscriptionStatus?.subscribed || false;
     const subscriberCount = subscriptionStatus?.subscriberCount || 0;
 
     usePageMeta({
@@ -77,14 +77,6 @@ function ChannelPage() {
         description: channel?.description?.slice(0, 200),
         image: resolveMediaUrl(channel?.bannerUrl || channel?.logoUrl),
     });
-
-    const handleSubscribe = () => {
-        if (!token) {
-            navigate('/login');
-            return;
-        }
-        toggleSubscription.mutate(subscribed);
-    };
 
     const isOwner = isChannelOwner(user, channel);
 
@@ -99,9 +91,15 @@ function ChannelPage() {
     if (channelLoading || !channel) {
         return (
             <PageShell>
+                {/* A failed request used to land in the empty branch — "this channel does not
+                    exist" for what may be a dropped connection. isError separates the two. */}
                 <QueryState
                     isLoading={channelLoading}
-                    isEmpty={!channelLoading}
+                    isError={channelError}
+                    error={channelErrorObject}
+                    onRetry={refetchChannel}
+                    errorTitle={t('channel.loadFailed')}
+                    isEmpty={!channelLoading && !channelError}
                     emptyTitle={t('channel.notFound')}
                 />
             </PageShell>
@@ -111,11 +109,15 @@ function ChannelPage() {
     return (
         <PageShell currentChannel={slug} contentClassName="p-4 sm:p-6">
             <div className="rounded-lg overflow-hidden mb-5" style={{ background: channel.primaryColor || '#0D6B4D' }}>
-                {channel.bannerUrl && (
+                {/* Owner-supplied and external. On failure the banner is dropped entirely and
+                    the header falls back to the channel's own primaryColor behind it — which is
+                    what a channel with no banner already looks like. */}
+                {channel.bannerUrl && !bannerFailed && (
                     <div className="h-[120px] sm:h-[160px] w-full overflow-hidden">
                         <img
                             src={resolveMediaUrl(channel.bannerUrl)}
                             alt=""
+                            onError={() => setBannerFailed(true)}
                             className="w-full h-full object-cover"
                         />
                     </div>
@@ -141,15 +143,7 @@ function ChannelPage() {
                         </Link>
                     )}
 
-                    <button
-                        onClick={handleSubscribe}
-                        disabled={toggleSubscription.isPending}
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-semibold text-sm ${
-                            subscribed ? 'bg-white/20 text-white' : 'bg-white text-primary'
-                        }`}
-                    >
-                        {toggleSubscription.isPending ? '...' : subscribed ? <><Check size={18} /> {t('channel.subscribed')}</> : <><Bell size={18} /> {t('channel.subscribe')}</>}
-                    </button>
+                    <SubscribeButton channelId={channel.id} variant="banner" />
                 </div>
             </div>
 

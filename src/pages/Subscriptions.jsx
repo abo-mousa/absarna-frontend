@@ -9,7 +9,7 @@ import { t } from '@/i18n';
 function Subscriptions() {
     usePageMeta({ title: t('subscriptions.title') });
     const { showToast } = useToast();
-    const { data: subscriptions = [], isLoading, isError } = useSubscriptions();
+    const { data: subscriptions = [], isLoading, isError, error, refetch } = useSubscriptions();
     const unsubscribe = useUnsubscribe();
 
     const handleUnsubscribe = (channelId) => {
@@ -24,6 +24,8 @@ function Subscriptions() {
             <QueryState
                 isLoading={isLoading}
                 isError={isError}
+                error={error}
+                onRetry={refetch}
                 isEmpty={subscriptions.length === 0}
                 errorTitle={t('subscriptions.loadFailed')}
                 emptyIcon="🔔"

@@ -527,3 +527,110 @@ page.
   CREATOR/CHANNEL_ADMIN who hasn't created a channel yet. No new page was built; multi-channel
   owners land on their first channel's manage tab and can switch via `SideBar`'s channel list, same
   as before this fix. Verified via `npm run build`.
+
+---
+
+## Review pass 2026-09-08 (F1) — security, caching, error handling, code quality
+
+The frontend half of a three-repo review. This was the **security/caching/error-handling/quality**
+phase; the visual and UX findings from the same review (navigation to books/articles, player speed
+control, PDF zoom, Arabic readability, honest publishing feedback) were deliberately deferred to a
+later phase and are listed in `CLAUDE.md`'s open items. Final gate: `npm run lint` clean,
+163 tests in 15 files, `npm run build` green.
+
+### The one that mattered
+
+**The cache had no notion of whose data it held, and nothing cleared it on logout.** On a shared
+device the next person to sign in saw the previous person's watch progress, likes, bookmarks,
+subscriptions and owner controls until each stale window ran out; signed out, `useLikeStatus` still
+served `liked: true` from cache. Fixed twice over — `queryClient.clear()` on logout and session
+expiry, and a viewer scope in every user-scoped key. The three rules that keep it working (scope
+last, public keys excluded, scope read from the token and not from `user`) are in `CLAUDE.md`,
+because each one is a trap: putting the scope second breaks every prefix invalidation in the app,
+and keying on `user` runs every scoped query twice per page load.
+
+### Security
+
+- **Unguarded `localStorage` crashed the app** — not degraded it. The access is at module scope, so
+  a browser told not to store anything (Lock Down Mode, cookies blocked, enterprise policy)
+  rendered a blank page. All five call sites go through `safeStorage` now.
+- **YouTube ids are validated** against `^[A-Za-z0-9_-]{11}$`. Whatever sat in `?v=` or the last
+  path segment was interpolated straight into an `img.youtube.com/vi/<id>/` URL and the embed
+  `src`. **The existing tests used a 6-character stand-in id**, so they failed against the fix and
+  had to be corrected to real-shaped ids — worth noting, since a fixture that is not shaped like
+  the real thing hides exactly this class of change.
+- **The refresh-exclusion in the axios interceptor matches on pathname**, not `includes()` on the
+  raw URL.
+- **`ErrorBoundary` shows only the catalog string**; the raw message goes to `console.error`.
+- **Post-login return-to is validated, not trusted** (`safeInternalPath`): root-relative only,
+  rejecting `//evil.example`, `/\evil.example` and anything carrying a scheme. Router state is not
+  attacker-controlled today; the check is what keeps that true if the value ever arrives from a
+  query string. **`Login` did not consume `state.from` at all** until this pass — the guard put the
+  destination in router state and the login page navigated to `/` regardless.
+- **`react-icons` removed** (zero imports); devtools confined to `devDependencies`.
+
+### Error handling
+
+- Every failed GET rendered the same «حدث خطأ» and every mutation toasted a fixed string, so
+  offline, rate-limited, deleted and server-fault read identically — and **the backend's own Arabic
+  429 message**, which the CORS filter ordering exists to make readable, was used in eight places
+  and dropped everywhere else. `describeError` + `QueryState`'s `error`/`onRetry` now cover both.
+- **A refresh failure only clears the session on 400/401/403.** A network error, a 5xx or a 429 on
+  the refresh endpoint used to log the user out — so a tunnel dropping for two seconds, or hitting
+  the refresh rate limit, ended the session.
+- **No 4xx is retried.** A 404 detail page sat through a request, a backoff and a second request
+  before rendering "not found". 429 is deliberately *not* retried either: the limiter is per-IP and
+  per-rule, so retrying spends the next token of the same bucket.
+- **A lazily-loaded chunk that 404s after a deploy triggers one guarded reload**
+  (`vite:preloadError`). The required host cache headers — `index.html` `no-cache`, `/assets/*`
+  `immutable` — are now written down; without them a cached `index.html` names chunks that no
+  longer exist, which is a blank page for as long as that HTML lives.
+- **The file input is cleared on every path and disabled while uploading.** An
+  `<input type="file">` fires `change` only when the selection differs from what it holds, so after
+  a failed upload **picking the same file again did nothing at all** — the retry the toast invites
+  was impossible. Picking a second file mid-upload started a second transfer whose session id
+  overwrote the first, orphaning a finished upload.
+- The reply submit button is disabled while pending; a double tap posted twice.
+
+### Caching
+
+- `useToggleLike.onSettled` now invalidates `['video', id]` and the list keys carrying
+  `likeCount` — **its own comment already claimed it did.**
+- `initialPageParam: 0` on every `useInfiniteQuery`.
+- Stale cache comments corrected in `useVideos`/`useBooks`/`VideoPlayer`: they justified their
+  settings by claiming `refetchOnMount` was disabled app-wide, which stopped being true when the
+  default moved to `STANDARD`.
+
+### Code quality
+
+- **There was no linter at all**, in plain JavaScript with no type system — so a name that does not
+  exist and a wrong dependency array both went uncaught. `eslint.config.js` added, zero errors.
+  **The non-obvious part**: `no-unused-vars` reported 300 false errors until
+  `react/jsx-uses-vars` was enabled, because nothing tells the base rule that a name used in JSX is
+  used. That one rule is the only `react/*` rule on. The four genuine `exhaustive-deps` exceptions
+  now carry a written reason each instead of being absent.
+- **`manualChunks`'s object form silently did nothing for React.** `{'vendor-react': ['react',
+  'react-dom']}` matches the module id `react`, which nothing imports — React 18's JSX runtime
+  imports `react/jsx-runtime` and the app imports `react-dom/client`. The chunk built **empty**
+  (Rollup said so) while React rode along in `vendor-router`, at 181 kB. Now a path-matching
+  function: `vendor-react` 143 kB, `vendor-router` 39 kB.
+- **Latin digits everywhere** (`lib/numbers.js`). The app had two digit systems on one card.
+- Backend `@Size` limits mirrored in `validation.js` and the two forms (username 50, full name 150,
+  email 254, bio 2000) — an over-long value used to come back as a 400 after submit, and for a
+  profile email change the backend had already queued the verification mail by then.
+- `watchThreshold` tested. It is read from four separate report paths across two player
+  implementations and **none of them makes it visible in a rendered page** — a wrong threshold does
+  not fail, it silently drops progress writes and "continue watching" is simply empty.
+- `SubscribeButton` uses a constant accessible name plus `aria-pressed`; it had been changing the
+  label *and* setting `aria-pressed`, so a screen reader announced a contradiction.
+
+### Deliberately not done in this phase
+
+- `TELEGRAM` is **kept** as a `sourceType` branch: the backend's own allowlist still contains it,
+  so removing the branch here would break a row the API accepts.
+- `VideoDTO` still carries no `channelName`/`channelSlug`/`channelLogoUrl`, so `VideoCard` keeps
+  resolving its channel through a shared `useChannel` query. `useUpdateChannel` invalidates the
+  whole `['channel']` prefix instead — a rename may have changed the slug, so the stale entry is
+  not necessarily the one just written. The `TODO(backend)` names the fields.
+- A persisted IndexedDB cache for public catalogue keys is still worth doing for a mobile Arabic
+  audience, and is only safe *because* of the scoping above. Not in this pass.

@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import api from '@/lib/api/client';
+import { queryKeys } from '@/lib/queryKeys';
+import { useUserScope } from './useUserScope';
 
 // ============ Public ============
 
@@ -58,8 +60,9 @@ export const useChannelSeries = (slug, enabled = true) => {
 // ============ Owner management (ChannelManage.jsx) ============
 
 export const useChannelSeriesManage = (slug, enabled = true) => {
+    const scope = useUserScope();
     return useQuery({
-        queryKey: ['channel-series-manage', slug],
+        queryKey: queryKeys.channelSeriesManage(slug, scope),
         queryFn: async () => {
             const res = await api.get(`/channels/${slug}/content/series`);
             return res.data || [];

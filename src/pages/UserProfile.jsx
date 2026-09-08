@@ -8,6 +8,7 @@ import { Input, Button } from '../components/ui';
 import { getPasswordRules, getPasswordStrengthLabel, isPasswordValid } from '@/lib/validation';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { t } from '@/i18n';
+import { EMAIL_MAX_LENGTH, FULL_NAME_MAX_LENGTH, BIO_MAX_LENGTH } from '@/lib/validation';
 
 function ChangePasswordCard() {
     const { showToast } = useToast();
@@ -168,6 +169,7 @@ function UserProfile() {
                             label={t('fields.fullName')}
                             value={form.fullName}
                             onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+                            maxLength={FULL_NAME_MAX_LENGTH}
                             placeholder={t('fields.fullNamePlaceholder')}
                         />
                         <Input
@@ -175,6 +177,7 @@ function UserProfile() {
                             type="email"
                             value={form.email}
                             onChange={(e) => setForm({ ...form, email: e.target.value })}
+                            maxLength={EMAIL_MAX_LENGTH}
                             dir="ltr"
                             placeholder="email@example.com"
                         />
@@ -184,6 +187,7 @@ function UserProfile() {
                             rows={3}
                             value={form.bio}
                             onChange={(e) => setForm({ ...form, bio: e.target.value })}
+                            maxLength={BIO_MAX_LENGTH}
                             placeholder={t('profile.bioPlaceholder')}
                         />
 

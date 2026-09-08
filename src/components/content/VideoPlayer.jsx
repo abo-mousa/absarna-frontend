@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useId, forwardRef, useImperativeHandle } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { resolveMediaUrl, safeExternalUrl, extractYouTubeId } from '@/lib/media';
+import { safeExternalUrl, extractYouTubeId } from '@/lib/media';
 import { useAuth } from '@/contexts/AuthContext';
 import { useVideoPlaybackUrl } from '@/hooks/useMediaUrl';
 import api from '@/lib/api/client';
@@ -31,7 +31,12 @@ const ABSOLUTE_MIN_WATCH_SECONDS = 1;
 
 // `durationSeconds` is whatever the player reports, which is NaN/0/Infinity for a source whose
 // metadata hasn't loaded (or a live stream) — anything non-finite falls back to the flat floor.
-const watchThreshold = (durationSeconds) => {
+//
+// Exported so the rule is testable without a DOM. It is the arithmetic behind "the video is never
+// added to my watch history", it is consulted from four separate report paths (throttled
+// timeupdate, pause/ended, the unmount flush and the pagehide flush) across two player
+// implementations, and none of them makes it visible in a rendered page.
+export const watchThreshold = (durationSeconds) => {
     if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) return MIN_WATCH_SECONDS;
     return Math.min(
         MIN_WATCH_SECONDS,
@@ -74,7 +79,7 @@ const qualityLabel = (quality) => tOptional(`video.qualityLabels.${quality}`) ??
 // this timestamp") can read the playhead on demand without this component re-rendering on
 // every tick — the alternative (lifting currentTime into state) would fire a render several
 // times a second for something only ever read once, at share-click time.
-const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourceUrl, title, visible, startTime = 0 }, ref) {
+const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourceUrl, title, startTime = 0 }, ref) {
     // Session token: still the right thing for the watch-progress writes below (they go through
     // axios, which sends it as an Authorization header). Nothing goes into the media URL any
     // more — it arrives already signed from the backend. See useVideoPlaybackUrl.
@@ -168,6 +173,10 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
                 reportProgress(el.currentTime, authRef.current);
             }
         };
+        // Mount-only, and that is the whole mechanism: the cleanup IS the flush. `reportProgress`
+        // is recreated every render, so listing it would tear down and re-run this effect
+        // constantly — writing a progress row on every render instead of once on the way out.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Covers the hard-refresh/tab-close/hard-navigation case above: `pagehide` fires in those
@@ -349,22 +358,30 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
         );
     }
 
+    // TELEGRAM is still an accepted `sourceType` on the backend — it is in
+    // VideoUpdateRequest.SOURCE_TYPE_PATTERN, so an admin or owner can set it through the create
+    // and update endpoints — but nothing writes it automatically and no such row exists today.
+    // It therefore keeps a branch, and that branch is a LINK rather than a <video>: the SPA's
+    // own CSP names `media-src 'self' blob: <bucket>` and nothing else, so a Telegram CDN URL in
+    // a <video> is blocked by the browser with no error the page can see. The player rendered
+    // black and the viewer had no route to the file at all. A link is honest about where the
+    // bytes live and works under the policy.
     if (sourceType === 'TELEGRAM') {
         if (!externalUrl) {
             return <p className="text-text-muted text-sm">{t('video.invalidUrl')}</p>;
         }
         return (
-            <video
-                ref={setVideoEl}
-                controls
-                onLoadedMetadata={handleLoadedMetadata}
-                onTimeUpdate={handleTimeUpdate}
-                onPause={handlePauseOrEnded}
-                onEnded={handlePauseOrEnded}
-                className="w-full max-h-[500px] rounded-lg bg-black"
-            >
-                <source src={externalUrl} type="video/mp4" />
-            </video>
+            <div className="rounded-lg border border-border bg-surface-hover p-4 text-sm">
+                <p className="text-text-secondary mb-2">{t('video.externalSourceNotice')}</p>
+                <a
+                    href={externalUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary font-semibold"
+                >
+                    {t('video.openExternalSource')}
+                </a>
+            </div>
         );
     }
 

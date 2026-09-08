@@ -14,7 +14,7 @@ function SeriesDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { token } = useAuth();
-    const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useSeriesDetail(id);
+    const { data, isLoading, isError, error, fetchNextPage, hasNextPage, isFetchingNextPage } = useSeriesDetail(id);
     const watchProgress = useWatchProgressMap(!!token);
 
     // Series metadata rides on every page; the first one is as good as any.
@@ -36,6 +36,7 @@ function SeriesDetail() {
                 <QueryState
                     isLoading={isLoading}
                     isError={isError || !series}
+                    error={error}
                     errorTitle={t('series.notFound')}
                     errorAction={<Link to="/" className="text-primary font-semibold">{t('common.backHome')}</Link>}
                 />

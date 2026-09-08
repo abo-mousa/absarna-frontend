@@ -245,9 +245,10 @@ function CommentsSection({ type, id }) {
                                         <span className="text-xs text-text-muted">{replyContent.length}/{MAX_COMMENT_LENGTH}</span>
                                         <button
                                             type="submit"
-                                            className="px-4 py-2 bg-primary-light text-primary rounded-md font-semibold w-fit"
+                                            disabled={replyComment.isPending}
+                                            className="px-4 py-2 bg-primary-light text-primary rounded-md font-semibold w-fit disabled:opacity-60"
                                         >
-                                            {t('comments.submitReply')}
+                                            {replyComment.isPending ? t('common.sending') : t('comments.submitReply')}
                                         </button>
                                     </div>
                                 </form>

@@ -3,10 +3,15 @@ import {
     PASSWORD_MAX_BYTES,
     PASSWORD_MIN_LENGTH,
     USERNAME_MIN_LENGTH,
+    USERNAME_MAX_LENGTH,
+    EMAIL_MAX_LENGTH,
+    FULL_NAME_MAX_LENGTH,
     getPasswordRules,
     getPasswordStrengthLabel,
     isPasswordValid,
     validateUsername,
+    validateEmail,
+    validateFullName,
 } from '@/lib/validation';
 import { t } from '@/i18n';
 // Asserted through the catalog, not as literals: a reworded label is a copy change, and this test
@@ -154,5 +159,42 @@ describe('getPasswordStrengthLabel', () => {
 
     it('handles an empty password without throwing', () => {
         expect(labelFor('')).toBe(t('validation.strengthWeak'));
+    });
+});
+
+/**
+ * The length caps, which mirror `RegisterRequest`/`ProfileUpdateRequest`'s `@Size` annotations.
+ * Divergence here is invisible: it shows the user a 400 from the API instead of inline feedback,
+ * and on a profile email change the backend has already queued a verification mail by then.
+ */
+describe('length caps mirror the backend @Size annotations', () => {
+    it('username: 50, matching RegisterRequest', () => {
+        expect(USERNAME_MAX_LENGTH).toBe(50);
+        expect(validateUsername('a'.repeat(USERNAME_MAX_LENGTH))).toBe('');
+        expect(validateUsername('a'.repeat(USERNAME_MAX_LENGTH + 1)))
+            .toBe(t('validation.usernameTooLong', { max: USERNAME_MAX_LENGTH }));
+    });
+
+    it('email: 254, matching both request DTOs', () => {
+        expect(EMAIL_MAX_LENGTH).toBe(254);
+        expect(validateEmail('a'.repeat(EMAIL_MAX_LENGTH))).toBe('');
+        expect(validateEmail('a'.repeat(EMAIL_MAX_LENGTH + 1)))
+            .toBe(t('validation.emailTooLong', { max: EMAIL_MAX_LENGTH }));
+        // Absent is not too long — the field is optional on a profile update.
+        expect(validateEmail('')).toBe('');
+        expect(validateEmail(undefined)).toBe('');
+    });
+
+    it('full name: 150, and measured after trimming', () => {
+        expect(FULL_NAME_MAX_LENGTH).toBe(150);
+        expect(validateFullName(' ' + 'a'.repeat(FULL_NAME_MAX_LENGTH) + ' ')).toBe('');
+        expect(validateFullName('a'.repeat(FULL_NAME_MAX_LENGTH + 1)))
+            .toBe(t('validation.fullNameTooLong', { max: FULL_NAME_MAX_LENGTH }));
+    });
+
+    it('the too-long message is checked before the character rule, so it is the one shown', () => {
+        // An over-long username of legal characters must report its length, not its charset.
+        expect(validateUsername('a'.repeat(60)))
+            .toBe(t('validation.usernameTooLong', { max: USERNAME_MAX_LENGTH }));
     });
 });

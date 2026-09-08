@@ -1,5 +1,7 @@
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api/client';
+import { queryKeys } from '@/lib/queryKeys';
+import { useUserScope } from './useUserScope';
 
 // "Load more" pagination, same accumulating-pages shape as useInfiniteContents/
 // useChannelContents — GET /api/books used to return the whole table in one unpaginated
@@ -11,6 +13,7 @@ export const useBooks = (size = 12) => {
             const res = await api.get(`/books?page=${pageParam}&size=${size}`);
             return res.data;
         },
+        initialPageParam: 0,
         getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.currentPage + 1 : undefined),
         staleTime: 5 * 60 * 1000,
     });
@@ -30,8 +33,9 @@ export const useBook = (id) => {
 
 // Caller's own saved reading position for one book — {} when nothing saved yet.
 export const useBookReadProgress = (id, enabled = true) => {
+    const scope = useUserScope();
     return useQuery({
-        queryKey: ['book-read-progress', id],
+        queryKey: queryKeys.bookReadProgress(id, scope),
         queryFn: async () => {
             const res = await api.get(`/books/${id}/read`);
             return res.data?.currentPage || null;
@@ -46,6 +50,7 @@ export const useBookReadProgress = (id, enabled = true) => {
 // back on failure, since a dropped progress write shouldn't visibly disrupt reading.
 export const useSaveReadProgress = (id) => {
     const queryClient = useQueryClient();
+    const scope = useUserScope();
 
     return useMutation({
         mutationFn: async (currentPage) => {
@@ -53,45 +58,22 @@ export const useSaveReadProgress = (id) => {
             return currentPage;
         },
         onMutate: (currentPage) => {
-            queryClient.setQueryData(['book-read-progress', id], currentPage);
+            queryClient.setQueryData(queryKeys.bookReadProgress(id, scope), currentPage);
         },
         onSuccess: () => {
             // The optimistic setQueryData above only covers this one book's own resume position
-            // (used when reopening it) — it doesn't touch the separate ['reading-history'] query
-            // that backs the History page and BookCard's progress bar everywhere else, and the
-            // app-wide QueryClient has refetchOnMount disabled, so those would otherwise keep
-            // showing the pre-read snapshot until something else forced a refetch. Same fix as
-            // VideoPlayer's watch-progress reporting.
+            // (used when reopening it) — it does not touch the separate reading-history query
+            // that backs the History page and BookCard's progress bar everywhere else. Those are
+            // a different key and nothing else marks them stale, so without this they keep
+            // serving the pre-read snapshot for the rest of their staleTime. Same fix as
+            // VideoPlayer's watch-progress reporting. Prefix, so it matches this viewer's copy.
             queryClient.invalidateQueries({ queryKey: ['reading-history'] });
         },
     });
 };
 
-// Create book
-export const useCreateBook = () => {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: async (book) => {
-            const res = await api.post('/admin/books', book);
-            return res.data;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['books'] });
-        },
-    });
-};
-
-// Delete book
-export const useDeleteBook = () => {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: async (id) => {
-            await api.delete(`/admin/books/${id}`);
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['books'] });
-        },
-    });
-};
+// NOTE: `useCreateBook` / `useDeleteBook` used to live here too, calling the same /admin/books
+// endpoints as the copies in `useAdminData.js` but invalidating only ['books'] — never
+// ['admin-books'] or ['admin-stats']. Nothing imported them (the admin pages have always used
+// useAdminData's), so they were dead code that would have refreshed the wrong lists the first
+// time anyone reached for the nearer-looking name. Removed 2026-09-08; use useAdminData's.

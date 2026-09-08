@@ -46,8 +46,8 @@ src/
     ui/         Button, Card, Input, Modal, Badge, Grid, Spinner, EmptyState, QueryState, Avatar — barrel export via index.js
     layout/     Navbar, SideBar, PageShell, SearchBar — barrel export via index.js
     content/    VideoCard, BookCard, ArticleCard, PostCard, VideoPlayer, CommentsSection,
-                BookmarkButton, ShareButton — barrel export via index.js (PdfReader is the
-                deliberate exception, see its own barrel comment)
+                BookmarkButton, LikeButton, SubscribeButton, ShareButton — barrel export via
+                index.js (PdfReader is the deliberate exception, see its own barrel comment)
     auth/       EmailVerificationNotice — barrel export via index.js, see "Email verification" below
     channel/    ContentPublishForm (+ FieldLabel), ContentManageList — the channel dashboard's
                 shared publish/list pieces, see "Channel dashboard" below
@@ -55,7 +55,7 @@ src/
                 Bookmarks.jsx (`/bookmarks`) and SeriesDetail.jsx (`/series/:id`) are the newest —
                 see "Bookmarks" and "Series" below.
   hooks/        useVideos, useBooks, useArticles, useBiography, useChannels, useComments,
-                useBookmarks, useSeries, useCommentModeration, useAdminData, useMediaUrl,
+                useBookmarks, useLikes, useSeries, useCommentModeration, useAdminData, useMediaUrl,
                 usePresignedUpload, useDebouncedValue, useOutsideClick, useFocusTrap,
                 usePageMeta, useChannelContentTab — see "Data fetching: React Query",
                 "Media URLs" and "Channel dashboard" below
@@ -309,6 +309,120 @@ the location is already `/` — React Router sees the same route and nothing rem
 gesture everybody uses to mean "give me the page again" did nothing. It now invalidates the feed
 and scrolls to top, rather than doing a full reload to refresh a dozen cards.
 
+## The cache knows whose data it holds — 2026-09-08 (F1)
+
+**The security fix of this pass.** The cache had no notion of a viewer. `['watch-history']`,
+`['bookmarks']`, `['my-channels']`, `['like-status', …]` and the owner-dashboard keys were keyed by
+resource alone, and **nothing cleared them on logout** — so on a shared device the next person to
+log in saw the previous person's progress bars, likes, bookmarks and owner controls until each
+stale window ran out. Signed out, `useLikeStatus` kept serving `liked: true` from cache.
+
+Two mechanisms, both needed:
+
+- **`AuthContext` calls `queryClient.clear()`** in `logout` and in the `auth:session-expired`
+  handler, and invalidates after `applySession`. That covers the sequential case.
+- **`lib/queryKeys.js` carries the viewer's identity in every user-scoped key**, which covers a
+  login with no logout in between and the anonymous → signed-in transition on a like button.
+
+Three rules to keep, because each is load-bearing:
+
+1. **The scope is the LAST segment, never the second.** Every existing prefix invalidation
+   (`['bookmarks']`, `['channel-manage', slug]`, `['subscription-status', channelId]`) then keeps
+   matching every viewer's copy unchanged. Only exact reads and writes — `setQueryData`,
+   `getQueryData` — need the scope, and they are the sites that have it. A hand-built key passed
+   to `invalidateQueries` is therefore *correct*, not an oversight.
+2. **Public catalogue keys are deliberately not in the factory** (`['video', id]`,
+   `['channel', slug]`, `['books', size]`). They are the same for everyone, and they are what a
+   persisted cache would be allowed to keep across sessions.
+3. **The scope comes from the token, not from `user`** (`useUserScope` → `userScopeOf`). `user` is
+   `null` while the profile fetch is in flight on every page load, so keying on it would run each
+   scoped query twice per load and briefly serve anonymous answers to a signed-in viewer. A token
+   whose payload will not decode still yields a per-session scope rather than falling back to
+   anonymous — falling back would be the leak this exists to close.
+
+## Storage is always guarded (`lib/safeStorage.js`) — 2026-09-08 (F1)
+
+Every `localStorage` read and write goes through `safeStorage` (try/catch, in-memory fallback):
+`AuthContext`, `ThemeContext`, `client.js`, `beacon.js`, `uploadResume`. Unguarded access **throws**
+when a browser blocks site data — Safari's Lock Down Mode, a private window with cookies blocked,
+enterprise policy — and the throw happened at module scope, so the app rendered a blank page rather
+than degrading. The in-memory fallback means a session works for the tab's lifetime and simply does
+not survive a reload, which is the correct behaviour for a browser that has been told not to store
+anything. Only test files use raw `localStorage`, on purpose.
+
+## Errors say what happened (`lib/describeError.js`, `QueryState`) — 2026-09-08 (F1)
+
+Every failed GET rendered the same «حدث خطأ» and every mutation toasted a fixed string, so being
+offline, being rate-limited, asking for something deleted and a server fault all read identically —
+and the backend's own Arabic 429 message, which the CORS filter ordering exists to make readable,
+was shown in eight places and dropped everywhere else.
+
+- `describeError(error, fallback)` returns one sentence: offline/timeout, the backend's 429 text
+  when present, 404, 403, 5xx, else the caller's own wording. **Offline and 429 override the
+  caller's fallback** because what to do next is different in those two cases, which is the whole
+  point of the sentence.
+- `QueryState` takes `error` and `onRetry` and renders a retry action by default. **Every list
+  page passes its `refetch`**; the detail pages deliberately pass an explicit `errorAction`
+  («back home») instead, because their commonest error is a 404 for an item that is gone or not
+  visible to this viewer, and offering "retry" there invites the reader to press it forever. An
+  explicit `errorAction` wins over the default. Sites that use `QueryState` only for its
+  loading/empty branches (the two admin pages, the dashboard) need neither.
+- The query client's `retry` predicate is `shouldRetryQuery` (`App.jsx`): **no 4xx is retried**,
+  so a 404 detail page renders immediately instead of sitting through a request, a backoff and a
+  second request. **429 is in the not-retried set even though it is transient** — the backend's
+  limiter is per-IP and per-rule, so an automatic retry spends the next token of the same bucket
+  and makes the situation worse; `describeError` tells the user to wait instead. `isRetryable` in
+  `describeError.js` is a *different* judgement — whether to offer the user a retry button — and
+  it does include 429, because a person waiting a moment and clicking is exactly right.
+
+## Deploy: cache headers and the chunk graph — 2026-09-08 (F1)
+
+**The host must serve `index.html` with `no-cache` and `/assets/*` as `immutable`.** Asset
+filenames are content-hashed, so they are safe to cache forever; `index.html` is the only file that
+names them, and a cached copy of it points at chunks that no longer exist. That is a blank page
+after every deploy, for exactly as long as the stale HTML lives.
+
+`vite:preloadError` is the belt to that braces: a lazily-loaded route chunk that 404s after a
+deploy triggers **one** reload, guarded by a `sessionStorage` flag through `safeStorage` so a
+genuinely broken chunk cannot become a reload loop.
+
+**`manualChunks` is a function matching resolved module paths, not the object form.** The object
+form (`{'vendor-react': ['react', 'react-dom']}`) matches the module id `react` exactly, and
+nothing imports that: React 18's automatic JSX runtime imports `react/jsx-runtime` and the app
+imports `react-dom/client`. So `vendor-react` built **empty** — Rollup printed "Generated an empty
+chunk" — while React was absorbed into whichever chunk reached it first, leaving `vendor-router` at
+181 kB. Now 143 kB in `vendor-react` and 39 kB in `vendor-router`. **Verify a chunking change
+against `npm run build`'s chunk list**, never against the config looking plausible.
+
+## Numbers shown to readers (`lib/numbers.js`) — 2026-09-08 (F1)
+
+`formatCount` everywhere, Latin digits. The app had two digit systems on one card:
+`toLocaleString('ar')` gave Arabic-Indic digits (١٢٣) for view/comment/like counts while every date
+(`lib/dayjsAr.js`, deliberately), «{count} صفحة», the subscriber count, «الجزء 3 من 99» and the
+result count used Latin. Latin was already the recorded decision for dates; this makes the counts
+agree, in one place, so the next count cannot re-open the question by copying whichever call site
+it sits next to. `null`/non-numeric renders as `''`, never `NaN`.
+
+## Linting (`eslint.config.js`) — 2026-09-08 (F1)
+
+There was no linter at all, in plain JavaScript with no type system. `npm run lint`, and it must
+stay at **zero errors**.
+
+- **`react-hooks/exhaustive-deps` is an error, not a warning** — a stale closure renders
+  correct-looking output from values captured several renders ago, which no test that mounts a
+  component once will catch. Where a dependency genuinely must not be there, the call site carries
+  an `eslint-disable-next-line` **saying why**; there are four, each a mount-only effect or one
+  keyed on a transition on purpose. `reportUnusedDisableDirectives` is on, so a disable left behind
+  after the code moved is itself an error.
+- **`eslint-plugin-react` is installed for exactly one rule, `react/jsx-uses-vars`.** None of its
+  stylistic set is on. That rule is not style: it is what tells `no-unused-vars` a name referenced
+  in JSX is used. Without it every component imported to be rendered read as unused — 300 false
+  errors, and a linter that is 95% noise is one nobody runs, so `exhaustive-deps` would have been
+  lost inside it.
+- The six remaining `react-refresh/only-export-components` **warnings are deliberate**: those files
+  export a pure helper beside the component precisely so it can be tested without a DOM
+  (`shouldShowNoMatches`, `watchThreshold`, `shouldRetryQuery`).
+
 ## Back navigation from a video
 
 `VideoDetail`'s back button was a hardcoded link to the home page, so arriving from a series — or a
@@ -374,11 +488,14 @@ Backend gates two actions on `user.emailVerified` (login itself is never blocked
 
 ## Search suggestions (`components/layout/SearchBar.jsx`)
 
-Replaces `Navbar.jsx`'s old inline `<form>` — shows suggestions on focus (before typing, via a blank-`q` request), narrows them as the user types, backed by `GET /api/search/suggestions` (see backend `CLAUDE.md`'s own section on this endpoint, including its `pg_trgm` close-match fallback for typos).
+Replaces `Navbar.jsx`'s old inline `<form>` — shows suggestions on focus (before typing, via a blank-`q` request), narrows them as the user types, backed by `GET /api/search/suggestions` (see backend `CLAUDE.md`'s own "Search" section, including word-by-word matching and the `pg_trgm` close-match fallback for typos).
+
+**The dropdown is a preview of what pressing Enter will show, and that is now guaranteed on the backend** (2026-09-08): the suggestions endpoint and `GET /api/search` run the same query and the same typo fallback. Until then only the dropdown had the fallback, so it offered eight videos for a query — a typo, reversed word order, a dropped `ال`, a doubled space — that `SearchPage` then answered with *"لا توجد نتائج"*. Nothing here compensated for it and nothing here should: if the two ever diverge again it is a backend bug, not something to paper over in `SearchBar`.
 
 - `hooks/useSearchSuggestions(rawQuery, limit, enabled)` (in `useVideos.js`) debounces `rawQuery` itself via `hooks/useDebouncedValue.js` (200ms) rather than debouncing the request — the debounced value becomes the `queryKey`, so React Query's own cache handles "retype something already seen" for free, no separate cache needed. The queryFn passes React Query's `signal` through to axios so a superseded in-flight request (a fast typist moving past `"qur"` before it resolves) gets cancelled instead of racing back and clobbering a newer result.
 - **Text-only suggestion rows, deliberately no thumbnails**: an earlier version showed a small thumbnail per row (by analogy to the app's YouTube-style browsing elsewhere), but real YouTube's own search-suggestion dropdown is text-only — thumbnails only appear once you're on the actual results grid. Reverted to text + a small search icon per row: no extra per-row image request, no broken-image/layout-shift edge cases in a compact dropdown, faster to scan.
-- **Distinguishes "no matches" from "request failed"**: `showNoMatches` in `SearchBar.jsx` is `true` only once a fetch for the current (non-blank) query has actually settled successfully with zero results — gated on `!isFetching && !isError`, so a debounce-triggered refetch never flashes "no results" before the real one lands, and a genuine network error never gets mislabeled as "nothing matches" (mirrors the same distinction `SearchPage.jsx` already made between its `isError` and empty-`results` branches).
+- **Distinguishes "no matches" from "request failed"**: `shouldShowNoMatches` (exported from `SearchBar.jsx` so the condition itself is testable — `__tests__/searchBarNoMatches.test.js`) is `true` only once a fetch for the current (non-blank) query has actually settled successfully with zero results — gated on `!isFetching && !isError`, so a debounce-triggered refetch never flashes "no results" before the real one lands, and a genuine network error never gets mislabeled as "nothing matches" (mirrors the same distinction `SearchPage.jsx` already made between its `isError` and empty-`results` branches).
+- **…and from "no answer about this text yet"** (2026-09-08). `!isFetching` is not enough on its own: the query is debounced by 200ms and `isFetching` is `false` for that whole window, so mid-typing the dropdown claimed *"لا توجد نتائج مطابقة لـ «X»"* about the text now in the box on the strength of a search for what was there two keystrokes ago — most visibly when the earlier query had no matches and the current one does. `useSearchSuggestions` now also returns **`settledQuery`**, the query its data actually answers, and both the condition and the quoted message use it; unless it equals the trimmed input, nothing is known about the input yet. Any future "did you mean" or result-count line in this dropdown has the same duty.
 - `hooks/useOutsideClick.js` closes the dropdown on an outside click; suggestion rows use `onMouseDown` (fires before both this listener and the input's own blur) so a click still registers as a selection rather than the dropdown just closing out from under it.
 - Keyboard: ArrowUp/ArrowDown move a `highlightIndex` through the suggestion list, Enter selects the highlighted suggestion (or submits the typed text as a full search if nothing's highlighted), Escape closes the dropdown.
 - Clicking a suggestion navigates straight to `/video/{id}`; submitting the form (or Enter with nothing highlighted) navigates to `/search?q=...` same as before.
@@ -507,9 +624,9 @@ page count are gone with the upload module — a book reads fine without either.
 
 ## Testing (`vitest`)
 
-Added 2026-09-04; broadened 2026-09-05 and again 2026-09-07. `npm test` (`vitest run`) /
-`npm run test:watch`. **125 tests across 10 files**, all in the node environment — there is still
-no jsdom, on purpose.
+Added 2026-09-04; broadened 2026-09-05, 2026-09-07 and twice on 2026-09-08. `npm test`
+(`vitest run`) / `npm run test:watch`. **163 tests across 15 files**, all in the node environment
+— there is still no jsdom, on purpose.
 `uploadResume` supplies its own `globalThis.localStorage` for the same reason, which is also why
 the module reads storage through `globalThis.localStorage?.` inside a `try` rather than assuming
 a DOM: privacy modes throw outright, and "no resume offered" is the correct answer there.
@@ -526,6 +643,7 @@ a DOM: privacy modes throw outright, and "no resume offered" is the correct answ
 | `lib/api/__tests__/client.test.js` | the 401-refresh interceptor: one shared in-flight refresh for parallel 401s, single retry, `auth:session-expired` on each dead end, auth endpoints excluded |
 | `lib/api/__tests__/beacon.test.js` | the unload flush: no token → no request, `keepalive` set, both sync and async failures swallowed |
 | `hooks/__tests__/useChannels.test.js` | `contentCreateConfig`: only a payload carrying an `uploadSessionId` gets the long confirm timeout, everything else stays on the client default |
+| `lib/__tests__/dayjsAr.test.js` | the two date functions the YouTube import broke, added 2026-09-08. `formatPublishDate`'s absolute branch carried no locale, so anything older than a week printed its month in English — "17 June 2007" mid-Arabic-card — which was invisible until a back catalogue arrived and made *every* card take that branch; asserted against the whole string, since an English month is a substring failure rather than a missing one. Plus that Latin digits survive (dayjs's own `ar` postformats to ١٢٣), the empty-not-"Invalid Date" cases, and `displayDate` preferring `originalPublishDate` — without which nineteen years of lectures all read "منذ ١٩ ساعة" |
 
 **Two conventions worth keeping.**
 
@@ -552,6 +670,48 @@ assertion.
 
 - `useBookmarkStatus(type, id, enabled)` / `useToggleBookmark(type, id)` — per-item toggle state; `useBookmarks(enabled)` — the full list for the `/bookmarks` page (`Bookmarks.jsx`, protected route, linked from `SideBar`'s "المحفوظات" entry next to "سجل المشاهدة"), same bounded/non-paginated shape as `History.jsx`'s watch/reading tabs, three tabs (`VIDEO`/`BOOK`/`ARTICLE`) instead of two. `useClearBookmarks()` backs its "مسح الكل" button.
 - Each `BookmarkDTO` from the list endpoint carries exactly one of `content`/`book`/`article` populated (matching `itemType`) — `Bookmarks.jsx` filters the flat list per active tab and hands the right one straight to `VideoCard`/`BookCard`/`ArticleCard`, no reshaping needed.
+
+## Subscribing / unsubscribing (`components/content/SubscribeButton.jsx`) — 2026-09-08
+
+**Unsubscribing was never missing — the affordance was.** `DELETE /channels/{id}/subscribe` has
+always been wired, in two places: the `/subscriptions` page's explicit "إلغاء" button, and
+`ChannelPage`'s subscribe button, which is a toggle. But the subscribed state rendered as
+`✓ مشترك` with no hover or focus treatment, so it read as a *status* rather than a control and
+people concluded there was no way out.
+
+- **One `SubscribeButton` now serves both places it appears**, because defining the affordance
+  twice would mean fixing it twice. `variant="banner"` is `ChannelPage`'s white-on-primary
+  treatment; `inline` is the ordinary pill.
+- **While subscribed, hover *and keyboard focus* swap the label to "إلغاء الاشتراك" with an ✕.**
+  Done with `group-hover`/`group-focus-visible` utilities toggling two hidden spans, not React
+  state — no re-render, and keyboard focus works for free.
+- **`aria-label` always names the action, never the state** (`إلغاء الاشتراك` while subscribed): a
+  screen-reader user gets no hover to reveal it. `aria-pressed` carries the state instead.
+- **`VideoDetail` gained the control too.** Following a channel previously required opening its
+  page — the only place the button existed. `ChannelPage` still reads `useSubscriptionStatus`
+  itself for the subscriber count in its header; that is the same cached query the button uses, so
+  it is not a second request.
+
+## Likes (`hooks/useLikes.js`, `components/content/LikeButton.jsx`) — 2026-09-08
+
+Backed by the backend's `content/like` package. `<LikeButton type="video"|"book"|"article" id={...}
+initialCount={...} />` sits beside `BookmarkButton` in all three detail-page headers.
+
+- **The count renders for everyone; only the action needs a login.** `useLikeStatus` is *not*
+  gated on `!!token` (unlike `useBookmarkStatus`, which is): the backend's status endpoint is
+  public and returns `{liked: false, likeCount: N}` for an anonymous caller. Hiding the button
+  when logged out would hide the count, which is the part a visitor came for. An anonymous press
+  routes to `/login`.
+- **The count is updated optimistically, with rollback** (`onMutate`/`onError`). The number is
+  directly beside the control that changes it, so a press that does nothing visible for a round
+  trip reads as broken, and invalidate-and-refetch shows a stale count for the same window. The
+  arithmetic is a pure exported `nextLikeState`, tested in `useLikes.test.js` — the clamp is the
+  part worth pinning: before the status query resolves there is no cached count, and unclamped
+  the first press on an uncached item renders "-1 إعجاب".
+- **`VideoCard` shows the count read-only, from `VideoDTO.likeCount`** — not a toggle. The DTO
+  carries the public count but no per-viewer `liked`, and giving each card its own status request
+  would be one request per card on every feed page. `initialCount` on the detail page is that same
+  DTO value, so the number does not flash 0 while the status query resolves.
 
 ## Series (`hooks/useSeries.js`, `pages/SeriesDetail.jsx`)
 
@@ -695,7 +855,7 @@ contract".
 npm run dev      # localhost:5173
 npm run build    # ALWAYS run before trusting a session's changes
 ```
-`npm run build` (Rollup) does full static import/export resolution and will catch things `npm run dev` (esbuild, lazy) won't — e.g. an imported named export that doesn't actually exist in the package. This exact class of bug (a `lucide-react` icon that didn't exist in the installed version) once broke the entire app with a blank white screen on every page, because `App.jsx` statically imports every page up front rather than lazy-loading per route — one bad import anywhere breaks the whole module graph on load. `npm run build` catches it in ~1.5s; a dev-mode HMR log won't.
+`npm run build` (Rollup) does full static import/export resolution and will catch things `npm run dev` (esbuild, lazy) won't — e.g. an imported named export that doesn't actually exist in the package. This exact class of bug (a `lucide-react` icon that didn't exist in the installed version) once broke the entire app with a blank white screen on every page. `App.jsx` lazy-loads every route now, so a bad import in one page is confined to that page's chunk rather than the whole module graph — but the failure mode simply moved: the chunk fails to load at navigation time, which is what the `vite:preloadError` handler below exists for. Either way `npm run build` catches it in ~2s and a dev-mode HMR log won't, so **run the build before trusting a session's changes** remains the rule.
 
 Backend must be running (see its own `CLAUDE.md`) on `localhost:8080` for the app to have real data — `VITE_API_BASE_URL` env var overrides this if needed.
 

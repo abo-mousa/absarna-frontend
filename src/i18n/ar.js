@@ -30,6 +30,7 @@ export const ar = {
         backHome: 'العودة للرئيسية',
         back: 'رجوع',
         errorTitle: 'حدث خطأ',
+        retry: 'إعادة المحاولة',
         noResults: 'لا توجد نتائج',
         noContent: 'لا يوجد محتوى',
         noData: 'لا توجد بيانات',
@@ -146,6 +147,19 @@ export const ar = {
         reload: 'إعادة التحميل',
     },
 
+    // One sentence per kind of failure — see lib/describeError.js. Offline and rate-limited say
+    // what to do next; the rest are the generic wording a caller falls back to when it has
+    // nothing more specific of its own.
+    errors: {
+        generic: 'حدث خطأ، يرجى المحاولة مرة أخرى',
+        offline: 'لا يوجد اتصال بالإنترنت، تحقق من الشبكة ثم أعد المحاولة',
+        timeout: 'استغرق الطلب وقتاً أطول من المتوقع، أعد المحاولة',
+        rateLimited: 'طلبات كثيرة في وقت قصير، يرجى المحاولة لاحقاً',
+        notFound: 'المحتوى غير موجود أو لم يعد متاحاً',
+        forbidden: 'ليس لديك صلاحية لهذا الإجراء',
+        server: 'حدث خلل في الخادم، يرجى المحاولة لاحقاً',
+    },
+
     auth: {
         login: {
             heading: 'تسجيل الدخول',
@@ -155,6 +169,8 @@ export const ar = {
             submit: 'دخول',
             noAccount: 'ليس لديك حساب؟',
             registerLink: 'إنشاء حساب',
+            failed: 'تعذر تسجيل الدخول',
+            invalidCredentials: 'اسم المستخدم أو كلمة المرور غير صحيحة',
         },
         register: {
             heading: 'إنشاء حساب',
@@ -164,7 +180,12 @@ export const ar = {
             haveAccount: 'لديك حساب بالفعل؟',
             loginLink: 'تسجيل الدخول',
             created: 'تم إنشاء الحساب! أرسلنا رابط توثيق إلى بريدك الإلكتروني.',
+            failed: 'تعذر إنشاء الحساب',
+            taken: 'اسم المستخدم أو البريد الإلكتروني مستخدم بالفعل',
         },
+        // Shown when a session ends while the visitor is on a public page; a protected page
+        // sends them to the login form instead.
+        sessionExpired: 'انتهت الجلسة، سجّل الدخول مرة أخرى للمتابعة',
         forgotPassword: {
             title: 'نسيت كلمة المرور',
             heading: 'نسيت كلمة المرور؟',
@@ -224,6 +245,11 @@ export const ar = {
         usernameRequired: 'اسم المستخدم مطلوب',
         usernameTooShort: 'اسم المستخدم يجب أن يكون {min} أحرف على الأقل',
         usernameCharacters: 'اسم المستخدم يمكن أن يحتوي فقط على حروف إنجليزية وأرقام و_',
+        // Mirror the backend's @Size limits (RegisterRequest) so the first feedback is not the
+        // server's English validation message.
+        usernameTooLong: 'اسم المستخدم يجب ألا يتجاوز {max} حرفاً',
+        fullNameTooLong: 'الاسم يجب ألا يتجاوز {max} حرفاً',
+        emailTooLong: 'البريد الإلكتروني يجب ألا يتجاوز {max} حرفاً',
         ruleLength: '{min} أحرف على الأقل',
         ruleUppercase: 'حرف كبير (A-Z)',
         ruleLowercase: 'حرف صغير (a-z)',
@@ -256,6 +282,14 @@ export const ar = {
 
     video: {
         watchAria: 'مشاهدة فيديو: {title}',
+        // Shown only to the channel's owner, on a video whose transcode has not finished. See
+        // VideoCard — nobody else can see such a video at all.
+        processing: 'جاري المعالجة',
+        // A video whose file lives on a third-party host (sourceType TELEGRAM). The SPA's own
+        // Content-Security-Policy allows media only from our storage, so it cannot be played
+        // in place; the link is the honest offer. See VideoPlayer.
+        externalSourceNotice: 'هذا الفيديو مستضاف على منصة خارجية ولا يمكن تشغيله هنا.',
+        openExternalSource: 'فتح الفيديو في المصدر الخارجي',
         deleteAria: 'حذف الفيديو',
         goToChannelAria: 'الذهاب إلى قناة {name}',
         loadFailed: 'فشل في تحميل الفيديو',
@@ -295,6 +329,10 @@ export const ar = {
         readOnline: 'قراءة أونلاين',
         downloadPdf: 'تحميل PDF',
         emptyOnChannel: 'لا توجد كتب بعد',
+        loadFailed: 'تعذر تحميل الكتب',
+        // The read-url answered, but with nothing the browser may open (no file, or a stored link
+        // that failed the scheme allowlist). Distinct from a network failure, which retries.
+        noFile: 'لا يوجد ملف متاح لهذا الكتاب',
     },
 
     pdfReader: {
@@ -335,10 +373,16 @@ export const ar = {
 
     channel: {
         notFound: 'القناة غير موجودة',
+        loadFailed: 'تعذر تحميل القناة',
         subscriberCount: '{count} مشترك',
         manage: 'إدارة القناة',
         subscribed: 'مشترك',
         subscribe: 'اشترك',
+        // Shown on hover/focus of the subscribed state. NOT the accessible name — see
+        // SubscribeButton: a toggle's name has to stay constant while `aria-pressed` carries
+        // the state, or a screen reader announces the two contradicting each other.
+        unsubscribe: 'إلغاء الاشتراك',
+        subscribeToggleAria: 'الاشتراك في القناة',
         noVideos: 'لا توجد فيديوهات بعد',
         noPosts: 'لا توجد منشورات بعد',
     },
@@ -581,6 +625,12 @@ export const ar = {
         absoluteDateFormat: 'D MMMM YYYY، HH:mm',
     },
 
+    likes: {
+        add: 'إعجاب',
+        remove: 'إلغاء الإعجاب',
+        // VideoCard's counts column, phrased like common.views / common.commentCount beside it.
+        count: '{count} إعجاب',
+    },
     bookmarks: {
         title: 'المحفوظات',
         add: 'حفظ لوقت لاحق',

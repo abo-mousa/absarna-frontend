@@ -24,7 +24,7 @@ function Bookmarks() {
     const { showToast } = useToast();
     const [activeTab, setActiveTab] = useState('VIDEO');
 
-    const { data: bookmarks = [], isLoading, isError } = useBookmarks();
+    const { data: bookmarks = [], isLoading, isError, error, refetch } = useBookmarks();
     const watchProgress = useWatchProgressMap(!!token);
     const readingProgress = useReadingProgressMap(!!token);
     const clearBookmarks = useClearBookmarks();
@@ -74,6 +74,8 @@ function Bookmarks() {
             <QueryState
                 isLoading={isLoading}
                 isError={isError}
+                error={error}
+                onRetry={refetch}
                 isEmpty={itemsForTab.length === 0}
                 errorTitle={t('bookmarks.loadFailed')}
                 emptyIcon="🔖"

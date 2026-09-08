@@ -1,9 +1,9 @@
 import { useRef } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { ArrowRight, ChevronRight, ChevronLeft, Clock, Folder, Tv, User, Calendar } from 'lucide-react';
+import { ArrowRight, ChevronRight, ChevronLeft, Clock, Folder, Tv, User } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
 import { QueryState, Avatar, Spinner, LinkifiedText } from '../components/ui';
-import { VideoPlayer, CommentsSection, VideoCard, BookmarkButton, ShareButton, SourceBadge } from '../components/content';
+import { VideoPlayer, CommentsSection, VideoCard, BookmarkButton, LikeButton, ShareButton, SourceBadge, SubscribeButton } from '../components/content';
 import { useVideo, useRelatedVideo, useWatchProgressMap, useWatchHistory } from '../hooks/useVideos';
 import { useChannel } from '../hooks/useChannels';
 import { useSeriesDetail, useSeriesNeighbours } from '../hooks/useSeries';
@@ -12,6 +12,7 @@ import { usePageMeta } from '../hooks/usePageMeta';
 import { resolveMediaUrl, youtubeThumbnail } from '@/lib/media';
 import { formatPublishDate, displayDate } from '@/lib/dayjsAr';
 import { t } from '@/i18n';
+import { formatCount } from '@/lib/numbers';
 
 function VideoDetail() {
     const { id } = useParams();
@@ -19,7 +20,7 @@ function VideoDetail() {
     const [searchParams] = useSearchParams();
     const sharedTime = Number(searchParams.get('t')) || 0;
     const playerRef = useRef(null);
-    const { data: video, isLoading, isError } = useVideo(id);
+    const { data: video, isLoading, isError, error } = useVideo(id);
     const { data: related = [] } = useRelatedVideo(id);
     const { data: channel } = useChannel(video?.channelId, !!video?.channelId);
     const { data: seriesData } = useSeriesDetail(video?.seriesId, 1, !!video?.seriesId);
@@ -51,6 +52,7 @@ function VideoDetail() {
                 <QueryState
                     isLoading={isLoading}
                     isError={isError || !video}
+                    error={error}
                     errorTitle={t('video.loadFailed')}
                     errorAction={<Link to="/" className="text-primary font-semibold">{t('common.backHome')}</Link>}
                 />
@@ -98,9 +100,11 @@ function VideoDetail() {
     // the meta row below, so it reads as this video's own stats rather than one more attribute
     // alongside duration/category.
     const stats = [
-        video.viewCount != null && t('common.views', { count: video.viewCount.toLocaleString('ar') }),
-        video.commentCount != null && t('common.commentCount', { count: video.commentCount.toLocaleString('ar') }),
+        video.viewCount != null && t('common.views', { count: formatCount(video.viewCount) }),
+        video.commentCount != null && t('common.commentCount', { count: formatCount(video.commentCount) }),
         displayDate(video) && formatPublishDate(displayDate(video)),
+        // Not the like count: LikeButton above already shows it, next to the control that
+        // changes it, and it is the one number here that updates without a reload.
     ].filter(Boolean).join(' · ');
 
     return (
@@ -122,7 +126,6 @@ function VideoDetail() {
                             sourceType={video.sourceType}
                             sourceUrl={video.sourceUrl}
                             title={video.title}
-                            visible={video.visible}
                             startTime={startTime}
                         />
                     )}
@@ -137,19 +140,28 @@ function VideoDetail() {
                                 path={`/video/${video.id}`}
                                 getCurrentTime={() => playerRef.current?.getCurrentTime() || 0}
                             />
+                            {/* initialCount from the DTO the page already has, so the number
+                                does not flash 0 while the status query resolves. */}
+                            <LikeButton type="video" id={video.id} initialCount={video.likeCount} />
                             <BookmarkButton type="video" id={video.id} />
                         </div>
                     </div>
 
                     <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
                         {channel ? (
-                            <Link
-                                to={`/channel/${channel.slug}`}
-                                className="flex items-center gap-2 w-fit text-text-primary hover:text-primary transition-colors"
-                            >
-                                <Avatar src={resolveMediaUrl(channel.logoUrl)} name={channel.name} size="sm" />
-                                <span className="font-semibold text-sm">{channel.name}</span>
-                            </Link>
+                            <div className="flex items-center gap-3 flex-wrap">
+                                <Link
+                                    to={`/channel/${channel.slug}`}
+                                    className="flex items-center gap-2 w-fit text-text-primary hover:text-primary transition-colors"
+                                >
+                                    <Avatar src={resolveMediaUrl(channel.logoUrl)} name={channel.name} size="sm" />
+                                    <span className="font-semibold text-sm">{channel.name}</span>
+                                </Link>
+                                {/* Following a channel from the video you are actually watching,
+                                    rather than having to open the channel page to do it — the
+                                    only place this control existed before. */}
+                                <SubscribeButton channelId={channel.id} className="!px-4 !py-1.5 !text-xs" />
+                            </div>
                         ) : <span />}
                         {stats && <span className="text-xs text-text-muted">{stats}</span>}
                     </div>

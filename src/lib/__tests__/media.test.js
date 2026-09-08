@@ -92,33 +92,46 @@ describe('safeExternalUrl', () => {
 
 describe('extractYouTubeId', () => {
     it('reads the v parameter from a watch URL', () => {
-        expect(extractYouTubeId('https://www.youtube.com/watch?v=abc123')).toBe('abc123');
-        expect(extractYouTubeId('https://youtube.com/watch?v=abc123&t=90')).toBe('abc123');
-        expect(extractYouTubeId('https://m.youtube.com/watch?v=abc123')).toBe('abc123');
+        expect(extractYouTubeId('https://www.youtube.com/watch?v=dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
+        expect(extractYouTubeId('https://youtube.com/watch?v=dQw4w9WgXcQ&t=90')).toBe('dQw4w9WgXcQ');
+        expect(extractYouTubeId('https://m.youtube.com/watch?v=dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
     });
 
     it('reads the last path segment of a short link', () => {
-        expect(extractYouTubeId('https://youtu.be/abc123')).toBe('abc123');
+        expect(extractYouTubeId('https://youtu.be/dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
     });
 
     it('ignores hosts that merely resemble YouTube', () => {
         // Matched against an exact hostname set rather than a substring, so a lookalike domain
         // cannot get its id embedded in a youtube.com thumbnail URL.
-        expect(extractYouTubeId('https://youtube.com.evil.test/watch?v=abc123')).toBe('');
-        expect(extractYouTubeId('https://notyoutube.com/watch?v=abc123')).toBe('');
+        expect(extractYouTubeId('https://youtube.com.evil.test/watch?v=dQw4w9WgXcQ')).toBe('');
+        expect(extractYouTubeId('https://notyoutube.com/watch?v=dQw4w9WgXcQ')).toBe('');
     });
 
     it('returns an empty string for a non-URL', () => {
-        expect(extractYouTubeId('abc123')).toBe('');
+        expect(extractYouTubeId('dQw4w9WgXcQ')).toBe('');
         expect(extractYouTubeId(null)).toBe('');
         expect(extractYouTubeId('')).toBe('');
+    });
+
+    it('rejects a value that is the wrong shape for an id, even on a real YouTube host', () => {
+        // A YouTube id is exactly 11 chars of [A-Za-z0-9_-]. Without the format check, whatever
+        // sat in ?v= or the last path segment was interpolated straight into an
+        // img.youtube.com/vi/<id>/ URL and into the embed src — so a path traversal or a query
+        // fragment rode along inside a URL the page trusts.
+        expect(extractYouTubeId('https://www.youtube.com/watch?v=../../evil')).toBe('');
+        expect(extractYouTubeId('https://www.youtube.com/watch?v=short')).toBe('');
+        expect(extractYouTubeId('https://www.youtube.com/watch?v=waaaaytoolongforanid')).toBe('');
+        // A YouTube URL that names no video at all — a channel page, the bare host.
+        expect(extractYouTubeId('https://www.youtube.com/')).toBe('');
+        expect(extractYouTubeId('https://www.youtube.com/@someones-channel')).toBe('');
     });
 });
 
 describe('youtubeThumbnail', () => {
     it('builds a thumbnail URL from a recognised video', () => {
-        expect(youtubeThumbnail('https://www.youtube.com/watch?v=abc123'))
-            .toBe('https://img.youtube.com/vi/abc123/hqdefault.jpg');
+        expect(youtubeThumbnail('https://www.youtube.com/watch?v=dQw4w9WgXcQ'))
+            .toBe('https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg');
     });
 
     it('returns null when there is no id, so the caller shows a placeholder', () => {

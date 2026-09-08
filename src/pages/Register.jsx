@@ -5,7 +5,10 @@ import { useToast } from '../contexts/ToastContext';
 import { usePageMeta } from '../hooks/usePageMeta';
 import PageShell from '../components/layout/PageShell';
 import { Input, Button } from '../components/ui';
-import { getPasswordRules, getPasswordStrengthLabel, isPasswordValid, validateUsername } from '@/lib/validation';
+import {
+    getPasswordRules, getPasswordStrengthLabel, isPasswordValid, validateUsername,
+    USERNAME_MAX_LENGTH, EMAIL_MAX_LENGTH, FULL_NAME_MAX_LENGTH,
+} from '@/lib/validation';
 import { t } from '@/i18n';
 
 function Register() {
@@ -68,6 +71,7 @@ function Register() {
                             value={form.username}
                             onChange={(e) => setForm({ ...form, username: e.target.value })}
                             required
+                            maxLength={USERNAME_MAX_LENGTH}
                             placeholder="username"
                             dir="ltr"
                             className={usernameError ? '!border-red-600 dark:!border-red-500' : ''}
@@ -81,6 +85,7 @@ function Register() {
                         label={t('fields.fullName')}
                         value={form.fullName}
                         onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+                        maxLength={FULL_NAME_MAX_LENGTH}
                         placeholder={t('fields.fullNamePlaceholder')}
                     />
 
@@ -89,6 +94,7 @@ function Register() {
                         type="email"
                         value={form.email}
                         onChange={(e) => setForm({ ...form, email: e.target.value })}
+                        maxLength={EMAIL_MAX_LENGTH}
                         placeholder="email@example.com"
                         dir="ltr"
                     />

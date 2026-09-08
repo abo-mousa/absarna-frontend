@@ -83,24 +83,33 @@ describe('uploadResume', () => {
         expect(rememberedSession('ch', 'videos')).toBeNull();
     });
 
-    /** Privacy modes throw outright on localStorage; no remembered session is the right answer. */
-    it('survives storage that throws', () => {
+    /**
+     * Privacy modes throw on the storage accessor itself. Since 2026-09-08 this module reads and
+     * writes through `lib/safeStorage`, so it degrades to an in-memory map rather than refusing
+     * outright: the resume still works inside the tab that started the upload and simply does not
+     * survive a reload. Asserting the degradation, not merely the absence of a throw — "it did
+     * not crash" is equally true of a version that silently loses every session.
+     */
+    it('degrades to memory when storage throws, rather than refusing', () => {
         globalThis.localStorage = {
             getItem: () => { throw new Error('denied'); },
             setItem: () => { throw new Error('denied'); },
             removeItem: () => { throw new Error('denied'); },
         };
 
-        expect(() => rememberSession('ch', 'videos', file('a.mp4', 1), 1)).not.toThrow();
-        expect(() => forgetSession('ch', 'videos')).not.toThrow();
-        expect(resumableSessionId('ch', 'videos', file('a.mp4', 1))).toBeNull();
+        expect(() => rememberSession('ch', 'blocked', file('a.mp4', 1), 1)).not.toThrow();
+        expect(resumableSessionId('ch', 'blocked', file('a.mp4', 1))).toBe(1);
+        expect(() => forgetSession('ch', 'blocked')).not.toThrow();
+        expect(rememberedSession('ch', 'blocked')).toBeNull();
     });
 
     /** Server-side rendering, a worker, any context with no storage at all. */
     it('survives storage being absent entirely', () => {
         globalThis.localStorage = undefined;
 
-        expect(() => rememberSession('ch', 'videos', file('a.mp4', 1), 1)).not.toThrow();
-        expect(resumableSessionId('ch', 'videos', file('a.mp4', 1))).toBeNull();
+        expect(() => rememberSession('ch', 'absent', file('a.mp4', 1), 1)).not.toThrow();
+        // Nothing was ever remembered under this key; the point is that asking does not throw
+        // when there is no store to ask.
+        expect(resumableSessionId('ch', 'never-used', file('a.mp4', 1))).toBeNull();
     });
 });

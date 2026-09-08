@@ -10,6 +10,7 @@ import { useWatchHistory, useReadingHistory } from '../hooks/useVideos';
 import { useToast } from '../contexts/ToastContext';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { t } from '@/i18n';
+import { describeError } from '@/lib/describeError';
 
 function History() {
     usePageMeta({ title: t('history.title') });
@@ -22,7 +23,7 @@ function History() {
     const readingHistory = useReadingHistory();
 
     const isVideos = activeTab === 'videos';
-    const { data: history = [], isLoading, isError } = isVideos ? watchHistory : readingHistory;
+    const { data: history = [], isLoading, isError, error, refetch } = isVideos ? watchHistory : readingHistory;
 
     const tabs = [
         { id: 'videos', label: t('common.videos'), icon: Video },
@@ -38,7 +39,7 @@ function History() {
             await api.delete(isVideos ? '/user/history' : '/user/reading-history');
             queryClient.invalidateQueries({ queryKey: [isVideos ? 'watch-history' : 'reading-history'] });
         } catch (err) {
-            showToast(t('history.clearFailed'), 'error');
+            showToast(describeError(err, t('history.clearFailed')), 'error');
         }
     };
 
@@ -77,6 +78,8 @@ function History() {
             <QueryState
                 isLoading={isLoading}
                 isError={isError}
+                error={error}
+                onRetry={refetch}
                 isEmpty={history.length === 0}
                 errorTitle={t('history.loadFailed')}
                 emptyIcon="🕘"

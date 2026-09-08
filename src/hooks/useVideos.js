@@ -2,6 +2,8 @@ import { useMemo } from 'react';
 import { useInfiniteQuery, useQuery, keepPreviousData } from '@tanstack/react-query';
 import api from '@/lib/api/client';
 import { NO_CACHE, STATIC } from '@/lib/queryCache';
+import { queryKeys } from '@/lib/queryKeys';
+import { useUserScope } from './useUserScope';
 import { useDebouncedValue } from './useDebouncedValue';
 
 export const fetchVideos = async ({ pageParam = 0, queryKey }) => {
@@ -19,6 +21,7 @@ export const useInfiniteVideos = (search = '', category = '', size = 12, enabled
     return useInfiniteQuery({
         queryKey: ['videos', { search, category, size }],
         queryFn: fetchVideos,
+        initialPageParam: 0,
         getNextPageParam: (lastPage) => {
             return lastPage.hasNext ? lastPage.currentPage + 1 : undefined;
         },
@@ -62,6 +65,7 @@ export const useInfiniteSearch = (query, size = 12, enabled = true) => {
             const res = await api.get(`/search?q=${encodeURIComponent(query)}&page=${pageParam}&size=${size}`);
             return res.data;
         },
+        initialPageParam: 0,
         getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.currentPage + 1 : undefined),
         enabled: enabled && !!query && query.trim().length > 0,
         staleTime: 2 * 60 * 1000,
@@ -75,7 +79,7 @@ export const useInfiniteSearch = (query, size = 12, enabled = true) => {
 // before the user types anything, per GET /api/search/suggestions's own blank-query default.
 export const useSearchSuggestions = (rawQuery, limit = 8, enabled = true) => {
     const query = useDebouncedValue(rawQuery.trim(), 200);
-    return useQuery({
+    const result = useQuery({
         queryKey: ['search-suggestions', query, limit],
         queryFn: async ({ signal }) => {
             let url = `/search/suggestions?limit=${limit}`;
@@ -87,12 +91,31 @@ export const useSearchSuggestions = (rawQuery, limit = 8, enabled = true) => {
         staleTime: query ? 60 * 1000 : 5 * 60 * 1000,
         placeholderData: keepPreviousData,
     });
+    // `settledQuery` is the query the returned suggestions actually answer, which is NOT what is
+    // in the box: during the debounce window (and the request after it) `isFetching` is false
+    // while the data still belongs to the previous keystrokes. Callers need it to avoid making
+    // claims about text nobody has searched for yet — see SearchBar's "no matches" line.
+    //
+    // Named properties, never `{ ...result }`: a v5 query result is a proxy that records which
+    // properties the caller reads and re-renders only when one of those changes. A spread reads
+    // every one of them, which opts the component out of that entirely — and this hook lives in
+    // the navbar, on every page, so it would re-render the whole header on each internal
+    // transition of a query that fires per keystroke.
+    return {
+        data: result.data,
+        isFetching: result.isFetching,
+        isError: result.isError,
+        refetch: result.refetch,
+        settledQuery: query,
+    };
 };
 
 // Bounded home feed (subscribed / discover / featured) — a fixed snapshot, not paginated.
+// Scoped to the viewer: its "subscribed" section is theirs alone.
 export const useFeed = (enabled = true) => {
+    const scope = useUserScope();
     return useQuery({
-        queryKey: ['feed'],
+        queryKey: queryKeys.feed(scope),
         queryFn: async () => {
             const res = await api.get('/feed');
             return res.data;
@@ -130,22 +153,21 @@ export const useRelatedVideo = (id, limit = 6) => {
 // The caller's own "continue watching" list — bounded/non-paginated per the backend's design
 // (see absarna-backend's CLAUDE.md), never used to drive ranking, only to show progress.
 export const useWatchHistory = (enabled = true) => {
+    const scope = useUserScope();
     return useQuery({
-        queryKey: ['watch-history'],
+        queryKey: queryKeys.watchHistory(scope),
         queryFn: async () => {
             const res = await api.get('/user/history?limit=200');
             return res.data;
         },
         enabled,
         staleTime: 60 * 1000,
-        // Overrides the app-wide refetchOnMount: false (same reasoning as useMediaToken's own
-        // override) — VideoPlayer invalidates this query the moment it reports progress, but
-        // that almost never happens while History/Home/Bookmarks is the mounted page (you're on
-        // VideoDetail while watching), so the invalidation only marks the query stale for
-        // *next* mount rather than refetching it immediately. With refetchOnMount left at the
-        // app-wide false, React Query ignores that staleness on mount too (it only compares
-        // against staleTime, not the isInvalidated flag) and keeps serving the pre-watch
-        // snapshot — so a watch that just happened would never show up without a full reload.
+        // Kept explicit even though the app-wide default is `refetchOnMount: true` now.
+        // VideoPlayer invalidates this query the moment it reports progress, but that almost
+        // never happens while History/Home/Bookmarks is the mounted page (you are on VideoDetail
+        // while watching), so the invalidation only marks the query stale for the *next* mount.
+        // This line is what makes that next mount actually refetch rather than serve the
+        // pre-watch snapshot for the rest of its staleTime.
         refetchOnMount: true,
     });
 };
@@ -162,15 +184,16 @@ export const useWatchProgressMap = (enabled = true) => {
 // The caller's own "resume reading" list — same bounded/non-ranking-signal design as
 // useWatchHistory, for books instead of videos.
 export const useReadingHistory = (enabled = true) => {
+    const scope = useUserScope();
     return useQuery({
-        queryKey: ['reading-history'],
+        queryKey: queryKeys.readingHistory(scope),
         queryFn: async () => {
             const res = await api.get('/user/reading-history?limit=200');
             return res.data;
         },
         enabled,
         staleTime: 60 * 1000,
-        // Same refetchOnMount override as useWatchHistory above, for the same reason —
+        // Same explicit refetchOnMount as useWatchHistory above, for the same reason —
         // useSaveReadProgress invalidates this on every successful page-turn write.
         refetchOnMount: true,
     });

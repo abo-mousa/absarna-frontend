@@ -27,7 +27,7 @@ function ChannelDot({ color, name }) {
     );
 }
 
-function ChannelRow({ channel, slug, name, color, currentChannel, onClose, manageLink }) {
+function ChannelRow({ slug, name, color, currentChannel, onClose, manageLink }) {
     return (
         <div className="flex items-center gap-1">
             <Link

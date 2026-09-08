@@ -5,6 +5,24 @@ import { useSearchSuggestions } from '@/hooks/useVideos';
 import { useOutsideClick } from '@/hooks/useOutsideClick';
 import { t } from '@/i18n';
 
+/**
+ * Whether the dropdown may say "nothing matches <query>".
+ *
+ * Extracted and exported so the condition itself is testable: it is a claim about the user's
+ * text, and it was making that claim about text nobody had searched for. `isFetching` is false
+ * for the whole debounce window, so mid-typing the message quoted what was in the box while the
+ * data underneath still answered an earlier keystroke — most visibly when the earlier query had
+ * no matches and the current one does. `settled` is the query the suggestions actually answer;
+ * unless it equals the input, nothing is known about the input yet.
+ *
+ * `isError` stays separate from an empty result so a failed request is not reported as "nothing
+ * matches", which is a different thing and would send the user off to rephrase a fine query.
+ */
+export function shouldShowNoMatches({ open, input, settled, isFetching, isError, count }) {
+    const typed = (input || '').trim();
+    return Boolean(open && typed && settled === typed && !isFetching && !isError && count === 0);
+}
+
 function SearchBar() {
     const navigate = useNavigate();
     const containerRef = useRef(null);
@@ -12,12 +30,15 @@ function SearchBar() {
     const [open, setOpen] = useState(false);
     const [highlightIndex, setHighlightIndex] = useState(-1);
 
-    const { data: suggestions = [], isFetching, isError } = useSearchSuggestions(query, 8, open);
-    // Only "no matches" once a fetch for the current query has actually settled — otherwise
-    // a debounce-triggered refetch would flash this message before the real result lands.
-    // Distinct from isError (a genuinely failed request) so a network hiccup isn't mislabeled
-    // as "nothing matches".
-    const showNoMatches = open && query.trim() && !isFetching && !isError && suggestions.length === 0;
+    const { data: suggestions = [], isFetching, isError, settledQuery } = useSearchSuggestions(query, 8, open);
+    const showNoMatches = shouldShowNoMatches({
+        open,
+        input: query,
+        settled: settledQuery,
+        isFetching,
+        isError,
+        count: suggestions.length,
+    });
 
     const goToSearch = (value) => {
         if (!value.trim()) return;
@@ -115,7 +136,7 @@ function SearchBar() {
 
             {showNoMatches && (
                 <div className="absolute top-[calc(100%+6px)] left-0 right-0 bg-surface border border-border-light rounded-lg shadow-lg z-[1001] px-3 py-4 text-center text-sm text-text-muted">
-                    {t('searchBar.noMatches', { query: query.trim() })}
+                    {t('searchBar.noMatches', { query: settledQuery })}
                 </div>
             )}
         </div>

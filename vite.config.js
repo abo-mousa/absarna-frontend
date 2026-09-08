@@ -94,6 +94,15 @@ const contentSecurityPolicy = (env, isProduction) => ({
         // it is then hotlinked as that channel's avatar on every card, detail page and channel
         // header. Without them here the prefill silently produces a broken image in production
         // and works fine in dev, since a meta CSP is the only thing enforcing this.
+        //
+        // WHAT THIS LIST DOES *NOT* COVER, and why every <img> rendering an owner-supplied URL
+        // carries an onError fallback: exactly seven sources are allowed — 'self', data:, blob:,
+        // the object-storage origin, and the four YouTube hosts — while `logoUrl`, `bannerUrl`,
+        // `previewImageUrl` and the biography photo are free-text fields anyone with a channel
+        // can point anywhere. Any other host is refused by the browser with no error the page
+        // can read, so the image simply never arrives. That is deliberate (a policy naming every
+        // host a user might type would name every host), and it makes a broken external image
+        // the NORMAL case here rather than an exception.
         'img-src': [
           "'self'", 'data:', 'blob:',
           'https://img.youtube.com', 'https://i.ytimg.com',
@@ -136,6 +145,48 @@ export default defineConfig(({ mode, command }) => {
     },
     server: {
       port: 5173,
+    },
+    build: {
+      rollupOptions: {
+        output: {
+          /**
+           * Split the dependencies that never change from the app code that changes every
+           * deploy.
+           *
+           * <p>Everything used to land in one vendor chunk, so shipping a one-line fix
+           * invalidated React, React Query, the router, dayjs, lucide and axios along with it —
+           * a returning visitor re-downloaded the whole runtime to receive a changed string.
+           * These four are split by how they change rather than by size: React and the router
+           * move on a major upgrade, React Query on its own schedule, and the `misc` group is
+           * the small, stable utilities that are not worth a chunk each.
+           *
+           * <p>`react-pdf`/`pdfjs` is deliberately NOT named here. It is already isolated by
+           * being reached only through a `React.lazy` import (see PdfReader's barrel comment),
+           * so naming it would pull a ~470KB dependency into the static graph and undo that.
+           *
+           * <p><b>Matched on the resolved module path, not on the bare package name.</b> The
+           * object form (`{'vendor-react': ['react', 'react-dom']}`) matches the entry `react`
+           * only, and nothing here imports it: React 18's automatic JSX runtime imports
+           * `react/jsx-runtime` and the app imports `react-dom/client`, neither of which is that
+           * id. So `vendor-react` built **empty** — Rollup even said so, "Generated an empty
+           * chunk" — while React itself was absorbed into whichever chunk reached it first
+           * (`vendor-router`, at 181 kB). The split existed in the config and not in the output,
+           * which is the whole failure this comment is here to prevent recurring: verify a
+           * chunking change against `npm run build`'s actual chunk list, never against the
+           * config reading plausibly.
+           *
+           * <p>`scheduler` travels with React — it is React's own dependency, upgraded with it.
+           */
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return undefined;
+            if (/node_modules\/(react|react-dom|scheduler)(\/|$)/.test(id)) return 'vendor-react';
+            if (id.includes('node_modules/@tanstack/')) return 'vendor-query';
+            if (/node_modules\/(react-router|react-router-dom)(\/|$)/.test(id)) return 'vendor-router';
+            if (/node_modules\/(dayjs|lucide-react|axios)(\/|$)/.test(id)) return 'vendor-misc';
+            return undefined;
+          },
+        },
+      },
     },
   }
 })

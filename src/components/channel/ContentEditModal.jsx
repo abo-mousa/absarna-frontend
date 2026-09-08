@@ -39,6 +39,11 @@ function ContentEditModal({ open, type, item, onClose, onSave, saving }) {
     useEffect(() => {
         if (!item) return;
         setForm(Object.fromEntries(fields.map((f) => [f, item[f] ?? ''])));
+        // Keyed on the item's IDENTITY, not the item: `item` is a fresh object on every refetch
+        // of the list behind this dialog, and re-seeding then would silently discard whatever the
+        // owner has typed. `fields` is derived from `type` (a new array each render), so `type`
+        // already covers it.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [item?.id, type]);
 
     if (!item) return null;

@@ -17,6 +17,7 @@ import { rememberSession, forgetSession, resumableSessionId, rememberedSession }
 import { useChannelComments, useModerateComment } from '@/hooks/useCommentModeration';
 import { useChannelYouTube, useUploadOriginal } from '@/hooks/useChannelYouTube';
 import { t } from '@/i18n';
+import { describeError } from '@/lib/describeError';
 
 const TABS = [
     { id: 'overview', label: t('channelManage.tabs.overview'), icon: Settings },
@@ -145,6 +146,10 @@ function ChannelManage() {
         } else if (status === 'FAILED') {
             showToast(t('youtube.failed', { reason: youtubeState?.importMessage || '' }), 'error');
         }
+        // Keyed on the status TRANSITION alone, per the note above. `importedVideos` climbs on
+        // every poll while the import runs, so listing it would re-fire this effect — and its
+        // toast and two invalidations — on each one.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [youtubeState?.importStatus]);
     const bookUpload = usePresignedUpload();
 
@@ -165,6 +170,10 @@ function ChannelManage() {
         videoUpload.cancel();
         bookUpload.cancel();
         originalUpload.cancel();
+        // Unmount-only. Each hook returns a new object per render, so listing them would run this
+        // cleanup mid-upload on any re-render — cancelling the transfer this effect exists to
+        // stop only on the way out.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // One call per content type, each carrying its own list, mutations, confirm and toasts.
@@ -200,7 +209,7 @@ function ChannelManage() {
             await updateChannel.mutateAsync(form);
             showToast(t('channelManage.saved'), 'success');
         } catch (err) {
-            showToast(t('channelManage.saveFailed'), 'error');
+            showToast(describeError(err, t('channelManage.saveFailed')), 'error');
         } finally {
             setSaving(false);
         }
@@ -272,7 +281,10 @@ function ChannelManage() {
      * by then there is nothing mounted to show a toast to.
      */
     const handleFileSelect = async (e, { kind, hook, setUploading, apply, onFailure }) => {
-        const file = e.target.files[0];
+        // Captured now: this function awaits, and the element is what has to be cleared at the
+        // end regardless of which branch got there.
+        const input = e.target;
+        const file = input.files[0];
         if (!file) return;
 
         setUploading(true);
@@ -285,6 +297,12 @@ function ChannelManage() {
             }
         } finally {
             setUploading(false);
+            // Cleared on every path, and the failure path is why. An <input type="file"> fires
+            // `change` only when the selection differs from what it already holds, so after a
+            // failed upload picking THE SAME FILE again did nothing at all — the retry the toast
+            // invites was impossible without first selecting some other file. Clearing also means
+            // the input never holds a stale selection while the session id lives in form state.
+            input.value = '';
         }
     };
 

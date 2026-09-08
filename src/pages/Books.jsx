@@ -22,6 +22,9 @@ function Books() {
     const {
         data,
         isLoading,
+        isError,
+        error,
+        refetch,
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
@@ -86,8 +89,15 @@ function Books() {
                 </div>
             )}
 
+            {/* isError was not passed at all before 2026-09-08, so a failed request rendered
+                the empty state — telling a visitor there are no books when the request simply
+                did not arrive. */}
             <QueryState
                 isLoading={isLoading}
+                isError={isError}
+                error={error}
+                onRetry={refetch}
+                errorTitle={t('books.loadFailed')}
                 isEmpty={books.length === 0 || filtered.length === 0}
                 emptyIcon={books.length === 0 ? '📚' : '🔍'}
                 emptyTitle={books.length === 0 ? t('books.empty') : t('common.noResults')}

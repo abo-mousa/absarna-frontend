@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api/client';
+import { queryKeys } from '@/lib/queryKeys';
+import { useUserScope } from './useUserScope';
 
 /**
  * The channel owner's YouTube link: resolve, verify, import once.
@@ -11,11 +13,15 @@ import api from '@/lib/api/client';
  * state they return to has to be exactly the state they left.
  */
 
-const key = (slug) => ['channel-youtube', slug];
+// Owner-scoped: what this returns includes a verification token minted for one owner, so it
+// must not survive into the next session on a shared machine. Scope is the last segment, so
+// `['channel-youtube', slug]` still matches it as a prefix.
+const key = queryKeys.channelYouTube;
 
-export const useChannelYouTube = (slug, enabled = true) =>
-    useQuery({
-        queryKey: key(slug),
+export const useChannelYouTube = (slug, enabled = true) => {
+    const scope = useUserScope();
+    return useQuery({
+        queryKey: key(slug, scope),
         queryFn: async () => (await api.get(`/channels/${slug}/youtube`)).data,
         enabled: Boolean(slug) && enabled,
         // An import runs on the server with nothing pushing progress back, so the panel polls —
@@ -25,36 +31,40 @@ export const useChannelYouTube = (slug, enabled = true) =>
             query.state.data?.importStatus === 'RUNNING' ? 5000 : false,
         retry: false,
     });
+};
 
 /** Resolves what the owner typed and returns the token to publish. */
 export const useLinkYouTubeChannel = (slug) => {
     const queryClient = useQueryClient();
+    const scope = useUserScope();
     return useMutation({
         mutationFn: async (source) =>
             (await api.post(`/channels/${slug}/youtube/verification`, { source })).data,
-        onSuccess: (data) => queryClient.setQueryData(key(slug), data),
+        onSuccess: (data) => queryClient.setQueryData(key(slug, scope), data),
     });
 };
 
 /** Re-reads the YouTube channel description looking for the token. */
 export const useCheckYouTubeVerification = (slug) => {
     const queryClient = useQueryClient();
+    const scope = useUserScope();
     return useMutation({
         mutationFn: async () =>
             (await api.post(`/channels/${slug}/youtube/verification/check`)).data,
         // Not an error when the token isn't there yet — `verified: false` is the answer, and the
         // caller renders "try again in a minute" rather than a failure.
-        onSuccess: (data) => queryClient.setQueryData(key(slug), data),
+        onSuccess: (data) => queryClient.setQueryData(key(slug, scope), data),
     });
 };
 
 /** Starts the one-time import. Returns immediately; the query above polls for the outcome. */
 export const useStartYouTubeImport = (slug) => {
     const queryClient = useQueryClient();
+    const scope = useUserScope();
     return useMutation({
         mutationFn: async () => (await api.post(`/channels/${slug}/youtube/import`)).data,
         onSuccess: (data) => {
-            queryClient.setQueryData(key(slug), data);
+            queryClient.setQueryData(key(slug, scope), data);
             // The import writes videos and series into this channel, so the dashboard's own lists
             // are stale the moment it finishes. Invalidated on start rather than on completion
             // because nothing tells us when that is — the poll above is what notices.
@@ -94,10 +104,11 @@ export const useUploadOriginal = (slug) => {
  */
 export const useAttestYouTubeChannel = (slug) => {
     const queryClient = useQueryClient();
+    const scope = useUserScope();
     return useMutation({
         mutationFn: async (source) =>
             (await api.post(`/channels/${slug}/youtube/attest`, { source })).data,
-        onSuccess: (data) => queryClient.setQueryData(key(slug), data),
+        onSuccess: (data) => queryClient.setQueryData(key(slug, scope), data),
     });
 };
 

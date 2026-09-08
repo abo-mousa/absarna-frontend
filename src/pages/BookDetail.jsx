@@ -8,10 +8,11 @@ import { flushOnUnload } from '@/lib/api/beacon';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
 import { QueryState } from '../components/ui';
-import { CommentsSection, BookmarkButton, ShareButton } from '../components/content';
+import { CommentsSection, BookmarkButton, LikeButton, ShareButton } from '../components/content';
 import { useBook, useBookReadProgress, useSaveReadProgress } from '../hooks/useBooks';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { t } from '@/i18n';
+import { formatCount } from '@/lib/numbers';
 
 // Code-split: pdfjs is a large dependency that only visitors who actually open a book should pay for.
 const PdfReader = lazy(() => import('../components/content/PdfReader'));
@@ -23,8 +24,9 @@ function BookDetail() {
     // backend. See useBookReadUrl.
     const { token } = useAuth();
     const [showPdf, setShowPdf] = useState(false);
-    const { data: book, isLoading, isError } = useBook(id);
-    const { data: pdfUrl, isLoading: pdfUrlLoading } = useBookReadUrl(book?.id, Boolean(book?.id));
+    const [previewFailed, setPreviewFailed] = useState(false);
+    const { data: book, isLoading, isError, error } = useBook(id);
+    const { data: pdfUrl } = useBookReadUrl(book?.id, Boolean(book?.id));
     const { data: savedPage } = useBookReadProgress(id, !!token);
     const saveReadProgress = useSaveReadProgress(id);
     const lastPageRef = useRef(null);
@@ -63,6 +65,7 @@ function BookDetail() {
                 <QueryState
                     isLoading={isLoading}
                     isError={isError || !book}
+                    error={error}
                     errorTitle={t('books.notFound')}
                     errorAction={<Link to="/books" className="text-primary font-semibold">{t('books.backToLibrary')}</Link>}
                 />
@@ -72,7 +75,10 @@ function BookDetail() {
 
     // Preview images are not presigned; resolveMediaUrl returns null for an object key and the
     // caller falls back to its placeholder.
-    const previewUrl = resolveMediaUrl(book.previewImageUrl);
+    // Owner-supplied and external, so it can fail for reasons the page cannot see — a dead link,
+    // a hotlink block, or the SPA's own img-src allowlist. Falling back to no image is correct;
+    // a broken-image glyph over a "tap to read" overlay is not.
+    const previewUrl = !previewFailed ? resolveMediaUrl(book.previewImageUrl) : null;
 
     return (
         <PageShell sidebar={false}>
@@ -80,7 +86,12 @@ function BookDetail() {
                 <div className="bg-surface rounded-lg overflow-hidden border border-border-light shadow-sm mb-6">
                     {previewUrl && !showPdf && (
                         <div className="relative h-[280px] overflow-hidden cursor-pointer" onClick={() => setShowPdf(true)}>
-                            <img src={previewUrl} alt={book.title} className="w-full h-full object-cover" />
+                            <img
+                                src={previewUrl}
+                                alt={book.title}
+                                onError={() => setPreviewFailed(true)}
+                                className="w-full h-full object-cover"
+                            />
                             <div className="absolute inset-0 flex items-center justify-center">
                                 <div className="flex items-center gap-2 bg-black/70 text-white px-5 py-3 rounded-md font-semibold">
                                     <BookOpen size={18} /> {t('books.tapToRead')}
@@ -100,6 +111,7 @@ function BookDetail() {
                             <h1 className="text-xl sm:text-2xl font-bold">{book.title}</h1>
                             <div className="flex items-center gap-3 flex-shrink-0 mt-1">
                                 <ShareButton title={book.title} path={`/books/${book.id}`} />
+                                <LikeButton type="book" id={book.id} />
                                 <BookmarkButton type="book" id={book.id} />
                             </div>
                         </div>
@@ -110,7 +122,7 @@ function BookDetail() {
                             {book.originalPublishDate && book.originalPublishDate !== book.publishDate && (
                                 <span>{t('common.originalPublishDate', { date: book.originalPublishDate })}</span>
                             )}
-                            <span>{t('common.views', { count: (book.viewCount ?? 0).toLocaleString('ar') })}</span>
+                            <span>{t('common.views', { count: formatCount(book.viewCount ?? 0) })}</span>
                         </div>
 
                         {book.description && (

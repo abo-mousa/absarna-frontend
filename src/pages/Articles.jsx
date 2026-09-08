@@ -20,6 +20,9 @@ function Articles() {
     const {
         data,
         isLoading,
+        isError,
+        error,
+        refetch,
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
@@ -84,8 +87,13 @@ function Articles() {
                 </div>
             )}
 
+            {/* Same gap Books had: no isError, so a failed request read as "no articles". */}
             <QueryState
                 isLoading={isLoading}
+                isError={isError}
+                error={error}
+                onRetry={refetch}
+                errorTitle={t('articles.loadFailed')}
                 isEmpty={articles.length === 0 || filtered.length === 0}
                 emptyIcon={articles.length === 0 ? '📝' : '🔍'}
                 emptyTitle={articles.length === 0 ? t('articles.empty') : t('common.noResults')}

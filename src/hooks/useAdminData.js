@@ -1,11 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api/client';
+import { queryKeys } from '@/lib/queryKeys';
+import { useUserScope } from './useUserScope';
+
+// Every listing here is admin-only, so it is user-scoped for the same reason the viewer's own
+// lists are: it must not survive a logout into the next person's session. The scope is the last
+// key segment, so the invalidations below stay prefix matches and need no scope of their own.
 
 // ============ STATS ============
 
 export const useStats = () => {
+    const scope = useUserScope();
     return useQuery({
-        queryKey: ['admin-stats'],
+        queryKey: queryKeys.adminStats(scope),
         queryFn: async () => {
             const res = await api.get('/admin/stats');
             return res.data;
@@ -20,8 +27,9 @@ export const useStats = () => {
 // bounded-first-page approach admin listings use rather than adding "load more" to the admin
 // table.
 export const useBooks = () => {
+    const scope = useUserScope();
     return useQuery({
-        queryKey: ['admin-books'],
+        queryKey: queryKeys.adminBooks(scope),
         queryFn: async () => {
             const res = await api.get('/admin/books?page=0&size=100');
             return res.data?.content || res.data || [];
@@ -64,8 +72,9 @@ export const useDeleteBook = () => {
 
 // Same pagination change as useBooks above.
 export const useArticles = () => {
+    const scope = useUserScope();
     return useQuery({
-        queryKey: ['admin-articles'],
+        queryKey: queryKeys.adminArticles(scope),
         queryFn: async () => {
             const res = await api.get('/admin/articles?page=0&size=100');
             return res.data?.content || res.data || [];
@@ -107,8 +116,9 @@ export const useDeleteArticle = () => {
 // ============ BIOGRAPHY ============
 
 export const useBiography = () => {
+    const scope = useUserScope();
     return useQuery({
-        queryKey: ['admin-biography'],
+        queryKey: queryKeys.adminBiography(scope),
         queryFn: async () => {
             const res = await api.get('/admin/biography');
             return res.data;

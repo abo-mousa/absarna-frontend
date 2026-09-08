@@ -3,14 +3,15 @@ import { ArrowRight, Type, Clock, Calendar, Eye } from 'lucide-react';
 import { formatPublishDate, displayDate } from '@/lib/dayjsAr';
 import PageShell from '../components/layout/PageShell';
 import { QueryState } from '../components/ui';
-import { CommentsSection, BookmarkButton, ShareButton } from '../components/content';
+import { CommentsSection, BookmarkButton, LikeButton, ShareButton } from '../components/content';
 import { useArticle } from '../hooks/useArticles';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { t } from '@/i18n';
+import { formatCount } from '@/lib/numbers';
 
 function ArticleDetail() {
     const { id } = useParams();
-    const { data: article, isLoading, isError } = useArticle(id);
+    const { data: article, isLoading, isError, error } = useArticle(id);
     usePageMeta({ title: article?.title, description: article?.content?.slice(0, 200) });
 
     if (isLoading || isError || !article) {
@@ -19,6 +20,7 @@ function ArticleDetail() {
                 <QueryState
                     isLoading={isLoading}
                     isError={isError || !article}
+                    error={error}
                     errorTitle={t('articles.loadFailed')}
                     errorAction={<Link to="/articles" className="text-primary font-semibold">{t('articles.backToArticles')}</Link>}
                 />
@@ -40,6 +42,7 @@ function ArticleDetail() {
                         <h1 className="text-2xl sm:text-3xl font-bold leading-snug">{article.title}</h1>
                         <div className="flex items-center gap-3 flex-shrink-0 mt-1 print:hidden">
                             <ShareButton title={article.title} path={`/articles/${article.id}`} />
+                            <LikeButton type="article" id={article.id} />
                             <BookmarkButton type="article" id={article.id} />
                         </div>
                     </div>
@@ -60,7 +63,7 @@ function ArticleDetail() {
                             </span>
                         )}
                         <span className="flex items-center gap-1.5">
-                            <Eye size={14} /> {t('common.views', { count: (article.viewCount ?? 0).toLocaleString('ar') })}
+                            <Eye size={14} /> {t('common.views', { count: formatCount(article.viewCount ?? 0) })}
                         </span>
                     </div>
 

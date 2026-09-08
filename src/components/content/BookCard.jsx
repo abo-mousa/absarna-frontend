@@ -56,8 +56,11 @@ function BookCard({ book, currentPage }) {
     };
 
     // Preview images are not presigned; resolveMediaUrl returns null for an object key and the
-    // caller falls back to its placeholder.
-    const previewUrl = resolveMediaUrl(book.previewImageUrl);
+    // caller falls back to its placeholder. It can also be an owner-supplied external URL that
+    // is dead, moved, hotlink-blocked, or outside the SPA's `img-src` allowlist — hence the
+    // onError below, which routes to the same 📖 placeholder rather than a broken-image glyph.
+    const [previewFailed, setPreviewFailed] = useState(false);
+    const previewUrl = !previewFailed ? resolveMediaUrl(book.previewImageUrl) : null;
     const readPercent = getReadPercent(book, currentPage);
 
     return (
@@ -67,7 +70,12 @@ function BookCard({ book, currentPage }) {
                 className="relative h-[200px] bg-surface-hover overflow-hidden block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
             >
                 {previewUrl ? (
-                    <img src={previewUrl} alt={book.title} className="w-full h-full object-cover" />
+                    <img
+                        src={previewUrl}
+                        alt={book.title}
+                        onError={() => setPreviewFailed(true)}
+                        className="w-full h-full object-cover"
+                    />
                 ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary-dark to-primary text-5xl opacity-50">
                         📖

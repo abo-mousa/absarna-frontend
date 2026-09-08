@@ -62,6 +62,8 @@ function Home() {
         isLoading: infiniteLoading,
         isFetching: infiniteFetching,
         isError: infiniteError,
+        error: infiniteErrorObject,
+        refetch: refetchInfinite,
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
@@ -157,6 +159,8 @@ function Home() {
                 <QueryState
                     isLoading={feedQuery.isLoading}
                     isError={feedQuery.isError}
+                    error={feedQuery.error}
+                    onRetry={feedQuery.refetch}
                     isEmpty={feedSections.every((section) => !(feedQuery.data?.[section.key]?.length))}
                     errorTitle={t('home.loadFailed')}
                     emptyTitle={t('home.empty')}
@@ -207,6 +211,8 @@ function Home() {
                     <QueryState
                         isLoading={infiniteLoading}
                         isError={infiniteError}
+                        error={infiniteErrorObject}
+                        onRetry={refetchInfinite}
                         isEmpty={(infiniteData?.pages.flatMap((page) => page.content) || []).length === 0}
                         errorTitle={t('home.loadFailed')}
                         emptyTitle={t('home.empty')}

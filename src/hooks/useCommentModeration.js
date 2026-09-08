@@ -1,5 +1,7 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api/client';
+import { queryKeys } from '@/lib/queryKeys';
+import { useUserScope } from './useUserScope';
 
 // Channel-owner moderation dashboard data — every comment across the channel's own
 // video/book/article content, any state (including already-hidden ones, so the owner can
@@ -9,12 +11,14 @@ import api from '@/lib/api/client';
 // "Load more" pagination, same accumulating-pages shape as useChannelBooks/useChannelContents —
 // this endpoint used to return every comment on the channel's entire content in one response.
 export const useChannelComments = (slug, size = 50, enabled = true) => {
+    const scope = useUserScope();
     return useInfiniteQuery({
-        queryKey: ['channel-comments', slug, size],
+        queryKey: queryKeys.channelComments(slug, size, scope),
         queryFn: async ({ pageParam = 0 }) => {
             const res = await api.get(`/channels/${slug}/content/comments?page=${pageParam}&size=${size}`);
             return res.data;
         },
+        initialPageParam: 0,
         getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.currentPage + 1 : undefined),
         enabled: enabled && !!slug,
     });

@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api/client';
+import { queryKeys } from '@/lib/queryKeys';
+import { useUserScope } from './useUserScope';
 
 // Maps this app's route/content "type" strings (used everywhere else — CommentsSection,
 // useComments, etc.) to the backend's BookmarkItemType enum values.
@@ -10,8 +12,9 @@ const ITEM_TYPE = { video: 'VIDEO', book: 'BOOK', article: 'ARTICLE' };
 // logged out rather than hitting an endpoint that needs auth.
 export const useBookmarkStatus = (type, id, enabled = true) => {
     const itemType = ITEM_TYPE[type];
+    const scope = useUserScope();
     return useQuery({
-        queryKey: ['bookmark-status', itemType, id],
+        queryKey: queryKeys.bookmarkStatus(itemType, id, scope),
         queryFn: async () => {
             const res = await api.get(`/bookmarks/${itemType}/${id}/status`);
             return !!res.data?.bookmarked;
@@ -25,6 +28,7 @@ export const useBookmarkStatus = (type, id, enabled = true) => {
 // idempotent on the backend, so there's no separate add/remove-conflict state to handle here.
 export const useToggleBookmark = (type, id) => {
     const itemType = ITEM_TYPE[type];
+    const scope = useUserScope();
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -37,7 +41,9 @@ export const useToggleBookmark = (type, id) => {
             return !currentlyBookmarked;
         },
         onSuccess: (nowBookmarked) => {
-            queryClient.setQueryData(['bookmark-status', itemType, id], nowBookmarked);
+            queryClient.setQueryData(queryKeys.bookmarkStatus(itemType, id, scope), nowBookmarked);
+            // A prefix, deliberately: it matches this viewer's list without repeating the scope,
+            // which is why every user-scoped key carries its scope as the LAST segment.
             queryClient.invalidateQueries({ queryKey: ['bookmarks'] });
         },
     });
@@ -47,8 +53,9 @@ export const useToggleBookmark = (type, id) => {
 // transparent-list design as watch/reading history (never a ranking signal, see backend
 // CLAUDE.md). Each entry carries itemType plus exactly one of content/book/article.
 export const useBookmarks = (enabled = true) => {
+    const scope = useUserScope();
     return useQuery({
-        queryKey: ['bookmarks'],
+        queryKey: queryKeys.bookmarks(scope),
         queryFn: async () => {
             const res = await api.get('/user/bookmarks?limit=200');
             return res.data || [];

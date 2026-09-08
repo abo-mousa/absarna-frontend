@@ -13,7 +13,7 @@ function EmailVerificationNotice({ message }) {
         try {
             await resendVerification();
             setStatus('sent');
-        } catch (err) {
+        } catch {
             setStatus('error');
         }
     };

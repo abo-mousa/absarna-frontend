@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { API_BASE_URL } from '../env';
+import { safeStorage } from '../safeStorage';
 
 const api = axios.create({
     baseURL: `${API_BASE_URL}/api`,
@@ -25,7 +26,7 @@ export const UPLOAD_CONFIRM_TIMEOUT_MS = 5 * 60 * 1000;
 // Request interceptor — attach token
 api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('token');
+        const token = safeStorage.getItem('token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -45,11 +46,11 @@ const refreshAccessToken = (refreshToken) => {
         refreshPromise = axios
             .post(`${API_BASE_URL}/api/auth/refresh`, { refreshToken })
             .then((res) => {
-                localStorage.setItem('token', res.data.token);
+                safeStorage.setItem('token', res.data.token);
                 // The backend may rotate the refresh token on use — store it if returned,
                 // otherwise the old one (still valid) stays in place.
                 if (res.data.refreshToken) {
-                    localStorage.setItem('refreshToken', res.data.refreshToken);
+                    safeStorage.setItem('refreshToken', res.data.refreshToken);
                 }
                 return res.data.token;
             })
@@ -60,43 +61,78 @@ const refreshAccessToken = (refreshToken) => {
     return refreshPromise;
 };
 
+/**
+ * The auth endpoints whose 401 means "wrong password" (or "dead refresh token"), not "expired
+ * access token" — refreshing on those would swallow the error the form needs, or recurse.
+ *
+ * <p>Matched on the resolved <i>pathname</i>, not by `includes()` on the raw URL: a substring
+ * match also fires on a request whose query string happens to carry the text, and says nothing
+ * about which segment of the path it found it in.
+ */
+const AUTH_ENDPOINT = /\/auth\/(login|register|refresh)$/;
+
+export const isAuthEndpoint = (config) => {
+    try {
+        const url = new URL(config?.url ?? '', config?.baseURL ?? 'http://placeholder.invalid/');
+        return AUTH_ENDPOINT.test(url.pathname);
+    } catch {
+        return false;
+    }
+};
+
+/**
+ * Whether a failed refresh means the session is over.
+ *
+ * <p>Only an answer from the backend that rejects the token does: 400/401/403. Everything else —
+ * offline, a timeout, a 5xx, or the endpoint's own 429 (it is limited to 10/min) — says nothing
+ * about the token, and clearing the session on it logged people out for riding through a tunnel.
+ * Those reject the original request and leave the tokens alone; the next request tries again.
+ */
+export const refreshFailureEndsSession = (refreshError) => {
+    const status = refreshError?.response?.status;
+    return status === 400 || status === 401 || status === 403;
+};
+
+const endSession = () => {
+    safeStorage.removeItem('token');
+    safeStorage.removeItem('refreshToken');
+    // A soft signal instead of a hard `window.location.href` redirect — the latter force-reloads
+    // the whole SPA even when the 401'd request came from a public page being browsed
+    // anonymously. AuthContext listens for this to clear its in-memory state and the cache, and
+    // to navigate via the router only when the current page needs a session.
+    window.dispatchEvent(new Event('auth:session-expired'));
+};
+
 // Response interceptor — auto refresh on 401
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
 
-        if (originalRequest.url?.includes('/auth/login') ||
-            originalRequest.url?.includes('/auth/register') ||
-            originalRequest.url?.includes('/auth/refresh')) {
+        if (isAuthEndpoint(originalRequest)) {
             return Promise.reject(error);
         }
 
         if (error.response?.status === 401 && !originalRequest._retry) {
             originalRequest._retry = true;
 
-            const refreshToken = localStorage.getItem('refreshToken');
+            const refreshToken = safeStorage.getItem('refreshToken');
             if (refreshToken) {
                 try {
                     const newToken = await refreshAccessToken(refreshToken);
                     originalRequest.headers.Authorization = `Bearer ${newToken}`;
                     return api(originalRequest);
                 } catch (refreshError) {
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('refreshToken');
-                    // A soft signal instead of a hard `window.location.href` redirect — the
-                    // latter force-reloads the whole SPA even when the 401'd request came
-                    // from a public page being browsed anonymously. AuthContext listens for
-                    // this to clear its in-memory state and navigate via the router.
-                    window.dispatchEvent(new Event('auth:session-expired'));
+                    if (refreshFailureEndsSession(refreshError)) {
+                        endSession();
+                    }
                 }
-            } else if (localStorage.getItem('token')) {
+            } else if (safeStorage.getItem('token')) {
                 // A 401 with an access token present but no refresh token to try — e.g. the
                 // refresh token was cleared/expired independently — used to fall straight
                 // through to Promise.reject below with no signal at all, leaving the app's
                 // in-memory auth state stuck "logged in" while every request kept 401ing.
-                localStorage.removeItem('token');
-                window.dispatchEvent(new Event('auth:session-expired'));
+                endSession();
             }
         }
 

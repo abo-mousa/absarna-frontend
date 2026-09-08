@@ -1,5 +1,6 @@
 import { useToast } from '@/contexts/ToastContext';
 import { t } from '@/i18n';
+import { describeError } from '@/lib/describeError';
 import {
     useChannelContentList,
     useCreateChannelContent,
@@ -66,7 +67,7 @@ export function useChannelContentTab(slug, type, active) {
             showToast(t('channelManage.saved'), 'success');
             return true;
         } catch (err) {
-            showToast(t('channelManage.saveFailed'), 'error');
+            showToast(describeError(err, t('channelManage.saveFailed')), 'error');
             return false;
         }
     };

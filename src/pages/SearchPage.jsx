@@ -19,6 +19,8 @@ function SearchPage() {
         data,
         isLoading,
         isError,
+        error,
+        refetch,
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
@@ -37,6 +39,8 @@ function SearchPage() {
             <QueryState
                 isLoading={isLoading}
                 isError={isError}
+                error={error}
+                onRetry={refetch}
                 isEmpty={results.length === 0}
                 errorTitle={t('search.failed')}
                 emptyIcon="🔍"

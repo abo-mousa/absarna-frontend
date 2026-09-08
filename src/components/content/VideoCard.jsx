@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Eye, EyeOff, Trash2, Tv } from 'lucide-react';
+import { Play, Eye, EyeOff, Trash2, Tv, Calendar, Loader2 } from 'lucide-react';
 import { resolveMediaUrl, youtubeThumbnail, durationToSeconds } from '@/lib/media';
 import { formatPublishDate, displayDate } from '@/lib/dayjsAr';
 import { useChannel } from '@/hooks/useChannels';
 import Avatar from '../ui/Avatar';
 import SourceBadge from './SourceBadge';
 import { t } from '@/i18n';
+import { formatCount } from '@/lib/numbers';
 
 function getThumbnail(video) {
     if (video.thumbnailUrl) {
@@ -89,11 +90,27 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                     className="absolute bottom-2 right-2"
                 />
 
-                {video.visible === false && (
-                    <div className="absolute top-2 right-2 bg-black/70 text-white text-xs font-semibold px-2 py-0.5 rounded">
-                        {t('common.hidden')}
-                    </div>
-                )}
+                {/* Both badges stack in one corner so a hidden, still-transcoding video shows
+                    both rather than one covering the other. */}
+                <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
+                    {video.visible === false && (
+                        <div className="bg-black/70 text-white text-xs font-semibold px-2 py-0.5 rounded">
+                            {t('common.hidden')}
+                        </div>
+                    )}
+                    {/* Owner-only, because nobody else can see an UPLOADED video at all — every
+                        public query gates on status = READY. This is the missing half of a
+                        deliberate design decision on the backend: there is no notification
+                        channel for a finished transcode, so re-fetching is the ONLY way an owner
+                        learns it completed. Until now nothing in the UI displayed `status`, so a
+                        just-uploaded video looked identical to a broken one. */}
+                    {isOwner && video.status === 'UPLOADED' && (
+                        <div className="flex items-center gap-1 bg-black/70 text-white text-xs font-semibold px-2 py-0.5 rounded">
+                            <Loader2 size={12} className="animate-spin" />
+                            {t('video.processing')}
+                        </div>
+                    )}
+                </div>
 
                 {isOwner && (
                     <div className="absolute top-2 left-2 flex gap-1">
@@ -128,52 +145,86 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                 )}
             </div>
 
-            <div className="p-4 flex items-start justify-between gap-3">
-                {/* `min-w-0` — without it, a flex item won't shrink below its content's natural
-                    width, which silently breaks the title's `line-clamp-2` truncation. */}
-                <div className="min-w-0">
-                    <h3 className="text-[0.95rem] font-semibold mb-1.5 leading-snug line-clamp-2">
-                        {video.title}
-                    </h3>
-                    {channel && (
-                        <button
-                            onClick={(e) => { e.stopPropagation(); navigate(`/channel/${channel.slug}`); }}
-                            aria-label={t('video.goToChannelAria', { name: channel.name })}
-                            className="flex items-center gap-1.5 mb-1.5 text-xs text-text-secondary hover:text-primary transition-colors"
-                        >
-                            <Avatar src={resolveMediaUrl(channel.logoUrl)} name={channel.name} size="sm" className="!w-5 !h-5 !text-[0.65rem]" />
-                            {channel.name}
-                        </button>
-                    )}
-                    {/* Which series this belongs to. A link, because the series page is where
-                        someone who recognises the name actually wants to go — and stopPropagation
-                        so it does not also trigger the card's own navigate-to-video. */}
-                    {video.seriesId && video.seriesTitle && (
-                        <button
-                            onClick={(e) => { e.stopPropagation(); navigate(`/series/${video.seriesId}`); }}
-                            title={t('series.partOf', { title: video.seriesTitle })}
-                            className="flex items-center gap-1 mb-1.5 text-xs text-text-muted hover:text-primary transition-colors max-w-full"
-                        >
-                            <Tv size={12} className="flex-shrink-0" />
-                            <span className="truncate">{video.seriesTitle}</span>
-                        </button>
-                    )}
+            {/* Title on its own full-width row, then the metadata as two columns beside each
+                other, split by kind rather than by how many fit: <b>what this video is</b>
+                (channel, series, date) at the start edge, and <b>its numbers</b> (views,
+                comments, likes) at the end edge. Keeping the counts to one column of their own
+                is what lets them line up as a readable stack instead of one text line mixed in
+                among links. `min-w-0` — without it a flex item won't shrink below its content's
+                natural width, which silently breaks the title's `line-clamp-2` and the
+                channel/series `truncate`. */}
+            <div className="p-4 min-w-0">
+                <h3 className="text-[0.95rem] font-semibold mb-1.5 leading-snug line-clamp-2">
+                    {video.title}
+                </h3>
 
-                    {video.category && (
-                        <span className="inline-block px-2.5 py-0.5 bg-primary-light text-primary rounded-full text-xs font-semibold">
-                            {video.category}
-                        </span>
+                <div className="flex items-start justify-between gap-3">
+                    {/* Always rendered even when empty: it is what holds the meta column at the
+                        far edge, since `justify-between` on a lone child places it at the start. */}
+                    <div className="min-w-0 space-y-1">
+                        {channel && (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); navigate(`/channel/${channel.slug}`); }}
+                                aria-label={t('video.goToChannelAria', { name: channel.name })}
+                                className="flex items-center gap-1.5 text-xs text-text-secondary hover:text-primary transition-colors max-w-full"
+                            >
+                                <Avatar src={resolveMediaUrl(channel.logoUrl)} name={channel.name} size="sm" className="!w-5 !h-5 !text-[0.65rem] flex-shrink-0" />
+                                <span className="truncate">{channel.name}</span>
+                            </button>
+                        )}
+                        {/* Which series this belongs to. A link, because the series page is where
+                            someone who recognises the name actually wants to go — and stopPropagation
+                            so it does not also trigger the card's own navigate-to-video. */}
+                        {video.seriesId && video.seriesTitle && (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); navigate(`/series/${video.seriesId}`); }}
+                                title={t('series.partOf', { title: video.seriesTitle })}
+                                className="flex items-center gap-1 text-xs text-text-muted hover:text-primary transition-colors max-w-full"
+                            >
+                                <Tv size={12} className="flex-shrink-0" />
+                                <span className="truncate">{video.seriesTitle}</span>
+                            </button>
+                        )}
+                        {/* Not a count, so it belongs here rather than in the numbers column —
+                            and it is the one line of the three that is plain text, hence the
+                            icon, which keeps it aligned with the avatar and the series glyph
+                            above it. `displayDate` prefers originalPublishDate when there is
+                            one; see lib/dayjsAr. */}
+                        {displayDate(video) && (
+                            <div className="flex items-center gap-1 text-xs text-text-muted">
+                                <Calendar size={12} className="flex-shrink-0" />
+                                <span className="truncate">{formatPublishDate(displayDate(video))}</span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Counts only. commentCount and likeCount are real DTO fields, each computed
+                        server-side by one grouped COUNT per list response — not fetched per card,
+                        see backend CLAUDE.md.
+
+                        All three phrased the same way ("{n} مشاهدة"), including likes: an icon +
+                        bare number for one of the three and words for the other two read as an
+                        odd one out, and the label is what makes the number legible to a screen
+                        reader without an aria-label to maintain. The heart lives on the detail
+                        page's LikeButton, where it is a control rather than a statistic.
+
+                        Read-only here, deliberately not a toggle: the card has no per-viewer
+                        `liked` state (VideoDTO carries the public count only), and giving every
+                        card one would mean a status request per card on every feed page. */}
+                    {(video.viewCount != null || video.commentCount != null
+                        || video.likeCount != null) && (
+                        <div className="flex-shrink-0 text-xs text-text-muted space-y-1 whitespace-nowrap text-end">
+                            {video.viewCount != null && <div>{t('common.views', { count: formatCount(video.viewCount) })}</div>}
+                            {video.commentCount != null && <div>{t('common.commentCount', { count: formatCount(video.commentCount) })}</div>}
+                            {video.likeCount != null && <div>{t('likes.count', { count: formatCount(video.likeCount) })}</div>}
+                        </div>
                     )}
                 </div>
-                {/* commentCount is now a real DTO field, computed server-side by a single grouped
-                    COUNT query per list response — not fetched per card, see backend CLAUDE.md's
-                    "Comment counts on video lists" entry. */}
-                {(video.publishDate || video.viewCount != null || video.commentCount != null) && (
-                    <div className="flex-shrink-0 text-xs text-text-muted space-y-1 whitespace-nowrap">
-                        {displayDate(video) && <div>{formatPublishDate(displayDate(video))}</div>}
-                        {video.viewCount != null && <div>{t('common.views', { count: video.viewCount.toLocaleString('ar') })}</div>}
-                        {video.commentCount != null && <div>{t('common.commentCount', { count: video.commentCount.toLocaleString('ar') })}</div>}
-                    </div>
+
+                {video.category && (
+                    <span className="inline-block mt-1.5 px-2.5 py-0.5 bg-primary-light text-primary rounded-full text-xs font-semibold">
+                        {video.category}
+                    </span>
                 )}
             </div>
         </div>

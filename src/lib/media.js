@@ -41,7 +41,7 @@ export const safeExternalUrl = (url) => {
     let parsed;
     try {
         parsed = new URL(url);
-    } catch (e) {
+    } catch {
         return null;
     }
     // parsed.href, not the original string: the URL parser strips embedded tabs/newlines, and
@@ -51,13 +51,33 @@ export const safeExternalUrl = (url) => {
 
 const YOUTUBE_HOSTNAMES = new Set(['youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtu.be']);
 
+/**
+ * A YouTube video id is exactly 11 characters of `[A-Za-z0-9_-]`, and has been for the whole life
+ * of the format.
+ *
+ * <p>Checked, because the id is not merely displayed: it is handed to the IFrame Player API as
+ * `videoId` and interpolated into `https://img.youtube.com/vi/{id}/…` for a poster. Without this,
+ * any URL on a host we accept produced *something* — `https://youtube.com/feed/history` yielded
+ * `history`, a bare `https://youtu.be/` yielded `youtu.be`, `?v=` yielded the empty string — and
+ * the player then rendered an embed that could only fail, with no route to the "watch on YouTube"
+ * fallback that exists for exactly this case. A value that is not an id is not an id, whatever
+ * the host said.
+ */
+const YOUTUBE_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/;
+
+export const isYouTubeId = (value) => typeof value === 'string' && YOUTUBE_ID_PATTERN.test(value);
+
+/** The video id in a YouTube URL, or `''` — including for a YouTube URL that names no video. */
 export const extractYouTubeId = (sourceUrl) => {
     try {
         const url = new URL(sourceUrl);
         if (YOUTUBE_HOSTNAMES.has(url.hostname)) {
-            return url.searchParams.get('v') || url.pathname.split('/').pop();
+            const candidate = url.searchParams.get('v') || url.pathname.split('/').pop();
+            // A malformed id falls back to '', which every caller already handles: the player
+            // shows its "watch on YouTube" link, and youtubeThumbnail below returns null.
+            if (isYouTubeId(candidate)) return candidate;
         }
-    } catch (e) {
+    } catch {
         // not a valid URL
     }
     return '';

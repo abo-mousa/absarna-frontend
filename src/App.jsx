@@ -1,12 +1,15 @@
 import { lazy, Suspense, useEffect, useRef } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { STANDARD } from '@/lib/queryCache';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { isPlatformAdmin } from '@/lib/user';
+import { safeSessionStorage } from '@/lib/safeStorage';
+import ErrorBoundary from './components/ErrorBoundary';
 import { Spinner } from './components/ui';
+import { t } from '@/i18n';
 
 const Home = lazy(() => import('./pages/Home'));
 const ChannelPage = lazy(() => import('./pages/ChannelPage'));
@@ -33,6 +36,28 @@ const CreateChannel = lazy(() => import('./pages/CreateChannel'));
 const ChannelManage = lazy(() => import('./pages/ChannelManage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
+/**
+ * Whether a failed request is worth retrying.
+ *
+ * <p>The default was a flat `retry: 1`, which retries everything — so a 404 detail page (an
+ * item that was deleted, or that this viewer may not see, which is the same 404 by design)
+ * sat through a request, a backoff delay and a second request before rendering "not found".
+ * A 4xx is the server's considered answer and asking again cannot change it; a 5xx, a timeout
+ * and an offline blip genuinely can.
+ *
+ * <p>429 is deliberately in the *not* retried set even though it is transient: the backend's
+ * limiter is per-IP and per-rule, so an automatic retry spends the next token of the same
+ * bucket and makes the situation it is reacting to worse. `describeError` tells the user to
+ * wait instead.
+ *
+ * <p>Exported for the test, and because the rule is easier to reason about named.
+ */
+export const shouldRetryQuery = (failureCount, error) => {
+    const status = error?.response?.status;
+    if (status >= 400 && status < 500) return false;
+    return failureCount < 1;
+};
+
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
@@ -47,13 +72,19 @@ const queryClient = new QueryClient({
             // disorienting in a way that refreshing on navigation is not.
             refetchOnWindowFocus: false,
             refetchOnReconnect: false,
-            retry: 1,
+            retry: shouldRetryQuery,
+        },
+        mutations: {
+            // A mutation is not idempotent in general — a comment, a like, a publish — so a
+            // blind retry can double-apply it. Left at none, stated rather than defaulted.
+            retry: false,
         },
     },
 });
 
 const ProtectedRoute = ({ children, adminOnly = false }) => {
     const { token, user, loading } = useAuth();
+    const location = useLocation();
 
     if (loading) {
         return (
@@ -63,8 +94,15 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
         );
     }
 
-    if (!token) return <Navigate to="/login" />;
-    if (adminOnly && !isPlatformAdmin(user)) return <Navigate to="/" />;
+    // `replace`, so the guarded URL does not stay in history: without it, pressing Back from the
+    // login form returns to the page that just bounced you, which bounces you again — the
+    // browser's Back button becomes inert. `state.from` is what lets Login send the visitor back
+    // to what they asked for instead of dropping them on the home page; it is validated on the
+    // way out by `safeInternalPath`, never trusted as a destination on sight.
+    if (!token) {
+        return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
+    }
+    if (adminOnly && !isPlatformAdmin(user)) return <Navigate to="/" replace />;
     return children;
 };
 
@@ -74,9 +112,52 @@ const RouteFallback = () => (
     </div>
 );
 
+/**
+ * The flag that stops a reload loop.
+ *
+ * <p>Session storage, not local: it should survive the one reload this handler performs and
+ * nothing beyond the tab. Through `safeSessionStorage`, because a browser blocking site data
+ * throws on the accessor — and the failure mode without the flag is an infinite reload, which is
+ * far worse than not reloading at all.
+ */
+const PRELOAD_RELOAD_FLAG = 'absarna.preload-reload';
+
+/**
+ * Recovers from a lazy chunk that 404s.
+ *
+ * <p>Every page here is `React.lazy`, so the running app holds hashed filenames for chunks it has
+ * not fetched yet. A deploy replaces those files, and a tab left open from before it then asks
+ * for a filename that no longer exists: the import rejects, Suspense has nothing to render, and
+ * the visitor sees a blank route with a console error. This is not rare — it is *every* open tab
+ * after *every* deploy, and it is why "it broke until I refreshed" is the classic SPA report.
+ *
+ * <p>Vite emits `vite:preloadError` for exactly this. One reload fixes it, because the reload
+ * fetches a fresh `index.html` naming the new chunks. Guarded by a flag so a preload error with
+ * some *other* cause — the chunk genuinely missing, a proxy serving HTML for a JS request —
+ * cannot turn into an endless reload loop; the second failure is left to surface as an error the
+ * boundary above can show.
+ *
+ * <p>The flag is cleared on a successful load, so the next deploy gets its own single reload.
+ * Requires the deploy to serve `index.html` as `no-cache` — see CLAUDE.md's deploy notes.
+ */
+const usePreloadErrorReload = () => {
+    useEffect(() => {
+        safeSessionStorage.removeItem(PRELOAD_RELOAD_FLAG);
+        const handler = (event) => {
+            event.preventDefault();
+            if (safeSessionStorage.getItem(PRELOAD_RELOAD_FLAG)) return;
+            safeSessionStorage.setItem(PRELOAD_RELOAD_FLAG, '1');
+            window.location.reload();
+        };
+        window.addEventListener('vite:preloadError', handler);
+        return () => window.removeEventListener('vite:preloadError', handler);
+    }, []);
+};
+
 function AppRoutes() {
     const location = useLocation();
     const isFirstRender = useRef(true);
+    usePreloadErrorReload();
 
     useEffect(() => {
         if (isFirstRender.current) {
@@ -90,6 +171,20 @@ function AppRoutes() {
     }, [location.pathname]);
 
     return (
+        // Keyed on the pathname so a page that throws does not latch the boundary for the rest of
+        // the session: navigating anywhere else remounts it clean. The outer boundary in main.jsx
+        // stays as the last resort for a throw outside the router, where "back home" would not be
+        // a navigation at all.
+        <ErrorBoundary
+            resetKey={location.pathname}
+            action={<Link
+                to="/"
+                style={{
+                    padding: '12px 24px', borderRadius: '8px', fontFamily: 'inherit',
+                    background: 'transparent', color: '#1a56db', textDecoration: 'none',
+                }}
+            >{t('common.backHome')}</Link>}
+        >
         <Suspense fallback={<RouteFallback />}>
             <Routes>
                 {/* Public */}
@@ -141,6 +236,7 @@ function AppRoutes() {
                 <Route path="*" element={<NotFound />} />
             </Routes>
         </Suspense>
+        </ErrorBoundary>
     );
 }
 

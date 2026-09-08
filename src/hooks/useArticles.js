@@ -11,6 +11,7 @@ export const useArticles = (size = 15) => {
             const res = await api.get(`/articles?page=${pageParam}&size=${size}`);
             return res.data;
         },
+        initialPageParam: 0,
         getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.currentPage + 1 : undefined),
         staleTime: 5 * 60 * 1000,
     });
