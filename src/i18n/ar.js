@@ -1,0 +1,715 @@
+/**
+ * Arabic copy for the whole app. See `./index.js` for why this is a plain object and what is
+ * deliberately not in it.
+ *
+ * ## How to add a string
+ *
+ * Put it in the namespace of the screen that shows it; put it in `common` only once a *second*
+ * screen needs the same words for the same reason. "Same words" is not enough on its own — the
+ * tab label «كتب» and the page heading «المكتبة» are both about books and must stay separate,
+ * because a translation of one is not a translation of the other.
+ *
+ * `{name}` marks an interpolation slot; `t('common.views', { count })` fills it. Prefer a slot
+ * over concatenating at the call site — a sentence assembled from fragments cannot be reordered
+ * by a translator, and Arabic and English do not order these the same way.
+ */
+export const ar = {
+
+    /** Words that genuinely mean the same thing everywhere they appear. */
+    common: {
+        loading: 'جاري التحميل...',
+        loadMore: 'تحميل المزيد',
+        save: 'حفظ',
+        saving: 'جاري الحفظ...',
+        cancel: 'إلغاء',
+        delete: 'حذف',
+        edit: 'تعديل',
+        close: 'إغلاق',
+        sending: 'جاري الإرسال...',
+        search: 'بحث',
+        backHome: 'العودة للرئيسية',
+        back: 'رجوع',
+        errorTitle: 'حدث خطأ',
+        noResults: 'لا توجد نتائج',
+        noContent: 'لا يوجد محتوى',
+        noData: 'لا توجد بيانات',
+        comingSoon: 'سيتم إضافة المحتوى قريباً',
+        tryAnotherSearch: 'جرّب كلمة بحث أو تصنيفاً آخر',
+        irreversible: 'لا يمكن التراجع عن هذا الإجراء.',
+        // Joins items in a run-on list. Arabic uses ، rather than , — punctuation is locale
+        // data too, and hardcoding a comma at a call site is the same bug as hardcoding a word.
+        listSeparator: '، ',
+
+        // Content-type words in their bare form — tab labels, stat labels, filter chips.
+        videos: 'فيديوهات',
+        books: 'كتب',
+        articles: 'مقالات',
+        posts: 'منشورات',
+        series: 'سلاسل',
+        all: 'الكل',
+
+        // Owner-facing visibility controls, shared by VideoCard and the channel dashboard.
+        hidden: 'مخفي',
+        hiddenFromVisitors: 'مخفي عن الزوار',
+        hideFromVisitors: 'إخفاء عن الزوار',
+        showToVisitors: 'إظهار للزوار',
+
+        // Counts. Each keeps its number in a slot rather than being concatenated at the call
+        // site, so the number can move to the other side of the word in another language.
+        views: '{count} مشاهدات',
+        commentCount: '{count} تعليقات',
+        pageCount: '{count} صفحة',
+        videoCount: '{count} فيديو',
+        wordCount: '{count} كلمة',
+        readingMinutes: '{count} دقائق',
+        readingMinutesLong: '{count} دقائق قراءة',
+        originalPublishDate: 'تاريخ النشر الأصلي: {date}',
+
+        allCategories: 'كل التصنيفات',
+        sortBy: 'ترتيب حسب: {label}',
+        sortNewest: 'الأحدث',
+        sortTitle: 'العنوان',
+    },
+
+    /** Form field labels and placeholders reused across create/edit forms. */
+    fields: {
+        title: 'العنوان',
+        description: 'الوصف',
+        category: 'التصنيف',
+        content: 'المحتوى',
+        primaryColor: 'اللون الرئيسي',
+        originalPublishDateOptional: 'تاريخ النشر الأصلي (اختياري)',
+        username: 'اسم المستخدم',
+        usernameRequired: 'اسم المستخدم *',
+        fullName: 'الاسم الكامل',
+        fullNamePlaceholder: 'محمد أحمد',
+        email: 'البريد الإلكتروني',
+        password: 'كلمة المرور',
+        passwordRequired: 'كلمة المرور *',
+        confirmPassword: 'تأكيد كلمة المرور *',
+        showPassword: 'إظهار كلمة المرور',
+        hidePassword: 'إخفاء كلمة المرور',
+    },
+
+    meta: {
+        defaultTitle: 'أَبْصَرْنا | Absarna',
+        defaultDescription: 'أَبْصَرْنا — منصة إسلامية للفيديوهات والكتب والمقالات',
+        // The suffix appended to every page's own title. Kept next to the default so the two
+        // cannot drift apart.
+        titleSuffix: '{title} | أَبْصَرْنا',
+    },
+
+    nav: {
+        brand: 'أَبْصَرْنا',
+        brandAlt: 'أبصرنا',
+        menu: 'القائمة',
+        sideMenu: 'القائمة الجانبية',
+        skipToContent: 'تخطي إلى المحتوى',
+        lightMode: 'الوضع الفاتح',
+        darkMode: 'الوضع الداكن',
+        lightShort: 'فاتح',
+        darkShort: 'داكن',
+        upload: 'رفع محتوى',
+        uploadShort: 'رفع',
+        profile: 'الملف الشخصي',
+        profileShort: 'حسابي',
+        adminPanel: 'لوحة التحكم',
+        adminShort: 'الإدارة',
+        logout: 'تسجيل الخروج',
+        logoutShort: 'خروج',
+        login: 'دخول',
+        register: 'إنشاء حساب',
+    },
+
+    sidebar: {
+        manageChannel: 'إدارة القناة',
+        home: 'الرئيسية',
+        subscriptions: 'الاشتراكات',
+        watchHistory: 'سجل المشاهدة',
+        bookmarks: 'المحفوظات',
+        createChannel: 'إنشاء قناة',
+        myChannels: 'قنواتي',
+        yourSubscriptions: 'اشتراكاتك',
+        discoverChannels: 'اكتشف قنوات أخرى',
+        noOtherChannels: 'لا توجد قنوات أخرى',
+    },
+
+    searchBar: {
+        placeholder: 'ابحث...',
+        label: 'بحث',
+        noMatches: 'لا توجد نتائج مطابقة لـ "{query}"',
+    },
+
+    errorBoundary: {
+        title: 'عذراً، حدث خطأ غير متوقع',
+        fallback: 'يرجى المحاولة مرة أخرى',
+        reload: 'إعادة التحميل',
+    },
+
+    auth: {
+        login: {
+            heading: 'تسجيل الدخول',
+            welcomeBack: 'مرحباً بعودتك!',
+            forgotPassword: 'نسيت كلمة المرور؟',
+            submitting: 'جاري الدخول...',
+            submit: 'دخول',
+            noAccount: 'ليس لديك حساب؟',
+            registerLink: 'إنشاء حساب',
+        },
+        register: {
+            heading: 'إنشاء حساب',
+            joinUs: 'انضم إلى أَبْصَرْنا',
+            submitting: 'جاري التسجيل...',
+            submit: 'إنشاء الحساب',
+            haveAccount: 'لديك حساب بالفعل؟',
+            loginLink: 'تسجيل الدخول',
+            created: 'تم إنشاء الحساب! أرسلنا رابط توثيق إلى بريدك الإلكتروني.',
+        },
+        forgotPassword: {
+            title: 'نسيت كلمة المرور',
+            heading: 'نسيت كلمة المرور؟',
+            instructions: 'أدخل بريدك الإلكتروني وسنرسل لك رابطاً لإعادة تعيين كلمة المرور.',
+            sentHeading: 'تحقق من بريدك الإلكتروني',
+            // Deliberately says nothing about whether the address exists — the backend answers
+            // identically either way so an address cannot be probed for.
+            sentBody: 'إذا كان البريد الإلكتروني مسجلاً لدينا، فسيتم إرسال رابط إعادة تعيين كلمة المرور إليه.',
+            backToLogin: 'العودة لتسجيل الدخول',
+            submit: 'إرسال رابط إعادة التعيين',
+            rememberedIt: 'تذكرت كلمة المرور؟',
+            loginLink: 'تسجيل الدخول',
+            genericError: 'حدث خطأ ما، يرجى المحاولة لاحقاً',
+        },
+        resetPassword: {
+            title: 'إعادة تعيين كلمة المرور',
+            heading: 'إعادة تعيين كلمة المرور',
+            instructions: 'أدخل كلمة المرور الجديدة',
+            newPassword: 'كلمة المرور الجديدة *',
+            doneHeading: 'تم إعادة تعيين كلمة المرور',
+            doneBody: 'يمكنك الآن تسجيل الدخول بكلمة المرور الجديدة.',
+            loginLink: 'تسجيل الدخول',
+            failedHeading: 'تعذرت إعادة التعيين',
+            requestNewLink: 'طلب رابط جديد',
+            invalidLink: 'رابط إعادة التعيين غير صالح',
+            expiredLink: 'انتهت صلاحية الرابط أو أنه غير صالح',
+            submit: 'إعادة تعيين كلمة المرور',
+        },
+        verifyEmail: {
+            title: 'توثيق البريد الإلكتروني',
+            verifying: 'جاري توثيق بريدك الإلكتروني...',
+            successHeading: 'تم توثيق بريدك الإلكتروني بنجاح',
+            successBody: 'يمكنك الآن التعليق وإنشاء قناة.',
+            failedHeading: 'تعذر التوثيق',
+            invalidLink: 'رابط التوثيق غير صالح',
+            expiredLink: 'انتهت صلاحية رابط التوثيق أو أنه غير صالح',
+            loginLink: 'تسجيل الدخول',
+        },
+        verificationNotice: {
+            defaultMessage: 'يجب توثيق بريدك الإلكتروني للقيام بهذا الإجراء',
+            beforeComment: 'يجب توثيق بريدك الإلكتروني قبل إضافة تعليق',
+            beforeChannel: 'يجب توثيق بريدك الإلكتروني قبل إنشاء قناة',
+            sent: 'تم إرسال رابط التوثيق، تحقق من بريدك',
+            resend: 'إعادة إرسال رابط التوثيق',
+            failed: 'تعذر إرسال الرابط، حاول لاحقاً',
+        },
+        passwordMismatch: 'كلمتا المرور غير متطابقتين',
+        passwordTooWeak: 'كلمة المرور يجب أن تحتوي على 8 أحرف على الأقل مع حرف كبير وحرف صغير ورقم ورمز خاص',
+    },
+
+    /**
+     * `lib/validation.js`. These mirror the backend's own rules, and the numbers are interpolated
+     * from the same constants the checks use — a limit and the sentence describing it must not be
+     * able to disagree.
+     */
+    validation: {
+        usernameRequired: 'اسم المستخدم مطلوب',
+        usernameTooShort: 'اسم المستخدم يجب أن يكون {min} أحرف على الأقل',
+        usernameCharacters: 'اسم المستخدم يمكن أن يحتوي فقط على حروف إنجليزية وأرقام و_',
+        ruleLength: '{min} أحرف على الأقل',
+        ruleUppercase: 'حرف كبير (A-Z)',
+        ruleLowercase: 'حرف صغير (a-z)',
+        ruleDigit: 'رقم واحد على الأقل',
+        ruleSpecial: 'رمز خاص (!@#$...)',
+        ruleMaxBytes: '{max} حرف كحد أقصى',
+        strengthVeryStrong: 'قوية جداً',
+        strengthStrong: 'قوية',
+        strengthMedium: 'متوسطة',
+        strengthWeak: 'ضعيفة',
+    },
+
+    home: {
+        // The curated landing view, versus browsing the whole catalogue. Two named modes rather
+        // than one "الكل" chip meaning both — see Home.jsx.
+        forYou: 'المقترح لك',
+        browseAll: 'كل الفيديوهات',
+        // The feed's tail — where the curated sections stop and the catalogue begins.
+        more: 'المزيد من الفيديوهات',
+        subscribed: 'من القنوات التي تتابعها',
+        discover: 'اقتراحات لك',
+        featured: 'استكشف',
+        loadFailed: 'فشل في تحميل المحتوى',
+        empty: 'لا يوجد محتوى بعد',
+        deleteVideoTitle: 'حذف الفيديو',
+        deleteVideoConfirm: 'هل تريد حذف "{title}"؟ لا يمكن التراجع عن هذا الإجراء.',
+        visibilityFailed: 'فشل في تحديث الظهور',
+        deleteFailed: 'فشل في الحذف',
+    },
+
+    video: {
+        watchAria: 'مشاهدة فيديو: {title}',
+        deleteAria: 'حذف الفيديو',
+        goToChannelAria: 'الذهاب إلى قناة {name}',
+        loadFailed: 'فشل في تحميل الفيديو',
+        unsupported: 'متصفحك لا يدعم تشغيل الفيديو',
+        invalidUrl: 'رابط الفيديو غير صالح',
+        watchOnYouTube: 'شاهد على يوتيوب',
+        watchVideo: 'شاهد الفيديو',
+        quality: 'الجودة',
+        /**
+         * The quality selector's option labels. Anything not listed falls through to the rung's
+         * own name, which is what "1080p" and friends want — they are not words. `audio` is,
+         * hence this map: the worker's rung name is an identifier, not copy.
+         */
+        qualityLabels: {
+            audio: 'صوت فقط',
+        },
+        seriesPart: 'الجزء {index} من {total}',
+        next: 'التالي',
+        previous: 'السابق',
+        related: 'قد يعجبك أيضاً',
+    },
+
+    books: {
+        title: 'المكتبة',
+        metaDescription: 'مكتبة الكتب الإسلامية على أَبْصَرْنا',
+        searchPlaceholder: 'ابحث عن كتاب...',
+        empty: 'لا توجد كتب',
+        emptyDescription: 'سيتم إضافة الكتب قريباً',
+        read: 'قراءة',
+        download: 'تحميل',
+        notFound: 'الكتاب غير موجود',
+        backToLibrary: 'العودة للمكتبة',
+        tapToRead: 'اضغط للقراءة',
+        stoppedAtPage: 'توقفت عند صفحة {page}',
+        hideReader: 'إخفاء القراءة',
+        continueReading: 'متابعة القراءة',
+        readOnline: 'قراءة أونلاين',
+        downloadPdf: 'تحميل PDF',
+        emptyOnChannel: 'لا توجد كتب بعد',
+    },
+
+    pdfReader: {
+        loadFailed: 'تعذر تحميل الملف —',
+        openInNewTab: 'افتح الملف في تبويب جديد',
+        contents: 'المحتويات',
+        search: 'بحث',
+        noContents: 'لا توجد قائمة محتويات لهذا الملف',
+        searchPlaceholder: 'ابحث داخل الملف...',
+        searching: 'جاري البحث في الملف...',
+        resultPage: 'صفحة {page}',
+        nextPage: 'الصفحة التالية',
+        previousPage: 'الصفحة السابقة',
+        page: 'صفحة',
+        goToPage: 'الانتقال إلى صفحة',
+        ofPages: 'من {total}',
+    },
+
+    articles: {
+        title: 'المقالات',
+        metaDescription: 'مقالات إسلامية على أَبْصَرْنا',
+        searchPlaceholder: 'ابحث عن مقال...',
+        empty: 'لا توجد مقالات',
+        loadFailed: 'فشل في تحميل المقال',
+        backToArticles: 'العودة للمقالات',
+        emptyOnChannel: 'لا توجد مقالات بعد',
+    },
+
+    series: {
+        badge: 'سلسلة',
+        // Shown on a card to say which series a video belongs to.
+        partOf: 'من سلسلة: {title}',
+        notFound: 'السلسلة غير موجودة',
+        backToChannel: 'العودة إلى قناة {name}',
+        empty: 'لا توجد فيديوهات في هذه السلسلة بعد',
+        emptyOnChannel: 'لا توجد سلاسل بعد',
+    },
+
+    channel: {
+        notFound: 'القناة غير موجودة',
+        subscriberCount: '{count} مشترك',
+        manage: 'إدارة القناة',
+        subscribed: 'مشترك',
+        subscribe: 'اشترك',
+        noVideos: 'لا توجد فيديوهات بعد',
+        noPosts: 'لا توجد منشورات بعد',
+    },
+
+    /**
+     * The one-time YouTube import. Copy here has to carry an unusual amount of instruction — the
+     * owner leaves the app, edits something on another site, and comes back — so these are
+     * sentences rather than labels.
+     */
+    youtube: {
+        heading: 'استيراد من يوتيوب',
+        intro: 'استورد فيديوهاتك وقوائم التشغيل من قناتك على يوتيوب مرة واحدة.',
+        sourceLabel: 'رابط قناتك على يوتيوب',
+        sourcePlaceholder: 'https://youtube.com/@yourchannel',
+        // Says all three forms because the canonical UC… id appears nowhere in YouTube's own
+        // interface, and a user who only knows the handle would otherwise assume they can't.
+        sourceHint: 'يمكنك لصق رابط القناة أو المعرف (@handle) أو معرف القناة',
+        link: 'ربط القناة',
+        linking: 'جاري الربط...',
+        foundChannel: 'وجدنا القناة: {title}',
+
+        verifyHeading: 'أثبت ملكيتك للقناة',
+        // Spells out where the description actually lives. "Add it to your channel description"
+        // assumes the owner knows that this means YouTube Studio → Customisation → Basic info,
+        // which is three levels deep and not called "description" at the top level.
+        verifyIntro: 'لإثبات أنك صاحب القناة، ضع الرمز التالي في وصف قناتك على يوتيوب. لن يراه أحد غيرك عملياً، ويمكنك حذفه فور نجاح التحقق.',
+        verifyStep1: '١. انسخ الرمز:',
+        verifyStep2: '٢. افتح يوتيوب استوديو ← التخصيص ← معلومات أساسية، والصقه في خانة "الوصف"، ثم اضغط "نشر".',
+        verifyStep3: '٣. ارجع إلى هنا واضغط "تحقق".',
+        verifyStep4: '٤. بعد نجاح التحقق يمكنك حذف الرمز من وصف قناتك.',
+        openStudio: 'افتح يوتيوب استوديو',
+        // YouTube's API can lag a minute or so behind a save; without saying so, a correct attempt
+        // reads as a failure and people re-do work they already did right.
+        verifyPatience: 'إن لم ينجح التحقق فوراً، انتظر دقيقة ثم أعد المحاولة — يوتيوب يحتاج وقتاً لتحديث البيانات.',
+        copyToken: 'نسخ الرمز',
+        tokenCopied: 'تم نسخ الرمز',
+        tokenCopyHint: 'اضغط على الرمز لنسخه',
+        // Clipboard access is refused outside a secure context and by some privacy settings.
+        // The token is selected for them, so copying is one keystroke rather than a careful drag.
+        tokenCopyManually: 'تم تحديد الرمز — انسخه يدوياً (Ctrl+C)',
+        verify: 'تحقق',
+        verifying: 'جاري التحقق...',
+        // The overwhelmingly common failure: YouTube's API hasn't caught up with the save yet.
+        // Saying "failed" would send people to re-check work they already did correctly.
+        notFoundYet: 'لم نجد الرمز في وصف القناة بعد. قد يستغرق يوتيوب دقيقة، حاول مرة أخرى.',
+        verified: 'تم التحقق من ملكيتك لهذه القناة',
+        verifiedByAdmin: 'تم ربط هذه القناة بواسطة إدارة المنصة',
+
+        // Admin-only. Worded as an assertion the admin is making, not as a step being skipped —
+        // it is a different check, not a shortcut past one, and it is recorded as such.
+        adminAttest: 'ربط بواسطة الإدارة',
+        adminAttesting: 'جاري الربط...',
+        adminAttestHint: 'للإدارة فقط: يُستخدم عند إنشاء قناة نيابة عن صاحبها، حيث لا يمكن إضافة رمز التحقق إلى وصف قناته.',
+        adminAttestWarning: 'الربط بواسطة الإدارة يسمح بالاستيراد فقط. رفع الملف الأصلي بدل رابط يوتيوب يتطلب تحقق صاحب القناة نفسه.',
+        adminAttestFailed: 'تعذر الربط. تأكد من الرابط وحاول مرة أخرى.',
+
+        importHeading: 'الاستيراد',
+        importIntro: 'سيتم استيراد الفيديوهات وقوائم التشغيل كسلاسل. يحدث هذا مرة واحدة.',
+        startImport: 'ابدأ الاستيراد',
+        retryImport: 'أعد المحاولة',
+        running: 'جاري الاستيراد... يمكنك مغادرة الصفحة، سيستمر العمل.',
+        succeeded: 'تم استيراد {count} فيديو',
+        failed: 'فشل الاستيراد: {reason}',
+        refresh: 'تحديث',
+
+        // Shown next to an imported video that still plays from YouTube.
+        badge: 'يوتيوب',
+        uploadOriginal: 'رفع الملف الأصلي',
+        uploadingOriginal: 'جاري الرفع... {progress}%',
+        uploadedOriginal: 'تم رفع الملف الأصلي — يُشغَّل الآن من المنصة',
+        uploadOriginalFailed: 'فشل رفع الملف الأصلي: {reason}',
+        // Only an owner's own proof licenses hosting the file; an admin's assertion does not.
+        uploadOriginalNeedsOwner: 'رفع الملف الأصلي يتطلب تحقق صاحب القناة نفسه',
+        linkFailed: 'تعذر العثور على القناة. تأكد من الرابط وحاول مرة أخرى.',
+    },
+
+    createChannel: {
+        title: 'إنشاء قناة',
+        heading: 'إنشاء قناة جديدة',
+        subheading: 'سيتم مراجعة قناتك من قبل الإدارة قبل النشر',
+        nameLabel: 'اسم القناة *',
+        namePlaceholder: 'مثال: محمد إلهامي',
+        slugLabel: 'المعرف (Slug) *',
+        slugHint: 'أحرف صغيرة وأرقام وشرطات فقط',
+        descriptionPlaceholder: 'وصف القناة...',
+        submitting: 'جاري الإنشاء...',
+        submit: 'إنشاء القناة',
+        youtubeLabel: 'رابط قناتك على يوتيوب (اختياري)',
+        youtubeHint: 'إن كان لديك محتوى على يوتيوب، يمكنك استيراده لاحقاً من إعدادات القناة',
+        youtubeFetch: 'جلب البيانات',
+        youtubeFetching: 'جاري الجلب...',
+        // Says what was filled in, because silently overwriting fields the user may have already
+        // typed would look like the form losing their work.
+        youtubeFetched: 'تم جلب بيانات القناة: {title}',
+        // Shown under the field after a successful lookup, so there is visible evidence even when
+        // every form field was already filled and nothing appeared to change.
+        youtubeFound: 'القناة: {title}',
+        youtubeWillLink: 'سيتم ربط القناة تلقائياً بعد الإنشاء، ثم يمكنك بدء الاستيراد.',
+        youtubeLinkedAfterCreate: 'تم ربط القناة — ابدأ الاستيراد من هنا',
+        youtubeLinkFailedAfterCreate: 'تم إنشاء القناة، لكن تعذر ربطها بيوتيوب. يمكنك ربطها من هنا.',
+        youtubeFetchFailed: 'تعذر العثور على القناة. تأكد من الرابط وحاول مرة أخرى.',
+        created: 'تم إنشاء القناة! ستظهر بعد موافقة الإدارة.',
+        failed: 'فشل في إنشاء القناة',
+    },
+
+    /**
+     * The channel owner's dashboard. Its five content forms share `fields.*` for labels and
+     * differ only in their headings and outcome messages — which is exactly the shape
+     * `ContentPublishForm` is built around.
+     */
+    channelManage: {
+        title: 'إدارة القناة',
+        titleFor: 'إدارة {name}',
+        heading: 'إدارة: {name}',
+        notFound: 'القناة غير موجودة',
+        notFoundDescription: 'لم نتمكن من العثور على هذه القناة',
+        forbidden: 'غير مصرح لك',
+        forbiddenDescription: 'ليس لديك صلاحية لإدارة هذه القناة',
+
+        tabs: {
+            overview: 'نظرة عامة',
+            videos: 'الفيديوهات',
+            books: 'الكتب',
+            articles: 'المقالات',
+            posts: 'المنشورات',
+            series: 'السلاسل',
+            comments: 'التعليقات',
+        },
+
+        emptyContent: 'لا يوجد محتوى بعد',
+        edit: 'تعديل',
+        editTitle: 'تعديل المحتوى',
+        // Shown when editing a video that still plays from YouTube: the change applies here only.
+        editYoutubeNote: 'هذا التعديل يظهر على أبصرنا فقط ولا يغيّر شيئاً على يوتيوب.',
+        channelName: 'اسم القناة',
+
+        // Every content tab: one publish form, then the owner's own list of that type.
+        forms: {
+            video: {
+                heading: 'رفع فيديو',
+                fileLabel: 'ملف الفيديو',
+                submit: 'نشر الفيديو',
+                listHeading: 'فيديوهاتي ({count})',
+                uploaded: 'تم رفع الفيديو',
+                published: 'تم نشر الفيديو',
+                uploadFailed: 'فشل في رفع الفيديو: {reason}',
+                action: 'نشر الفيديو',
+            },
+            book: {
+                heading: 'إضافة كتاب',
+                fileLabel: 'ملف PDF',
+                uploading: 'جاري الرفع...',
+                pagesLabel: 'عدد الصفحات',
+                submit: 'نشر الكتاب',
+                listHeading: 'كتبي ({count})',
+                uploaded: 'تم رفع الكتاب',
+                published: 'تم نشر الكتاب',
+                uploadFailed: 'فشل في رفع الكتاب: {reason}',
+                action: 'نشر الكتاب',
+            },
+            article: {
+                heading: 'كتابة مقال',
+                submit: 'نشر المقال',
+                listHeading: 'مقالاتي ({count})',
+                published: 'تم نشر المقال',
+                failed: 'فشل في نشر المقال: {reason}',
+            },
+            post: {
+                heading: 'نشر تحديث',
+                submit: 'نشر',
+                listHeading: 'منشوراتي ({count})',
+                published: 'تم نشر التحديث',
+                failed: 'فشل في نشر التحديث: {reason}',
+            },
+        },
+
+        seriesSelectLabel: 'السلسلة (اختياري)',
+        seriesSelectNone: 'بدون سلسلة',
+        seriesOrderLabel: 'الترتيب داخل السلسلة',
+        newSeriesHeading: 'سلسلة جديدة',
+        seriesTitleLabel: 'عنوان السلسلة',
+        createSeries: 'إنشاء السلسلة',
+        seriesListHeading: 'سلاسلي ({count})',
+        seriesCreated: 'تم إنشاء السلسلة',
+        seriesCreateFailed: 'فشل في إنشاء السلسلة: {reason}',
+        seriesDeleted: 'تم حذف السلسلة',
+        seriesDeleteFailed: 'فشل في حذف السلسلة',
+        deleteSeries: 'حذف السلسلة',
+        deleteSeriesConfirm: 'هل تريد حذف سلسلة "{title}"؟ ستبقى الفيديوهات نفسها، فقط تُفصل عن السلسلة.',
+
+        commentsHeading: 'تعليقات على محتوى قناتك ({count})',
+        noComments: 'لا توجد تعليقات بعد',
+        commentHidden: '(مخفي)',
+        commentPinned: 'مثبّت',
+        pin: 'تثبيت',
+        unpin: 'إلغاء التثبيت',
+        hide: 'إخفاء',
+        show: 'إظهار',
+        commentUpdateFailed: 'فشل في تحديث التعليق',
+
+        deleteConfirm: 'هل تريد حذف "{label}"؟',
+        deleted: 'تم الحذف',
+        deleteFailed: 'فشل في الحذف',
+        visibilityFailed: 'فشل في تحديث الظهور',
+        saved: 'تم حفظ التغييرات',
+        saveFailed: 'فشل في الحفظ',
+
+        resumePrompt: 'تم العثور على رفع غير مكتمل للملف "{name}". هل تريد إكماله؟',
+        /**
+         * Shown when the confirm call times out client-side. It deliberately does not say
+         * "failed": the server is usually still assembling a multi-gigabyte object, confirm is
+         * idempotent on the session id, and one more click finishes the job — telling the user it
+         * failed would send them back to re-upload the whole file instead.
+         */
+        publishSlow: '{action} يستغرق وقتًا أطول من المعتاد. لم يضِع ما رفعته — أعد المحاولة بعد قليل.',
+        publishFailed: 'فشل في {action}: {reason}',
+    },
+
+    comments: {
+        heading: 'التعليقات ({count})',
+        commentingAs: 'التعليق باسم',
+        placeholder: 'اكتب تعليقك هنا...',
+        submit: 'إرسال التعليق',
+        loginPrompt: 'سجّل الدخول',
+        loginPromptSuffix: 'لإضافة تعليق',
+        empty: 'لا توجد تعليقات بعد — كن أول من يعلق!',
+        reply: 'رد',
+        replyPlaceholder: 'اكتب ردك...',
+        submitReply: 'إرسال الرد',
+        editAria: 'تعديل التعليق',
+        deleteAria: 'حذف التعليق',
+        deleteTitle: 'حذف التعليق',
+        deleteConfirm: 'هل تريد حذف هذا التعليق؟ لا يمكن التراجع عن هذا الإجراء.',
+        createFailed: 'فشل في إرسال التعليق',
+        replyFailed: 'فشل في إرسال الرد',
+        editFailed: 'فشل في تعديل التعليق',
+        deleteFailed: 'فشل في حذف التعليق',
+        // dayjs format string, not a sentence — it is passed to `date.format(...)`, so its
+        // punctuation is layout rather than copy.
+        absoluteDateFormat: 'D MMMM YYYY، HH:mm',
+    },
+
+    bookmarks: {
+        title: 'المحفوظات',
+        add: 'حفظ لوقت لاحق',
+        remove: 'إزالة من المحفوظات',
+        clearAll: 'مسح الكل',
+        clearConfirm: 'هل تريد إزالة جميع العناصر المحفوظة؟',
+        clearFailed: 'فشل في مسح المحفوظات',
+        loadFailed: 'فشل في تحميل المحفوظات',
+        empty: 'لا يوجد شيء محفوظ هنا بعد',
+        emptyDescription: 'اضغط على أيقونة الحفظ على أي فيديو أو كتاب أو مقال لإضافته هنا',
+    },
+
+    history: {
+        title: 'السجل',
+        clear: 'مسح السجل',
+        clearWatchConfirm: 'هل تريد مسح سجل المشاهدة بالكامل؟',
+        clearReadConfirm: 'هل تريد مسح سجل القراءة بالكامل؟',
+        clearFailed: 'فشل في مسح السجل',
+        loadFailed: 'فشل في تحميل السجل',
+        emptyWatch: 'لا يوجد سجل مشاهدة',
+        emptyRead: 'لا يوجد سجل قراءة',
+        emptyWatchDescription: 'الفيديوهات التي تشاهدها ستظهر هنا',
+        emptyReadDescription: 'الكتب التي تقرأها ستظهر هنا',
+    },
+
+    subscriptions: {
+        title: 'اشتراكاتي',
+        unsubscribeConfirm: 'هل تريد إلغاء الاشتراك؟',
+        unsubscribeFailed: 'فشل في إلغاء الاشتراك',
+        loadFailed: 'فشل في تحميل الاشتراكات',
+        empty: 'لا توجد اشتراكات',
+        emptyDescription: 'اشترك في القنوات لمتابعة محتواها',
+        visit: 'زيارة',
+        unsubscribe: 'إلغاء',
+        // First letter shown in the avatar when a subscription row has no channel name.
+        avatarFallback: 'ق',
+    },
+
+    profile: {
+        title: 'الملف الشخصي',
+        changePassword: 'تغيير كلمة المرور',
+        currentPassword: 'كلمة المرور الحالية',
+        newPassword: 'كلمة المرور الجديدة',
+        confirmNewPassword: 'تأكيد كلمة المرور الجديدة',
+        passwordChanged: 'تم تغيير كلمة المرور بنجاح',
+        passwordChangeFailed: 'فشل في تغيير كلمة المرور',
+        bioLabel: 'نبذة عنك',
+        bioPlaceholder: 'اكتب نبذة قصيرة...',
+        saved: 'تم حفظ الملف الشخصي',
+        saveFailed: 'فشل في الحفظ',
+    },
+
+    admin: {
+        title: 'لوحة التحكم',
+        manageChannels: 'إدارة القنوات',
+        pendingHeading: 'قنوات بانتظار الموافقة',
+        pendingEmpty: 'لا توجد قنوات بانتظار الموافقة',
+        pendingCount: 'بانتظار الموافقة ({count})',
+        allChannelsCount: 'جميع القنوات ({count})',
+        approve: 'موافقة',
+        reject: 'رفض',
+        suspend: 'تعليق',
+        delete: 'حذف القناة',
+        deleteTitle: 'حذف القناة نهائياً',
+        // States the blast radius plainly. The delete cascades in SQL and nothing is recoverable.
+        deleteWarning: 'سيتم حذف القناة وكل محتواها نهائياً: الفيديوهات والكتب والمقالات والمنشورات والسلاسل، وكل التعليقات والمحفوظات وسجلات المشاهدة المرتبطة بها. لا يمكن التراجع.',
+        deleteSuggestSuspend: 'إن كنت تريد إخفاءها مؤقتاً فقط، استخدم "تعليق" بدلاً من الحذف.',
+        deleteConfirmPrompt: 'اكتب معرف القناة ({slug}) للتأكيد:',
+        deleteConfirmMismatch: 'المعرف غير مطابق',
+        deleted: 'تم حذف القناة',
+        deleteFailed: 'فشل في حذف القناة',
+        approveFailed: 'فشل في الموافقة',
+        rejectFailed: 'فشل في الرفض',
+        suspendFailed: 'فشل في التعليق',
+        stats: {
+            videos: 'فيديوهات',
+            books: 'كتب',
+            articles: 'مقالات',
+            activeChannels: 'قنوات نشطة',
+            pendingChannels: 'بانتظار الموافقة',
+        },
+        channelStatus: {
+            PENDING: 'بانتظار الموافقة',
+            ACTIVE: 'نشط',
+            REJECTED: 'مرفوض',
+            SUSPENDED: 'معلق',
+        },
+    },
+
+    search: {
+        title: 'بحث',
+        titleFor: 'بحث: {query}',
+        heading: 'نتائج البحث عن: "{query}"',
+        resultCount: '{count} نتيجة',
+        failed: 'فشل البحث',
+        emptyDescription: 'لم يتم العثور على نتائج لـ "{query}"',
+    },
+
+    biography: {
+        title: 'السيرة الذاتية',
+        empty: 'لا توجد معلومات',
+        // Shown only if the record itself carries no name.
+        defaultName: 'محمد إلهامي',
+        education: 'المؤهلات:',
+        youtube: 'يوتيوب',
+        telegram: 'تيليجرام',
+        contact: 'تواصل',
+    },
+
+    share: {
+        button: 'مشاركة',
+        linkAria: 'رابط المشاركة',
+        copy: 'نسخ الرابط',
+        copied: 'تم نسخ الرابط',
+        copyFailed: 'تعذر نسخ الرابط',
+        fromTimestamp: 'مشاركة من الدقيقة {time}',
+        viaApps: 'مشاركة عبر التطبيقات',
+        whatsapp: 'واتساب',
+        telegram: 'تيليجرام',
+    },
+
+    upload: {
+        allowedTypes: 'الملفات المسموح بها: {extensions}',
+    },
+
+    notFound: {
+        title: 'الصفحة غير موجودة',
+        description: 'هذه الصفحة غير موجودة أو تم نقلها',
+    },
+};
+
+export default ar;

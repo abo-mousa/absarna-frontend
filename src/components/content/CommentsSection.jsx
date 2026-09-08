@@ -13,6 +13,7 @@ import {
     useUpdateComment,
     useDeleteComment,
 } from '../../hooks/useComments';
+import { t } from '@/i18n';
 
 const MAX_COMMENT_LENGTH = 2000;
 
@@ -23,7 +24,7 @@ function formatDate(dateStr) {
     // Relative for anything recent (matches the app's non-addictive-but-still-friendly tone),
     // an absolute date+time once it's old enough that "منذ 12 يوماً" stops being useful.
     if (dayjs().diff(date, 'day') < 7) return date.fromNow();
-    return date.format('D MMMM YYYY، HH:mm');
+    return date.format(t('comments.absoluteDateFormat'));
 }
 
 function countComments(comments) {
@@ -58,7 +59,7 @@ function CommentsSection({ type, id }) {
                 if (err.response?.data?.emailVerificationRequired) {
                     setNeedsVerification(true);
                 } else {
-                    showToast('فشل في إرسال التعليق', 'error');
+                    showToast(t('comments.createFailed'), 'error');
                 }
             },
         });
@@ -78,7 +79,7 @@ function CommentsSection({ type, id }) {
                 if (err.response?.data?.emailVerificationRequired) {
                     setNeedsVerification(true);
                 } else {
-                    showToast('فشل في إرسال الرد', 'error');
+                    showToast(t('comments.replyFailed'), 'error');
                 }
             },
         });
@@ -94,7 +95,7 @@ function CommentsSection({ type, id }) {
         if (!editContent.trim()) return;
         updateComment.mutate({ commentId, content: editContent.trim() }, {
             onSuccess: () => setEditingId(null),
-            onError: () => showToast('فشل في تعديل التعليق', 'error'),
+            onError: () => showToast(t('comments.editFailed'), 'error'),
         });
     };
 
@@ -102,7 +103,7 @@ function CommentsSection({ type, id }) {
         const commentId = deletingId;
         setDeletingId(null);
         deleteComment.mutate(commentId, {
-            onError: () => showToast('فشل في حذف التعليق', 'error'),
+            onError: () => showToast(t('comments.deleteFailed'), 'error'),
         });
     };
 
@@ -112,16 +113,16 @@ function CommentsSection({ type, id }) {
             <div className="flex gap-1">
                 <button
                     onClick={() => startEdit(comment)}
-                    title="تعديل"
-                    aria-label="تعديل التعليق"
+                    title={t('common.edit')}
+                    aria-label={t('comments.editAria')}
                     className="p-1 text-text-muted hover:text-primary transition-colors"
                 >
                     <Pencil size={14} />
                 </button>
                 <button
                     onClick={() => setDeletingId(comment.id)}
-                    title="حذف"
-                    aria-label="حذف التعليق"
+                    title={t('common.delete')}
+                    aria-label={t('comments.deleteAria')}
                     className="p-1 text-text-muted hover:text-red-600 dark:hover:text-red-400 transition-colors"
                 >
                     <Trash2 size={14} />
@@ -148,14 +149,14 @@ function CommentsSection({ type, id }) {
                         onClick={() => setEditingId(null)}
                         className="px-3 py-1.5 text-text-secondary text-sm font-semibold"
                     >
-                        إلغاء
+                        {t('common.cancel')}
                     </button>
                     <button
                         type="submit"
                         disabled={updateComment.isPending}
                         className="px-4 py-1.5 bg-primary text-white rounded-md font-semibold text-sm disabled:opacity-60"
                     >
-                        حفظ
+                        {t('common.save')}
                     </button>
                 </div>
             </div>
@@ -164,18 +165,18 @@ function CommentsSection({ type, id }) {
 
     return (
         <div className="mt-8">
-            <h3 className="mb-4 text-lg font-bold">التعليقات ({countComments(comments)})</h3>
+            <h3 className="mb-4 text-lg font-bold">{t('comments.heading', { count: countComments(comments) })}</h3>
 
             {token ? (
                 <form onSubmit={handleSubmit} className="grid gap-3 mb-6 bg-surface p-5 rounded-lg border border-border-light">
                     <div className="text-sm text-text-muted">
-                        التعليق باسم <strong className="text-primary">{user?.fullName || user?.username}</strong>
+                        {t('comments.commentingAs')} <strong className="text-primary">{user?.fullName || user?.username}</strong>
                     </div>
                     {needsVerification && (
-                        <EmailVerificationNotice message="يجب توثيق بريدك الإلكتروني قبل إضافة تعليق" />
+                        <EmailVerificationNotice message={t('auth.verificationNotice.beforeComment')} />
                     )}
                     <textarea
-                        placeholder="اكتب تعليقك هنا..."
+                        placeholder={t('comments.placeholder')}
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
                         maxLength={MAX_COMMENT_LENGTH}
@@ -189,20 +190,20 @@ function CommentsSection({ type, id }) {
                             disabled={createComment.isPending}
                             className="px-5 py-2.5 bg-primary text-white rounded-md font-semibold hover:bg-primary-dark transition-colors disabled:opacity-60"
                         >
-                            {createComment.isPending ? 'جاري الإرسال...' : 'إرسال التعليق'}
+                            {createComment.isPending ? t('common.sending') : t('comments.submit')}
                         </button>
                     </div>
                 </form>
             ) : (
                 <div className="mb-6 bg-surface p-5 rounded-lg border border-border-light text-center text-text-secondary">
-                    <Link to="/login" className="text-primary font-semibold">سجّل الدخول</Link> لإضافة تعليق
+                    <Link to="/login" className="text-primary font-semibold">{t('comments.loginPrompt')}</Link> {t('comments.loginPromptSuffix')}
                 </div>
             )}
 
             {isLoading ? (
-                <p className="text-text-muted">جاري التحميل...</p>
+                <p className="text-text-muted">{t('common.loading')}</p>
             ) : comments.length === 0 ? (
-                <p className="text-text-muted text-center py-5">لا توجد تعليقات بعد — كن أول من يعلق!</p>
+                <p className="text-text-muted text-center py-5">{t('comments.empty')}</p>
             ) : (
                 <div className="grid gap-3">
                     {comments.map((comment) => (
@@ -226,14 +227,14 @@ function CommentsSection({ type, id }) {
                                     onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
                                     className="flex items-center gap-1 mt-2 text-primary font-semibold text-sm"
                                 >
-                                    <CornerUpLeft size={14} /> رد
+                                    <CornerUpLeft size={14} /> {t('comments.reply')}
                                 </button>
                             )}
 
                             {replyingTo === comment.id && (
                                 <form onSubmit={(e) => handleReplySubmit(e, comment.id)} className="grid gap-2 mt-3">
                                     <textarea
-                                        placeholder="اكتب ردك..."
+                                        placeholder={t('comments.replyPlaceholder')}
                                         value={replyContent}
                                         onChange={(e) => setReplyContent(e.target.value)}
                                         maxLength={MAX_COMMENT_LENGTH}
@@ -246,7 +247,7 @@ function CommentsSection({ type, id }) {
                                             type="submit"
                                             className="px-4 py-2 bg-primary-light text-primary rounded-md font-semibold w-fit"
                                         >
-                                            إرسال الرد
+                                            {t('comments.submitReply')}
                                         </button>
                                     </div>
                                 </form>
@@ -277,21 +278,21 @@ function CommentsSection({ type, id }) {
                 </div>
             )}
 
-            <Modal open={!!deletingId} onClose={() => setDeletingId(null)} title="حذف التعليق" maxWidth="400px">
-                <p className="text-text-secondary mb-5">هل تريد حذف هذا التعليق؟ لا يمكن التراجع عن هذا الإجراء.</p>
+            <Modal open={!!deletingId} onClose={() => setDeletingId(null)} title={t('comments.deleteTitle')} maxWidth="400px">
+                <p className="text-text-secondary mb-5">{t('comments.deleteConfirm')}</p>
                 <div className="flex gap-2 justify-end">
                     <button
                         onClick={() => setDeletingId(null)}
                         className="px-4 py-2 text-text-secondary font-semibold"
                     >
-                        إلغاء
+                        {t('common.cancel')}
                     </button>
                     <button
                         onClick={confirmDelete}
                         disabled={deleteComment.isPending}
                         className="px-4 py-2 bg-red-600 text-white rounded-md font-semibold disabled:opacity-60"
                     >
-                        حذف
+                        {t('common.delete')}
                     </button>
                 </div>
             </Modal>

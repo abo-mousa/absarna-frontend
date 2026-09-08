@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api/client';
+import { STATIC } from '@/lib/queryCache';
 
 // Public biography page. Query key intentionally matches the one useUpdateBiography
 // (hooks/useAdminData.js) invalidates on save, so an admin edit shows up here with no
@@ -11,6 +12,6 @@ export const useBiography = () => {
             const res = await api.get('/biography');
             return res.data;
         },
-        staleTime: 10 * 60 * 1000,
+        ...STATIC,
     });
 };

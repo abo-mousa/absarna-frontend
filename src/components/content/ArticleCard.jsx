@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Clock } from 'lucide-react';
-import { formatPublishDate } from '@/lib/dayjsAr';
+import { formatPublishDate, displayDate } from '@/lib/dayjsAr';
+import { t } from '@/i18n';
 
 function ArticleCard({ article }) {
     return (
@@ -24,10 +25,10 @@ function ArticleCard({ article }) {
             <div className="flex gap-3 text-xs text-text-muted">
                 {article.readingTimeMinutes > 0 && (
                     <span className="flex items-center gap-1">
-                        <Clock size={12} /> {article.readingTimeMinutes} دقائق
+                        <Clock size={12} /> {t('common.readingMinutes', { count: article.readingTimeMinutes })}
                     </span>
                 )}
-                {article.publishDate && <span>{formatPublishDate(article.publishDate)}</span>}
+                {displayDate(article) && <span>{formatPublishDate(displayDate(article))}</span>}
             </div>
         </Link>
     );

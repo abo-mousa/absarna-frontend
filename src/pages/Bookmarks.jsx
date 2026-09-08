@@ -9,15 +9,16 @@ import { useBookmarks, useClearBookmarks } from '../hooks/useBookmarks';
 import { useWatchProgressMap, useReadingProgressMap } from '../hooks/useVideos';
 import { useToast } from '../contexts/ToastContext';
 import { usePageMeta } from '../hooks/usePageMeta';
+import { t } from '@/i18n';
 
 const TABS = [
-    { id: 'VIDEO', label: 'فيديوهات', icon: Video },
-    { id: 'BOOK', label: 'كتب', icon: BookOpen },
-    { id: 'ARTICLE', label: 'مقالات', icon: FileText },
+    { id: 'VIDEO', label: t('common.videos'), icon: Video },
+    { id: 'BOOK', label: t('common.books'), icon: BookOpen },
+    { id: 'ARTICLE', label: t('common.articles'), icon: FileText },
 ];
 
 function Bookmarks() {
-    usePageMeta({ title: 'المحفوظات' });
+    usePageMeta({ title: t('bookmarks.title') });
     const navigate = useNavigate();
     const { token } = useAuth();
     const { showToast } = useToast();
@@ -31,23 +32,23 @@ function Bookmarks() {
     const itemsForTab = bookmarks.filter((b) => b.itemType === activeTab);
 
     const handleClear = () => {
-        if (!window.confirm('هل تريد إزالة جميع العناصر المحفوظة؟')) return;
+        if (!window.confirm(t('bookmarks.clearConfirm'))) return;
         clearBookmarks.mutate(undefined, {
-            onError: () => showToast('فشل في مسح المحفوظات', 'error'),
+            onError: () => showToast(t('bookmarks.clearFailed'), 'error'),
         });
     };
 
     return (
         <PageShell contentClassName="p-4 sm:p-6">
             <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
-                <h1 className="text-xl font-bold">المحفوظات</h1>
+                <h1 className="text-xl font-bold">{t('bookmarks.title')}</h1>
                 {bookmarks.length > 0 && (
                     <button
                         onClick={handleClear}
                         className="flex items-center gap-1.5 px-4 py-2 bg-surface-hover text-text-secondary border border-border rounded-md font-semibold text-sm"
                     >
                         <Trash2 size={14} />
-                        مسح الكل
+                        {t('bookmarks.clearAll')}
                     </button>
                 )}
             </div>
@@ -74,10 +75,10 @@ function Bookmarks() {
                 isLoading={isLoading}
                 isError={isError}
                 isEmpty={itemsForTab.length === 0}
-                errorTitle="فشل في تحميل المحفوظات"
+                errorTitle={t('bookmarks.loadFailed')}
                 emptyIcon="🔖"
-                emptyTitle="لا يوجد شيء محفوظ هنا بعد"
-                emptyDescription="اضغط على أيقونة الحفظ على أي فيديو أو كتاب أو مقال لإضافته هنا"
+                emptyTitle={t('bookmarks.empty')}
+                emptyDescription={t('bookmarks.emptyDescription')}
             >
                 <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
                     {activeTab === 'VIDEO' &&

@@ -6,16 +6,17 @@ import { BookCard } from '../components/content';
 import { useReadingProgressMap } from '../hooks/useVideos';
 import { useBooks } from '../hooks/useBooks';
 import { usePageMeta } from '../hooks/usePageMeta';
+import { t } from '@/i18n';
 
 const PAGE_SIZE = 12;
 
 const SORTS = [
-    { id: 'newest', label: 'الأحدث' },
-    { id: 'title', label: 'العنوان' },
+    { id: 'newest', label: t('common.sortNewest') },
+    { id: 'title', label: t('common.sortTitle') },
 ];
 
 function Books() {
-    usePageMeta({ title: 'المكتبة', description: 'مكتبة الكتب الإسلامية على أَبْصَرْنا' });
+    usePageMeta({ title: t('books.title'), description: t('books.metaDescription') });
     const { token } = useAuth();
     const readingProgress = useReadingProgressMap(!!token);
     const {
@@ -52,13 +53,13 @@ function Books() {
 
     return (
         <PageShell sidebar={false} contentClassName="max-w-[1100px] mx-auto px-4 sm:px-6 py-8">
-            <h1 className="text-2xl font-bold mb-6">المكتبة</h1>
+            <h1 className="text-2xl font-bold mb-6">{t('books.title')}</h1>
 
             {!isLoading && books.length > 0 && (
                 <div className="flex gap-3 flex-wrap mb-6">
                     <div className="flex-1 min-w-[200px]">
                         <Input
-                            placeholder="ابحث عن كتاب..."
+                            placeholder={t('books.searchPlaceholder')}
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                         />
@@ -70,7 +71,7 @@ function Books() {
                             onChange={(e) => setCategory(e.target.value)}
                             className="px-3.5 py-2.5 rounded-md border border-border bg-surface text-sm"
                         >
-                            <option value="">كل التصنيفات</option>
+                            <option value="">{t('common.allCategories')}</option>
                             {categories.map((c) => <option key={c} value={c}>{c}</option>)}
                         </select>
                     )}
@@ -80,7 +81,7 @@ function Books() {
                         onChange={(e) => setSortBy(e.target.value)}
                         className="px-3.5 py-2.5 rounded-md border border-border bg-surface text-sm"
                     >
-                        {SORTS.map((s) => <option key={s.id} value={s.id}>ترتيب حسب: {s.label}</option>)}
+                        {SORTS.map((s) => <option key={s.id} value={s.id}>{t('common.sortBy', { label: s.label })}</option>)}
                     </select>
                 </div>
             )}
@@ -89,8 +90,8 @@ function Books() {
                 isLoading={isLoading}
                 isEmpty={books.length === 0 || filtered.length === 0}
                 emptyIcon={books.length === 0 ? '📚' : '🔍'}
-                emptyTitle={books.length === 0 ? 'لا توجد كتب' : 'لا توجد نتائج'}
-                emptyDescription={books.length === 0 ? 'سيتم إضافة الكتب قريباً' : 'جرّب كلمة بحث أو تصنيفاً آخر'}
+                emptyTitle={books.length === 0 ? t('books.empty') : t('common.noResults')}
+                emptyDescription={books.length === 0 ? t('books.emptyDescription') : t('common.tryAnotherSearch')}
             >
                 <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-5">
                     {filtered.map((book) => (
@@ -105,7 +106,7 @@ function Books() {
                             disabled={isFetchingNextPage}
                             className="px-8 py-2.5 bg-primary text-white rounded-md font-semibold disabled:opacity-60"
                         >
-                            {isFetchingNextPage ? 'جاري التحميل...' : 'تحميل المزيد'}
+                            {isFetchingNextPage ? t('common.loading') : t('common.loadMore')}
                         </button>
                     </div>
                 )}

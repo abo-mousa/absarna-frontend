@@ -4,35 +4,36 @@ import { QueryState, Avatar } from '../components/ui';
 import { useToast } from '../contexts/ToastContext';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { useSubscriptions, useUnsubscribe } from '../hooks/useChannels';
+import { t } from '@/i18n';
 
 function Subscriptions() {
-    usePageMeta({ title: 'اشتراكاتي' });
+    usePageMeta({ title: t('subscriptions.title') });
     const { showToast } = useToast();
     const { data: subscriptions = [], isLoading, isError } = useSubscriptions();
     const unsubscribe = useUnsubscribe();
 
     const handleUnsubscribe = (channelId) => {
-        if (!window.confirm('هل تريد إلغاء الاشتراك؟')) return;
-        unsubscribe.mutate(channelId, { onError: () => showToast('فشل في إلغاء الاشتراك', 'error') });
+        if (!window.confirm(t('subscriptions.unsubscribeConfirm'))) return;
+        unsubscribe.mutate(channelId, { onError: () => showToast(t('subscriptions.unsubscribeFailed'), 'error') });
     };
 
     return (
         <PageShell contentClassName="p-4 sm:p-6">
-            <h1 className="text-xl font-bold mb-6">اشتراكاتي</h1>
+            <h1 className="text-xl font-bold mb-6">{t('subscriptions.title')}</h1>
 
             <QueryState
                 isLoading={isLoading}
                 isError={isError}
                 isEmpty={subscriptions.length === 0}
-                errorTitle="فشل في تحميل الاشتراكات"
+                errorTitle={t('subscriptions.loadFailed')}
                 emptyIcon="🔔"
-                emptyTitle="لا توجد اشتراكات"
-                emptyDescription="اشترك في القنوات لمتابعة محتواها"
+                emptyTitle={t('subscriptions.empty')}
+                emptyDescription={t('subscriptions.emptyDescription')}
             >
                 <div className="grid gap-4">
                     {subscriptions.map((sub) => (
                         <div key={sub.subscriptionId} className="flex items-center gap-4 bg-surface p-4 rounded-lg border border-border-light shadow-sm flex-wrap">
-                            <Avatar name={sub.channelName || 'ق'} color={sub.channelColor} size="lg" />
+                            <Avatar name={sub.channelName || t('subscriptions.avatarFallback')} color={sub.channelColor} size="lg" />
 
                             <div className="flex-1 min-w-0">
                                 <h3 className="font-semibold">{sub.channelName}</h3>
@@ -47,13 +48,13 @@ function Subscriptions() {
                                     to={`/channel/${sub.channelSlug}`}
                                     className="px-4 py-2 bg-primary text-white rounded-md font-semibold text-sm whitespace-nowrap"
                                 >
-                                    زيارة
+                                    {t('subscriptions.visit')}
                                 </Link>
                                 <button
                                     onClick={() => handleUnsubscribe(sub.channelId)}
                                     className="px-4 py-2 bg-surface-hover text-text-secondary border border-border rounded-md font-semibold text-sm whitespace-nowrap"
                                 >
-                                    إلغاء
+                                    {t('subscriptions.unsubscribe')}
                                 </button>
                             </div>
                         </div>

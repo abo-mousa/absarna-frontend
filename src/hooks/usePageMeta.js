@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
+import { t } from '@/i18n';
 
-const DEFAULT_TITLE = 'أَبْصَرْنا | Absarna';
-const DEFAULT_DESCRIPTION = 'أَبْصَرْنا — منصة إسلامية للفيديوهات والكتب والمقالات';
+const DEFAULT_TITLE = t('meta.defaultTitle');
+const DEFAULT_DESCRIPTION = t('meta.defaultDescription');
 const DEFAULT_IMAGE = '/favicon.svg';
 
 function setMeta(attr, key, value) {
@@ -25,12 +26,12 @@ function applyMeta(title, description, image) {
 }
 
 // Sets document.title plus OG/Twitter meta for the current page, restoring the app-wide
-// default on unmount — every page other than the fallback 404 renders "أَبْصَرْنا | Absarna" for
+// default on unmount — every page other than the fallback 404 renders the default title for
 // every route/history entry/shared link otherwise (see CLAUDE.md's UX review).
 export function usePageMeta({ title, description, image } = {}) {
     useEffect(() => {
         applyMeta(
-            title ? `${title} | أَبْصَرْنا` : DEFAULT_TITLE,
+            title ? t('meta.titleSuffix', { title }) : DEFAULT_TITLE,
             description || DEFAULT_DESCRIPTION,
             image || DEFAULT_IMAGE
         );

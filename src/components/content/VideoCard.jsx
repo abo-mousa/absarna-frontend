@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Eye, EyeOff, Trash2 } from 'lucide-react';
+import { Play, Eye, EyeOff, Trash2, Tv } from 'lucide-react';
 import { resolveMediaUrl, youtubeThumbnail, durationToSeconds } from '@/lib/media';
-import { formatPublishDate } from '@/lib/dayjsAr';
+import { formatPublishDate, displayDate } from '@/lib/dayjsAr';
 import { useChannel } from '@/hooks/useChannels';
 import Avatar from '../ui/Avatar';
+import SourceBadge from './SourceBadge';
+import { t } from '@/i18n';
 
 function getThumbnail(video) {
     if (video.thumbnailUrl) {
@@ -50,7 +52,7 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
             onKeyDown={handleKeyDown}
             role="button"
             tabIndex={0}
-            aria-label={`مشاهدة فيديو: ${video.title}`}
+            aria-label={t('video.watchAria', { title: video.title })}
             className={`group bg-surface rounded-lg overflow-hidden border shadow-sm
                 hover:shadow-md hover:-translate-y-1 transition-all cursor-pointer
                 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary
@@ -82,9 +84,14 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                     </div>
                 )}
 
+                <SourceBadge
+                    sourceType={video.sourceType}
+                    className="absolute bottom-2 right-2"
+                />
+
                 {video.visible === false && (
                     <div className="absolute top-2 right-2 bg-black/70 text-white text-xs font-semibold px-2 py-0.5 rounded">
-                        مخفي
+                        {t('common.hidden')}
                     </div>
                 )}
 
@@ -92,16 +99,16 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                     <div className="absolute top-2 left-2 flex gap-1">
                         <button
                             onClick={(e) => { e.stopPropagation(); onToggleVisibility(video); }}
-                            title={video.visible === false ? 'إظهار للزوار' : 'إخفاء عن الزوار'}
-                            aria-label={video.visible === false ? 'إظهار للزوار' : 'إخفاء عن الزوار'}
+                            title={video.visible === false ? t('common.showToVisitors') : t('common.hideFromVisitors')}
+                            aria-label={video.visible === false ? t('common.showToVisitors') : t('common.hideFromVisitors')}
                             className="p-1.5 rounded-md bg-black/60 text-white hover:bg-black/80 transition-colors"
                         >
                             {video.visible === false ? <Eye size={14} /> : <EyeOff size={14} />}
                         </button>
                         <button
                             onClick={(e) => { e.stopPropagation(); onDelete(video); }}
-                            title="حذف"
-                            aria-label="حذف الفيديو"
+                            title={t('common.delete')}
+                            aria-label={t('video.deleteAria')}
                             className="p-1.5 rounded-md bg-black/60 text-white hover:bg-red-600 transition-colors"
                         >
                             <Trash2 size={14} />
@@ -131,13 +138,27 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                     {channel && (
                         <button
                             onClick={(e) => { e.stopPropagation(); navigate(`/channel/${channel.slug}`); }}
-                            aria-label={`الذهاب إلى قناة ${channel.name}`}
+                            aria-label={t('video.goToChannelAria', { name: channel.name })}
                             className="flex items-center gap-1.5 mb-1.5 text-xs text-text-secondary hover:text-primary transition-colors"
                         >
                             <Avatar src={resolveMediaUrl(channel.logoUrl)} name={channel.name} size="sm" className="!w-5 !h-5 !text-[0.65rem]" />
                             {channel.name}
                         </button>
                     )}
+                    {/* Which series this belongs to. A link, because the series page is where
+                        someone who recognises the name actually wants to go — and stopPropagation
+                        so it does not also trigger the card's own navigate-to-video. */}
+                    {video.seriesId && video.seriesTitle && (
+                        <button
+                            onClick={(e) => { e.stopPropagation(); navigate(`/series/${video.seriesId}`); }}
+                            title={t('series.partOf', { title: video.seriesTitle })}
+                            className="flex items-center gap-1 mb-1.5 text-xs text-text-muted hover:text-primary transition-colors max-w-full"
+                        >
+                            <Tv size={12} className="flex-shrink-0" />
+                            <span className="truncate">{video.seriesTitle}</span>
+                        </button>
+                    )}
+
                     {video.category && (
                         <span className="inline-block px-2.5 py-0.5 bg-primary-light text-primary rounded-full text-xs font-semibold">
                             {video.category}
@@ -149,9 +170,9 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                     "Comment counts on video lists" entry. */}
                 {(video.publishDate || video.viewCount != null || video.commentCount != null) && (
                     <div className="flex-shrink-0 text-xs text-text-muted space-y-1 whitespace-nowrap">
-                        {video.publishDate && <div>{formatPublishDate(video.publishDate)}</div>}
-                        {video.viewCount != null && <div>{video.viewCount.toLocaleString('ar')} مشاهدات</div>}
-                        {video.commentCount != null && <div>{video.commentCount.toLocaleString('ar')} تعليقات</div>}
+                        {displayDate(video) && <div>{formatPublishDate(displayDate(video))}</div>}
+                        {video.viewCount != null && <div>{t('common.views', { count: video.viewCount.toLocaleString('ar') })}</div>}
+                        {video.commentCount != null && <div>{t('common.commentCount', { count: video.commentCount.toLocaleString('ar') })}</div>}
                     </div>
                 )}
             </div>

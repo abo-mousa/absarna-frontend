@@ -1,11 +1,12 @@
 import { useParams, Link } from 'react-router-dom';
 import { ArrowRight, Type, Clock, Calendar, Eye } from 'lucide-react';
-import { formatPublishDate } from '@/lib/dayjsAr';
+import { formatPublishDate, displayDate } from '@/lib/dayjsAr';
 import PageShell from '../components/layout/PageShell';
 import { QueryState } from '../components/ui';
 import { CommentsSection, BookmarkButton, ShareButton } from '../components/content';
 import { useArticle } from '../hooks/useArticles';
 import { usePageMeta } from '../hooks/usePageMeta';
+import { t } from '@/i18n';
 
 function ArticleDetail() {
     const { id } = useParams();
@@ -18,8 +19,8 @@ function ArticleDetail() {
                 <QueryState
                     isLoading={isLoading}
                     isError={isError || !article}
-                    errorTitle="فشل في تحميل المقال"
-                    errorAction={<Link to="/articles" className="text-primary font-semibold">العودة للمقالات</Link>}
+                    errorTitle={t('articles.loadFailed')}
+                    errorAction={<Link to="/articles" className="text-primary font-semibold">{t('articles.backToArticles')}</Link>}
                 />
             </PageShell>
         );
@@ -45,21 +46,21 @@ function ArticleDetail() {
 
                     <div className="flex gap-5 flex-wrap py-3 border-y border-border-light mb-6 text-sm text-text-secondary print:hidden">
                         {article.wordCount > 0 && (
-                            <span className="flex items-center gap-1.5"><Type size={14} /> {article.wordCount} كلمة</span>
+                            <span className="flex items-center gap-1.5"><Type size={14} /> {t('common.wordCount', { count: article.wordCount })}</span>
                         )}
                         {article.readingTimeMinutes > 0 && (
-                            <span className="flex items-center gap-1.5"><Clock size={14} /> {article.readingTimeMinutes} دقائق قراءة</span>
+                            <span className="flex items-center gap-1.5"><Clock size={14} /> {t('common.readingMinutesLong', { count: article.readingTimeMinutes })}</span>
                         )}
                         {article.publishDate && (
-                            <span className="flex items-center gap-1.5"><Calendar size={14} /> {formatPublishDate(article.publishDate)}</span>
+                            <span className="flex items-center gap-1.5"><Calendar size={14} /> {formatPublishDate(displayDate(article))}</span>
                         )}
                         {article.originalPublishDate && article.originalPublishDate !== article.publishDate && (
                             <span className="flex items-center gap-1.5">
-                                <Calendar size={14} /> تاريخ النشر الأصلي: {article.originalPublishDate}
+                                <Calendar size={14} /> {t('common.originalPublishDate', { date: article.originalPublishDate })}
                             </span>
                         )}
                         <span className="flex items-center gap-1.5">
-                            <Eye size={14} /> {(article.viewCount ?? 0).toLocaleString('ar')} مشاهدات
+                            <Eye size={14} /> {t('common.views', { count: (article.viewCount ?? 0).toLocaleString('ar') })}
                         </span>
                     </div>
 
@@ -74,7 +75,7 @@ function ArticleDetail() {
 
                 <div className="mt-6 print:hidden">
                     <Link to="/articles" className="flex items-center gap-1.5 text-primary font-semibold w-fit">
-                        <ArrowRight size={16} /> العودة للمقالات
+                        <ArrowRight size={16} /> {t('articles.backToArticles')}
                     </Link>
                 </div>
             </div>

@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { Share2, Copy, Check } from 'lucide-react';
 import Modal from '../ui/Modal';
 import { useToast } from '../../contexts/ToastContext';
+import { t } from '@/i18n';
 
 // Plain-text platform links, not brand icons — lucide-react ships no brand marks (and the
 // app already deliberately avoids per-row icons elsewhere, see SearchBar's suggestion-row
 // comment), so a labeled pill reads clearer here than an approximated logo would.
 const shareTargets = (url, title) => [
-    { label: 'واتساب', href: `https://wa.me/?text=${encodeURIComponent(`${title} ${url}`)}` },
-    { label: 'تيليجرام', href: `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}` },
+    { label: t('share.whatsapp'), href: `https://wa.me/?text=${encodeURIComponent(`${title} ${url}`)}` },
+    { label: t('share.telegram'), href: `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}` },
     { label: 'X', href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}` },
 ];
 
@@ -47,9 +48,9 @@ function ShareButton({ title, path, getCurrentTime, className = '', size = 18 })
         try {
             await navigator.clipboard.writeText(url);
             setCopied(true);
-            showToast('تم نسخ الرابط', 'success');
+            showToast(t('share.copied'), 'success');
         } catch {
-            showToast('تعذر نسخ الرابط', 'error');
+            showToast(t('share.copyFailed'), 'error');
         }
     };
 
@@ -65,27 +66,27 @@ function ShareButton({ title, path, getCurrentTime, className = '', size = 18 })
             <button
                 type="button"
                 onClick={handleOpen}
-                title="مشاركة"
-                aria-label="مشاركة"
+                title={t('share.button')}
+                aria-label={t('share.button')}
                 className={`inline-flex items-center gap-1.5 font-semibold text-sm text-text-secondary hover:text-primary transition-colors ${className}`}
             >
                 <Share2 size={size} />
             </button>
 
-            <Modal open={open} onClose={() => setOpen(false)} title="مشاركة" maxWidth="420px">
+            <Modal open={open} onClose={() => setOpen(false)} title={t('share.button')} maxWidth="420px">
                 <div className="flex items-center gap-2 mb-4">
                     <input
                         readOnly
                         value={url}
                         onFocus={(e) => e.target.select()}
-                        aria-label="رابط المشاركة"
+                        aria-label={t('share.linkAria')}
                         dir="ltr"
                         className="flex-1 min-w-0 px-3 py-2 rounded-md border border-border bg-surface-hover text-sm text-text-secondary"
                     />
                     <button
                         onClick={handleCopy}
-                        title="نسخ الرابط"
-                        aria-label="نسخ الرابط"
+                        title={t('share.copy')}
+                        aria-label={t('share.copy')}
                         className="p-2.5 rounded-md bg-primary text-white flex-shrink-0"
                     >
                         {copied ? <Check size={18} /> : <Copy size={18} />}
@@ -100,7 +101,7 @@ function ShareButton({ title, path, getCurrentTime, className = '', size = 18 })
                             onChange={(e) => setIncludeTime(e.target.checked)}
                             className="accent-primary"
                         />
-                        مشاركة من الدقيقة {formatTimestamp(timestamp)}
+                        {t('share.fromTimestamp', { time: formatTimestamp(timestamp) })}
                     </label>
                 )}
 
@@ -109,20 +110,20 @@ function ShareButton({ title, path, getCurrentTime, className = '', size = 18 })
                         onClick={handleNativeShare}
                         className="w-full mb-4 py-2.5 bg-primary-light text-primary rounded-md font-semibold text-sm"
                     >
-                        مشاركة عبر التطبيقات
+                        {t('share.viaApps')}
                     </button>
                 )}
 
                 <div className="flex gap-2 flex-wrap">
-                    {shareTargets(url, title).map((t) => (
+                    {shareTargets(url, title).map((target) => (
                         <a
-                            key={t.label}
-                            href={t.href}
+                            key={target.label}
+                            href={target.href}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="px-3.5 py-2 rounded-full bg-surface-hover text-text-secondary text-sm font-semibold hover:text-text-primary transition-colors"
                         >
-                            {t.label}
+                            {target.label}
                         </a>
                     ))}
                 </div>

@@ -3,6 +3,7 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import { ChevronRight, ChevronLeft, List, Search } from 'lucide-react';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
+import { t } from '@/i18n';
 
 // Bundled locally (not the browser's native PDF plugin) so rendering is identical across
 // Chrome/Firefox/Safari/etc — this is the whole point of using react-pdf over <object>.
@@ -206,9 +207,9 @@ function PdfReader({ fileUrl, initialPage = 1, onPageChange, onPageChangeImmedia
     if (loadError) {
         return (
             <div className="py-16 text-center text-red-600 dark:text-red-400">
-                تعذر تحميل الملف —{' '}
+                {t('pdfReader.loadFailed')}{' '}
                 <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="underline">
-                    افتح الملف في تبويب جديد
+                    {t('pdfReader.openInNewTab')}
                 </a>
             </div>
         );
@@ -226,7 +227,7 @@ function PdfReader({ fileUrl, initialPage = 1, onPageChange, onPageChangeImmedia
                             panel === 'toc' ? 'bg-primary-light text-primary' : 'bg-surface-hover text-text-secondary hover:text-text-primary'
                         }`}
                     >
-                        <List size={15} /> المحتويات
+                        <List size={15} /> {t('pdfReader.contents')}
                     </button>
                     <button
                         type="button"
@@ -236,7 +237,7 @@ function PdfReader({ fileUrl, initialPage = 1, onPageChange, onPageChangeImmedia
                             panel === 'search' ? 'bg-primary-light text-primary' : 'bg-surface-hover text-text-secondary hover:text-text-primary'
                         }`}
                     >
-                        <Search size={15} /> بحث
+                        <Search size={15} /> {t('pdfReader.search')}
                     </button>
                 </div>
             )}
@@ -244,11 +245,11 @@ function PdfReader({ fileUrl, initialPage = 1, onPageChange, onPageChangeImmedia
             {panel === 'toc' && (
                 <div className="w-full max-w-[500px] mb-4 p-3.5 rounded-md border border-border-light bg-surface-hover max-h-[280px] overflow-y-auto">
                     {outlineLoading ? (
-                        <p className="text-sm text-text-muted text-center py-3">جاري التحميل...</p>
+                        <p className="text-sm text-text-muted text-center py-3">{t('common.loading')}</p>
                     ) : outline?.length ? (
                         <OutlineList items={outline} onSelect={handleSelectFromPanel} />
                     ) : (
-                        <p className="text-sm text-text-muted text-center py-3">لا توجد قائمة محتويات لهذا الملف</p>
+                        <p className="text-sm text-text-muted text-center py-3">{t('pdfReader.noContents')}</p>
                     )}
                 </div>
             )}
@@ -260,7 +261,7 @@ function PdfReader({ fileUrl, initialPage = 1, onPageChange, onPageChangeImmedia
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="ابحث داخل الملف..."
+                            placeholder={t('pdfReader.searchPlaceholder')}
                             className="flex-1 min-w-0 px-3 py-2 rounded-md border border-border bg-surface text-sm outline-none focus:border-primary"
                         />
                         <button
@@ -268,11 +269,11 @@ function PdfReader({ fileUrl, initialPage = 1, onPageChange, onPageChangeImmedia
                             disabled={searching || !searchQuery.trim()}
                             className="px-4 py-2 rounded-md bg-primary text-white text-sm font-semibold disabled:opacity-50"
                         >
-                            بحث
+                            {t('pdfReader.search')}
                         </button>
                     </form>
 
-                    {searching && <p className="text-sm text-text-muted text-center py-2">جاري البحث في الملف...</p>}
+                    {searching && <p className="text-sm text-text-muted text-center py-2">{t('pdfReader.searching')}</p>}
 
                     {!searching && searchResults !== null && (
                         searchResults.length > 0 ? (
@@ -283,12 +284,12 @@ function PdfReader({ fileUrl, initialPage = 1, onPageChange, onPageChangeImmedia
                                         onClick={() => handleSelectFromPanel(page)}
                                         className="px-3 py-1 rounded-full bg-surface border border-border text-sm text-text-secondary hover:text-primary hover:border-primary transition-colors"
                                     >
-                                        صفحة {page}
+                                        {t('pdfReader.resultPage', { page })}
                                     </button>
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-sm text-text-muted text-center py-2">لا توجد نتائج</p>
+                            <p className="text-sm text-text-muted text-center py-2">{t('common.noResults')}</p>
                         )
                     )}
                 </div>
@@ -305,7 +306,7 @@ function PdfReader({ fileUrl, initialPage = 1, onPageChange, onPageChangeImmedia
                         setNumPages(pdf.numPages);
                     }}
                     onLoadError={() => setLoadError(true)}
-                    loading={<div className="py-16 text-text-muted">جاري التحميل...</div>}
+                    loading={<div className="py-16 text-text-muted">{t('common.loading')}</div>}
                 >
                     {containerWidth > 0 && (
                         <Page pageNumber={pageNumber} width={containerWidth} renderAnnotationLayer={false} />
@@ -319,30 +320,30 @@ function PdfReader({ fileUrl, initialPage = 1, onPageChange, onPageChangeImmedia
                         onClick={() => goToPage(pageNumber + 1)}
                         disabled={pageNumber >= numPages}
                         className="p-2 rounded-md bg-surface-hover disabled:opacity-40"
-                        aria-label="الصفحة التالية"
+                        aria-label={t('pdfReader.nextPage')}
                     >
                         <ChevronLeft size={18} />
                     </button>
 
                     <form onSubmit={handlePageInputSubmit} className="flex items-center gap-1.5 text-sm text-text-secondary whitespace-nowrap">
-                        صفحة
+                        {t('pdfReader.page')}
                         <input
                             type="text"
                             inputMode="numeric"
                             value={pageInput}
                             onChange={(e) => setPageInput(e.target.value)}
                             onFocus={(e) => e.target.select()}
-                            aria-label="الانتقال إلى صفحة"
+                            aria-label={t('pdfReader.goToPage')}
                             className="w-12 px-1.5 py-1 text-center rounded-md border border-border bg-surface outline-none focus:border-primary"
                         />
-                        من {numPages}
+                        {t('pdfReader.ofPages', { total: numPages })}
                     </form>
 
                     <button
                         onClick={() => goToPage(pageNumber - 1)}
                         disabled={pageNumber <= 1}
                         className="p-2 rounded-md bg-surface-hover disabled:opacity-40"
-                        aria-label="الصفحة السابقة"
+                        aria-label={t('pdfReader.previousPage')}
                     >
                         <ChevronRight size={18} />
                     </button>

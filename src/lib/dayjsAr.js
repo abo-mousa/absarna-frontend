@@ -43,8 +43,29 @@ export function formatPublishDate(dateStr) {
     if (!dateStr) return '';
     const date = dayjs(dateStr);
     if (!date.isValid()) return '';
-    if (dayjs().diff(date, 'day') < 7) return date.locale('ar-latn').fromNow();
-    return date.format('D MMMM YYYY');
+    // Both branches carry the locale. Only the relative one did, so anything older than a week
+    // fell back to dayjs's default locale and printed its month in English — "17 June 2007" in the
+    // middle of an otherwise Arabic card. Invisible while the catalogue was days old; every
+    // imported video is older than a week.
+    const localised = date.locale('ar-latn');
+    if (dayjs().diff(date, 'day') < 7) return localised.fromNow();
+    return localised.format('D MMMM YYYY');
 }
 
 export default dayjs;
+
+/**
+ * The date to show for a piece of content.
+ *
+ * <p>`publishDate` means "when this landed on the platform", which is the right thing for the
+ * backend to sort on and the wrong thing to show a reader. A YouTube import stamps an entire back
+ * catalogue with one day, so every card read "منذ ١٩ ساعة" — nineteen years of lectures all
+ * claiming to be nineteen hours old. What a viewer is asking is "when was this published", and for
+ * imported content the honest answer is the original date.
+ *
+ * <p>Null for platform-native content, where the two are the same thing and `publishDate` already
+ * is the answer.
+ */
+export function displayDate(item) {
+    return item?.originalPublishDate || item?.publishDate || null;
+}

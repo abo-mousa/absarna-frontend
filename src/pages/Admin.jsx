@@ -6,9 +6,10 @@ import { useToast } from '../contexts/ToastContext';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { useStats } from '../hooks/useAdminData';
 import { usePendingChannels, useApproveChannel, useRejectChannel } from '../hooks/useChannels';
+import { t } from '@/i18n';
 
 function Admin() {
-    usePageMeta({ title: 'لوحة التحكم' });
+    usePageMeta({ title: t('admin.title') });
     const { showToast } = useToast();
     const { data: stats = {} } = useStats();
     const { data: pendingChannels = [] } = usePendingChannels();
@@ -16,19 +17,19 @@ function Admin() {
     const rejectChannel = useRejectChannel();
 
     const handleApprove = (id) => {
-        approveChannel.mutate(id, { onError: () => showToast('فشل في الموافقة', 'error') });
+        approveChannel.mutate(id, { onError: () => showToast(t('admin.approveFailed'), 'error') });
     };
 
     const handleReject = (id) => {
-        rejectChannel.mutate(id, { onError: () => showToast('فشل في الرفض', 'error') });
+        rejectChannel.mutate(id, { onError: () => showToast(t('admin.rejectFailed'), 'error') });
     };
 
     const statCards = [
-        { icon: Video, label: 'فيديوهات', value: stats.videos || 0, color: 'bg-primary' },
-        { icon: BookOpen, label: 'كتب', value: stats.books || 0, color: 'bg-gold' },
-        { icon: FileText, label: 'مقالات', value: stats.articles || 0, color: 'bg-emerald-600' },
-        { icon: Tv, label: 'قنوات نشطة', value: stats.activeChannels || 0, color: 'bg-[#1a56db]' },
-        { icon: Bell, label: 'بانتظار الموافقة', value: stats.pendingChannels || 0, color: 'bg-[#D97706]' },
+        { icon: Video, label: t('admin.stats.videos'), value: stats.videos || 0, color: 'bg-primary' },
+        { icon: BookOpen, label: t('admin.stats.books'), value: stats.books || 0, color: 'bg-gold' },
+        { icon: FileText, label: t('admin.stats.articles'), value: stats.articles || 0, color: 'bg-emerald-600' },
+        { icon: Tv, label: t('admin.stats.activeChannels'), value: stats.activeChannels || 0, color: 'bg-[#1a56db]' },
+        { icon: Bell, label: t('admin.stats.pendingChannels'), value: stats.pendingChannels || 0, color: 'bg-[#D97706]' },
     ];
 
     return (
@@ -36,10 +37,10 @@ function Admin() {
             <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-6">
                 <div className="flex justify-between items-center flex-wrap gap-3 mb-6">
                     <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-                        <Shield size={24} /> لوحة التحكم
+                        <Shield size={24} /> {t('admin.title')}
                     </h1>
                     <Link to="/admin/channels" className="px-5 py-2.5 bg-primary text-white rounded-md font-semibold">
-                        إدارة القنوات
+                        {t('admin.manageChannels')}
                     </Link>
                 </div>
 
@@ -58,10 +59,10 @@ function Admin() {
                 </div>
 
                 <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-                    <Bell size={18} /> قنوات بانتظار الموافقة
+                    <Bell size={18} /> {t('admin.pendingHeading')}
                 </h2>
 
-                <QueryState isEmpty={pendingChannels.length === 0} emptyTitle="لا توجد قنوات بانتظار الموافقة">
+                <QueryState isEmpty={pendingChannels.length === 0} emptyTitle={t('admin.pendingEmpty')}>
                     <div className="grid gap-3">
                         {pendingChannels.map((channel) => (
                             <div key={channel.id} className="flex items-center gap-4 bg-surface p-4 rounded-lg border border-border-light flex-wrap">
@@ -77,10 +78,10 @@ function Admin() {
                                 </div>
                                 <div className="flex gap-2">
                                     <Button variant="primary" size="sm" onClick={() => handleApprove(channel.id)} icon={<Check size={14} />}>
-                                        موافقة
+                                        {t('admin.approve')}
                                     </Button>
                                     <Button variant="danger" size="sm" onClick={() => handleReject(channel.id)} icon={<X size={14} />}>
-                                        رفض
+                                        {t('admin.reject')}
                                     </Button>
                                 </div>
                             </div>

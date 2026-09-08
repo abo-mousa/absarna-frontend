@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useInfiniteQuery, useQuery, keepPreviousData } from '@tanstack/react-query';
 import api from '@/lib/api/client';
+import { NO_CACHE, STATIC } from '@/lib/queryCache';
 import { useDebouncedValue } from './useDebouncedValue';
 
 export const fetchVideos = async ({ pageParam = 0, queryKey }) => {
@@ -34,7 +35,7 @@ export const useCategories = () => {
             const res = await api.get('/categories');
             return res.data;
         },
-        staleTime: 30 * 60 * 1000,
+        ...STATIC,
     });
 };
 
@@ -97,7 +98,9 @@ export const useFeed = (enabled = true) => {
             return res.data;
         },
         enabled,
-        staleTime: 5 * 60 * 1000,
+        // Not cached at all. The discover section is randomised server-side precisely so a return
+        // visit shows something else; any caching makes that invisible and the home page static.
+        ...NO_CACHE,
     });
 };
 

@@ -1,6 +1,7 @@
+import { t } from '@/i18n';
 function EmptyState({
                         icon = '📭',
-                        title = 'لا يوجد محتوى',
+                        title = t('common.noContent'),
                         description = '',
                         action,
                     }) {

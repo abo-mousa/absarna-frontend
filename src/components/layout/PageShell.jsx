@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Navbar from './Navbar';
 import SideBar from './SideBar';
+import { t } from '@/i18n';
 
 // The shared app shell (Navbar + collapsible Sidebar) every browsing page uses.
 // Pages that don't want a sidebar (auth forms, detail/reading pages) pass sidebar={false}.
@@ -13,7 +14,7 @@ function PageShell({ children, sidebar = true, currentChannel, contentClassName 
                 href="#main-content"
                 className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:right-2 focus:z-[3000] focus:px-4 focus:py-2 focus:bg-primary focus:text-white focus:rounded-md"
             >
-                تخطي إلى المحتوى
+                {t('nav.skipToContent')}
             </a>
             <Navbar onMenuClick={() => setDrawerOpen(true)} />
             <div className="flex">

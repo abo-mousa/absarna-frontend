@@ -6,9 +6,10 @@ import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
 import { Button, Spinner } from '../components/ui';
 import { usePageMeta } from '../hooks/usePageMeta';
+import { t } from '@/i18n';
 
 function VerifyEmail() {
-    usePageMeta({ title: 'توثيق البريد الإلكتروني' });
+    usePageMeta({ title: t('auth.verifyEmail.title') });
     const [searchParams] = useSearchParams();
     const token = searchParams.get('token');
     const { token: authToken, refreshUser } = useAuth();
@@ -22,7 +23,7 @@ function VerifyEmail() {
 
         if (!token) {
             setStatus('error');
-            setErrorMessage('رابط التوثيق غير صالح');
+            setErrorMessage(t('auth.verifyEmail.invalidLink'));
             return;
         }
 
@@ -35,7 +36,7 @@ function VerifyEmail() {
             })
             .catch((err) => {
                 setStatus('error');
-                setErrorMessage(err.response?.data?.message || 'انتهت صلاحية رابط التوثيق أو أنه غير صالح');
+                setErrorMessage(err.response?.data?.message || t('auth.verifyEmail.expiredLink'));
             });
     }, [token, authToken, refreshUser]);
 
@@ -45,17 +46,17 @@ function VerifyEmail() {
                 {status === 'verifying' && (
                     <>
                         <Spinner />
-                        <p className="text-text-secondary mt-4">جاري توثيق بريدك الإلكتروني...</p>
+                        <p className="text-text-secondary mt-4">{t('auth.verifyEmail.verifying')}</p>
                     </>
                 )}
 
                 {status === 'success' && (
                     <>
                         <CheckCircle2 className="mx-auto text-primary" size={48} />
-                        <h2 className="text-xl font-bold mt-4">تم توثيق بريدك الإلكتروني بنجاح</h2>
-                        <p className="text-text-muted mt-2">يمكنك الآن التعليق وإنشاء قناة.</p>
+                        <h2 className="text-xl font-bold mt-4">{t('auth.verifyEmail.successHeading')}</h2>
+                        <p className="text-text-muted mt-2">{t('auth.verifyEmail.successBody')}</p>
                         <Link to="/" className="block mt-6">
-                            <Button fullWidth>العودة للرئيسية</Button>
+                            <Button fullWidth>{t('common.backHome')}</Button>
                         </Link>
                     </>
                 )}
@@ -63,10 +64,10 @@ function VerifyEmail() {
                 {status === 'error' && (
                     <>
                         <XCircle className="mx-auto text-red-600 dark:text-red-400" size={48} />
-                        <h2 className="text-xl font-bold mt-4">تعذر التوثيق</h2>
+                        <h2 className="text-xl font-bold mt-4">{t('auth.verifyEmail.failedHeading')}</h2>
                         <p className="text-text-muted mt-2">{errorMessage}</p>
                         <Link to="/login" className="block mt-6">
-                            <Button variant="outline" fullWidth>تسجيل الدخول</Button>
+                            <Button variant="outline" fullWidth>{t('auth.verifyEmail.loginLink')}</Button>
                         </Link>
                     </>
                 )}

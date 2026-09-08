@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowRight, BookOpen, Download, X } from 'lucide-react';
 import { resolveMediaUrl } from '@/lib/media';
-import { formatPublishDate } from '@/lib/dayjsAr';
+import { formatPublishDate, displayDate } from '@/lib/dayjsAr';
 import { useBookReadUrl } from '@/hooks/useMediaUrl';
 import { flushOnUnload } from '@/lib/api/beacon';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,6 +11,7 @@ import { QueryState } from '../components/ui';
 import { CommentsSection, BookmarkButton, ShareButton } from '../components/content';
 import { useBook, useBookReadProgress, useSaveReadProgress } from '../hooks/useBooks';
 import { usePageMeta } from '../hooks/usePageMeta';
+import { t } from '@/i18n';
 
 // Code-split: pdfjs is a large dependency that only visitors who actually open a book should pay for.
 const PdfReader = lazy(() => import('../components/content/PdfReader'));
@@ -62,8 +63,8 @@ function BookDetail() {
                 <QueryState
                     isLoading={isLoading}
                     isError={isError || !book}
-                    errorTitle="الكتاب غير موجود"
-                    errorAction={<Link to="/books" className="text-primary font-semibold">العودة للمكتبة</Link>}
+                    errorTitle={t('books.notFound')}
+                    errorAction={<Link to="/books" className="text-primary font-semibold">{t('books.backToLibrary')}</Link>}
                 />
             </PageShell>
         );
@@ -82,7 +83,7 @@ function BookDetail() {
                             <img src={previewUrl} alt={book.title} className="w-full h-full object-cover" />
                             <div className="absolute inset-0 flex items-center justify-center">
                                 <div className="flex items-center gap-2 bg-black/70 text-white px-5 py-3 rounded-md font-semibold">
-                                    <BookOpen size={18} /> اضغط للقراءة
+                                    <BookOpen size={18} /> {t('books.tapToRead')}
                                 </div>
                             </div>
                         </div>
@@ -104,12 +105,12 @@ function BookDetail() {
                         </div>
 
                         <div className="flex gap-4 flex-wrap text-sm text-text-secondary mb-4">
-                            {book.pages && <span>{book.pages} صفحة</span>}
-                            {book.publishDate && <span>{formatPublishDate(book.publishDate)}</span>}
+                            {book.pages && <span>{t('common.pageCount', { count: book.pages })}</span>}
+                            {displayDate(book) && <span>{formatPublishDate(displayDate(book))}</span>}
                             {book.originalPublishDate && book.originalPublishDate !== book.publishDate && (
-                                <span>تاريخ النشر الأصلي: {book.originalPublishDate}</span>
+                                <span>{t('common.originalPublishDate', { date: book.originalPublishDate })}</span>
                             )}
-                            <span>{(book.viewCount ?? 0).toLocaleString('ar')} مشاهدات</span>
+                            <span>{t('common.views', { count: (book.viewCount ?? 0).toLocaleString('ar') })}</span>
                         </div>
 
                         {book.description && (
@@ -120,7 +121,7 @@ function BookDetail() {
                             <>
                                 {savedPage && !showPdf && (
                                     <p className="text-sm text-text-muted mb-3">
-                                        توقفت عند صفحة {savedPage}
+                                        {t('books.stoppedAtPage', { page: savedPage })}
                                     </p>
                                 )}
                                 <div className="flex gap-2 flex-wrap">
@@ -129,7 +130,7 @@ function BookDetail() {
                                         className="flex-1 min-w-[150px] flex items-center justify-center gap-2 py-3 bg-primary text-white rounded-md font-semibold"
                                     >
                                         <BookOpen size={18} />
-                                        {showPdf ? 'إخفاء القراءة' : savedPage ? 'متابعة القراءة' : 'قراءة أونلاين'}
+                                        {showPdf ? t('books.hideReader') : savedPage ? t('books.continueReading') : t('books.readOnline')}
                                     </button>
 
                                     <a
@@ -138,7 +139,7 @@ function BookDetail() {
                                         rel="noopener noreferrer"
                                         className="flex-1 min-w-[150px] flex items-center justify-center gap-2 py-3 bg-primary-light text-primary rounded-md font-semibold"
                                     >
-                                        <Download size={18} /> تحميل PDF
+                                        <Download size={18} /> {t('books.downloadPdf')}
                                     </a>
                                 </div>
                             </>
@@ -155,7 +156,7 @@ function BookDetail() {
                             </button>
                         </div>
                         <div className="flex-1 overflow-auto p-4">
-                            <Suspense fallback={<div className="py-16 text-center text-text-muted">جاري التحميل...</div>}>
+                            <Suspense fallback={<div className="py-16 text-center text-text-muted">{t('common.loading')}</div>}>
                                 <PdfReader
                                     fileUrl={pdfUrl}
                                     initialPage={savedPage || 1}
@@ -171,7 +172,7 @@ function BookDetail() {
 
                 <div className="mt-6">
                     <Link to="/books" className="flex items-center gap-1.5 text-primary font-semibold w-fit">
-                        <ArrowRight size={16} /> العودة للمكتبة
+                        <ArrowRight size={16} /> {t('books.backToLibrary')}
                     </Link>
                 </div>
             </div>

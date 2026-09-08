@@ -1,5 +1,6 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import api from '@/lib/api/client';
+import { safeExternalUrl } from '@/lib/media';
 
 /**
  * Presigned URLs for media held in object storage.
@@ -50,12 +51,25 @@ export const useVideoPlaybackUrl = (videoId, enabled = true, quality = null) =>
         retry: false, // a 404 here means "not visible to you", which retrying cannot change
     });
 
+/**
+ * The book's file URL — a presigned GET for an uploaded PDF, or the book's own external link for
+ * one hosted elsewhere.
+ *
+ * **Passed through `safeExternalUrl`, and that is not belt-and-braces.** Every caller renders this
+ * as something the browser navigates to: an `href` on the detail page, a `location.replace` on the
+ * card, `<Document file>` in the reader. The external branch is a value someone typed into the
+ * database, and while the backend now allowlists the scheme both on write (`SafeUrl`'s `@Pattern`)
+ * and on read, `sourceUrl` gets the same treatment here for exactly this reason — the guard
+ * belongs at the point of render, where the consequence is, rather than only at the two points
+ * that happen to write and serve it today. Anything not absolute http(s) becomes null and the
+ * callers already render their no-file state for that.
+ */
 export const useBookReadUrl = (bookId, enabled = true) =>
     useQuery({
         queryKey: ['bookReadUrl', bookId],
         queryFn: async () => {
             const { data } = await api.get(`/books/${bookId}/read-url`);
-            return data.url;
+            return safeExternalUrl(data.url);
         },
         enabled: Boolean(bookId) && enabled,
         staleTime: STALE_MS,

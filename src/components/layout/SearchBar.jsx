@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import { useSearchSuggestions } from '@/hooks/useVideos';
 import { useOutsideClick } from '@/hooks/useOutsideClick';
+import { t } from '@/i18n';
 
 function SearchBar() {
     const navigate = useNavigate();
@@ -70,7 +71,7 @@ function SearchBar() {
             >
                 <input
                     type="text"
-                    placeholder="ابحث..."
+                    placeholder={t('searchBar.placeholder')}
                     value={query}
                     onChange={(e) => {
                         setQuery(e.target.value);
@@ -83,7 +84,7 @@ function SearchBar() {
                 />
                 <button
                     type="submit"
-                    aria-label="بحث"
+                    aria-label={t('searchBar.label')}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted transition-colors hover:text-primary peer-focus:text-primary"
                 >
                     <Search size={16} />
@@ -114,7 +115,7 @@ function SearchBar() {
 
             {showNoMatches && (
                 <div className="absolute top-[calc(100%+6px)] left-0 right-0 bg-surface border border-border-light rounded-lg shadow-lg z-[1001] px-3 py-4 text-center text-sm text-text-muted">
-                    لا توجد نتائج مطابقة لـ "{query.trim()}"
+                    {t('searchBar.noMatches', { query: query.trim() })}
                 </div>
             )}
         </div>

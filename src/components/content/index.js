@@ -9,3 +9,4 @@ export { default as ShareButton } from './ShareButton';
 // and this barrel is imported broadly. Import it directly with React.lazy() where needed
 // (see BookDetail.jsx) so that cost only ships to visitors who actually open a book.
 export { default as CommentsSection } from './CommentsSection';
+export { default as SourceBadge } from './SourceBadge';

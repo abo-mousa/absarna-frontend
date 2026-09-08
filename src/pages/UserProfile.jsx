@@ -7,6 +7,7 @@ import PageShell from '../components/layout/PageShell';
 import { Input, Button } from '../components/ui';
 import { getPasswordRules, getPasswordStrengthLabel, isPasswordValid } from '@/lib/validation';
 import { usePageMeta } from '../hooks/usePageMeta';
+import { t } from '@/i18n';
 
 function ChangePasswordCard() {
     const { showToast } = useToast();
@@ -22,11 +23,11 @@ function ChangePasswordCard() {
         e.preventDefault();
 
         if (form.newPassword !== form.confirmPassword) {
-            showToast('كلمتا المرور غير متطابقتين', 'error');
+            showToast(t('auth.passwordMismatch'), 'error');
             return;
         }
         if (!isPasswordValid(form.newPassword)) {
-            showToast('كلمة المرور يجب أن تحتوي على 8 أحرف على الأقل مع حرف كبير وحرف صغير ورقم ورمز خاص', 'error');
+            showToast(t('auth.passwordTooWeak'), 'error');
             return;
         }
 
@@ -39,10 +40,10 @@ function ChangePasswordCard() {
             // screen moments after a successful password change.
             const res = await changePassword(form.currentPassword, form.newPassword);
             applySession(res.data);
-            showToast('تم تغيير كلمة المرور بنجاح', 'success');
+            showToast(t('profile.passwordChanged'), 'success');
             setForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
         } catch (err) {
-            showToast(err.response?.data?.message || 'فشل في تغيير كلمة المرور', 'error');
+            showToast(err.response?.data?.message || t('profile.passwordChangeFailed'), 'error');
         } finally {
             setSaving(false);
         }
@@ -50,11 +51,11 @@ function ChangePasswordCard() {
 
     return (
         <div className="bg-surface p-6 sm:p-8 rounded-lg shadow-sm border border-border-light mt-6">
-            <h2 className="text-lg font-bold mb-6">تغيير كلمة المرور</h2>
+            <h2 className="text-lg font-bold mb-6">{t('profile.changePassword')}</h2>
 
             <form onSubmit={handleSubmit} className="grid gap-4">
                 <Input
-                    label="كلمة المرور الحالية"
+                    label={t('profile.currentPassword')}
                     type="password"
                     value={form.currentPassword}
                     onChange={(e) => setForm({ ...form, currentPassword: e.target.value })}
@@ -65,7 +66,7 @@ function ChangePasswordCard() {
 
                 <div>
                     <Input
-                        label="كلمة المرور الجديدة"
+                        label={t('profile.newPassword')}
                         type="password"
                         value={form.newPassword}
                         onChange={(e) => setForm({ ...form, newPassword: e.target.value })}
@@ -105,7 +106,7 @@ function ChangePasswordCard() {
                 </div>
 
                 <Input
-                    label="تأكيد كلمة المرور الجديدة"
+                    label={t('profile.confirmNewPassword')}
                     type="password"
                     value={form.confirmPassword}
                     onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
@@ -116,7 +117,7 @@ function ChangePasswordCard() {
                 />
 
                 <Button type="submit" disabled={saving} fullWidth>
-                    {saving ? 'جاري الحفظ...' : 'تغيير كلمة المرور'}
+                    {saving ? t('common.saving') : t('profile.changePassword')}
                 </Button>
             </form>
         </div>
@@ -124,7 +125,7 @@ function ChangePasswordCard() {
 }
 
 function UserProfile() {
-    usePageMeta({ title: 'الملف الشخصي' });
+    usePageMeta({ title: t('profile.title') });
     const { user } = useAuth();
     const { showToast } = useToast();
     const [form, setForm] = useState({ fullName: '', bio: '', email: '', profilePictureUrl: '' });
@@ -147,9 +148,9 @@ function UserProfile() {
 
         try {
             await api.put('/user/profile', form);
-            showToast('تم حفظ الملف الشخصي', 'success');
+            showToast(t('profile.saved'), 'success');
         } catch (err) {
-            showToast(err.response?.data?.message || 'فشل في الحفظ', 'error');
+            showToast(err.response?.data?.message || t('profile.saveFailed'), 'error');
         } finally {
             setSaving(false);
         }
@@ -159,18 +160,18 @@ function UserProfile() {
         <PageShell sidebar={false}>
             <div className="max-w-[500px] mx-auto my-8 sm:my-10 px-4">
                 <div className="bg-surface p-6 sm:p-8 rounded-lg shadow-sm border border-border-light">
-                    <h1 className="text-xl font-bold mb-6">الملف الشخصي</h1>
+                    <h1 className="text-xl font-bold mb-6">{t('profile.title')}</h1>
 
                     <form onSubmit={handleSubmit} className="grid gap-4">
-                        <Input label="اسم المستخدم" value={user?.username || ''} dir="ltr" disabled />
+                        <Input label={t('fields.username')} value={user?.username || ''} dir="ltr" disabled />
                         <Input
-                            label="الاسم الكامل"
+                            label={t('fields.fullName')}
                             value={form.fullName}
                             onChange={(e) => setForm({ ...form, fullName: e.target.value })}
-                            placeholder="محمد أحمد"
+                            placeholder={t('fields.fullNamePlaceholder')}
                         />
                         <Input
-                            label="البريد الإلكتروني"
+                            label={t('fields.email')}
                             type="email"
                             value={form.email}
                             onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -178,16 +179,16 @@ function UserProfile() {
                             placeholder="email@example.com"
                         />
                         <Input
-                            label="نبذة عنك"
+                            label={t('profile.bioLabel')}
                             textarea
                             rows={3}
                             value={form.bio}
                             onChange={(e) => setForm({ ...form, bio: e.target.value })}
-                            placeholder="اكتب نبذة قصيرة..."
+                            placeholder={t('profile.bioPlaceholder')}
                         />
 
                         <Button type="submit" disabled={saving} fullWidth>
-                            {saving ? 'جاري الحفظ...' : 'حفظ'}
+                            {saving ? t('common.saving') : t('common.save')}
                         </Button>
                     </form>
                 </div>

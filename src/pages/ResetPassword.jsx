@@ -6,9 +6,10 @@ import PageShell from '../components/layout/PageShell';
 import { Input, Button } from '../components/ui';
 import { getPasswordRules, getPasswordStrengthLabel, isPasswordValid } from '@/lib/validation';
 import { usePageMeta } from '../hooks/usePageMeta';
+import { t } from '@/i18n';
 
 function ResetPassword() {
-    usePageMeta({ title: 'إعادة تعيين كلمة المرور' });
+    usePageMeta({ title: t('auth.resetPassword.title') });
     const [searchParams] = useSearchParams();
     const token = searchParams.get('token');
 
@@ -26,15 +27,15 @@ function ResetPassword() {
         setError('');
 
         if (!token) {
-            setError('رابط إعادة التعيين غير صالح');
+            setError(t('auth.resetPassword.invalidLink'));
             return;
         }
         if (password !== confirmPassword) {
-            setError('كلمتا المرور غير متطابقتين');
+            setError(t('auth.passwordMismatch'));
             return;
         }
         if (!isPasswordValid(password)) {
-            setError('كلمة المرور يجب أن تحتوي على 8 أحرف على الأقل مع حرف كبير وحرف صغير ورقم ورمز خاص');
+            setError(t('auth.passwordTooWeak'));
             return;
         }
 
@@ -44,7 +45,7 @@ function ResetPassword() {
             setStatus('success');
         } catch (err) {
             setStatus('error');
-            setError(err.response?.data?.message || 'انتهت صلاحية الرابط أو أنه غير صالح');
+            setError(err.response?.data?.message || t('auth.resetPassword.expiredLink'));
         } finally {
             setLoading(false);
         }
@@ -58,10 +59,10 @@ function ResetPassword() {
                 {status === 'success' && (
                     <div className="text-center">
                         <CheckCircle2 className="mx-auto text-primary" size={48} />
-                        <h2 className="text-xl font-bold mt-4">تم إعادة تعيين كلمة المرور</h2>
-                        <p className="text-text-muted mt-2">يمكنك الآن تسجيل الدخول بكلمة المرور الجديدة.</p>
+                        <h2 className="text-xl font-bold mt-4">{t('auth.resetPassword.doneHeading')}</h2>
+                        <p className="text-text-muted mt-2">{t('auth.resetPassword.doneBody')}</p>
                         <Link to="/login" className="block mt-6">
-                            <Button fullWidth>تسجيل الدخول</Button>
+                            <Button fullWidth>{t('auth.resetPassword.loginLink')}</Button>
                         </Link>
                     </div>
                 )}
@@ -69,10 +70,10 @@ function ResetPassword() {
                 {status === 'error' && (
                     <div className="text-center">
                         <XCircle className="mx-auto text-red-600 dark:text-red-400" size={48} />
-                        <h2 className="text-xl font-bold mt-4">تعذرت إعادة التعيين</h2>
+                        <h2 className="text-xl font-bold mt-4">{t('auth.resetPassword.failedHeading')}</h2>
                         <p className="text-text-muted mt-2">{error}</p>
                         <Link to="/forgot-password" className="block mt-6">
-                            <Button variant="outline" fullWidth>طلب رابط جديد</Button>
+                            <Button variant="outline" fullWidth>{t('auth.resetPassword.requestNewLink')}</Button>
                         </Link>
                     </div>
                 )}
@@ -80,19 +81,19 @@ function ResetPassword() {
                 {status === 'form' && (
                     <>
                         <div className="text-center mb-6">
-                            <h2 className="text-xl font-bold">إعادة تعيين كلمة المرور</h2>
-                            <p className="text-text-muted mt-2">أدخل كلمة المرور الجديدة</p>
+                            <h2 className="text-xl font-bold">{t('auth.resetPassword.heading')}</h2>
+                            <p className="text-text-muted mt-2">{t('auth.resetPassword.instructions')}</p>
                         </div>
 
                         {!token ? (
                             <p className="text-red-600 dark:text-red-400 text-sm bg-red-100 dark:bg-red-950/40 p-2.5 rounded-md text-center">
-                                رابط إعادة التعيين غير صالح
+                                {t('auth.resetPassword.invalidLink')}
                             </p>
                         ) : (
                             <form onSubmit={handleSubmit} className="grid gap-4">
                                 <div>
                                     <Input
-                                        label="كلمة المرور الجديدة *"
+                                        label={t('auth.resetPassword.newPassword')}
                                         type="password"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
@@ -133,7 +134,7 @@ function ResetPassword() {
 
                                 <div>
                                     <Input
-                                        label="تأكيد كلمة المرور *"
+                                        label={t('fields.confirmPassword')}
                                         type="password"
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}
@@ -143,7 +144,7 @@ function ResetPassword() {
                                         className={confirmPassword && confirmPassword !== password ? '!border-red-600 dark:!border-red-500' : ''}
                                     />
                                     {confirmPassword && confirmPassword !== password && (
-                                        <p className="text-red-600 dark:text-red-400 text-xs mt-1">كلمتا المرور غير متطابقتين</p>
+                                        <p className="text-red-600 dark:text-red-400 text-xs mt-1">{t('auth.passwordMismatch')}</p>
                                     )}
                                 </div>
 
@@ -152,7 +153,7 @@ function ResetPassword() {
                                 )}
 
                                 <Button type="submit" disabled={loading} fullWidth>
-                                    {loading ? 'جاري الحفظ...' : 'إعادة تعيين كلمة المرور'}
+                                    {loading ? t('common.saving') : t('auth.resetPassword.submit')}
                                 </Button>
                             </form>
                         )}

@@ -8,23 +8,25 @@ import { useWatchProgressMap } from '../hooks/useVideos';
 import { useChannel } from '../hooks/useChannels';
 import { useAuth } from '../contexts/AuthContext';
 import { usePageMeta } from '../hooks/usePageMeta';
+import { t } from '@/i18n';
 
 function SeriesDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { token } = useAuth();
-    const { data, isLoading, isError } = useSeriesDetail(id);
+    const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useSeriesDetail(id);
     const watchProgress = useWatchProgressMap(!!token);
 
-    const series = data?.series;
-    const content = data?.content || [];
+    // Series metadata rides on every page; the first one is as good as any.
+    const series = data?.pages[0]?.series;
+    const content = data?.pages.flatMap((page) => page.content) || [];
     // A series always belongs to exactly one channel — that's its natural "back to" destination
     // (there's no standalone /series listing page the way Articles/Books have one), so this goes
     // back to the owning channel rather than always to Home regardless of where the visitor came
     // from (a channel's "سلاسل" tab, or a video's "part X of Y" block).
     const { data: channel } = useChannel(series?.channelId, !!series?.channelId);
     const backTo = channel ? `/channel/${channel.slug}` : '/';
-    const backLabel = channel ? `العودة إلى قناة ${channel.name}` : 'العودة للرئيسية';
+    const backLabel = channel ? t('series.backToChannel', { name: channel.name }) : t('common.backHome');
 
     usePageMeta({ title: series?.title, description: series?.description?.slice(0, 200) });
 
@@ -34,8 +36,8 @@ function SeriesDetail() {
                 <QueryState
                     isLoading={isLoading}
                     isError={isError || !series}
-                    errorTitle="السلسلة غير موجودة"
-                    errorAction={<Link to="/" className="text-primary font-semibold">العودة للرئيسية</Link>}
+                    errorTitle={t('series.notFound')}
+                    errorAction={<Link to="/" className="text-primary font-semibold">{t('common.backHome')}</Link>}
                 />
             </PageShell>
         );
@@ -52,19 +54,19 @@ function SeriesDetail() {
 
                 <div className="bg-surface p-5 sm:p-6 rounded-lg border border-border-light mb-6">
                     <div className="flex items-center gap-2 text-primary font-semibold text-sm mb-2">
-                        <Tv size={16} /> سلسلة
+                        <Tv size={16} /> {t('series.badge')}
                     </div>
                     <h1 className="text-xl sm:text-2xl font-bold mb-2">{series.title}</h1>
                     {series.description && (
                         <p className="text-text-secondary leading-relaxed mb-2">{series.description}</p>
                     )}
-                    <p className="text-sm text-text-muted">{series.contentCount ?? content.length} فيديو</p>
+                    <p className="text-sm text-text-muted">{t('common.videoCount', { count: series.contentCount ?? content.length })}</p>
                 </div>
 
                 <QueryState
                     isEmpty={content.length === 0}
                     emptyIcon="🎬"
-                    emptyTitle="لا توجد فيديوهات في هذه السلسلة بعد"
+                    emptyTitle={t('series.empty')}
                 >
                     <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-4">
                         {content.map((item) => (
@@ -76,6 +78,18 @@ function SeriesDetail() {
                             />
                         ))}
                     </div>
+
+                    {hasNextPage && (
+                        <div className="text-center mt-6">
+                            <button
+                                onClick={() => fetchNextPage()}
+                                disabled={isFetchingNextPage}
+                                className="px-8 py-2.5 bg-primary text-white rounded-md font-semibold disabled:opacity-60"
+                            >
+                                {isFetchingNextPage ? t('common.loading') : t('common.loadMore')}
+                            </button>
+                        </div>
+                    )}
                 </QueryState>
 
                 <div className="mt-6">

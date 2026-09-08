@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import api from '@/lib/api/client';
+import { t } from '@/i18n';
 
 /**
  * Uploads a file straight to object storage through presigned S3 multipart URLs.
@@ -174,20 +175,47 @@ const putPart = async (url, blob, signal) => {
     }
 };
 
-/** Uploads a batch of presigned parts with bounded concurrency, retrying transient failures. */
-export const uploadParts = async (file, parts, partSizeBytes, { signal, onPartDone, put, sleepFn } = {}) => {
+/** A 403 from object storage means this signature is dead — expired, or for a different request. */
+const isExpiredSignature = (error) => (error?.status ?? error?.response?.status) === 403;
+
+/**
+ * Uploads a batch of presigned parts with bounded concurrency, retrying transient failures.
+ *
+ * `resign` is what makes a slow connection survivable. A window is 50 parts — 400 MB — signed for
+ * one hour, so finishing it inside the signature's life needs roughly 0.9 Mbit/s sustained.
+ * Below that the URLs died mid-window and the upload failed outright: 403 is deliberately not in
+ * `RETRYABLE_STATUSES`, because re-sending the same bytes to a dead signature can never work.
+ * Re-signing and then retrying can, and it is the same call the resume path already makes — so a
+ * connection slow enough to outrun its own URLs now continues instead of asking the user to start
+ * over, which on a rural or mobile link is the difference between the feature working and not.
+ */
+export const uploadParts = async (file, parts, partSizeBytes,
+                                  { signal, onPartDone, put, sleepFn, resign } = {}) => {
     const send = put ?? putPart;
     const queue = [...parts];
+
+    const sendPart = async (part) => {
+        const { start, end } = partRange(part.partNumber, partSizeBytes, file.size);
+        const blob = file.slice(start, end);
+        try {
+            // Per part, not per upload: a retry re-sends one 8 MB slice, and every other part
+            // already sent stays sent.
+            await withRetry(() => send(part.url, blob, signal), { signal, sleepFn });
+        } catch (e) {
+            if (!resign || !isExpiredSignature(e)) throw e;
+            // One re-sign, not a loop: a fresh URL that also 403s is not an expiry, it is a
+            // configuration or permission problem, and retrying it forever would hide that.
+            const url = await resign(part.partNumber);
+            await withRetry(() => send(url, blob, signal), { signal, sleepFn });
+        }
+        onPartDone?.(end - start);
+    };
 
     const worker = async () => {
         for (;;) {
             const part = queue.shift();
             if (!part) return;
-            const { start, end } = partRange(part.partNumber, partSizeBytes, file.size);
-            // Per part, not per upload: a retry re-sends one 8 MB slice, and every other part
-            // already sent stays sent.
-            await withRetry(() => send(part.url, file.slice(start, end), signal), { signal, sleepFn });
-            onPartDone?.(end - start);
+            await sendPart(part);
         }
     };
 
@@ -255,7 +283,8 @@ export const usePresignedUpload = () => {
                 setSessionId(session.sessionId);
                 onSessionStart?.(session.sessionId);
                 // The first window arrives already signed; everything past it is requested below.
-                done = await uploadWindow(file, data.parts, data, controller, setProgress, 0);
+                done = await uploadWindow(file, data.parts, data, controller, setProgress, 0,
+                    resignPart(slug, kind, session.sessionId, controller));
                 outstanding = [];
                 for (let n = (data.parts?.length ?? 0) + 1; n <= data.totalParts; n += 1) {
                     outstanding.push(n);
@@ -272,7 +301,8 @@ export const usePresignedUpload = () => {
                     `/channels/${slug}/content/${kind}/upload-url/${session.sessionId}/parts`,
                     { partNumbers: batch }
                 ), { signal: controller.signal });
-                done = await uploadWindow(file, data.parts, session, controller, setProgress, done);
+                done = await uploadWindow(file, data.parts, session, controller, setProgress, done,
+                    resignPart(slug, kind, session.sessionId, controller));
             }
 
             setProgress(100);
@@ -302,6 +332,25 @@ export const usePresignedUpload = () => {
     return { upload, cancel, discard, progress, uploading, error, sessionId };
 };
 
+/**
+ * Asks the backend to re-sign one part, for a URL that expired mid-window.
+ *
+ * Deliberately a single-part call rather than a fresh 50-part window: only the parts still
+ * outstanding need new URLs, and the endpoint is rate-limited per minute, so re-signing a whole
+ * window per expired part would trade one failure mode for another.
+ */
+const resignPart = (slug, kind, sessionId, controller) => async (partNumber) => {
+    const { data } = await withRetry(() => api.post(
+        `/channels/${slug}/content/${kind}/upload-url/${sessionId}/parts`,
+        { partNumbers: [partNumber] }
+    ), { signal: controller.signal });
+    const reissued = data.parts?.find((p) => p.partNumber === partNumber);
+    if (!reissued?.url) {
+        throw new Error(`The server did not reissue a URL for part ${partNumber}`);
+    }
+    return reissued.url;
+};
+
 /** A remembered session that no longer exists is an ordinary restart, not an error to report. */
 const resumeProgress = async (slug, kind, resumeSessionId) => {
     try {
@@ -328,7 +377,7 @@ const resumeProgress = async (slug, kind, resumeSessionId) => {
 const requireSupportedType = (file, kind) => {
     const allowed = ALLOWED_EXTENSIONS[kind] ?? [];
     if (!allowed.includes(extensionOf(file))) {
-        throw new UnsupportedFileTypeError(`الملفات المسموح بها: ${allowed.join('، ')}`);
+        throw new UnsupportedFileTypeError(t('upload.allowedTypes', { extensions: allowed.join(t('common.listSeparator')) }));
     }
 };
 
@@ -345,10 +394,11 @@ const requireSessionFits = (file, session) => {
     }
 };
 
-const uploadWindow = async (file, parts, session, controller, setProgress, alreadyDone) => {
+const uploadWindow = async (file, parts, session, controller, setProgress, alreadyDone, resign) => {
     let done = alreadyDone;
     await uploadParts(file, parts ?? [], session.partSizeBytes, {
         signal: controller.signal,
+        resign,
         onPartDone: (bytes) => {
             done += bytes;
             // Capped below 100 until the session is confirmed — the upload isn't finished until

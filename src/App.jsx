@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { STANDARD } from '@/lib/queryCache';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -35,10 +36,16 @@ const NotFound = lazy(() => import('./pages/NotFound'));
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
-            staleTime: 10 * 60 * 1000,
+            // STANDARD, not a hand-picked pair of numbers — see lib/queryCache.js.
+            //
+            // This used to be staleTime 10min AND refetchOnMount:false, which together mean stale
+            // data is never refetched: navigating away and back showed exactly what you left, for
+            // as long as the tab lived. That is what made the home page look frozen.
+            ...STANDARD,
             gcTime: 30 * 60 * 1000,
+            // Deliberately still off: reshuffling the page under someone who just tabbed back is
+            // disorienting in a way that refreshing on navigation is not.
             refetchOnWindowFocus: false,
-            refetchOnMount: false,
             refetchOnReconnect: false,
             retry: 1,
         },

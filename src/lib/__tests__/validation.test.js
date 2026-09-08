@@ -8,6 +8,9 @@ import {
     isPasswordValid,
     validateUsername,
 } from '@/lib/validation';
+import { t } from '@/i18n';
+// Asserted through the catalog, not as literals: a reworded label is a copy change, and this test
+// is about which label gets picked, not about how it is spelled.
 
 /**
  * These rules exist only to reject input before it reaches the API, so their whole value is being
@@ -132,14 +135,14 @@ describe('getPasswordStrengthLabel', () => {
     const labelFor = (password) => getPasswordStrengthLabel(getPasswordRules(password)).text;
 
     it('reports the top label only when every rule passes', () => {
-        expect(labelFor('Passw0rd!')).toBe('قوية جداً');
+        expect(labelFor('Passw0rd!')).toBe(t('validation.strengthVeryStrong'));
     });
 
     it('degrades as rules fail', () => {
         // One missing rule is still "strong"; the label is a hint, while isPasswordValid is the gate.
-        expect(labelFor('Password!')).toBe('قوية');
-        expect(labelFor('password!')).toBe('متوسطة');
-        expect(labelFor('pass')).toBe('ضعيفة');
+        expect(labelFor('Password!')).toBe(t('validation.strengthStrong'));
+        expect(labelFor('password!')).toBe(t('validation.strengthMedium'));
+        expect(labelFor('pass')).toBe(t('validation.strengthWeak'));
     });
 
     it('always returns a colour to render with', () => {
@@ -150,6 +153,6 @@ describe('getPasswordStrengthLabel', () => {
     });
 
     it('handles an empty password without throwing', () => {
-        expect(labelFor('')).toBe('ضعيفة');
+        expect(labelFor('')).toBe(t('validation.strengthWeak'));
     });
 });

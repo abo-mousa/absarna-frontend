@@ -1,5 +1,6 @@
 import { useId, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
+import { t } from '@/i18n';
 
 // Native date/color inputs render their own browser chrome instead of respecting a custom
 // `placeholder` (Chrome always shows its own "mm/dd/yyyy" segments regardless of what's set,
@@ -159,7 +160,7 @@ function Input({
                     type="button"
                     onClick={() => setShowPassword((prev) => !prev)}
                     tabIndex={-1}
-                    aria-label={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+                    aria-label={showPassword ? t('fields.hidePassword') : t('fields.showPassword')}
                     className="absolute inset-y-0 left-2.5 flex items-center text-text-muted hover:text-text-secondary"
                 >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}

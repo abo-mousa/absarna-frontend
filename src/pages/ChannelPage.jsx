@@ -19,6 +19,7 @@ import {
     useToggleSubscription,
 } from '../hooks/useChannels';
 import { useChannelSeries } from '../hooks/useSeries';
+import { t } from '@/i18n';
 
 function ChannelPage() {
     const { slug } = useParams();
@@ -88,11 +89,11 @@ function ChannelPage() {
     const isOwner = isChannelOwner(user, channel);
 
     const tabs = [
-        { id: 'videos', label: 'فيديوهات', icon: Video, count: videoCount },
-        { id: 'books', label: 'كتب', icon: BookOpen, count: bookCount },
-        { id: 'articles', label: 'مقالات', icon: FileText, count: articleCount },
-        { id: 'posts', label: 'منشورات', icon: MessageSquare, count: postCount },
-        { id: 'series', label: 'سلاسل', icon: Tv, count: series.length },
+        { id: 'videos', label: t('common.videos'), icon: Video, count: videoCount },
+        { id: 'books', label: t('common.books'), icon: BookOpen, count: bookCount },
+        { id: 'articles', label: t('common.articles'), icon: FileText, count: articleCount },
+        { id: 'posts', label: t('common.posts'), icon: MessageSquare, count: postCount },
+        { id: 'series', label: t('common.series'), icon: Tv, count: series.length },
     ];
 
     if (channelLoading || !channel) {
@@ -101,7 +102,7 @@ function ChannelPage() {
                 <QueryState
                     isLoading={channelLoading}
                     isEmpty={!channelLoading}
-                    emptyTitle="القناة غير موجودة"
+                    emptyTitle={t('channel.notFound')}
                 />
             </PageShell>
         );
@@ -125,7 +126,7 @@ function ChannelPage() {
 
                     <div className="flex-1 min-w-[150px]">
                         <h1 className="text-white m-0 text-xl sm:text-2xl font-bold">{channel.name}</h1>
-                        {token && <p className="opacity-90 text-sm mt-1">{subscriberCount} مشترك</p>}
+                        {token && <p className="opacity-90 text-sm mt-1">{t('channel.subscriberCount', { count: subscriberCount })}</p>}
                         {channel.description && (
                             <p className="opacity-90 text-sm mt-2 max-w-[500px]">{channel.description}</p>
                         )}
@@ -136,7 +137,7 @@ function ChannelPage() {
                             to={`/channel/${slug}/manage`}
                             className="flex items-center gap-1.5 px-4 py-2.5 bg-white/20 text-white rounded-full font-semibold text-sm"
                         >
-                            <Settings size={18} /> إدارة القناة
+                            <Settings size={18} /> {t('channel.manage')}
                         </Link>
                     )}
 
@@ -147,7 +148,7 @@ function ChannelPage() {
                             subscribed ? 'bg-white/20 text-white' : 'bg-white text-primary'
                         }`}
                     >
-                        {toggleSubscription.isPending ? '...' : subscribed ? <><Check size={18} /> مشترك</> : <><Bell size={18} /> اشترك</>}
+                        {toggleSubscription.isPending ? '...' : subscribed ? <><Check size={18} /> {t('channel.subscribed')}</> : <><Bell size={18} /> {t('channel.subscribe')}</>}
                     </button>
                 </div>
             </div>
@@ -173,7 +174,7 @@ function ChannelPage() {
             </div>
 
             {activeTab === 'videos' && (
-                <QueryState isEmpty={videos.length === 0} emptyTitle="لا توجد فيديوهات بعد">
+                <QueryState isEmpty={videos.length === 0} emptyTitle={t('channel.noVideos')}>
                     <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-4">
                         {videos.map((video) => (
                             <VideoCard
@@ -193,7 +194,7 @@ function ChannelPage() {
                                 disabled={isFetchingNextPage}
                                 className="px-8 py-2.5 bg-primary text-white rounded-md font-semibold disabled:opacity-60"
                             >
-                                {isFetchingNextPage ? 'جاري التحميل...' : 'تحميل المزيد'}
+                                {isFetchingNextPage ? t('common.loading') : t('common.loadMore')}
                             </button>
                         </div>
                     )}
@@ -201,7 +202,7 @@ function ChannelPage() {
             )}
 
             {activeTab === 'books' && (
-                <QueryState isEmpty={books.length === 0} emptyTitle="لا توجد كتب بعد">
+                <QueryState isEmpty={books.length === 0} emptyTitle={t('books.emptyOnChannel')}>
                     <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-4">
                         {books.map((book) => (
                             <BookCard key={book.id} book={book} currentPage={readingProgress[book.id]} />
@@ -215,7 +216,7 @@ function ChannelPage() {
                                 disabled={isFetchingNextBooksPage}
                                 className="px-8 py-2.5 bg-primary text-white rounded-md font-semibold disabled:opacity-60"
                             >
-                                {isFetchingNextBooksPage ? 'جاري التحميل...' : 'تحميل المزيد'}
+                                {isFetchingNextBooksPage ? t('common.loading') : t('common.loadMore')}
                             </button>
                         </div>
                     )}
@@ -223,7 +224,7 @@ function ChannelPage() {
             )}
 
             {activeTab === 'articles' && (
-                <QueryState isEmpty={articles.length === 0} emptyTitle="لا توجد مقالات بعد">
+                <QueryState isEmpty={articles.length === 0} emptyTitle={t('articles.emptyOnChannel')}>
                     <div className="grid gap-3">
                         {articles.map((article) => (
                             <ArticleCard key={article.id} article={article} />
@@ -237,7 +238,7 @@ function ChannelPage() {
                                 disabled={isFetchingNextArticlesPage}
                                 className="px-8 py-2.5 bg-primary text-white rounded-md font-semibold disabled:opacity-60"
                             >
-                                {isFetchingNextArticlesPage ? 'جاري التحميل...' : 'تحميل المزيد'}
+                                {isFetchingNextArticlesPage ? t('common.loading') : t('common.loadMore')}
                             </button>
                         </div>
                     )}
@@ -245,7 +246,7 @@ function ChannelPage() {
             )}
 
             {activeTab === 'posts' && (
-                <QueryState isEmpty={posts.length === 0} emptyTitle="لا توجد منشورات بعد">
+                <QueryState isEmpty={posts.length === 0} emptyTitle={t('channel.noPosts')}>
                     <div className="grid gap-3">
                         {posts.map((post) => (
                             <PostCard key={post.id} post={post} />
@@ -259,7 +260,7 @@ function ChannelPage() {
                                 disabled={isFetchingNextPostsPage}
                                 className="px-8 py-2.5 bg-primary text-white rounded-md font-semibold disabled:opacity-60"
                             >
-                                {isFetchingNextPostsPage ? 'جاري التحميل...' : 'تحميل المزيد'}
+                                {isFetchingNextPostsPage ? t('common.loading') : t('common.loadMore')}
                             </button>
                         </div>
                     )}
@@ -267,7 +268,7 @@ function ChannelPage() {
             )}
 
             {activeTab === 'series' && (
-                <QueryState isEmpty={series.length === 0} emptyTitle="لا توجد سلاسل بعد">
+                <QueryState isEmpty={series.length === 0} emptyTitle={t('series.emptyOnChannel')}>
                     <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-4">
                         {series.map((s) => (
                             <Link
@@ -276,13 +277,13 @@ function ChannelPage() {
                                 className="block bg-surface rounded-lg p-5 border border-border-light shadow-sm hover:shadow-md transition-shadow"
                             >
                                 <div className="flex items-center gap-2 text-primary font-semibold text-xs mb-2">
-                                    <Tv size={14} /> سلسلة
+                                    <Tv size={14} /> {t('series.badge')}
                                 </div>
                                 <h3 className="text-base font-semibold mb-2 leading-snug line-clamp-2">{s.title}</h3>
                                 {s.description && (
                                     <p className="text-text-secondary text-sm leading-relaxed line-clamp-2 mb-2">{s.description}</p>
                                 )}
-                                <span className="text-xs text-text-muted">{s.contentCount ?? 0} فيديو</span>
+                                <span className="text-xs text-text-muted">{t('common.videoCount', { count: s.contentCount ?? 0 })}</span>
                             </Link>
                         ))}
                     </div>

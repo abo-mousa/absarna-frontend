@@ -5,6 +5,7 @@ import { QueryState } from '../components/ui';
 import { VideoCard } from '../components/content';
 import { useInfiniteSearch, useWatchProgressMap } from '../hooks/useVideos';
 import { usePageMeta } from '../hooks/usePageMeta';
+import { t } from '@/i18n';
 
 function SearchPage() {
     const [searchParams] = useSearchParams();
@@ -12,7 +13,7 @@ function SearchPage() {
     const query = searchParams.get('q') || '';
     const { token } = useAuth();
     const watchProgress = useWatchProgressMap(!!token);
-    usePageMeta({ title: query ? `بحث: ${query}` : 'بحث' });
+    usePageMeta({ title: query ? t('search.titleFor', { query }) : t('search.title') });
 
     const {
         data,
@@ -29,18 +30,18 @@ function SearchPage() {
     return (
         <PageShell contentClassName="p-4 sm:p-6">
             <div className="mb-6">
-                <h1 className="text-xl font-bold mb-1">نتائج البحث عن: "{query}"</h1>
-                {!isLoading && <p className="text-text-muted text-sm">{totalItems} نتيجة</p>}
+                <h1 className="text-xl font-bold mb-1">{t('search.heading', { query })}</h1>
+                {!isLoading && <p className="text-text-muted text-sm">{t('search.resultCount', { count: totalItems })}</p>}
             </div>
 
             <QueryState
                 isLoading={isLoading}
                 isError={isError}
                 isEmpty={results.length === 0}
-                errorTitle="فشل البحث"
+                errorTitle={t('search.failed')}
                 emptyIcon="🔍"
-                emptyTitle="لا توجد نتائج"
-                emptyDescription={`لم يتم العثور على نتائج لـ "${query}"`}
+                emptyTitle={t('common.noResults')}
+                emptyDescription={t('search.emptyDescription', { query })}
             >
                 <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
                     {results.map((video) => (
@@ -60,7 +61,7 @@ function SearchPage() {
                             disabled={isFetchingNextPage}
                             className="px-8 py-2.5 bg-primary text-white rounded-md font-semibold disabled:opacity-60"
                         >
-                            {isFetchingNextPage ? 'جاري التحميل...' : 'تحميل المزيد'}
+                            {isFetchingNextPage ? t('common.loading') : t('common.loadMore')}
                         </button>
                     </div>
                 )}

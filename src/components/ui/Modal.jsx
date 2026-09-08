@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { t } from '@/i18n';
 
 // Kept as a constant so the exit timeout below always matches the CSS `duration-200`
 // classes — drifting the two apart would either cut the fade short or leave a mounted-but
@@ -51,7 +52,7 @@ function Modal({ open, onClose, title, children, maxWidth = '800px' }) {
                     <h3 id={titleId} className="m-0">{title}</h3>
                     <button
                         onClick={onClose}
-                        aria-label="إغلاق"
+                        aria-label={t('common.close')}
                         className="text-text-muted hover:text-text-primary transition-colors"
                     >
                         <X size={22} />

@@ -9,9 +9,10 @@ import { VideoCard, BookCard } from '../components/content';
 import { useWatchHistory, useReadingHistory } from '../hooks/useVideos';
 import { useToast } from '../contexts/ToastContext';
 import { usePageMeta } from '../hooks/usePageMeta';
+import { t } from '@/i18n';
 
 function History() {
-    usePageMeta({ title: 'السجل' });
+    usePageMeta({ title: t('history.title') });
     const { showToast } = useToast();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
@@ -24,34 +25,34 @@ function History() {
     const { data: history = [], isLoading, isError } = isVideos ? watchHistory : readingHistory;
 
     const tabs = [
-        { id: 'videos', label: 'فيديوهات', icon: Video },
-        { id: 'books', label: 'كتب', icon: BookOpen },
+        { id: 'videos', label: t('common.videos'), icon: Video },
+        { id: 'books', label: t('common.books'), icon: BookOpen },
     ];
 
     const handleClear = async () => {
         const confirmMessage = isVideos
-            ? 'هل تريد مسح سجل المشاهدة بالكامل؟'
-            : 'هل تريد مسح سجل القراءة بالكامل؟';
+            ? t('history.clearWatchConfirm')
+            : t('history.clearReadConfirm');
         if (!window.confirm(confirmMessage)) return;
         try {
             await api.delete(isVideos ? '/user/history' : '/user/reading-history');
             queryClient.invalidateQueries({ queryKey: [isVideos ? 'watch-history' : 'reading-history'] });
         } catch (err) {
-            showToast('فشل في مسح السجل', 'error');
+            showToast(t('history.clearFailed'), 'error');
         }
     };
 
     return (
         <PageShell contentClassName="p-4 sm:p-6">
             <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
-                <h1 className="text-xl font-bold">السجل</h1>
+                <h1 className="text-xl font-bold">{t('history.title')}</h1>
                 {history.length > 0 && (
                     <button
                         onClick={handleClear}
                         className="flex items-center gap-1.5 px-4 py-2 bg-surface-hover text-text-secondary border border-border rounded-md font-semibold text-sm"
                     >
                         <Trash2 size={14} />
-                        مسح السجل
+                        {t('history.clear')}
                     </button>
                 )}
             </div>
@@ -77,10 +78,10 @@ function History() {
                 isLoading={isLoading}
                 isError={isError}
                 isEmpty={history.length === 0}
-                errorTitle="فشل في تحميل السجل"
+                errorTitle={t('history.loadFailed')}
                 emptyIcon="🕘"
-                emptyTitle={isVideos ? 'لا يوجد سجل مشاهدة' : 'لا يوجد سجل قراءة'}
-                emptyDescription={isVideos ? 'الفيديوهات التي تشاهدها ستظهر هنا' : 'الكتب التي تقرأها ستظهر هنا'}
+                emptyTitle={isVideos ? t('history.emptyWatch') : t('history.emptyRead')}
+                emptyDescription={isVideos ? t('history.emptyWatchDescription') : t('history.emptyReadDescription')}
             >
                 <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
                     {isVideos

@@ -4,6 +4,7 @@ import { Home, Bell, History, Bookmark, Plus, Settings } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAllChannels, useSubscriptions, useMyChannels } from '../../hooks/useChannels';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { t } from '@/i18n';
 
 const navLinkClass = (active) =>
     `flex items-center gap-3 px-3 py-2 rounded-md text-sm mb-0.5 transition-colors ${
@@ -41,8 +42,8 @@ function ChannelRow({ channel, slug, name, color, currentChannel, onClose, manag
                 <Link
                     to={`/channel/${slug}/manage`}
                     onClick={onClose}
-                    title="إدارة القناة"
-                    aria-label="إدارة القناة"
+                    title={t('sidebar.manageChannel')}
+                    aria-label={t('sidebar.manageChannel')}
                     className="p-1.5 rounded-md text-text-muted hover:bg-surface-hover hover:text-text-secondary flex-shrink-0"
                 >
                     <Settings size={14} />
@@ -86,7 +87,7 @@ function SideBar({ currentChannel, open = false, onClose }) {
                 ref={asideRef}
                 role={open ? 'dialog' : undefined}
                 aria-modal={open ? 'true' : undefined}
-                aria-label={open ? 'القائمة الجانبية' : undefined}
+                aria-label={open ? t('nav.sideMenu') : undefined}
                 tabIndex={-1}
                 className={`w-[240px] bg-surface border-l border-border-light py-3 overflow-y-auto flex-shrink-0
                     fixed right-0 top-0 bottom-0 lg:sticky lg:top-[60px] lg:h-[calc(100vh-60px)] z-[1000] outline-none
@@ -95,27 +96,27 @@ function SideBar({ currentChannel, open = false, onClose }) {
                 <div className="px-2 mb-4">
                     <Link to="/" onClick={onClose} className={navLinkClass(isActive('/'))}>
                         <Home size={18} />
-                        الرئيسية
+                        {t('sidebar.home')}
                     </Link>
 
                     {token && (
                         <Link to="/subscriptions" onClick={onClose} className={navLinkClass(isActive('/subscriptions'))}>
                             <Bell size={18} />
-                            الاشتراكات
+                            {t('sidebar.subscriptions')}
                         </Link>
                     )}
 
                     {token && (
                         <Link to="/history" onClick={onClose} className={navLinkClass(isActive('/history'))}>
                             <History size={18} />
-                            سجل المشاهدة
+                            {t('sidebar.watchHistory')}
                         </Link>
                     )}
 
                     {token && (
                         <Link to="/bookmarks" onClick={onClose} className={navLinkClass(isActive('/bookmarks'))}>
                             <Bookmark size={18} />
-                            المحفوظات
+                            {t('sidebar.bookmarks')}
                         </Link>
                     )}
                 </div>
@@ -128,7 +129,7 @@ function SideBar({ currentChannel, open = false, onClose }) {
                             className="flex items-center justify-center gap-2 py-2.5 bg-primary text-white rounded-md font-semibold text-sm"
                         >
                             <Plus size={18} />
-                            إنشاء قناة
+                            {t('sidebar.createChannel')}
                         </Link>
                     </div>
                 )}
@@ -136,7 +137,7 @@ function SideBar({ currentChannel, open = false, onClose }) {
                 {token && myChannels.length > 0 && (
                     <div className="px-2 mb-4">
                         <h4 className="text-[0.7rem] text-text-muted uppercase tracking-wider mb-1.5 px-3">
-                            قنواتي
+                            {t('sidebar.myChannels')}
                         </h4>
                         {myChannels.map((channel) => (
                             <ChannelRow
@@ -155,7 +156,7 @@ function SideBar({ currentChannel, open = false, onClose }) {
                 {token && visibleSubscriptions.length > 0 && (
                     <div className="px-2 mb-4">
                         <h4 className="text-[0.7rem] text-text-muted uppercase tracking-wider mb-1.5 px-3">
-                            اشتراكاتك
+                            {t('sidebar.yourSubscriptions')}
                         </h4>
                         {visibleSubscriptions.map((sub) => (
                             <ChannelRow
@@ -172,12 +173,12 @@ function SideBar({ currentChannel, open = false, onClose }) {
 
                 <div className="px-2">
                     <h4 className="text-[0.7rem] text-text-muted uppercase tracking-wider mb-1.5 px-3">
-                        اكتشف قنوات أخرى
+                        {t('sidebar.discoverChannels')}
                     </h4>
                     {loading ? (
-                        <p className="text-[0.8rem] text-text-muted px-3">جاري التحميل...</p>
+                        <p className="text-[0.8rem] text-text-muted px-3">{t('common.loading')}</p>
                     ) : discoverChannels.length === 0 ? (
-                        <p className="text-[0.8rem] text-text-muted px-3">لا توجد قنوات أخرى</p>
+                        <p className="text-[0.8rem] text-text-muted px-3">{t('sidebar.noOtherChannels')}</p>
                     ) : (
                         discoverChannels.map((channel) => (
                             <ChannelRow

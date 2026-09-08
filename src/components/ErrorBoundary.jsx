@@ -1,4 +1,5 @@
 import { Component } from 'react';
+import { t } from '@/i18n';
 
 class ErrorBoundary extends Component {
     constructor(props) {
@@ -23,8 +24,8 @@ class ErrorBoundary extends Component {
                     fontFamily: 'Amiri, Inter, sans-serif',
                     direction: 'rtl'
                 }}>
-                    <h2>عذراً، حدث خطأ غير متوقع</h2>
-                    <p style={{ color: '#64748b' }}>{this.state.error?.message || 'يرجى المحاولة مرة أخرى'}</p>
+                    <h2>{t('errorBoundary.title')}</h2>
+                    <p style={{ color: '#64748b' }}>{this.state.error?.message || t('errorBoundary.fallback')}</p>
                     <button
                         onClick={() => window.location.reload()}
                         style={{
@@ -37,7 +38,7 @@ class ErrorBoundary extends Component {
                             fontFamily: 'inherit'
                         }}
                     >
-                        إعادة التحميل
+                        {t('errorBoundary.reload')}
                     </button>
                 </div>
             );

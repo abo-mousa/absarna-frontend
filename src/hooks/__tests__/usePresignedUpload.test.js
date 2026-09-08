@@ -127,6 +127,54 @@ describe('uploadParts', () => {
         expect(put).toHaveBeenCalledTimes(2);
         expect(onPartDone).toHaveBeenCalledTimes(1);
     });
+
+    // A window is 50 parts (400 MB) signed for one hour, so finishing one inside its signatures'
+    // lifetime needs roughly 0.9 Mbit/s sustained. Below that the URLs died mid-window and the
+    // whole upload failed: a 403 is deliberately not retryable, because re-sending the same bytes
+    // to a dead signature can never work. Re-signing first can.
+    it('re-signs a part whose URL expired, then retries it', async () => {
+        const expired = () => Object.assign(new Error('Part upload failed (403)'), { status: 403 });
+        const put = vi.fn()
+            .mockRejectedValueOnce(expired())
+            .mockResolvedValue(undefined);
+        const resign = vi.fn().mockResolvedValue('fresh-url');
+        const onPartDone = vi.fn();
+
+        await uploadParts(fakeFile(100), [{ partNumber: 1, url: 'stale-url' }], 100, {
+            put, onPartDone, resign, sleepFn: noSleep,
+        });
+
+        expect(resign).toHaveBeenCalledWith(1);
+        expect(put).toHaveBeenNthCalledWith(2, 'fresh-url', expect.anything(), undefined);
+        // Counted once: the retry re-sends the same slice, it is not extra progress.
+        expect(onPartDone).toHaveBeenCalledTimes(1);
+    });
+
+    it('gives up when a freshly signed URL is also refused', async () => {
+        // A second 403 is not an expiry — it is a permission or configuration problem, and
+        // re-signing forever would hide it behind an upload that never finishes.
+        const put = vi.fn().mockRejectedValue(
+            Object.assign(new Error('Part upload failed (403)'), { status: 403 }));
+        const resign = vi.fn().mockResolvedValue('fresh-url');
+
+        await expect(uploadParts(fakeFile(100), [{ partNumber: 1, url: 'stale-url' }], 100, {
+            put, resign, sleepFn: noSleep,
+        })).rejects.toThrow('403');
+
+        expect(resign).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not re-sign a failure that is not an expired signature', async () => {
+        const put = vi.fn().mockRejectedValue(
+            Object.assign(new Error('gone'), { status: 404 }));
+        const resign = vi.fn();
+
+        await expect(uploadParts(fakeFile(100), [{ partNumber: 1, url: 'u1' }], 100, {
+            put, resign, sleepFn: noSleep,
+        })).rejects.toThrow('gone');
+
+        expect(resign).not.toHaveBeenCalled();
+    });
 });
 
 describe('withRetry', () => {

@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useState } from 'react';
 import { CheckCircle, XCircle, X } from 'lucide-react';
+import { t } from '@/i18n';
 
 const ToastContext = createContext();
 
@@ -32,7 +33,7 @@ function ToastItem({ toast, onDismiss }) {
             <span>{message}</span>
             <button
                 onClick={() => onDismiss(toast.id)}
-                aria-label="إغلاق"
+                aria-label={t('common.close')}
                 className="shrink-0 opacity-80 hover:opacity-100"
             >
                 <X size={16} />
@@ -45,11 +46,11 @@ export function ToastProvider({ children }) {
     const [toasts, setToasts] = useState([]);
 
     const dismiss = useCallback((id) => {
-        setToasts((prev) => prev.filter((t) => t.id !== id));
+        setToasts((prev) => prev.filter((toast) => toast.id !== id));
     }, []);
 
     const startDismiss = useCallback((id) => {
-        setToasts((prev) => prev.map((t) => (t.id === id ? { ...t, leaving: true } : t)));
+        setToasts((prev) => prev.map((toast) => (toast.id === id ? { ...toast, leaving: true } : toast)));
         setTimeout(() => dismiss(id), EXIT_TRANSITION_MS);
     }, [dismiss]);
 

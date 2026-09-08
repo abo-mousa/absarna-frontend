@@ -1,12 +1,24 @@
 # أَبْصَرْنا (Absarna) Platform — Frontend
 
-React 18 + Vite frontend for the أَبْصَرْنا (Absarna) media platform (videos/books/articles) — renamed 2026-09-03 from its original "منارة" (Manara, "lighthouse/beacon") branding; see "Rebrand: منارة → أَبْصَرْنا" under History for the full rationale and what changed. Plain JavaScript (`.jsx`, not TypeScript). RTL (Arabic) throughout. Backend lives at `/Users/kareemismail/IdeaProjects/absarna-backend` (separate repo, has its own `CLAUDE.md`; renamed from `manara-platform`/`com.manara.*` on 2026-09-03 — see "Rename: Manara → Absarna" under History).
+React 18 + Vite SPA for the Absarna media platform (videos, books, articles). Plain JavaScript
+(`.jsx`, not TypeScript), RTL Arabic throughout.
 
-The repo directory is `/Users/kareemismail/IdeaProjects/absarna-frontend` (renamed 2026-09-03 from `elhamy-frontend-enhanced` and moved out of `~/Desktop` to sit alongside the backend under `~/IdeaProjects` — see "Rename: Manara → Absarna" under History; `.idea/` project files need reopening from the new path). `package.json`'s `name` field is `absarna-frontend` (updated as part of the rebrand; `package-lock.json` resynced via `npm install --package-lock-only`).
+**Two companion repos**, each with its own `CLAUDE.md`:
 
-A third repo joined the platform on 2026-09-06: `/Users/kareemismail/IdeaProjects/absarna-worker`, the transcode worker. **Nothing here talks to it** — it has no HTTP surface at all, and reaches the backend only over Redis streams. It matters to this repo for exactly one reason: it is what produces the rendition ladder behind `playback-url`'s `qualities`, and the poster frames that will eventually fill `thumbnailUrl`. Until a rung exists, a video simply has no quality to choose.
+- `/Users/kareemismail/IdeaProjects/absarna-backend` — the API. What this app relies on from it is
+  under "Backend contract" below.
+- `/Users/kareemismail/IdeaProjects/absarna-worker` — the transcode worker. **Nothing here talks
+  to it**: it has no HTTP surface and reaches the backend only over Redis streams. It matters to
+  this repo for one reason — it produces the rendition ladder behind `playback-url`'s `qualities`
+  and the poster frames that fill `thumbnailUrl`. Until a rung exists there is no quality to pick.
 
-Keep this file updated when architecture/conventions change — not a changelog for every commit, just what a fresh session would otherwise have to re-derive by reading everything.
+**Two files here.** This one is loaded into every session; `HISTORY.md` is not, so read it when
+the work calls for it: it holds the closed review passes, the منارة → أَبْصَرْنا rebrand, and the
+calls that were considered and rejected. Read it when you need to know *why* code looks defensive.
+
+Keep this file updated when architecture or conventions change — not a changelog for every commit,
+just what a fresh session would otherwise re-derive by reading everything. When work closes, move
+the narrative to `HISTORY.md` rather than growing this file.
 
 ## Styling: Tailwind CSS
 
@@ -37,14 +49,19 @@ src/
                 BookmarkButton, ShareButton — barrel export via index.js (PdfReader is the
                 deliberate exception, see its own barrel comment)
     auth/       EmailVerificationNotice — barrel export via index.js, see "Email verification" below
+    channel/    ContentPublishForm (+ FieldLabel), ContentManageList — the channel dashboard's
+                shared publish/list pieces, see "Channel dashboard" below
   pages/        route-level components, each lazy-loaded per route in App.jsx (see "Build / verify" below).
                 Bookmarks.jsx (`/bookmarks`) and SeriesDetail.jsx (`/series/:id`) are the newest —
                 see "Bookmarks" and "Series" below.
   hooks/        useVideos, useBooks, useArticles, useBiography, useChannels, useComments,
                 useBookmarks, useSeries, useCommentModeration, useAdminData, useMediaUrl,
                 usePresignedUpload, useDebouncedValue, useOutsideClick, useFocusTrap,
-                usePageMeta — see "Data fetching: React Query" and "Media URLs" below
+                usePageMeta, useChannelContentTab — see "Data fetching: React Query",
+                "Media URLs" and "Channel dashboard" below
   contexts/     AuthContext, ThemeContext (see "Dark mode"), ToastContext (see "Toast notifications")
+  i18n/         index.js (`t`/`tOptional`) + ar.js (the whole catalog) — EVERY user-facing string
+                lives here, see "Strings: the catalog" below
   lib/
     api/        client.js (axios instance + interceptors), auth.js, contents.js (thin per-domain wrappers)
     env.js       API_BASE_URL, from VITE_API_BASE_URL env var (no more hardcoded localhost:8080)
@@ -64,6 +81,266 @@ Shared app shell (`components/layout/PageShell.jsx`) wrapping `Navbar` + collaps
 ## `QueryState`
 
 `components/ui/QueryState.jsx` collapses the loading/error/empty/success four-branch ternary that used to be hand-rolled per page around a `useQuery`/`useInfiniteQuery` result: `<QueryState isLoading isError isEmpty errorTitle emptyTitle emptyDescription emptyAction errorAction>{children}</QueryState>` renders a `Spinner`, an `EmptyState` (for either the error or empty case, swapping icon/copy), or `children` once data's ready. Reach for this instead of inventing another loading/error/empty variant per page.
+
+## Strings: the catalog (`src/i18n`) — extracted 2026-09-07
+
+**Every user-facing string lives in `src/i18n/ar.js` and reaches the screen through `t()`.** There
+were ~600 Arabic literals across 51 files before this; there are now **422 catalog entries** read
+from **587 call sites** in 51 files. Do not add a bare Arabic literal to a component — the whole
+point is that there is exactly one place to look.
+
+- **`t('some.key')`, `t('key', { name })` for a `{name}` placeholder.** Prefer a placeholder over
+  concatenating at the call site: a sentence assembled from fragments can't be reordered by a
+  translator, and Arabic and English don't order these the same way.
+- **A missing key returns the key itself** and warns in dev. Visibly wrong beats invisibly wrong —
+  an empty string is a button with no label that nobody notices in review.
+- **`tOptional(key)` returns `undefined` instead**, for lookups whose key comes from *data* rather
+  than source. The one caller is `VideoPlayer`'s quality selector: it asks whether the catalog has
+  a word for a rung name the transcode worker chose, and "1080p" correctly has none, so a miss is
+  the normal case and warning about it would train everyone to ignore the warning that matters.
+- **Hand-rolled, not react-i18next, and that is the point.** `index.js` is ~40 lines with no
+  dependencies; neither it nor `ar.js` imports React, touches the DOM, or knows what a bundler is,
+  so **a React Native app can import both verbatim** — the largest single thing this app can hand a
+  mobile one. i18next's weight is in plural rules, language detection and lazy namespaces, none of
+  which a single-locale app needs. The call sites are identical either way, so swapping the
+  implementation later is a one-file change; extracting the strings was the irreversible half.
+- **Namespacing rule**: put a string in the namespace of the screen that shows it; promote it to
+  `common` only once a *second* screen needs the same words *for the same reason*. Same words is
+  not enough — the tab label «كتب» and the page heading «المكتبة» are both about books and stay
+  separate, because a translation of one isn't a translation of the other.
+- **Deliberately NOT in the catalog**: `lib/dayjsAr.js` (month names and relative-time forms are
+  dayjs *locale data* — a second locale swaps the whole object rather than translating entries);
+  Arabic inside code comments; and test fixtures that happen to be Arabic (`{ title: 'درس' }`
+  stands for "some text"). Tests that assert a *user-visible* string do go through `t()`, so
+  rewording a message updates its test instead of turning it red — see `validation.test.js`.
+- **`src/i18n/__tests__/i18n.test.js` walks the source for every literal `t('...')` key and asserts
+  it resolves.** This is the test that makes the catalog safe to refactor: a mistyped key is
+  otherwise invisible, since `t()` returns the key and the page still renders — the bug is a line
+  of dotted ASCII in the middle of an Arabic screen that only a human looking at that exact screen
+  would catch. There's no type system here to do it instead. The suite also asserts it found more
+  than 200 call sites, so a regex that stops matching can't make the check pass vacuously.
+
+**Why this landed now**: it's the precondition for sharing copy with a mobile app, and for an
+English build ever being possible. It was cheap while this app was the only consumer, and gets
+steadily more expensive after that.
+
+## Channel dashboard (`ChannelManage` + `components/channel` + `useChannelContentTab`)
+
+The refactor this file had been flagging as "unblocked" landed 2026-09-07. `ChannelManage.jsx` was
+789 lines holding five tabs and four near-identical publish forms; it is 701 now, and — more to the
+point — the duplication is gone rather than merely moved:
+
+- **`useChannelContentTab(slug, type, active)`** replaces what was **sixteen hook calls** (four
+  types × list/create/toggle/delete) plus `deleteItem`, `toggleVisibility` and a `showMessage`
+  helper shared between them. Four calls now. A new content type is one more call, not four more
+  hooks and another copy of the handlers. **It is called unconditionally, once per type** — `active`
+  gates the *query*, not the hook, because making the call conditional would break the rules of
+  hooks the moment someone switched tabs.
+- **`ContentPublishForm`** owns the shell all four forms share: the card, its heading, the optional
+  file picker with its progress bar, the submit button. **The fields stay at the call site as
+  children** — a series picker for a video, a page count for a book, a fifteen-row body for an
+  article are genuinely different, and a schema prop would trade four readable forms for one
+  form-builder DSL that's harder to read than any of them. Hoist what's shared; write out what
+  differs.
+- **The scaffolding was the part that had drifted**, which is the argument for extracting it: the
+  book tab showed a "جاري الرفع..." string where the video tab showed a progress bar, from the same
+  hook reporting the same number. Both show the bar now.
+- **`showMessage('success:...')` is gone.** That string-prefix hack was kept "to avoid touching all
+  twelve call sites"; the call sites moved anyway, and it split on the first colon in a message.
+  Everything goes through `showToast(message, 'success'|'error')` directly.
+- **The one rule worth knowing before touching `publish()`**: a client-side timeout is reported as
+  "still working, try again shortly" for `videos`/`books` and as an ordinary failure for
+  `articles`/`posts`. That asymmetry is not cosmetic — the upload-backed create call is idempotent
+  on the upload session id, so a retry returns the row the first attempt made; an article publish
+  has no session, so the same wording would invite a duplicate. `UPLOAD_BACKED` in
+  `useChannelContentTab.js` is that rule, and `useChannelContentTab.test.js` pins both directions.
+
+## YouTube import (`components/channel/YouTubeImportPanel`, `hooks/useChannelYouTube`)
+
+Added 2026-09-07. Lets a channel owner import their existing YouTube catalogue **once**.
+
+**Also on `CreateChannel`**: a YouTube link field with a "جلب البيانات" button that resolves the
+channel and prefills name, description, logo and slug (`useResolveYouTubeChannel` →
+`POST /api/youtube/resolve`). Most of that form is something the owner already wrote once on
+YouTube. **A button, never on-blur or on-keystroke** — each call spends a unit of the platform's
+shared daily quota. **Only empty fields are overwritten**, so someone who typed a name and then
+pasted their channel link does not watch their own words disappear.
+
+**The slug comes from the YouTube handle, not the title** — and that is the field that would
+otherwise stall the whole form. The slug is required and Latin-only, and an Arabic channel title
+reduces to the empty string, so prefilling from the title left the one required field blank on
+exactly the channels this feature exists for. `@melhamy` → `melhamy` is already Latin, already
+unique, and already what the owner is known by.
+
+**Creating the channel also links it** (2026-09-07). The lookup button only fills in the form; it
+establishes no relationship. Without this the flow was: paste the link, watch it say it fetched
+something, create the channel, land on a different page, and paste the same link *again* before
+anything was actually imported — two of those steps being the same step. `handleSubmit` now calls
+`/youtube/attest` for a platform admin (who cannot put a token in someone else's description, which
+is what attest is for) or `/youtube/verification` for anyone else, so the manage page opens on the
+step that actually needs the user: one "ابدأ الاستيراد" button for an admin, the token for an owner.
+**A failure there is non-fatal** — the channel exists and the panel can link it by hand; the one
+thing that must not happen is losing the channel over a YouTube hiccup.
+
+**A successful lookup is confirmed under the field, not only in a toast.** If every form field was
+already filled, nothing visibly changes and a toast alone reads as "it did nothing" — which is
+exactly how it was reported.
+
+- **It lives in the overview tab, not a tab of its own.** A YouTube link is a property of the
+  channel, like its name and colour; every other tab is a content *type*, and a source is not one.
+  **Imported videos land in the videos tab beside uploaded ones** — that is the whole reason to
+  import rather than link out, since an imported video can then join a series, be searched,
+  bookmarked and resumed.
+- **Three states in one panel, not a wizard**: not linked → linked but unverified → verified. The
+  middle step sends the owner to another website to edit their channel description and back, and a
+  wizard that loses its place while they are gone is worse than a page that shows where they got to.
+- **The verification steps name the actual place.** "Add it to your channel description" assumed
+  the owner knows that means YouTube Studio → Customisation → Basic info, which is three levels
+  deep and not called "description" at the top level. There is now a numbered sequence, a deep link
+  to that exact Studio page (built from the channel id we just resolved), an explicit "you can
+  delete the code afterwards", and a note that YouTube's API lags a save by a minute — without
+  which a correct attempt reads as a failure and people redo work they already did right.
+- **The whole token row copies, not just the icon**, and the icon becomes a tick for a moment —
+  the confirmation belongs where the click was, not only in a toast at the edge of the screen
+  (`ShareButton` established that pattern). On a phone, tapping a twelve-character random string to
+  select it by hand is the fiddliest gesture in this flow.
+- **A clipboard refusal is no longer silent.** `navigator.clipboard` needs a secure context and can
+  be refused by privacy settings; the catch used to swallow that, so the owner clicked and *nothing
+  happened* with no hint to select the text themselves. It now selects the token for them, making
+  the fallback one keystroke rather than a careful drag.
+- **A failed verification check is not an error.** Almost always YouTube's API has not caught up
+  with the owner's save yet, so the copy says "try again in a minute" rather than "failed" — and
+  that message only appears *after* a check, never on first render, where it would be an
+  accusation rather than a hint.
+- **`ChannelManage` reacts to the import finishing**, watching the `RUNNING` → terminal
+  transition (not the status alone, so it fires once rather than on every poll after). It toasts
+  the outcome and invalidates `['channel-manage', slug]` and `['channel-series-manage', slug]` —
+  the import wrote videos and series straight into the channel, and the lists were last
+  invalidated when it *started*. Without this an import that added 1,926 videos left the videos
+  tab showing none of them. **Nothing reaches an owner who navigated away**: the platform has no
+  notification channel, deliberately, the same call the transcode pipeline makes.
+- **The panel polls only while an import is `RUNNING`** (`refetchInterval` as a function of the
+  data, not a constant). Nothing pushes progress from the server, and a finished import polls
+  nothing.
+- **Starting an import invalidates `['channel-manage', slug]`** — the import writes videos and
+  series into this channel, so the dashboard's own lists are stale the moment it finishes.
+  Invalidated on *start* because nothing tells the client when that is; the poll is what notices.
+- **`CreateChannel` collects the YouTube URL but does nothing with it.** It is stored on the
+  channel; importing needs the owner to prove they control that channel first, which happens from
+  the channel's settings once it exists. Backend: `Channel.youtubeSource`.
+- The backend accepts a channel URL, an `@handle`, or a raw `UC…` id, and **the parsing is
+  deliberately server-side** — a frontend regex would have to be kept in step with it, and a
+  mismatch would reject a form the backend supports.
+- `verifiedBy` is `OWNER` or `ADMIN` and the panel says which: "verified by the platform" and
+  "verified by the channel's owner" are different claims to show a visitor.
+- **The admin link button is hidden for non-admins**, not shown-and-rejected — the backend 403s
+  anyone else, and offering an action that cannot succeed is worse than not offering it. It appears
+  in both states an admin might use it from: before anything is linked, and after a link whose
+  token will never appear because the admin does not control that description. When a channel is
+  ADMIN-linked the panel says so *and* says what it does not license — importing and embedding yes,
+  hosting the file no.
+
+## `SourceBadge` (`components/content`)
+
+Marks a video that plays from YouTube rather than from this platform, on cards (mark only, bottom
+right — the one thumbnail corner not already taken by duration, the hidden badge, owner actions or
+the progress bar) and on the detail page (mark plus the word, where there is room).
+
+- **Driven by `sourceType`**, so it is self-maintaining in the direction that matters: when an
+  owner uploads the original file `sourceType` flips `YOUTUBE` → `UPLOAD` and the badge disappears
+  on its own.
+- **Inline SVG, because lucide-react ships no brand marks** — the same reason `ShareButton` uses
+  text pills rather than approximating WhatsApp and Telegram logos.
+- **The mark is unmodified and unplated.** YouTube's brand guidelines allow it to identify YouTube
+  content and forbid recolouring or distorting it, so legibility over an arbitrary thumbnail comes
+  from a drop-shadow on the mark rather than a background box or a tint. Don't restyle it to fit a
+  palette.
+
+`VideoCard` also shows which **series** a video belongs to (`seriesTitle`, batch-attached on the
+backend), as a link to the series page with `stopPropagation` so it doesn't also fire the card's
+own navigation.
+
+## Deleting a channel (`AdminChannels`)
+
+`DELETE /api/channels/admin/{id}` is `PLATFORM_ADMIN`-only and had **no caller at all** until
+2026-09-07 — the endpoint existed and nothing in the app could reach it.
+
+**Guarded by typing the slug, not by a confirm dialog.** The delete cascades in SQL (backend
+migration 013) through every video, book, article and post, and through the comments, bookmarks
+and watch-history rows hanging off them — thousands for a channel that has imported a back
+catalogue, none of it recoverable, with no Java running that could spare anything. A click-through
+confirm is the wrong weight for that. The dialog also points at **suspend**, which is the
+reversible option and usually the one actually wanted.
+
+## Editing content (`components/channel/ContentEditModal`)
+
+One editor for videos, books and articles; `type` decides which fields it renders (`content` and
+`pages` are the only real divergences). Reached from a pencil on every row of `ContentManageList`.
+
+- **Sends only what changed.** Every Update DTO on the backend merges rather than replaces, so an
+  omitted field is left alone — sending the whole object would silently overwrite anything the form
+  does not render, like a video's `seriesId`.
+- **Re-seeded on `item.id`**, or the dialog would briefly show the previous item's values and a
+  quick save would write them onto the new one.
+- **Stays open on failure**, so a rejected save does not discard what the owner typed.
+- For a video still sourced from YouTube it says the edit is local. An owner retitling an embedded
+  video should not be left wondering whether they just renamed it on YouTube.
+
+## Query caching (`lib/queryCache.js`)
+
+Four named tiers — `NO_CACHE`, `LIVE`, `STANDARD`, `STATIC` — so "how long is this good for" is a
+decision with a reason attached rather than a number copied from the query above it.
+
+**The default used to be `staleTime: 10min` *and* `refetchOnMount: false`, which together mean
+stale data is never refetched at all.** Navigating away and back showed exactly what you left, for
+as long as the tab lived. Invisible on a small catalogue; on a large one it read as "the home page
+is frozen". The default is `STANDARD` now (2 min, refetch on mount).
+
+- **The feed is `NO_CACHE`.** Its discover section is randomised server-side precisely so a return
+  visit shows something different; any caching makes that randomisation invisible.
+- `STATIC` (1h) for the category list and the biography — refetching those per navigation is waste.
+- **`refetchOnWindowFocus` stays off everywhere.** Reshuffling a page under someone who just tabbed
+  back is disorienting in a way that refreshing on navigation is not.
+- Watch the spread order: `{ ...STATIC, staleTime: X }` silently overrides the tier. Put the spread
+  last, or don't add the literal.
+
+**Clicking the wordmark on the home page refreshes it.** A plain `<Link to="/">` is a no-op when
+the location is already `/` — React Router sees the same route and nothing remounts — so the one
+gesture everybody uses to mean "give me the page again" did nothing. It now invalidates the feed
+and scrolls to top, rather than doing a full reload to refresh a dozen cards.
+
+## Back navigation from a video
+
+`VideoDetail`'s back button was a hardcoded link to the home page, so arriving from a series — or a
+search, or a channel — and pressing it dumped you on the home page instead of back into the list
+you were working through. On a 99-video series that is the difference between watching a course and
+re-finding your place after every episode.
+
+It uses `navigate(-1)` now, gated on `window.history.state?.idx > 0` — React Router's own cursor
+into session history, which is zero for a deep link opened in a fresh tab. In that case it falls
+back to home **and the label says so**, because a button reading "back" that goes somewhere you
+have never been is worse than one that admits where it is taking you.
+
+## Dates shown to readers (`lib/dayjsAr.js`)
+
+`displayDate(item)` = `originalPublishDate || publishDate`, and every card and detail page uses it.
+`publishDate` means "when this landed on the platform" — right for the backend to sort on, wrong to
+show a reader. A YouTube import stamps a whole back catalogue with one day, so nineteen years of
+lectures all read «منذ ١٩ ساعة». `PostCard` is the deliberate exception: `Post` has no
+`originalPublishDate`.
+
+`formatPublishDate` now sets the locale on **both** branches. Only the relative one did, so
+anything older than a week fell through to dayjs's default and printed its month in English inside
+an otherwise Arabic card — invisible while the catalogue was days old, universal the moment content
+was imported.
+
+## `LinkifiedText` (`components/ui`)
+
+Renders user-authored text with bare URLs as links — YouTube descriptions are largely links, and
+importing them as plain text throws that away. **Never `dangerouslySetInnerHTML`**: the text is
+untrusted, so it is split on a URL pattern and the pieces are rendered as React children, which
+makes injection impossible by construction rather than by sanitising. Each candidate still passes
+`safeExternalUrl`, and links get `dir="ltr"` so bidi does not scramble a URL inside Arabic prose.
 
 ## Comment auth model
 
@@ -109,7 +386,7 @@ Replaces `Navbar.jsx`'s old inline `<form>` — shows suggestions on focus (befo
 ## Password reset & change password
 
 - `src/pages/ForgotPassword.jsx` (`/forgot-password`, public) and `src/pages/ResetPassword.jsx` (`/reset-password?token=...`, public) mirror `VerifyEmail.jsx`'s status-state pattern (form → success/error). `ForgotPassword` always renders the same success state after a successful request — the backend's response is deliberately identical whether or not the email is registered (see backend `CLAUDE.md`), so there's no separate "email not found" branch to build.
-- `lib/api/auth.js` exports `forgotPassword(email)`, `resetPassword(token, newPassword)`, `changePassword(currentPassword, newPassword)`. All three are called directly, the same way `VerifyEmail.jsx` calls `verifyEmail`, rather than being wrapped by `AuthContext` — but `changePassword` is **not** token-neutral the way the other two are: its response carries a replacement `{token, refreshToken}` pair (the backend's `tokenVersion` bump invalidates the one this session is holding), and its caller has to hand that to `AuthContext`'s `applySession` or it logs itself out. See the change-password entry under History.
+- `lib/api/auth.js` exports `forgotPassword(email)`, `resetPassword(token, newPassword)`, `changePassword(currentPassword, newPassword)`. All three are called directly, the same way `VerifyEmail.jsx` calls `verifyEmail`, rather than being wrapped by `AuthContext` — but `changePassword` is **not** token-neutral the way the other two are: its response carries a replacement `{token, refreshToken}` pair (the backend's `tokenVersion` bump invalidates the one this session is holding), and its caller has to hand that to `AuthContext`'s `applySession` or it logs itself out. See the change-password entry in `HISTORY.md`.
 - `UserProfile.jsx` has a second card, `ChangePasswordCard`, below the profile-save form — its own local state and submit handler, deliberately not merged into the profile form (different validation, different endpoint).
 - `Login.jsx` links to `/forgot-password` ("نسيت كلمة المرور؟") under the password field.
 
@@ -164,7 +441,7 @@ a gated item is indistinguishable from a missing one).
   enables the query on pointer-enter/focus/pointer-down (all of which precede a click), and the
   rare click that lands first opens a blank tab inside the gesture and points it at the URL once
   it arrives — a popup opened outside the gesture is blocked. Detail pages are the exception and
-  still fetch on mount: opening one *is* the intent. Fixed 2026-09-05, see History.
+  still fetch on mount: opening one *is* the intent. Fixed 2026-09-05, see `HISTORY.md`.
 - The session token from `useAuth()` is still right for watch/read-progress writes — those go
   through axios with a real `Authorization` header. Nothing goes into a media URL any more.
 
@@ -188,9 +465,15 @@ Four things that are load-bearing:
   has to blink once, so 408/425/429/5xx and status-less transport failures (`fetch` rejects with
   a `TypeError`) get four attempts with jittered exponential backoff — applied per part, and
   around the reissue call, which is where the backend's own rate limit produces a 429. A **403 is
-  never retried**: it means the presigned URL is dead, and only a re-signed one fixes that. Nor
-  is a cancellation — `sleep` wakes on the abort signal instead of sitting out a backoff someone
-  already cancelled.
+  never *re-sent*** — it means the presigned URL is dead, and the same bytes to the same dead
+  signature can never work — but as of 2026-09-06 it is **re-signed once and then retried**
+  (`uploadParts`' `resign` callback, one part at a time through the same `reissue-parts` endpoint).
+  A window is 50 parts, 400 MB, signed for one hour, so finishing one inside its signatures'
+  lifetime needs roughly 0.9 Mbit/s sustained; below that the URLs died mid-window and the whole
+  upload failed with everything already transferred discarded. A *second* 403 on a freshly signed
+  URL is not an expiry — it is a permission or configuration problem — and is surfaced rather than
+  re-signed in a loop. Cancellation is likewise never retried: `sleep` wakes on the abort signal
+  instead of sitting out a backoff someone already cancelled.
 - **The presigned `PUT` uses raw `fetch`, never the shared axios client.** That client's
   interceptor attaches the user's JWT to every call; sending it to object storage would leak a
   session token to a third-party host, and the presigned signature covers the URL and host only —
@@ -224,8 +507,9 @@ page count are gone with the upload module — a book reads fine without either.
 
 ## Testing (`vitest`)
 
-Added 2026-09-04; broadened 2026-09-05. `npm test` (`vitest run`) / `npm run test:watch`.
-**108 tests across 8 files**, all in the node environment — there is still no jsdom, on purpose.
+Added 2026-09-04; broadened 2026-09-05 and again 2026-09-07. `npm test` (`vitest run`) /
+`npm run test:watch`. **125 tests across 10 files**, all in the node environment — there is still
+no jsdom, on purpose.
 `uploadResume` supplies its own `globalThis.localStorage` for the same reason, which is also why
 the module reads storage through `globalThis.localStorage?.` inside a `try` rather than assuming
 a DOM: privacy modes throw outright, and "no resume offered" is the correct answer there.
@@ -236,6 +520,8 @@ a DOM: privacy modes throw outright, and "no resume offered" is the correct answ
 | `lib/__tests__/validation.test.js` | username/password rules **as mirrors of the backend's** — most importantly the 72-**byte** BCrypt ceiling measured with `TextEncoder`, which no character-count check can express |
 | `lib/__tests__/media.test.js` | `safeExternalUrl` as a scheme *allowlist* (`javascript:` in every spelling, scheme-less values, tab/newline smuggling), `resolveMediaUrl` returning null for a bare object key, YouTube id extraction rejecting lookalike hosts |
 | `lib/__tests__/uploadResume.test.js` | what may be resumed: same channel *and* kind, same name *and* size, the 7-day bound matching the backend's sweep, and storage that throws or is absent |
+| `i18n/__tests__/i18n.test.js` | `t`'s lookup, interpolation and miss behaviour, `tOptional`'s silence — and the one that earns its keep: a walk over the whole source asserting **every literal `t('...')` key resolves**, since a mistyped key renders as dotted ASCII rather than throwing. It also asserts it found 200+ call sites, so the regex can't rot into a vacuous pass |
+| `hooks/__tests__/useChannelContentTab.test.js` | that a timed-out publish reads as "still working" for `videos`/`books` and as a failure for `articles`/`posts` — the create call is idempotent on an upload session and not otherwise, so the wrong wording either sends someone to re-upload gigabytes or invites a duplicate post |
 | `lib/__tests__/user.test.js` | the three permission helpers, incl. every null/loading case |
 | `lib/api/__tests__/client.test.js` | the 401-refresh interceptor: one shared in-flight refresh for parallel 401s, single retry, `auth:session-expired` on each dead end, auth endpoints excluded |
 | `lib/api/__tests__/beacon.test.js` | the unload flush: no token → no request, `keepalive` set, both sync and async failures swallowed |
@@ -291,7 +577,7 @@ Channel-owner hide/pin (not approve — see backend `CLAUDE.md`'s "Comment moder
 
 None of this adds request volume — layer 1 actually got *less* frequent for video (60s vs. 15s); layer 3 is a reliability fix for a write that was already attempted via layer 2 but silently lost on refresh, not a new one.
 
-- `VideoPlayer.jsx`'s minimum-watch gate: a very short play never creates/bumps a watch-history row — otherwise an accidental click-and-immediately-back-out would count as "watched" and could push a genuinely-watched video out of the backend's per-user 200-row cap (see backend `CLAUDE.md`'s watch-history section). The floor is **duration-aware** (`watchThreshold(durationSeconds)`), not the flat `MIN_WATCH_SECONDS` (5s) it started as: `min(5s, max(1s, 10% of duration))`, falling back to the flat 5s whenever the player doesn't know the duration yet (non-finite/zero — an unloaded source or a live stream). 5s is right for a 45-minute lecture and wrong for a 13-second clip, where it silently swallowed the first 38% of the video — see the watch-history entry under History. Duration comes from the native element's `onLoadedMetadata` or the YouTube player's `getDuration()` on its first state change, held in `durationRef`; all four report paths (throttled `onTimeUpdate`, pause/ended, unmount flush, `pagehide` flush, both native and YouTube) share the one helper.
+- `VideoPlayer.jsx`'s minimum-watch gate: a very short play never creates/bumps a watch-history row — otherwise an accidental click-and-immediately-back-out would count as "watched" and could push a genuinely-watched video out of the backend's per-user 200-row cap (see backend `CLAUDE.md`'s watch-history section). The floor is **duration-aware** (`watchThreshold(durationSeconds)`), not the flat `MIN_WATCH_SECONDS` (5s) it started as: `min(5s, max(1s, 10% of duration))`, falling back to the flat 5s whenever the player doesn't know the duration yet (non-finite/zero — an unloaded source or a live stream). 5s is right for a 45-minute lecture and wrong for a 13-second clip, where it silently swallowed the first 38% of the video — see the watch-history entry in `HISTORY.md`. Duration comes from the native element's `onLoadedMetadata` or the YouTube player's `getDuration()` on its first state change, held in `durationRef`; all four report paths (throttled `onTimeUpdate`, pause/ended, unmount flush, `pagehide` flush, both native and YouTube) share the one helper.
 - `PdfReader.jsx` exposes a second callback, `onPageChangeImmediate(page, total)`, fired synchronously on every page turn (unlike the debounced `onPageChange`) at zero network cost — `BookDetail.jsx` uses it to keep a ref of the *true* latest page for its own `pagehide` flush, since the debounced network write (1s) might not have fired yet.
 
 ## Reader improvements (`components/content/PdfReader.jsx`)
@@ -321,7 +607,7 @@ Dropped into `VideoDetail`/`BookDetail`/`ArticleDetail`'s header next to `Bookma
 
 ## Known gaps
 
-- The Navbar's "رفع" (Upload) link (see "Navbar upload link" under History) now routes to the viewer's own channel-manage page rather than the old unrouted `/upload`. There used to be 5 unrouted admin CMS tab components under `components/admin/` meant to eventually back a dedicated upload page; they were deleted 2026-09-01 (dead code, fully duplicated by `ChannelManage.jsx`) rather than wired up. If per-type CMS tabs come back, build them as part of the `ChannelManage` rewrite mentioned under "Refactoring / structure" below, not as a second implementation.
+- The Navbar's "رفع" (Upload) link (see "Navbar upload link" in `HISTORY.md`) now routes to the viewer's own channel-manage page rather than the old unrouted `/upload`. There used to be 5 unrouted admin CMS tab components under `components/admin/` meant to eventually back a dedicated upload page; they were deleted 2026-09-01 (dead code, fully duplicated by `ChannelManage.jsx`) rather than wired up. If per-type CMS tabs come back, build them into `ChannelManage`, not as a second implementation.
 
 ## Backend contract
 
@@ -337,6 +623,12 @@ contract".
   went on to assemble a multi-GB object and create the row, reporting failure for a publish that
   had succeeded (Review 5, C5). Keep the override scoped to payloads carrying an
   `uploadSessionId` — the global timeout exists so ordinary reads fail fast.
+- **`read-url`'s value is passed through `safeExternalUrl` in `useBookReadUrl`.** For a book with
+  no uploaded master the backend falls back to the stored `pdfUrl`, and every caller renders it as
+  something the browser navigates to (an `href`, a `location.replace`, `<Document file>`). The
+  backend checks it on the way out too, but the guard belongs where the consequence is — the same
+  reason `sourceUrl` has always gone through it. Anything not absolute http(s) becomes null, and
+  the callers already render their no-file state for that.
 - **`playback-url` / `read-url` are the only source of a *playable* media URL**, and they answer
   **404, not 403**, when refused. `VideoDTO.sourceUrl` is **null** for an upload-backed video, so
   render a placeholder rather than treating null as an error. Never construct a bucket URL here;
@@ -348,8 +640,9 @@ contract".
   stays load-bearing; treat null as "not yet", never as an error. Object keys still never appear
   on a DTO.
 - **`playback-url` returns `{url, quality, qualities}` and takes an optional `?quality=`.**
-  `qualities` is the rendition ladder's names (`1080p`/`720p`/`480p`, whatever the worker produced
-  for that source) — names only, never object keys — and `quality` is the rung actually served,
+  `qualities` is the rendition ladder's names (`1080p`/`720p`/`480p`, plus **`audio`** for any
+  source with sound — whatever the worker produced) — names only, never object keys — and
+  `quality` is the rung actually served,
   which is *not* necessarily the one asked for: with no parameter the backend picks the default
   rung, and the player has no other way to learn which. An unknown quality is a 404, deliberately,
   rather than a silent downgrade. Two consequences for the player, both in `VideoPlayer`:
@@ -357,6 +650,14 @@ contract".
   must be carried across a quality switch by hand; and the query needs
   `placeholderData: keepPreviousData`, or the hook goes undefined mid-switch, the element
   unmounts, and the position is gone before the seek can be applied.
+- **`audio` is a rung like any other, and is never the default.** The worker added an audio-only
+  rung on 2026-09-07 (AAC 64 kbit/s mono, ~a twentieth of 480p) for a lecture audience on mobile
+  data. Nothing about the API changed: it arrives in `qualities` and `?quality=audio` serves it.
+  Two things on this side — the selector labels it from the catalog
+  (`video.qualityLabels.audio` → «صوت فقط»; every other rung name is an identifier, not a word, and
+  renders as itself via `tOptional`), and it always sorts last, because the backend orders the
+  ladder by height `NULLS LAST` and this rung has none. A player that asks for no quality never
+  lands on it.
 - **Resume is `list-parts` → diff → `reissue-parts`.** Object storage is the source of truth, so
   persist only the session id (never progress), keyed per channel *and* kind. Persist it **before
   the first byte goes out** — an upload interrupted at 3% is exactly the case resume must serve.
@@ -372,15 +673,21 @@ contract".
   derives `contentType` from that extension** — `file.type` is accepted and ignored, because
   browsers commonly leave it empty for `.mov`/`.m4v` and `application/octet-stream` used to 400
   a perfectly valid file (Review 5, C7).
-- **Rate limits are per client IP and per rule**, not per URL. Since 2026-09-05 the backend keys
+- **Rate limits are per client IP and per rule**, not per URL. The limiter runs after the
+  backend's CORS filter, so a 429 body is genuinely readable from here rather than surfacing as an
+  opaque network error. Since 2026-09-05 the backend keys
   buckets on the matched rule, so hitting the same rule from many different paths shares one
   bucket: general API reads are 300/min and writes 60/min across the whole app, with tighter
   per-rule limits on login (5/min), register (3/min), comments (10/min) and password reset
   (3/hour). Part reissue is 60/min, deliberately generous — it is a step inside one upload. A 429
   body is `{error, message}`, the `message` half user-facing Arabic.
-- **An uploaded video is not immediately playable.** `status` is `UPLOADED` until the pipeline
-  finishes, and there is **no notification channel by design** — no SSE, no WebSocket, no polling
-  loop. Re-fetch `GET /videos/{id}` when the user comes back, and never imply a quick turnaround.
+- **An uploaded video is not immediately visible, not merely un-transcoded.** `status` is
+  `UPLOADED` until the transcode worker reports back, and every public listing query gates on
+  `READY` — so until then the video is absent from the feed, from search and from its channel's
+  public page, not just missing a quality selector. The owner still sees it on their own dashboard,
+  which is the only surface that shows it. There is **no notification channel by design** — no SSE,
+  no WebSocket, no polling loop — so re-fetch `GET /videos/{id}` when the user comes back, and never
+  imply a quick turnaround: a long lecture is measured in hours.
 
 ## Build / verify
 
@@ -392,684 +699,78 @@ npm run build    # ALWAYS run before trusting a session's changes
 
 Backend must be running (see its own `CLAUDE.md`) on `localhost:8080` for the app to have real data — `VITE_API_BASE_URL` env var overrides this if needed.
 
+### Content-Security-Policy (`vite.config.js`, added 2026-09-06)
+
+`vite.config.js` injects a CSP meta tag into `index.html` at build time. A meta tag rather than a
+header because the SPA is static files — there is no server of ours in the request path, and the
+backend's own CSP rides on API responses only, never on this document.
+
+- **The inline theme script is hashed, not `'unsafe-inline'`-allowed.** The hash is computed from
+  the file actually being served, so it cannot drift when that script is edited — a hash pasted
+  into the HTML by hand is wrong the first time someone changes a character of it. **This is why
+  adding a second inline `<script>` to `index.html` needs no action**, and why moving the theme
+  script to a separate file would need the policy revisited.
+- **`img-src` names every remote image host the app can end up rendering**, and that list is not
+  obvious from the code: `img.youtube.com`/`i.ytimg.com` are video posters derived from a YouTube
+  id, and `yt3.ggpht.com`/`yt3.googleusercontent.com` are **channel avatars** —
+  `POST /api/youtube/resolve` prefills a new channel's `logoUrl` with one and it is then hotlinked
+  on every card, detail page and channel header. The yt3 hosts were missing until 2026-09-08, so a
+  YouTube-prefilled logo rendered fine in review and broke in production; a host that only reaches
+  the page through data typed by a user is exactly the one this list forgets.
+- **`frame-ancestors` is inert in a meta tag** and is kept only as documentation of intent —
+  browsers ignore it (along with `sandbox` and `report-uri`) when the policy is delivered this way.
+  Real clickjacking protection for the SPA has to come from an `X-Frame-Options` or
+  `Content-Security-Policy` **header** on whatever serves these static files.
+- **`style-src` keeps `'unsafe-inline'`**, deliberately: react-pdf's text and annotation layers
+  position every span with a generated style rule and there is no hash-based way to express that.
+  Inline style cannot execute, so it is the one concession.
+- **Two env vars are read at build time and baked into the policy**: `VITE_API_BASE_URL` and
+  **`VITE_STORAGE_ORIGIN`** (see `.env.example`). In dev both fall back to the compose stack
+  (`localhost:8080` / `localhost:9000`), so `npm run dev` needs no `.env` — the policy applies in
+  dev exactly as in a build, so without that fallback it would block MinIO on every machine. **A
+  production build does not guess**: leaving `VITE_STORAGE_ORIGIN` unset there builds an app that
+  renders fine and then **cannot play a video or open a book** — `connect-src`/`media-src`/`img-src`
+  will not include the bucket host and the browser blocks the request as a CSP violation, nowhere
+  near the missing variable. The build warns loudly; do not ignore it.
+
 ---
 
 # Open items
 
-Everything still outstanding, consolidated from all three review passes. This is the list to work
-from; completed work and the verification record behind it live under "History" at the bottom.
-Delete an entry here when it's actually fixed rather than moving it up — History is where
-finished work goes.
+Only what is still outstanding. Closed findings and the reasoning behind them are in `HISTORY.md`;
+delete an entry here when it is fixed rather than striking it through.
 
 ## Bugs
 
-From **Review 4 — 2026-09-05**, a staff-level pass over frontend *and* backend together, focused
-on the presigned-upload/playback code that landed 2026-09-04 and had never been reviewed. The
-backend half is filed in `absarna-backend/CLAUDE.md` under "Review 5"; several items below are
-one bug with two halves and are cross-referenced.
-
-**All six are now closed (2026-09-05), so nothing in this section is outstanding.** They are kept
-struck-through in place rather than deleted per this file's usual rule, because in three of them
-what was fixed differs from what the finding proposed — the unmount cancel, the `sizeBytes` field
-name, and the retry classification — and an entry that only said "fixed" would invite the
-original suggestion being re-applied. Fold them into History on the next pass through this file.
-
-- ~~**Abandoned uploads permanently lock a channel out of uploading.**~~ **Closed 2026-09-05**,
-  across both repos: the backend age-bounds the quota count at 24h, sweeps at 7 days, and exposes
-  `DELETE .../upload-url/{sessionId}` (finding C1); this side calls it when a resume offer is
-  declined or a different file is picked, and `ChannelManage` now aborts the in-flight transfer
-  when the page unmounts.
-  - **Unmount aborts the transfer, it does not discard the session** — and the difference is the
-    whole point, so don't "finish the job" later by adding a `discard()` there. This entry
-    originally read "a cancel call on unmount/replace", written before resume existed; giving up
-    the session on unmount would abort the multipart upload, throw away every byte transferred,
-    and leave the remembered session id pointing at nothing — destroying exactly the upload that
-    resume was built to pick back up. What is worth stopping is the transfer itself: three
-    parallel `PUT`s otherwise keep saturating the connection for a session id that has nowhere
-    left to go, since the form that would carry it to the create call unmounted with the page. A
-    hard refresh already behaves this way, so this only makes SPA navigation consistent with it.
-  - An `AbortError` is not reported to the user in either file-select handler. It means the page
-    was left, the session survives it, and by then there is nothing mounted to show a toast to.
-
-- ~~**A single failed part aborts the whole upload**~~ / ~~**a 429 mid-upload kills it**~~ —
-  **both fixed 2026-09-05** by one `withRetry` helper, applied per part *and* around the reissue
-  call (the 429 came from our own backend's rate limit on `POST .../parts`, not from storage).
-  Four attempts, exponential backoff with jitter so three concurrent workers that fail together
-  don't retry in lockstep. What is and isn't retried is the load-bearing part:
-  - **Retryable**: 408/425/429/5xx, and a failure carrying no status at all — `fetch` rejects
-    with a `TypeError` when the connection drops, which is the mobile case this is for.
-  - **Not retryable**: a 403. That means the presigned URL is expired or wrong, and re-sending
-    the same bytes to it cannot fix that — only a re-signed URL can, which is the resume path's
-    job. Nor a cancellation: `sleep` wakes on the abort signal rather than sitting out a backoff
-    someone already cancelled.
-  - `putPart` now attaches `.status` to the error it throws, which is what makes that
-    distinction possible at all.
-
-- ~~**`contentType` is taken from `file.type`, which browsers often leave empty.**~~ **Fixed
-  2026-09-05**: the field is no longer sent at all. The backend derives the content type from the
-  allowlisted extension (finding C7) and accepts-and-ignores the field, so the fallback to
-  `'application/octet-stream'` — which is not on the allowlist and 400'd perfectly valid `.mov`
-  and `.m4v` files — has nothing left to break. Nothing is lost: the header was client-asserted
-  either way.
-
-- ~~**`accept="video/*"` doesn't match what the backend accepts**~~ — **fixed 2026-09-05.**
-  `ALLOWED_EXTENSIONS` in `usePresignedUpload.js` now mirrors the backend's `UploadType`
-  allowlist (`mp4`/`mov`/`m4v`, `pdf`), `acceptAttribute(kind)` renders the input's `accept` from
-  it, and `upload()` refuses an unlisted extension up front with `UnsupportedFileTypeError`
-  naming what *is* accepted. Both halves are needed: `accept` narrows the dialog but binds
-  nothing (drag-and-drop ignores it, and every platform offers a way past it), and the guard is
-  what stops a doomed file consuming one of the channel's five session slots. Same
-  mirror-the-backend arrangement as `lib/validation.js` and pinned by a test for the same
-  reason — drift here is a file the picker offers and the server refuses.
-
-- ~~**Progress can exceed the file on a resume.**~~ **Fixed 2026-09-05** by reading the number
-  instead of inferring it: `uploadedBytes(parts)` sums the `sizeBytes` `ListParts` already
-  returns per uploaded part. The old `file.size - missing * partSizeBytes` assumed every missing
-  part was full-sized, which the final part is not. Note the field is **`sizeBytes`**, not the
-  `size` this entry originally claimed. The fresh-upload path had the mirror-image error — it
-  discarded the byte count `uploadWindow` returned and recomputed the same wrong expression —
-  and now keeps it, so the bar starts from a real figure on both paths.
-
-## Refactoring / structure
-
-- ~~**Resume is fully built and completely unreachable.**~~ **Wired up 2026-09-05** (backend
-  finding R1) — `lib/uploadResume.js` + `ChannelManage`'s shared `runUpload`, details under
-  "Presigned uploads" above. Four built endpoints stopped being dead weight, and the failed-part
-  and 429 bugs above are now survivable rather than fatal: an interrupted upload can be picked up
-  where it stopped instead of started over.
-
-- **This section's own entry was stale and is now corrected.** The previous text said, "checked
-  2026-09-03, that rewrite has not happened" and described `ChannelManage.jsx` posting to
-  `/channels/{slug}/content/{videos,books}/upload` with a separate backend `upload` module
-  (`ChunkUploadController`/`FileUploadController`) alongside it. **All of that is gone as of
-  2026-09-04**: the backend's `upload` and `streaming` modules were deleted outright, and
-  `ChannelManage.jsx` now uploads through `usePresignedUpload` straight to object storage. So
-  the condition this extraction was parked on — "wait until the upload endpoints change
-  underneath it" — **has been met**. `ChannelManage.jsx` is still ~700 lines holding five tabs
-  and four near-identical content forms, and the `<ContentPublishForm type=… />` +
-  `useChannelContentTab(slug, type)` extraction is now genuinely unblocked. Doing it is also the
-  natural place to land the resume UI above, since the video and book upload handlers are
-  near-duplicates of each other.
-
-- ~~**`STREAM_BASE_URL` in `lib/env.js` is dead**~~ — **deleted 2026-09-05** along with the
-  `VITE_STREAM_BASE_URL` env var it read. It pointed at the backend's `/stream/**` range-request
-  endpoints, which went with the `streaming` module.
+Nothing outstanding. Review 4 (2026-09-05) closed all six of its findings across both repos —
+abandoned-upload lockout, per-part retry, the 429 mid-upload, `contentType`, the `accept`
+allowlist, and resume progress. Three of them were fixed differently from what the finding
+proposed, which is worth knowing before re-applying the original suggestion: see "Review 4" in
+`HISTORY.md`.
 
 ## UX
 
-- **Comment reporting.** Author-only comment edit/delete exist, but a reader still has no way to
-  report someone else's comment — there's no backend endpoint for it yet.
+- **Comment reporting.** Author-only edit/delete exist; a reader has no way to flag someone
+  else's comment. Blocked on a backend endpoint.
+- **A wedged YouTube import used to have no way out of the panel.** The backend now fails a
+  `RUNNING` record left behind by a restart, so the panel falls through to its FAILED branch and
+  its retry button. If `importStatus` ever gains a third stuck state, the 5-second poll in
+  `useChannelYouTube` needs a matching escape — it currently polls `RUNNING` forever.
 
 ## Feature ideas
 
 Matching the backend's list; these follow the "surface useful content, don't optimise for
 time-on-site" principle rather than fighting it.
 
-- **Offline/PWA for downloaded books and articles** — genuinely useful for an audience with
-  intermittent connectivity, and it doesn't require any engagement machinery.
-- **Transcript view alongside the video player** (needs the backend transcript work), with
-  click-to-seek. Biggest accessibility and skimmability win available.
-- **A "من القنوات التي تتابعها" digest/inbox page** — an explicit list of what's new since your
-  last visit, which you can clear, instead of an implicit ranked feed.
-- **Per-page notes/highlights on `PdfReader`**, keyed to the existing reading history — the rest
-  of that idea (search, TOC, page-jump) shipped, see "Reader improvements" above; this piece was
-  deliberately left out of that pass and is still open.
-
-Shipped since this list was written (2026-09-02): series previous/next + "part X of Y" on
-`VideoDetail` (see "Series" above), the share sheet + copy-link-at-timestamp (see "Share sheet"
-above), PdfReader's search/TOC/page-jump (see "Reader improvements" above), and dark mode (see
-"Dark mode" under "Styling: Tailwind CSS" above).
-
-- **A per-channel "takeout"/export view** for the backend export idea — a channel owner can
-  download everything they've published. Reinforces the not-locked-in stance the platform's
-  design already implies.
-- **Series completion state on `ChannelPage`'s "سلاسل" tab** — "4 of 11" per series card, from the
-  same data `VideoDetail`'s Previous/Next block already computes client-side.
-
-Shipped since this list was written (2026-09-02): **progress bars on cards beyond the history
-page** — `VideoCard`/`BookCard` already accepted `watchedSeconds`/`currentPage` props (wired into
-`Home`, `SearchPage`, `ChannelPage`'s videos tab, `VideoDetail`'s related row, `SeriesDetail`,
-`Books`), but `ChannelPage`'s books tab and `Bookmarks.jsx` (both video and book tabs) weren't
-passing them — now wired via the existing `useWatchProgressMap`/`useReadingProgressMap` hooks,
-same pattern as everywhere else. **Print/clean-reading stylesheet for articles and biography** —
-`index.css` gained a hand-written `@media print` block (not per-page `print:` utilities alone,
-since forcing real black-on-white over the dark-mode CSS-variable tokens needs `!important` to
-reliably win — see the block's own comment) hiding `nav`/`aside` globally and resetting
-`.max-w-reading` content to black-on-white/no-shadow; `ArticleDetail.jsx` and `Biography.jsx` use
-`print:hidden`/`print:p-0`/`print:shadow-none`/`print:border-0` on their own share/bookmark
-buttons, metadata bar, comments section, and card chrome. Verified via `npm run build`'s compiled
-CSS (both the hand-written block and the `print:` utilities are present); not verified against a
-real printed article, since no article content is seeded in the local backend to load
-`ArticleDetail` with.
-
----
-
-# History — completed work, verifications, and decisions
-
-Three review passes with the fixes that came out of each. Nothing here is outstanding — it's kept
-because the *why* is expensive to re-derive, and because several entries record things
-deliberately **not** done. Open items live under "Open items" above.
-
-## Frontend security pass — 2026-09-05
-
-A pass over this side alone, deliberately scoped to what the frontend can fix without touching
-the backend. Three things changed; the rest of the section records what was checked and found
-sound, so the next pass doesn't re-derive it. **No backend change was needed for any of it.**
-
-- **`BookCard` minted a presigned read URL for every card it rendered.** The worst of the three,
-  and the only one that scales: a presigned URL is a bearer credential valid for hours, and a
-  listing page created one per book on screen — twelve on `/books`, twelve more per
-  infinite-scroll page, again on `History`, `Bookmarks` and `ChannelPage` — for books nobody
-  downloaded. Not a privilege escalation (the backend runs `ContentVisibility` before signing, so
-  every one of those URLs was for a book the viewer may already read), but it turned one careless
-  page view into a cache full of live download links and made the backend's
-  `playback_url_minted_total` counter — its stated proxy for concurrent viewers — measure card
-  impressions instead. Now fetched on intent; the mechanics and why a blank tab is opened inside
-  the click gesture are under "Reading media" above.
-- **`AuthContext` logged the whole axios error on a failed profile fetch**, and an axios error
-  carries `config.headers.Authorization` — the live session JWT. Console output is not a private
-  channel: extensions read it, screenshots capture it, and any error-reporting hook added later
-  would ship it. Now logs the status alone. (`ErrorBoundary`'s `console.error` is left as-is —
-  a React error and its component stack carry no credential.)
-- **Dependency advisories cleared: 7 → 0.** `vite` 5.4.21 → 6.4.3, `vitest` 2.1.9 → 3.2.7,
-  `react-router-dom` 6.30.6 → 7.18.3. The critical and high were dev-only (vitest UI arbitrary
-  file read/execute; vite dev-server path traversal and `server.fs.deny` bypass) but genuinely
-  live for anyone running `npm run dev --host` to test on a phone. The one touching shipped code
-  was React Router's open redirect via a backslash in `<Link>`/`useNavigate` — **checked as
-  unreachable here** before bumping: every `to=` in `src/` is a template literal over an id or a
-  channel slug, and the backend constrains slugs to `^[a-z0-9-]+$`, so no backslash can reach a
-  route target. Bumped anyway rather than left as an argued exception.
-  - Note the earlier entry's "needs vite 8 / vitest 3" was pessimistic: **vite 6.4.3 and vitest
-    3.2.7 are already past every advisory range**, which is why this stayed a two-major bump on
-    the tooling rather than a jump to vite 8 (whose `@vitejs/plugin-react` 6 pulls in
-    oxc/rolldown and a React-compiler babel plugin — a real migration, for no extra security).
-  - **Verified by `npm run build` and the full 95-test suite on the new toolchain, not by a
-    browser click-through** — the Chrome extension wasn't connected. Every React Router API this
-    app imports (`BrowserRouter`, `Routes`, `Route`, `Navigate`, `Link`, `useLocation`,
-    `useNavigate`, `useParams`, `useSearchParams`) was confirmed present in 7.18.3, and the app
-    uses component routes rather than a data router, so none of v7's loader/action-era breaking
-    changes apply. Worth one manual pass over the routes anyway.
-
-Checked and found sound, for the record: no `dangerouslySetInnerHTML`, `eval`, or `innerHTML`
-anywhere in `src/`; every externally-sourced URL that becomes an `href`/`src` goes through
-`safeExternalUrl` or `resolveMediaUrl` (both of which reject anything but absolute http(s), see
-`lib/media.js`); every `target="_blank"` carries `rel="noopener noreferrer"`; the presigned `PUT`
-still uses raw `fetch` so the JWT never reaches the storage host; the YouTube embed passes a
-parsed video id to `YT.Player` on the `youtube-nocookie.com` host rather than interpolating a URL;
-and no route target, redirect, or API path is built from a query parameter.
-
-## Confirm timeout — 2026-09-05 (Review 4 / backend C5)
-
-**The one Review-4 item that was a pure frontend fix.** `lib/api/client.js`'s blanket
-`timeout: 30000` also governed the create call that confirms a presigned upload — where the
-backend pages through `ListParts` and runs `CompleteMultipartUpload` over an object that can be
-several GB, routinely well past 30s. Axios aborted, the user was told "فشل في نشر الفيديو", and
-the backend went on to assemble the object and create the video anyway: a failure message for a
-publish that had actually succeeded.
-
-- **A per-request override, not a higher global timeout.** `UPLOAD_CONFIRM_TIMEOUT_MS` (5 min) is
-  exported from `client.js` and applied by `contentCreateConfig(payload)` in `useChannels.js`,
-  which hands it only to a payload carrying an `uploadSessionId`. The 30s default exists so an
-  ordinary stalled read fails fast; raising it globally would make every hung request hang five
-  minutes to suit the slowest call in the app.
-- **The decision is an exported pure function** so it could be tested without standing up a React
-  tree — convention 1 of the Testing section, applied rather than restated.
-- **A timeout now says something different from a failure.** `ChannelManage`'s `publishError`
-  reports a slow confirm as "لم يضِع ما رفعته — أعد المحاولة بعد قليل" instead of "فشل". That is
-  accurate rather than merely kinder: the create endpoint is idempotent on the session, and the
-  error path deliberately leaves `uploadSessionId` in form state, so pressing publish again
-  returns the row the first attempt created without re-uploading a byte. Telling the user it
-  failed was pointing them at starting over.
-
-## Review findings — 2026-09-01
-
-Full read-through of the frontend (no code changed). Everything below is **open**; delete an
-entry when it's actually fixed rather than leaving it here as history. Backend-side findings
-live in the backend's own `CLAUDE.md` under the same heading — several items here have a
-matching entry there and are best fixed on both sides at once.
-
-### Bugs
-
-Fixed 2026-09-01 (session after the review that logged this list): the React Query v4→v5
-option renames (`cacheTime`→`gcTime` in `App.jsx`, `keepPreviousData: true`→`placeholderData:
-keepPreviousData` in `useContents.js`), `AuthContext.fetchUserProfile` no longer logging out on
-a non-401/403 failure, client-side password/username validation now mirroring the backend's
-actual rules via new `lib/validation.js` (used by `Register.jsx`, `ResetPassword.jsx`,
-`UserProfile.jsx`'s `ChangePasswordCard`), `/admin` and `/admin/channels` now gated on
-`user.role === 'PLATFORM_ADMIN'` (`ProtectedRoute`'s new `adminOnly` prop in `App.jsx`),
-`client.js`'s token refresh now deduped behind a shared in-flight promise, stores a rotated
-refresh token when the backend returns one, and signals expiry via a `window` event
-(`auth:session-expired`, handled in `AuthContext`) instead of a hard `window.location.href`
-reload, `extractYouTubeId` now checks an exact hostname set instead of `.includes(...)`, and
-`VideoCard`'s broken-thumbnail `onError` now falls back to the 🎬 placeholder instead of
-leaving an empty box.
-
-Fixed 2026-09-02: `ChannelManage.jsx`'s video/book/article/post submit handlers now run the
-form object through a `stripEmpty` helper before sending, so an untouched `publishDate`/`pages`
-is omitted from the payload instead of going over the wire as `""`; the video form gained a
-`publishDate` input (previously only books/articles had one, so every video was created with
-`publishDate = null` — the backend already defaults it to `LocalDate.now()` on create, matching
-books/articles, so leaving the new field blank behaves the same as before); the still-missing
-`NULLS LAST` on `ContentRepository.findDiscoverByCategoriesExcludingChannels` (the feed's
-"اقتراحات لك" discover query — every other `publishDate DESC` query already had it) was fixed on
-the backend, which would otherwise have kept pinning NULL-date videos to the top of that section
-even after the form fix; and `videoForm`'s dead `speaker`/`isFeatured` state (neither had an
-input, and `handleVideoSubmit` overrode `speaker` with `channel.name` anyway) was dropped, along
-with the same dead `isFeatured` on `bookForm`/`articleForm` — the backend's create DTOs already
-exclude `isFeatured` entirely by design (see `ContentCreateRequest`'s comment), so sending it was
-always a no-op.
-
-Turned out to already be fixed, this list just hadn't been updated: platform admins getting
-403'd on channel-management actions. `ChannelContentController`'s `requireManageableChannel`/
-`verifyOwnership` helpers — used by every video/book/article/post list/create/visibility-toggle/
-delete/upload endpoint — already call `ChannelService.canManageChannel(userId, channelId,
-isAdmin)`, the 3-arg admin-bypass overload; the frontend's `canManageChannel` (`lib/user.js`)
-already matches. Only the four controllers' unrelated `isVisibleToCaller` helpers (gating whether
-a hidden item is visible to *this* caller, not manage actions) still call the 2-arg owner-only
-overload, but each already has its own explicit `isAdmin` early-return before that call, so
-there's no gap there either.
-
-
-### UX / UI
-
-Fixed 2026-09-01: `<html lang="ar" dir="rtl">` set on the root element (per-page `dir="rtl"`
-wrappers deleted — `Input.jsx`'s label `dir="rtl"` is unrelated and stays); per-page `<title>` +
-OG/Twitter meta via the new `hooks/usePageMeta.js`, wired into every page; `VideoCard`/
-`VideoDetail` now show the owning channel's name + avatar, linked to the channel page (via
-`useChannel(video.channelId)` — `GET /channels/{identifier}` already accepted a numeric id as a
-slug fallback, so no backend change was needed); `ChannelPage` renders `bannerUrl` and
-`description`; the subscriber count is hidden (not shown as `0`) for logged-out visitors;
-`alert()`/`window.confirm()` replaced with `useToast()`/`Modal` in `Home`, `CommentsSection`,
-`Admin`, `Register`, and (bonus, same bug) `Subscriptions`, `History`, `AdminChannels`,
-`CreateChannel`; a channel's video tab now paginates via `useChannelContents` as an
-`useInfiniteQuery` with a "load more" button, and its tab badge shows the real total — this
-needed a small backend change too, since `GET /channels/{slug}/contents` was returning a raw
-`Page<Content>` with no `hasNext`/`currentPage` fields (see manara-platform's `ChannelController`,
-now mirroring `GET /api/contents`'s `{content, currentPage, hasNext, totalItems}` shape); `/books`
-and `/articles` got client-side search/category-filter/sort/"load more" (both endpoints already
-return the full unfiltered list, so nothing server-side was needed); `VideoCard` thumbnails are
-`aspect-video`/`object-cover` instead of a fixed-height `object-contain` box; comment counts
-include replies; comment dates use `dayjs` (`lib/dayjsAr.js`, a custom locale that keeps Latin
-digits — dayjs's bundled `ar` locale swaps to Arabic-Indic same as `ar-EG` did) with relative
-formatting under a week old and an absolute date+time past that; comments gained a character
-counter/limit and author-only edit/delete (the backend already had `PATCH`/`DELETE
-/comments/{id}` gated on `Comment.userId` — `CommentDTO.userId` was already exposed specifically
-for this, per its own code comment — the frontend just hadn't wired it up); a real `NotFound`
-page now renders on the `*` route instead of silently redirecting to Home; YouTube videos are
-now played through the IFrame Player API (`youtube-nocookie.com`, `rel=0`) instead of a bare
-`<iframe src>`, which both drops the deprecated `frameBorder` prop and — as a side effect of
-needing `onStateChange`/`getCurrentTime` for the embed anyway — closes the "watch history never
-records for YouTube videos" gap from the same list.
-
-Turned out to already be fixed, this list just hadn't been updated: **category chips leading to
-empty result grids** — `ContentRepository.findAllCategories` (backing `GET /api/categories`,
-the only categories endpoint) already filters to `visible = true` and active-channel content
-only; `/books`/`/articles` derive their chips client-side from the already-fetched, already-
-filtered list, so there was never a separate risk there either.
-
-
-### Accessibility
-
-Fixed 2026-09-02: `VideoCard`'s outer clickable `<div>` now has `role="button"`/`tabIndex={0}`/
-an Enter-Space `onKeyDown` handler/a focus ring, and `BookCard`'s clickable cover/title `<div>`/
-`<h3>` became a real `<Link>` — both card grids are keyboard-operable now; route changes move
-focus to a new `#main-content` landmark (`App.jsx`'s `AppRoutes`, skipped on first render) and
-`PageShell` gained a skip-to-content link as the first focusable element on every page; `Modal`
-and the mobile sidebar drawer (`SideBar.jsx`, only when its `open` prop is true — the same
-`<aside>` is a persistent, non-modal nav rail on desktop) now use a shared `useFocusTrap` hook
-(`hooks/useFocusTrap.js`): focus moves into the panel on open, Tab/Shift+Tab cycles within it,
-Escape closes it, and focus is restored to whatever opened it on close; both also gained
-`role="dialog"`/`aria-modal`, and `Modal`'s title is wired to the dialog via `aria-labelledby`;
-icon-only buttons that relied on `title` alone now also have a matching `aria-label` (`Navbar`'s
-upload/profile/admin/logout, `SideBar`'s manage-channel link, `VideoCard`'s visibility-toggle/
-delete/channel-link, `ChannelManage`'s `ContentManageList` visibility-toggle/delete,
-`CommentsSection`'s edit/delete, `Modal`'s close button, which previously had neither).
-
-Checked and turned out not to be an issue: colour-only state signalling on the visible/hidden
-toggle and the subscribe button — both already pair an icon change (`Eye`/`EyeOff`, `Bell`/
-`Check`) with a text label (`مخفي عن الزوار`, `اشترك`/`مشترك`), not colour alone.
-
-### Refactoring / structure
-
-Resolved 2026-09-01: `PageShell` is now used by every page, including the ones that used to
-hand-roll `<div className="min-h-screen bg-bg"><Navbar/>…` (`ChannelPage`, `VideoDetail`,
-`BookDetail`, `ArticleDetail`, `ChannelManage`, `Admin`, `AdminChannels`, `Register`, `Login`,
-`ForgotPassword`, `ResetPassword`, `VerifyEmail`, `NotFound`, `UserProfile`, `CreateChannel`,
-`Biography`) — pages with no browsing sidebar pass `sidebar={false}`, see "`PageShell`" above;
-loading/error/empty ternaries were collapsed into the new `QueryState` (see "`QueryState`"
-above) across all of the pages listed there plus `Home`, `SearchPage`, `Books`, `Articles`,
-`Subscriptions`, `History`; `ProtectedRoute` (`App.jsx`) now renders `<Spinner/>` inside a
-Tailwind-classed wrapper instead of the old CSS-variable inline-styled spinner; `lib/user.js`
-now exports `isPlatformAdmin`/`isChannelOwner`/`canManageChannel`, wired into `App.jsx`,
-`Navbar.jsx`, `ChannelPage.jsx`, `ChannelManage.jsx` in place of inline `user?.role === …` /
-`channel.ownerUserId === user.id` checks; `Home`'s visibility-toggle/delete direct `api.patch`/
-`api.delete` calls became `useToggleVideoVisibilityByChannelId`/`useDeleteVideoByChannelId`
-(`hooks/useChannels.js`, reusing the existing `invalidateChannelContent` helper) — `ChannelManage`'s
-two file-upload handlers are unchanged, per their own documented reason (upload-progress
-callbacks don't fit `useMutation` cleanly); every page in `App.jsx` is now `React.lazy`-loaded
-per route behind one `<Suspense>` (mirroring the existing `PdfReader` pattern), and `framer-motion`/
-`react-hook-form` — confirmed genuinely unreferenced anywhere in `src/` — were removed from
-`package.json`; the five admin CMS tab components were deleted rather than wired up (see "Known
-gaps"). Checked and turned out not to be an issue: `.DS_Store` was never actually git-tracked
-(already covered by `.gitignore`), and the repo does have a git history now.
-
-## Review findings — 2026-09-02
-
-Second full read-through (frontend + backend), no code changed. Everything below is **open**;
-delete an entry when it's actually fixed. The backend's `CLAUDE.md` has a matching section under
-the same heading — the first two items here are two halves of one fix and should be done together.
-
-### Bugs / security
-
-Fixed 2026-09-02: **stored XSS via a video's `sourceUrl`**, on both sides as the finding
-required. Here: `lib/media.js`'s new `safeExternalUrl(url)` returns `null` for anything that
-isn't an absolute `http(s)` URL, and every place that renders a stored URL as-is now goes
-through it — `VideoPlayer.jsx`'s two `<a href>` fallbacks and its `TELEGRAM` `<source src>`
-(which render "رابط الفيديو غير صالح" instead of a live link when it returns null), plus
-`Biography.jsx`'s three social links, which had exactly the same exposure. There: a `@Pattern`
-allowlist on every user-supplied URL field (backend `core/validation/SafeUrl`).
-`safeExternalUrl` parses with **no base URL**, so a scheme-less `www.example.com` is rejected
-rather than silently resolved against our own origin, and it returns `parsed.href` rather than
-the input, since the URL parser strips embedded tabs/newlines that would otherwise go straight
-back into the href.
-Fixed 2026-09-02 (session after the review that logged this list): **`client.js`'s 401-with-no-
-refresh-token gap** — a 401 with an access token present but no refresh token to try (cleared,
-another tab logged out, first-party storage eviction) now dispatches `auth:session-expired` on
-that path too, not just inside the refresh-attempt branch (see `e3f13c3`).
-
-Fixed 2026-09-02: **`validation.js` was missing the backend's 72-byte password cap.**
-`PasswordValidator` rejects any password over 72 **UTF-8 bytes** (BCrypt truncates past that),
-which a mixed-script password hits well under 72 characters. `getPasswordRules` now has a
-`maxBytes` rule measured via `TextEncoder`, not `password.length` — rendered automatically by
-`Register.jsx`/`ResetPassword.jsx`/`UserProfile.jsx`'s `ChangePasswordCard`, which already `.map()`
-over the rules array generically.
-
-Fixed 2026-09-02 (backend side): hidden content no longer shows up in `/history` or
-`/bookmarks` — those endpoints gate on visibility now, both when recording and when listing, so
-a card in either list can no longer be for an item whose own detail page 404s.
-
-Turned out to already be fixed, this list just hadn't been updated: **`durationToSeconds`
-returning `0` instead of `null` for an empty string** — it already guards `if (!duration ...)
-return null` before ever reaching `.split(':')`, and an empty string is falsy, so this path was
-never actually reachable.
-
-### Notes
-
-- `resolveMediaUrl(url, token)` now appends `?token=` only to `/uploads` and `/stream` paths on
-  our own origin — it used to append to any URL whose string merely *started with* the API base,
-  which turned out to be a real leak, not just a wide contract. Fixed 2026-09-02; see the third-
-  pass section at the end of this file.
-- (Historical — the token parameter no longer exists.) The `token` it took was the **media token**, never the session
-  token — see "Media tokens" below.
-- `<html lang="ar" dir="rtl">`, per-page `usePageMeta`, `ErrorBoundary`, focus trapping and the
-  skip link are all in place; no `dangerouslySetInnerHTML` anywhere in `src/` — the XSS item above
-  is the only injection path found.
-
-## Review findings — 2026-09-02 (third pass)
-
-Third full read-through (frontend + backend), no code changed. Everything below is **open**;
-delete an entry when it's actually fixed. The backend's `CLAUDE.md` has a matching section under
-the same heading — the media-token item below is the frontend half of a fix that is *entirely*
-frontend-side (the backend's own credential separation was probed and is sound), and the
-change-password item is one half of a fix that needs both sides.
-
-### Bugs / security
-
-Fixed 2026-09-02 (same day as this review): **changing your password no longer logs you out of
-the session you changed it from.** The backend's `tokenVersion` bump invalidates every JWT
-issued before the change — correctly, that's what kills a pre-change stolen token — but it also
-kills the pair this session holds, and `POST /api/user/change-password` returned nothing but
-`{"changed": true}`, so the next request 401'd, the refresh 401'd, `auth:session-expired` fired,
-and `ChangePasswordCard` dropped the user at `/login` moments after a successful change. The
-backend now returns a fresh `{changed, token, refreshToken}` (see its `CLAUDE.md`); this side
-adopts it. `AuthContext` gained **`applySession({token, refreshToken})`** — the one place a
-fresh pair is written to `localStorage` and to `token` state — and `login`/`register` were
-rewritten to use it rather than each repeating the same three lines, so no caller can set one of
-the two keys and forget the other. `UserProfile.jsx`'s `ChangePasswordCard` now pulls
-`applySession` from `useAuth()` and passes it the response. Note this makes `changePassword` the
-one function in `lib/api/auth.js` whose result must reach `AuthContext` — the bullet under
-"Password reset" above says so.
-
-Fixed 2026-09-02 (same day as this review): **`resolveMediaUrl` appended the media token on a
-string-prefix match, not an origin match.** `lib/media.js` guarded the `?token=` append with
-`resolved.startsWith(API_BASE_URL)` — a prefix test on a URL *string*, so it also passed for any
-host whose name merely begins with ours (`https://api.example.com.evil.tld/…`) and for userinfo
-syntax (`https://api.example.com@evil.tld/…`, which the browser sends to evil.tld). That was
-reachable, not theoretical: the backend's `SafeUrl` allowlist admits any absolute `https` URL, so
-a channel owner could store such a value as a hidden video's `sourceUrl` and collect the media
-token of anyone able to view it — a platform admin moderating that channel included, whose token
-is good for an hour against any gated file on the platform. `VideoPlayer.jsx` renders
-`<source src={resolveMediaUrl(sourceUrl, mediaToken)}>` for exactly the hidden + `LOCAL`/`STREAM`
-case; `BookCard.jsx`/`BookDetail.jsx` had the same shape via `pdfUrl`/`previewImageUrl`.
-
-The guard is now a new `isOwnMediaUrl(resolved)` helper comparing **parsed origins**
-(`new URL(resolved, window.location.href).origin === apiOrigin`, the latter parsed once at module
-load), *and* narrowed to the two paths `MediaAccessInterceptor` actually gates — the token
-authenticates nothing else, since `JwtFilter` only accepts it from `?token=` on `/uploads` and
-`/stream`, so sending it anywhere else was pure leak surface. That also closes the
-"`resolveMediaUrl` appends `?token=` to **any** URL on the API host" note under "Notes" in the
-2026-09-02 section above, which can be deleted with it. Verified across all seven shapes: the two
-attack URLs and an on-origin `/api/user/profile` get no token; `/stream/…`, `/uploads/…` and a
-bare filename still do.
-
-Fixed 2026-09-02 (reported live: "when I click on the home page logo or refresh the watch history
-isn't saved; only saved when I press pause"): **two separate bugs in watch/reading-progress
-reporting, one write-side and one read-side.**
-
-Write-side — `VideoPlayer.jsx`'s unmount-flush effect read `videoRef.current` *inside* its
-cleanup function:
-```js
-useEffect(() => {
-    return () => {
-        const el = videoRef.current; // already null here
-        if (el && el.currentTime > 0) reportProgress(el.currentTime, authRef.current);
-    };
-}, []);
-```
-React nulls a `ref={...}`-attached ref for a removed host element as part of the *same* unmount
-pass that runs this cleanup, so by the time the closure ran, `videoRef.current` was already
-`null` and the guard silently skipped the report — meaning any in-app navigation away from a
-locally-hosted video (clicking the navbar logo, any other `<Link>`, `navigate()`) never sent the
-final progress write. YouTube playback was unaffected — its player lives in a plain `useRef` we
-set ourselves (`youtubePlayerRef.current = new YT.Player(...)`), which React has no special
-unmount behavior for. Fixed by capturing `videoRef.current` into a local variable when the effect
-is *set up*, not read fresh at cleanup time — the standard fix for this exact class of React bug.
-
-Read-side — even with the write landing, the UI still wouldn't show it. `VideoPlayer` posts
-progress via a raw `api.post(...)`, entirely outside React Query, so nothing marked the cached
-`['watch-history']` query (which backs History/Home/Bookmarks/`VideoCard`'s progress bar) stale.
-A same-day fix added `queryClient.invalidateQueries({ queryKey: ['watch-history'] })` after each
-successful write — necessary but, on its own, insufficient: `invalidateQueries` only forces an
-*immediate* refetch for queries with an active (currently-mounted) observer, which `['watch-
-history']` almost never has at the moment a watch is reported (you're on `VideoDetail`, not
-History). For an inactive query, invalidation just sets `state.isInvalidated = true` and waits for
-the next mount — but the app-wide `QueryClientProvider` sets `refetchOnMount: false`, and (checked
-directly against the installed `@tanstack/query-core` source, `queryObserver.js`'s
-`shouldFetchOnMount`/`shouldFetchOn`) that option short-circuits *before* the invalidated-check
-ever runs when there's already cached data — so a query invalidated while inactive still doesn't
-refetch on its next mount. Net effect: the backend row was correct the whole time (confirmed
-directly via `curl` against `/api/videos/{id}/watch` and `/api/user/history`, bypassing the
-frontend entirely) and only the cache serving History/the progress bars was stale. Fixed by
-overriding `refetchOnMount: true` on `useWatchHistory` (and, for the identical gap, on
-`useReadingHistory`, which `useSaveReadProgress` invalidates on every page-turn write) — same
-precedent as the old `useMediaToken`'s override of the app-wide default, for the same reason: an
-explicitly-invalidated query has to be allowed to actually refetch on its next mount, not just
-get flagged and ignored.
-
-Fixed 2026-09-02 (reported live: "when I watch a couple of seconds of any video and then click
-on the logo to go to home page the video is not added to my watch history"): **the flat 5-second
-`MIN_WATCH_SECONDS` floor, not the flush plumbing.** The three-layer reporting fixed earlier the
-same day is working — `watch_history` in the local DB holds rows written by it — but every row's
-`progress_seconds` is ≥ 5 and none is 1–4, because `reportProgress` drops anything below the
-floor before it ever reaches axios. Every video seeded locally is 13 seconds long, so the floor
-was eating the first 38% of the clip: watching "a couple of seconds" and navigating away was
-correctly flushed on unmount and then correctly discarded, indistinguishably (from the outside)
-from not being flushed at all. Replaced with the duration-aware `watchThreshold()` described
-under "Watch/reading progress" above; the accidental-click protection it exists for is also
-narrower than it looks, since nothing in the player autoplays — the viewer has to press play.
-
-Fixed in the same pass, found while reading that path: **the unmount flush captured a `null`
-element for any hidden video.** The effect took `const el = videoRef.current` at *setup* time to
-dodge React's null-out-on-unmount, but it's a `[]` effect, so it runs on the first render — and
-on the hidden-item path the first render is the media-token placeholder `<div>`, not the
-`<video>`. `el` was therefore `null` for the life of the component and the final progress write
-never fired at all for a hidden video (the `pagehide` layer was unaffected — it reads the ref at
-event time). `videoRef` is now populated by a `useCallback`'d callback ref that ignores the null
-write, so the last real element stays readable at cleanup time whichever render produced it.
-
-### Checked and holding
-
-Probed specifically this pass, not assumed from this file's changelog:
-
-- **No injection sinks anywhere in `src/`.** No `dangerouslySetInnerHTML`, no `innerHTML`, no
-  `eval`. Every external `href` goes through `safeExternalUrl` (`VideoPlayer`'s two fallbacks and
-  its `TELEGRAM` `<source>`, `Biography`'s three social links) or is a `mailto:` with a fixed
-  scheme prefix that can't be escaped. Every `target="_blank"` carries `rel="noopener noreferrer"`.
-- (Historical, code since deleted.) **`useMediaToken`'s `required` gating, hold-back-until-loaded, and no-refetch-on-a-timer
-  behavior all worked as documented** — the only media-token problem was `resolveMediaUrl`'s host
-  check above, not the hook.
-- **`client.js`'s deduped refresh, rotated-refresh-token storage, and both `auth:session-expired`
-  paths are correct**, including the no-refresh-token branch fixed in `e3f13c3`.
-- **`validation.js` mirrors the backend's real rules**, including the 72-**byte** BCrypt cap
-  measured with `TextEncoder` rather than `String.length`.
-
-## Rebrand: منارة → أَبْصَرْنا — 2026-09-03
-
-Platform renamed from "منارة" (Manara, "lighthouse/beacon") to "أَبْصَرْنا" (Absarna) — a real
-change in meaning, not just a new word: "منارة" describes a fixed guiding light, "أَبْصَرْنا"
-("we perceived / we gained insight/sight", from the root بصر) describes the act of seeing itself.
-Direction was worked out iteratively against a design canvas (Islamic-Andalusian/Cairo geometric
-reference, several logo concepts tried and rejected — an eye motif, a pierced-brass lantern, a
-lantern-in-star hybrid — before landing on the current mark) before touching any code; only the
-final approved direction is described here.
-
-- **Logo/favicon** (`src/assets/logo.svg`, copied to `public/favicon.svg`): two overlapping
-  squares, one turquoise (`#17A398`→`#0A4A45` gradient) and one gold (`#F2AE30`→`#A66E14`
-  gradient) rotated 45° from each other — a literal construction from Islamic geometric
-  ornament (the intersection of two squares gives a regular octagon; their eight combined
-  corners give the classic 8-point star), not a stock "8-point star" glyph. Deliberately **not**
-  a lantern or an eye — both were explored and rejected (lantern read as visually busy/cluttered
-  at favicon size and is a fairly generic Middle-Eastern-branding trope; an eye motif was
-  explicitly ruled out for feeling too literal about "sight"). A richer malachite-textured
-  octagon-on-square "showcase" variant (gold-engraved star medallion, backlit glow, built with an
-  SVG `feTurbulence` filter for the stone texture rather than a raster asset) exists in the design
-  canvas for splash-screen/marketing use but was **not** shipped as the in-app icon — its fine
-  lattice detail doesn't hold up below hero size, same reason the lantern was dropped.
-- **Color tokens** (`src/index.css`'s `:root`/`.dark`, see "Dark mode" above): primary shifted
-  from a muted forest green (`#0D6B4D`) to a more saturated zellige turquoise (`#17A398` light /
-  `#22C4BC` dark), gold shifted from a muted brass (`#D4AF37`) to a warmer, more saturated gold
-  (`#F2AE30` light / `#F5C15A` dark) — both pushed more vivid than the first pass, which read as
-  "dull" against the Islamic-ornament reference material. Light-mode neutrals also moved from a
-  cool off-white to a warm parchment (`#FBF7EE` page / `#FEFDF9` surface / `#E5DFD3` border), and
-  dark-mode neutrals from a neutral charcoal to an indigo-tinted near-black (`#10141C`) — matching
-  the design canvas's full palette, not just the two brand accent tokens.
-- **Wordmark**: `Navbar.jsx` now renders "أَبْصَرْنا" (fully vocalized with tashkeel — hamza,
-  sukūn, fatha — since a bare `ابصرنا` is ambiguous/harder to read as a fresh brand name) in the
-  new `font-serif` token (`Markazi Text`, added to `tailwind.config.js`'s `fontFamily` and loaded
-  in `index.html`'s Google Fonts link) — used only for the wordmark, not a body/heading font swap.
-- **Copy**: every user-facing "منارة" string replaced with "أَبْصَرْنا" —
-  `index.html`'s title/OG/Twitter meta, `usePageMeta.js`'s defaults and per-page suffix,
-  `Register.jsx`'s post-registration line, and the `usePageMeta` description strings in
-  `Articles.jsx`/`Books.jsx`.
-- **`package.json`'s `name`** changed from `manara-frontend` to `absarna-frontend`;
-  `package-lock.json` resynced via `npm install --package-lock-only`. The repo directory
-  (`elhamy-frontend-enhanced`) and `.idea/` project files stay as they were before this rebrand —
-  already-documented cosmetic leftovers, unaffected by this change. The **backend** repo
-  (`/Users/kareemismail/IdeaProjects/manara-platform`) is untouched — its directory name and
-  `com.manara.*` Java package naming are that repo's own decision, out of this session's scope.
-- Not changed (at the time): comment in `src/hooks/useVideos.js` and `src/lib/validation.js`
-  referencing "manara-platform"/"com/manara/..." — these named the actual backend repo/package,
-  not the product brand, and stayed accurate only as long as the backend itself wasn't renamed.
-  It was, six days later — see "Rename: Manara → Absarna" below.
-
-## Rename: Manara → Absarna (repo/folder/backend cross-refs) — 2026-09-03
-
-The rebrand above changed user-facing copy and `package.json`'s `name`, but deliberately left the
-repo directory, GitHub repo, and the backend untouched (both scoped out at the time — see the
-bullet above). All three closed today, together with the matching backend-side rename (see the
-backend's own `CLAUDE.md`, "Rename: Manara → Absarna" entry, for the Java-package/DB/SQL-function
-side of it — that repo's rename is out of this repo's scope to describe in detail, same as before).
-
-- Local directory: `~/Desktop/elhamy-frontend-enhanced` → `~/Desktop/absarna-frontend` → (same
-  day) `~/IdeaProjects/absarna-frontend`, moved a second time to sit next to the backend under
-  `~/IdeaProjects` rather than `~/Desktop` — see the intro paragraph above, now updated. GitHub
-  repo: `abo-mousa/manara-fe` → `abo-mousa/absarna-frontend` (the GitHub repo name had already
-  drifted from the local folder name pre-rename — it was never actually
-  `elhamy-frontend-enhanced` on GitHub, just locally).
-- Backend path references updated to match its own rename: the intro paragraph above, and the
-  two source comments (`src/hooks/useVideos.js`'s `useWatchHistory` comment,
-  `src/lib/validation.js`'s header comment) that name the backend repo/package by its old name —
-  see the bullet directly above this entry for why those were deliberately left alone the first
-  time.
-- Nothing else in this repo's own code changed — the frontend has no runtime dependency on the
-  backend's package names, DB name, or SQL function name (those only matter inside the backend's
-  own JVM/DB), so this was purely a documentation/comment-accuracy pass on this side.
-
-## Video resume-playback — 2026-09-03
-
-Opening a video (from History or anywhere else) always restarted from 0, never resuming from a
-previously saved watch position — reported live ("when I open a video that I already opened
-before it doesn't continue from where it stopped").
-
-Two separate bugs, found in sequence:
-
-- **Never wired up at all.** `VideoDetail.jsx` computed `startTime` only from the `?t=`
-  share-timestamp query param — it never looked at `useWatchProgressMap`, even though that data
-  was already being fetched on the same page (for the related-videos row's progress bars).
-  Fixed: `startTime = sharedTime || Math.floor(watchProgress[video.id] || 0)`.
-- **A race, found while fixing the above.** `VideoPlayer.jsx`'s YouTube branch bakes its start
-  position into `playerVars.start` once, at player-creation time, and its creation `useEffect`
-  doesn't depend on `startTime` (deliberately, to avoid recreating the player on every seek) — so
-  if the ~200-item `/user/history` request hadn't resolved yet by the time the video's own
-  (single-row) fetch completed, the player got created with `start: undefined` and never resumed,
-  silently, not just late. Native `<video>` had the same theoretical exposure via
-  `onLoadedMetadata`, just less likely to actually lose the race.
-  Fixed by holding `<VideoPlayer>` itself back — a `Spinner` in its place — until
-  `useWatchHistory`'s `isLoading` clears, so the player is only ever constructed once the true
-  resume point is known; every entry point (Home, Search, ChannelPage, Bookmarks, History,
-  SeriesDetail, the navbar search bar) benefits automatically since they all just navigate to
-  `/video/{id}` and this fix lives at the destination.
-- Checked and already correct by comparison: `BookDetail.jsx`/`PdfReader.jsx`'s reading-progress
-  resume has no equivalent race — `PdfReader` has an explicit effect that applies `initialPage`
-  even if it "arrives asynchronously," precisely the robustness `VideoPlayer`'s one-shot YouTube
-  player creation lacked.
-
-## Comment counts on `VideoCard`/`VideoDetail` — 2026-09-03
-
-`video.commentCount` is now a real field on every video DTO the backend returns (see backend
-`CLAUDE.md`'s matching entry for how — a computed `COUNT()` per response, not a stored/synced
-counter). Counts both top-level comments and replies, matching `CommentsSection`'s own
-"التعليقات (N)" total exactly, so the number never disagrees between a card and the video's own
-page.
-
-- `VideoCard.jsx`'s info area is now two columns: title → channel name → category on one side,
-  publish date · views · comments stacked on the other (`min-w-0` on the title column — without
-  it a flex item won't shrink below its content's natural width, which silently breaks
-  `line-clamp-2`).
-- `VideoDetail.jsx` reads `video.commentCount` directly now instead of separately fetching every
-  comment via `useComments` just to run them through `countComments` — that workaround predated
-  the backend field and is gone; `CommentsSection` still does its own full fetch, for the actual
-  comment list, unrelated to this count.
-- Publish dates across every card/detail page (`VideoCard`, `VideoDetail`, `BookCard`,
-  `ArticleCard`, `PostCard`, `BookDetail`, `ArticleDetail`, `Articles.jsx`) now render through a
-  shared `formatPublishDate()` (`lib/dayjsAr.js`) — relative ("منذ يومين") under a week old, an
-  absolute date past that, date-only (no time-of-day, unlike `CommentsSection`'s own
-  timestamp formatter, since a publish date has none).
-
-## Two quick cleanups — 2026-09-03
-
-- **`ChannelManage.jsx`'s four create handlers no longer send a `channelId`.** They previously did
-  `{ ...stripEmpty(form), channelId: channel.id }`; none of `VideoCreateRequest`/
-  `BookCreateRequest`/`ArticleCreateRequest`/`PostCreateRequest` has that field, so it was always
-  silently discarded by Jackson's default unknown-property handling on arrival —
-  `ChannelContentController` sets the real `channelId` server-side after mapping, which *is* the
-  mass-assignment fix, so the client was never trusted with it. Harmless, but it read as though
-  the client picks the channel. Dropped from all four `mutateAsync` calls; `handleVideoSubmit`'s
-  `speaker: channel.name` is unrelated (still genuinely sent) and stays.
-- **Navbar's "رفع" (Upload) link no longer points at the unrouted `/upload`.** It now uses
-  `useMyChannels()` (already the hook `SideBar.jsx` uses for its own "قنواتي" list) to route to
-  the viewer's first owned channel's `/channel/{slug}/manage` — the only place uploading actually
-  happens, per "Owner content management" above — falling back to `/create-channel` for a
-  CREATOR/CHANNEL_ADMIN who hasn't created a channel yet. No new page was built; multi-channel
-  owners land on their first channel's manage tab and can switch via `SideBar`'s channel list, same
-  as before this fix. Verified via `npm run build`.
+- **Offline/PWA for downloaded books and articles** — useful for an audience with intermittent
+  connectivity, and it needs no engagement machinery.
+- **Transcript view alongside the player** (needs the backend transcript work), with
+  click-to-seek. The biggest accessibility and skimmability win available.
+- **A "من القنوات التي تتابعها" digest page** — an explicit list of what is new since your last
+  visit, which you can clear, instead of an implicit ranked feed.
+- **Per-page notes/highlights on `PdfReader`**, keyed to the existing reading history. The rest of
+  that idea (search, TOC, page-jump) shipped.
+- **A per-channel takeout/export view** for the backend export idea — an owner downloads
+  everything they have published.
+- **Series completion state on `ChannelPage`'s سلاسل tab** — "4 of 11" per card, from the data
+  `VideoDetail`'s previous/next block already computes.

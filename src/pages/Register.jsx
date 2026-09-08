@@ -6,9 +6,10 @@ import { usePageMeta } from '../hooks/usePageMeta';
 import PageShell from '../components/layout/PageShell';
 import { Input, Button } from '../components/ui';
 import { getPasswordRules, getPasswordStrengthLabel, isPasswordValid, validateUsername } from '@/lib/validation';
+import { t } from '@/i18n';
 
 function Register() {
-    usePageMeta({ title: 'إنشاء حساب' });
+    usePageMeta({ title: t('auth.register.heading') });
     const navigate = useNavigate();
     const { register } = useAuth();
     const { showToast } = useToast();
@@ -33,18 +34,18 @@ function Register() {
             return;
         }
         if (form.password !== form.confirmPassword) {
-            setError('كلمتا المرور غير متطابقتين');
+            setError(t('auth.passwordMismatch'));
             return;
         }
         if (!isPasswordValid(form.password)) {
-            setError('كلمة المرور يجب أن تحتوي على 8 أحرف على الأقل مع حرف كبير وحرف صغير ورقم ورمز خاص');
+            setError(t('auth.passwordTooWeak'));
             return;
         }
 
         setLoading(true);
         const result = await register(form.username, form.email, form.password, form.fullName);
         if (result.success) {
-            showToast('تم إنشاء الحساب! أرسلنا رابط توثيق إلى بريدك الإلكتروني.', 'success');
+            showToast(t('auth.register.created'), 'success');
             navigate('/');
         } else {
             setError(result.message);
@@ -56,14 +57,14 @@ function Register() {
         <PageShell sidebar={false}>
             <div className="max-w-[400px] mx-auto my-10 sm:my-16 p-6 sm:p-8 bg-surface rounded-lg shadow-md border border-border-light">
                 <div className="text-center mb-6">
-                    <h2 className="text-xl font-bold">إنشاء حساب</h2>
-                    <p className="text-text-muted mt-2">انضم إلى أَبْصَرْنا</p>
+                    <h2 className="text-xl font-bold">{t('auth.register.heading')}</h2>
+                    <p className="text-text-muted mt-2">{t('auth.register.joinUs')}</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="grid gap-4">
                     <div>
                         <Input
-                            label="اسم المستخدم *"
+                            label={t('fields.usernameRequired')}
                             value={form.username}
                             onChange={(e) => setForm({ ...form, username: e.target.value })}
                             required
@@ -77,14 +78,14 @@ function Register() {
                     </div>
 
                     <Input
-                        label="الاسم الكامل"
+                        label={t('fields.fullName')}
                         value={form.fullName}
                         onChange={(e) => setForm({ ...form, fullName: e.target.value })}
-                        placeholder="محمد أحمد"
+                        placeholder={t('fields.fullNamePlaceholder')}
                     />
 
                     <Input
-                        label="البريد الإلكتروني"
+                        label={t('fields.email')}
                         type="email"
                         value={form.email}
                         onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -94,7 +95,7 @@ function Register() {
 
                     <div>
                         <Input
-                            label="كلمة المرور *"
+                            label={t('fields.passwordRequired')}
                             type="password"
                             value={form.password}
                             onChange={(e) => setForm({ ...form, password: e.target.value })}
@@ -135,7 +136,7 @@ function Register() {
 
                     <div>
                         <Input
-                            label="تأكيد كلمة المرور *"
+                            label={t('fields.confirmPassword')}
                             type="password"
                             value={form.confirmPassword}
                             onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
@@ -145,7 +146,7 @@ function Register() {
                             className={form.confirmPassword && form.confirmPassword !== form.password ? '!border-red-600 dark:!border-red-500' : ''}
                         />
                         {form.confirmPassword && form.confirmPassword !== form.password && (
-                            <p className="text-red-600 dark:text-red-400 text-xs mt-1">كلمتا المرور غير متطابقتين</p>
+                            <p className="text-red-600 dark:text-red-400 text-xs mt-1">{t('auth.passwordMismatch')}</p>
                         )}
                     </div>
 
@@ -154,14 +155,14 @@ function Register() {
                     )}
 
                     <Button type="submit" disabled={loading} fullWidth>
-                        {loading ? 'جاري التسجيل...' : 'إنشاء الحساب'}
+                        {loading ? t('auth.register.submitting') : t('auth.register.submit')}
                     </Button>
                 </form>
 
                 <div className="text-center mt-5">
                     <p className="text-sm text-text-secondary">
-                        لديك حساب بالفعل؟{' '}
-                        <Link to="/login" className="text-primary font-semibold">تسجيل الدخول</Link>
+                        {t('auth.register.haveAccount')}{' '}
+                        <Link to="/login" className="text-primary font-semibold">{t('auth.register.loginLink')}</Link>
                     </p>
                 </div>
             </div>

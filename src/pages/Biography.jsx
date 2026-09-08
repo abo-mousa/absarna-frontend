@@ -4,18 +4,19 @@ import { QueryState } from '../components/ui';
 import { safeExternalUrl } from '@/lib/media';
 import { useBiography } from '../hooks/useBiography';
 import { usePageMeta } from '../hooks/usePageMeta';
+import { t } from '@/i18n';
 
 const socialLinkClass = 'flex items-center gap-2 px-5 py-2.5 rounded-full font-semibold text-sm text-white transition-opacity hover:opacity-90';
 
 function Biography() {
     const { data: bio, isLoading } = useBiography();
-    usePageMeta({ title: 'السيرة الذاتية', description: bio?.shortBio, image: bio?.photoUrl });
+    usePageMeta({ title: t('biography.title'), description: bio?.shortBio, image: bio?.photoUrl });
 
     return (
         <PageShell sidebar={false} contentClassName="max-w-reading mx-auto px-4 sm:px-6 py-10">
-            <h1 className="text-2xl font-bold text-center mb-8">السيرة الذاتية</h1>
+            <h1 className="text-2xl font-bold text-center mb-8">{t('biography.title')}</h1>
 
-            <QueryState isLoading={isLoading} isEmpty={!bio} emptyTitle="لا توجد معلومات">
+            <QueryState isLoading={isLoading} isEmpty={!bio} emptyTitle={t('biography.empty')}>
                 {bio && (
                     <div className="bg-surface p-6 sm:p-10 rounded-xl shadow-sm border border-border-light print:p-0 print:shadow-none print:border-0">
                         {bio.photoUrl && (
@@ -26,7 +27,7 @@ function Biography() {
                             />
                         )}
 
-                        <h1 className="text-center text-3xl font-bold mb-2">{bio.fullName || 'محمد إلهامي'}</h1>
+                        <h1 className="text-center text-3xl font-bold mb-2">{bio.fullName || t('biography.defaultName')}</h1>
 
                         {bio.occupation && (
                             <p className="text-center text-text-secondary mb-6">{bio.occupation}</p>
@@ -44,7 +45,7 @@ function Biography() {
 
                         {bio.education && (
                             <div className="mt-6 p-4 bg-bg rounded-lg">
-                                <strong>المؤهلات:</strong> {bio.education}
+                                <strong>{t('biography.education')}</strong> {bio.education}
                             </div>
                         )}
 
@@ -52,13 +53,13 @@ function Biography() {
                             {safeExternalUrl(bio.youtubeUrl) && (
                                 <a href={safeExternalUrl(bio.youtubeUrl)} target="_blank" rel="noopener noreferrer"
                                    className={socialLinkClass} style={{ background: '#FF0000' }}>
-                                    <Play size={16} /> يوتيوب
+                                    <Play size={16} /> {t('biography.youtube')}
                                 </a>
                             )}
                             {safeExternalUrl(bio.telegramUrl) && (
                                 <a href={safeExternalUrl(bio.telegramUrl)} target="_blank" rel="noopener noreferrer"
                                    className={socialLinkClass} style={{ background: '#0088cc' }}>
-                                    <Send size={16} /> تيليجرام
+                                    <Send size={16} /> {t('biography.telegram')}
                                 </a>
                             )}
                             {safeExternalUrl(bio.patreonUrl) && (
@@ -70,7 +71,7 @@ function Biography() {
                             {bio.email && (
                                 <a href={`mailto:${bio.email}`}
                                    className={`${socialLinkClass} !text-primary border border-primary`} style={{ background: 'transparent' }}>
-                                    <Mail size={16} /> تواصل
+                                    <Mail size={16} /> {t('biography.contact')}
                                 </a>
                             )}
                         </div>

@@ -225,6 +225,25 @@ export const useCreateChannelContent = (slug, type) => {
     });
 };
 
+/**
+ * Edits one item's metadata — title, description, and the rest.
+ *
+ * <p>PATCH, and the body carries only what changed: every Update DTO on the backend merges with
+ * `NullValuePropertyMappingStrategy.IGNORE`, so an omitted field is left alone rather than
+ * nulled. Sending the whole object would work too, but would silently overwrite anything the
+ * form does not render.
+ */
+export const useUpdateChannelContent = (slug, type) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ id, changes }) => {
+            const res = await api.patch(`/channels/${slug}/content/${type}/${id}`, changes);
+            return res.data;
+        },
+        onSuccess: () => invalidateChannelContent(queryClient, slug, type),
+    });
+};
+
 export const useToggleContentVisibility = (slug, type) => {
     const queryClient = useQueryClient();
 
@@ -327,6 +346,25 @@ export const useSuspendChannel = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: (id) => api.post(`/channels/admin/${id}/suspend`),
+        onSuccess: () => invalidateAdminChannels(queryClient),
+    });
+};
+
+/**
+ * Deletes a channel, and with it everything the channel owns.
+ *
+ * <p><b>The delete cascades in SQL</b> (migration 013): videos, books, articles and posts go, and
+ * with them every comment, bookmark and watch-history row attached to them. No Java runs, so
+ * nothing can be selectively spared and nothing is recoverable. A channel that has imported a
+ * back catalogue can be thousands of rows.
+ *
+ * <p>That is why the caller makes the operator type the slug rather than click through a
+ * confirm — and why suspending, which is reversible, sits next to it as the usual answer.
+ */
+export const useDeleteChannel = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (id) => api.delete(`/channels/admin/${id}`),
         onSuccess: () => invalidateAdminChannels(queryClient),
     });
 };

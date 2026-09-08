@@ -2,6 +2,7 @@ import { Bookmark } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useBookmarkStatus, useToggleBookmark } from '../../hooks/useBookmarks';
+import { t } from '@/i18n';
 
 // "Read/watch later" toggle — reusable across video/book/article detail pages. type is the
 // same 'video'|'book'|'article' string CommentsSection/useComments already use elsewhere.
@@ -21,7 +22,7 @@ function BookmarkButton({ type, id, className = '', size = 18, labeled = false }
         toggleBookmark.mutate(bookmarked);
     };
 
-    const label = bookmarked ? 'إزالة من المحفوظات' : 'حفظ لوقت لاحق';
+    const label = bookmarked ? t('bookmarks.remove') : t('bookmarks.add');
 
     return (
         <button

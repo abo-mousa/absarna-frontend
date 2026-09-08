@@ -4,9 +4,10 @@ import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
 import { Input, Button } from '../components/ui';
 import { usePageMeta } from '../hooks/usePageMeta';
+import { t } from '@/i18n';
 
 function Login() {
-    usePageMeta({ title: 'تسجيل الدخول' });
+    usePageMeta({ title: t('auth.login.heading') });
     const navigate = useNavigate();
     const { login } = useAuth();
     const [username, setUsername] = useState('');
@@ -29,13 +30,13 @@ function Login() {
         <PageShell sidebar={false}>
             <div className="max-w-[400px] mx-auto my-10 sm:my-16 p-6 sm:p-8 bg-surface rounded-lg shadow-md border border-border-light">
                 <div className="text-center mb-6">
-                    <h2 className="text-xl font-bold">تسجيل الدخول</h2>
-                    <p className="text-text-muted mt-2">مرحباً بعودتك!</p>
+                    <h2 className="text-xl font-bold">{t('auth.login.heading')}</h2>
+                    <p className="text-text-muted mt-2">{t('auth.login.welcomeBack')}</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="grid gap-4">
                     <Input
-                        label="اسم المستخدم"
+                        label={t('fields.username')}
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         required
@@ -45,7 +46,7 @@ function Login() {
 
                     <div>
                         <Input
-                            label="كلمة المرور"
+                            label={t('fields.password')}
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
@@ -55,7 +56,7 @@ function Login() {
                         />
                         <div className="text-left mt-1.5">
                             <Link to="/forgot-password" className="text-sm text-primary font-semibold">
-                                نسيت كلمة المرور؟
+                                {t('auth.login.forgotPassword')}
                             </Link>
                         </div>
                     </div>
@@ -65,14 +66,14 @@ function Login() {
                     )}
 
                     <Button type="submit" disabled={loading} fullWidth>
-                        {loading ? 'جاري الدخول...' : 'دخول'}
+                        {loading ? t('auth.login.submitting') : t('auth.login.submit')}
                     </Button>
                 </form>
 
                 <div className="text-center mt-5">
                     <p className="text-sm text-text-secondary">
-                        ليس لديك حساب؟{' '}
-                        <Link to="/register" className="text-primary font-semibold">إنشاء حساب</Link>
+                        {t('auth.login.noAccount')}{' '}
+                        <Link to="/register" className="text-primary font-semibold">{t('auth.login.registerLink')}</Link>
                     </p>
                 </div>
             </div>

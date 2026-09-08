@@ -5,17 +5,18 @@ import PageShell from '../components/layout/PageShell';
 import { QueryState, Input } from '../components/ui';
 import { useArticles } from '../hooks/useArticles';
 import { usePageMeta } from '../hooks/usePageMeta';
-import { formatPublishDate } from '@/lib/dayjsAr';
+import { formatPublishDate, displayDate } from '@/lib/dayjsAr';
+import { t } from '@/i18n';
 
 const PAGE_SIZE = 15;
 
 const SORTS = [
-    { id: 'newest', label: 'الأحدث' },
-    { id: 'title', label: 'العنوان' },
+    { id: 'newest', label: t('common.sortNewest') },
+    { id: 'title', label: t('common.sortTitle') },
 ];
 
 function Articles() {
-    usePageMeta({ title: 'المقالات', description: 'مقالات إسلامية على أَبْصَرْنا' });
+    usePageMeta({ title: t('articles.title'), description: t('articles.metaDescription') });
     const {
         data,
         isLoading,
@@ -50,13 +51,13 @@ function Articles() {
 
     return (
         <PageShell sidebar={false} contentClassName="max-w-reading mx-auto px-4 sm:px-6 py-8">
-            <h1 className="text-2xl font-bold mb-6">المقالات</h1>
+            <h1 className="text-2xl font-bold mb-6">{t('articles.title')}</h1>
 
             {!isLoading && articles.length > 0 && (
                 <div className="flex gap-3 flex-wrap mb-6">
                     <div className="flex-1 min-w-[200px]">
                         <Input
-                            placeholder="ابحث عن مقال..."
+                            placeholder={t('articles.searchPlaceholder')}
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                         />
@@ -68,7 +69,7 @@ function Articles() {
                             onChange={(e) => setCategory(e.target.value)}
                             className="px-3.5 py-2.5 rounded-md border border-border bg-surface text-sm"
                         >
-                            <option value="">كل التصنيفات</option>
+                            <option value="">{t('common.allCategories')}</option>
                             {categories.map((c) => <option key={c} value={c}>{c}</option>)}
                         </select>
                     )}
@@ -78,7 +79,7 @@ function Articles() {
                         onChange={(e) => setSortBy(e.target.value)}
                         className="px-3.5 py-2.5 rounded-md border border-border bg-surface text-sm"
                     >
-                        {SORTS.map((s) => <option key={s.id} value={s.id}>ترتيب حسب: {s.label}</option>)}
+                        {SORTS.map((s) => <option key={s.id} value={s.id}>{t('common.sortBy', { label: s.label })}</option>)}
                     </select>
                 </div>
             )}
@@ -87,8 +88,8 @@ function Articles() {
                 isLoading={isLoading}
                 isEmpty={articles.length === 0 || filtered.length === 0}
                 emptyIcon={articles.length === 0 ? '📝' : '🔍'}
-                emptyTitle={articles.length === 0 ? 'لا توجد مقالات' : 'لا توجد نتائج'}
-                emptyDescription={articles.length === 0 ? undefined : 'جرّب كلمة بحث أو تصنيفاً آخر'}
+                emptyTitle={articles.length === 0 ? t('articles.empty') : t('common.noResults')}
+                emptyDescription={articles.length === 0 ? undefined : t('common.tryAnotherSearch')}
             >
                 <div className="grid gap-4">
                     {filtered.map((article) => (
@@ -100,13 +101,13 @@ function Articles() {
                             <h3 className="text-lg font-semibold mb-2">{article.title}</h3>
                             <div className="flex gap-4 flex-wrap text-sm text-text-muted">
                                 {article.wordCount > 0 && (
-                                    <span className="flex items-center gap-1"><Type size={13} /> {article.wordCount} كلمة</span>
+                                    <span className="flex items-center gap-1"><Type size={13} /> {t('common.wordCount', { count: article.wordCount })}</span>
                                 )}
                                 {article.readingTimeMinutes > 0 && (
-                                    <span className="flex items-center gap-1"><Clock size={13} /> {article.readingTimeMinutes} دقائق</span>
+                                    <span className="flex items-center gap-1"><Clock size={13} /> {t('common.readingMinutes', { count: article.readingTimeMinutes })}</span>
                                 )}
                                 {article.publishDate && (
-                                    <span className="flex items-center gap-1"><Calendar size={13} /> {formatPublishDate(article.publishDate)}</span>
+                                    <span className="flex items-center gap-1"><Calendar size={13} /> {formatPublishDate(displayDate(article))}</span>
                                 )}
                             </div>
                             {article.content && (
@@ -125,7 +126,7 @@ function Articles() {
                             disabled={isFetchingNextPage}
                             className="px-8 py-2.5 bg-primary text-white rounded-md font-semibold disabled:opacity-60"
                         >
-                            {isFetchingNextPage ? 'جاري التحميل...' : 'تحميل المزيد'}
+                            {isFetchingNextPage ? t('common.loading') : t('common.loadMore')}
                         </button>
                     </div>
                 )}

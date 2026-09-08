@@ -1,18 +1,45 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import api from '@/lib/api/client';
 
 // ============ Public ============
 
 // A series' own page: its metadata plus its videos in order (backend already orders them,
 // nulls-last on orderInSeries then publishDate — see ContentRepository#findBySeriesIdAndVisibleTrue).
-export const useSeriesDetail = (id, enabled = true) => {
-    return useQuery({
-        queryKey: ['series', id],
-        queryFn: async () => {
-            const res = await api.get(`/series/${id}`);
+/**
+ * A series' videos, paginated.
+ *
+ * <p>The endpoint used to return every video; a 99-video series made that a real cost. Pages
+ * accumulate the same way the other listings do, so "load more" appends rather than replaces.
+ */
+export const useSeriesDetail = (id, size = 20, enabled = true) => {
+    return useInfiniteQuery({
+        queryKey: ['series', id, size],
+        queryFn: async ({ pageParam = 0 }) => {
+            const res = await api.get(`/series/${id}`, { params: { page: pageParam, size } });
             return res.data;
         },
+        initialPageParam: 0,
+        getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.currentPage + 1 : undefined),
         enabled: enabled && !!id,
+    });
+};
+
+/**
+ * One video's position in its series, and its neighbours.
+ *
+ * <p>Its own request rather than something derived from the list above, and that is the point:
+ * the detail page needs the position within the *whole* series, and a video on page 4 is not in
+ * the page the list happens to have loaded. Deriving it from the list is what paginating the
+ * series would otherwise have broken.
+ */
+export const useSeriesNeighbours = (seriesId, videoId, enabled = true) => {
+    return useQuery({
+        queryKey: ['series-neighbours', seriesId, videoId],
+        queryFn: async () => {
+            const res = await api.get(`/series/${seriesId}/neighbours`, { params: { videoId } });
+            return res.data;
+        },
+        enabled: enabled && !!seriesId && !!videoId,
     });
 };
 

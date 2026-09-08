@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useVideoPlaybackUrl } from '@/hooks/useMediaUrl';
 import api from '@/lib/api/client';
 import { flushOnUnload } from '@/lib/api/beacon';
+import { t, tOptional } from '@/i18n';
 
 // How often onTimeUpdate (fires several times a second) is allowed to actually hit the
 // backend — watch history is a convenience feature, not an analytics stream, so this stays
@@ -57,6 +58,17 @@ function loadYouTubeIframeApi() {
     });
     return youtubeApiPromise;
 }
+
+/**
+ * The label for one rung of the ladder.
+ *
+ * <p>Most rung names — "1080p", "720p" — are not words and are shown as the worker produced them;
+ * translating them would be wrong. `audio` is the exception: the worker's audio-only rung is named
+ * with an identifier, not with copy, so it gets a real label from the catalog. Anything the
+ * catalog does not name falls through to the rung's own name, which is what keeps a rung the
+ * worker adds later from rendering as a missing-key warning.
+ */
+const qualityLabel = (quality) => tOptional(`video.qualityLabels.${quality}`) ?? quality;
 
 // `ref` exposes getCurrentTime() so a parent (VideoDetail's share sheet, for "copy link at
 // this timestamp") can read the playhead on demand without this component re-rendering on
@@ -310,7 +322,7 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
                     onEnded={handlePauseOrEnded}
                     className="w-full max-h-[500px] rounded-lg bg-black"
                 >
-                    متصفحك لا يدعم تشغيل الفيديو
+                    {t('video.unsupported')}
                 </video>
 
                 {/* Only worth showing when there is a real choice. A source smaller than 480p
@@ -318,7 +330,7 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
                 {qualities.length > 1 && (
                     <div className="flex items-center justify-end gap-2 mt-2">
                         <label htmlFor={qualitySelectId} className="text-sm text-text-muted">
-                            الجودة
+                            {t('video.quality')}
                         </label>
                         <select
                             id={qualitySelectId}
@@ -328,7 +340,7 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
                                 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                         >
                             {qualities.map((q) => (
-                                <option key={q} value={q}>{q}</option>
+                                <option key={q} value={q}>{qualityLabel(q)}</option>
                             ))}
                         </select>
                     </div>
@@ -339,7 +351,7 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
 
     if (sourceType === 'TELEGRAM') {
         if (!externalUrl) {
-            return <p className="text-text-muted text-sm">رابط الفيديو غير صالح</p>;
+            return <p className="text-text-muted text-sm">{t('video.invalidUrl')}</p>;
         }
         return (
             <video
@@ -359,11 +371,11 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
     if (isYouTube) {
         if (!youtubeVideoId) {
             if (!externalUrl) {
-                return <p className="text-text-muted text-sm">رابط الفيديو غير صالح</p>;
+                return <p className="text-text-muted text-sm">{t('video.invalidUrl')}</p>;
             }
             return (
                 <a href={externalUrl} target="_blank" rel="noopener noreferrer" className="text-primary font-semibold">
-                    شاهد على يوتيوب
+                    {t('video.watchOnYouTube')}
                 </a>
             );
         }
@@ -376,12 +388,12 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
     }
 
     if (!externalUrl) {
-        return <p className="text-text-muted text-sm">رابط الفيديو غير صالح</p>;
+        return <p className="text-text-muted text-sm">{t('video.invalidUrl')}</p>;
     }
 
     return (
         <a href={externalUrl} target="_blank" rel="noopener noreferrer" className="text-primary font-semibold">
-            شاهد الفيديو
+            {t('video.watchVideo')}
         </a>
     );
 });

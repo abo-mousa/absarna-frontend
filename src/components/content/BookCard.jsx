@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BookOpen, Download } from 'lucide-react';
 import { resolveMediaUrl } from '@/lib/media';
-import { formatPublishDate } from '@/lib/dayjsAr';
+import { formatPublishDate, displayDate } from '@/lib/dayjsAr';
 import { useBookReadUrl } from '@/hooks/useMediaUrl';
+import { t } from '@/i18n';
 
 // Percent read, for the small progress bar on the cover — same idea as VideoCard's
 // watched-percent, hidden below 1% so a barely-opened book doesn't show a sliver.
@@ -96,8 +97,8 @@ function BookCard({ book, currentPage }) {
                 </h3>
 
                 <div className="flex gap-3 text-xs text-text-muted mb-3">
-                    {book.pages && <span>{book.pages} صفحة</span>}
-                    {book.publishDate && <span>{formatPublishDate(book.publishDate)}</span>}
+                    {book.pages && <span>{t('common.pageCount', { count: book.pages })}</span>}
+                    {displayDate(book) && <span>{formatPublishDate(displayDate(book))}</span>}
                 </div>
 
                 <div className="flex gap-2 mt-auto">
@@ -105,7 +106,7 @@ function BookCard({ book, currentPage }) {
                         onClick={() => navigate(`/books/${book.id}`)}
                         className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-primary text-white rounded-md font-semibold text-sm hover:bg-primary-dark transition-colors"
                     >
-                        <BookOpen size={15} /> قراءة
+                        <BookOpen size={15} /> {t('books.read')}
                     </button>
 
                     {/* Rendered optimistically: whether a book has a file at all is only knowable
@@ -122,7 +123,7 @@ function BookCard({ book, currentPage }) {
                             onClick={handleDownloadClick}
                             className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-primary-light text-primary rounded-md font-semibold text-sm"
                         >
-                            <Download size={15} /> تحميل
+                            <Download size={15} /> {t('books.download')}
                         </a>
                     )}
                 </div>

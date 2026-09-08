@@ -5,9 +5,10 @@ import { forgotPassword } from '@/lib/api/auth';
 import PageShell from '../components/layout/PageShell';
 import { Input, Button } from '../components/ui';
 import { usePageMeta } from '../hooks/usePageMeta';
+import { t } from '@/i18n';
 
 function ForgotPassword() {
-    usePageMeta({ title: 'نسيت كلمة المرور' });
+    usePageMeta({ title: t('auth.forgotPassword.title') });
     const [email, setEmail] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -24,7 +25,7 @@ function ForgotPassword() {
             // registered, so this branch is the only outcome on a network success.
             setSent(true);
         } catch (err) {
-            setError(err.response?.data?.message || 'حدث خطأ ما، يرجى المحاولة لاحقاً');
+            setError(err.response?.data?.message || t('auth.forgotPassword.genericError'));
         } finally {
             setLoading(false);
         }
@@ -36,26 +37,26 @@ function ForgotPassword() {
                 {sent ? (
                     <div className="text-center">
                         <MailCheck className="mx-auto text-primary" size={48} />
-                        <h2 className="text-xl font-bold mt-4">تحقق من بريدك الإلكتروني</h2>
+                        <h2 className="text-xl font-bold mt-4">{t('auth.forgotPassword.sentHeading')}</h2>
                         <p className="text-text-muted mt-2">
-                            إذا كان البريد الإلكتروني مسجلاً لدينا، فسيتم إرسال رابط إعادة تعيين كلمة المرور إليه.
+                            {t('auth.forgotPassword.sentBody')}
                         </p>
                         <Link to="/login" className="block mt-6">
-                            <Button variant="outline" fullWidth>العودة لتسجيل الدخول</Button>
+                            <Button variant="outline" fullWidth>{t('auth.forgotPassword.backToLogin')}</Button>
                         </Link>
                     </div>
                 ) : (
                     <>
                         <div className="text-center mb-6">
-                            <h2 className="text-xl font-bold">نسيت كلمة المرور؟</h2>
+                            <h2 className="text-xl font-bold">{t('auth.forgotPassword.heading')}</h2>
                             <p className="text-text-muted mt-2">
-                                أدخل بريدك الإلكتروني وسنرسل لك رابطاً لإعادة تعيين كلمة المرور.
+                                {t('auth.forgotPassword.instructions')}
                             </p>
                         </div>
 
                         <form onSubmit={handleSubmit} className="grid gap-4">
                             <Input
-                                label="البريد الإلكتروني"
+                                label={t('fields.email')}
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
@@ -69,14 +70,14 @@ function ForgotPassword() {
                             )}
 
                             <Button type="submit" disabled={loading} fullWidth>
-                                {loading ? 'جاري الإرسال...' : 'إرسال رابط إعادة التعيين'}
+                                {loading ? t('common.sending') : t('auth.forgotPassword.submit')}
                             </Button>
                         </form>
 
                         <div className="text-center mt-5">
                             <p className="text-sm text-text-secondary">
-                                تذكرت كلمة المرور؟{' '}
-                                <Link to="/login" className="text-primary font-semibold">تسجيل الدخول</Link>
+                                {t('auth.forgotPassword.rememberedIt')}{' '}
+                                <Link to="/login" className="text-primary font-semibold">{t('auth.forgotPassword.loginLink')}</Link>
                             </p>
                         </div>
                     </>

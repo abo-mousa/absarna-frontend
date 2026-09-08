@@ -2,15 +2,16 @@ import { useRef } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { ArrowRight, ChevronRight, ChevronLeft, Clock, Folder, Tv, User, Calendar } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
-import { QueryState, Avatar, Spinner } from '../components/ui';
-import { VideoPlayer, CommentsSection, VideoCard, BookmarkButton, ShareButton } from '../components/content';
+import { QueryState, Avatar, Spinner, LinkifiedText } from '../components/ui';
+import { VideoPlayer, CommentsSection, VideoCard, BookmarkButton, ShareButton, SourceBadge } from '../components/content';
 import { useVideo, useRelatedVideo, useWatchProgressMap, useWatchHistory } from '../hooks/useVideos';
 import { useChannel } from '../hooks/useChannels';
-import { useSeriesDetail } from '../hooks/useSeries';
+import { useSeriesDetail, useSeriesNeighbours } from '../hooks/useSeries';
 import { useAuth } from '../contexts/AuthContext';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { resolveMediaUrl, youtubeThumbnail } from '@/lib/media';
-import { formatPublishDate } from '@/lib/dayjsAr';
+import { formatPublishDate, displayDate } from '@/lib/dayjsAr';
+import { t } from '@/i18n';
 
 function VideoDetail() {
     const { id } = useParams();
@@ -21,7 +22,8 @@ function VideoDetail() {
     const { data: video, isLoading, isError } = useVideo(id);
     const { data: related = [] } = useRelatedVideo(id);
     const { data: channel } = useChannel(video?.channelId, !!video?.channelId);
-    const { data: seriesData } = useSeriesDetail(video?.seriesId, !!video?.seriesId);
+    const { data: seriesData } = useSeriesDetail(video?.seriesId, 1, !!video?.seriesId);
+    const { data: neighbours } = useSeriesNeighbours(video?.seriesId, video?.id, !!video?.seriesId);
     const { token } = useAuth();
     const watchProgress = useWatchProgressMap(!!token);
     // Same cached `['watch-history']` query `useWatchProgressMap` reads internally — called
@@ -49,35 +51,56 @@ function VideoDetail() {
                 <QueryState
                     isLoading={isLoading}
                     isError={isError || !video}
-                    errorTitle="فشل في تحميل الفيديو"
-                    errorAction={<Link to="/" className="text-primary font-semibold">العودة للرئيسية</Link>}
+                    errorTitle={t('video.loadFailed')}
+                    errorAction={<Link to="/" className="text-primary font-semibold">{t('common.backHome')}</Link>}
                 />
             </PageShell>
         );
     }
 
-    // Ordered list the series' own page (SeriesDetail.jsx) also renders from — used here just
-    // to compute this video's position and its immediate neighbours, not to duplicate the list.
-    const seriesContent = seriesData?.content || [];
-    const seriesIndex = seriesContent.findIndex((v) => v.id === video.id);
-    const prevVideo = seriesIndex > 0 ? seriesContent[seriesIndex - 1] : null;
-    const nextVideo = seriesIndex >= 0 && seriesIndex < seriesContent.length - 1 ? seriesContent[seriesIndex + 1] : null;
+    // Position and neighbours come from the series' own lookup, not from a page of its videos.
+    // This page used to scan the complete content list, which stopped being available when the
+    // series endpoint was paginated — a video on page 4 of a 99-video series is simply not in the
+    // page the list happened to load, and its navigation would have silently vanished.
+    /**
+     * Goes back to wherever the viewer actually came from.
+     *
+     * <p>This was a hardcoded link to the home page, so arriving from a series — or a search, or a
+     * channel — and pressing it dumped you on the home page instead of back into the list you were
+     * working through. On a 99-video series that is the difference between watching a course and
+     * re-finding your place after every episode.
+     *
+     * <p>`history.state.idx` is React Router's own cursor into the session's history: greater than
+     * zero means there is a previous entry *within this app* to go back to. A deep link opened in
+     * a fresh tab has none, and falls back to the home page — which is what the label then says,
+     * because a button that says "back" and goes somewhere you have never been is worse than one
+     * that admits where it is taking you.
+     */
+    const canGoBack = (window.history.state?.idx ?? 0) > 0;
+    const handleBack = () => (canGoBack ? navigate(-1) : navigate('/'));
+
+    const seriesIndex = (neighbours?.position ?? 0) - 1;
+    const seriesTotal = neighbours?.total ?? 0;
+    const prevVideo = neighbours?.previousId
+        ? { id: neighbours.previousId, title: neighbours.previousTitle }
+        : null;
+    const nextVideo = neighbours?.nextId
+        ? { id: neighbours.nextId, title: neighbours.nextTitle }
+        : null;
 
     const meta = [
         video.duration && { icon: Clock, text: video.duration },
         video.category && { icon: Folder, text: video.category },
         video.speaker && { icon: User, text: video.speaker },
-        video.originalPublishDate && video.originalPublishDate !== video.publishDate &&
-            { icon: Calendar, text: `تاريخ النشر الأصلي: ${video.originalPublishDate}` },
     ].filter(Boolean);
 
     // Views · comments · publish date — sits opposite the channel name instead of buried in
     // the meta row below, so it reads as this video's own stats rather than one more attribute
     // alongside duration/category.
     const stats = [
-        video.viewCount != null && `${video.viewCount.toLocaleString('ar')} مشاهدات`,
-        video.commentCount != null && `${video.commentCount.toLocaleString('ar')} تعليقات`,
-        video.publishDate && formatPublishDate(video.publishDate),
+        video.viewCount != null && t('common.views', { count: video.viewCount.toLocaleString('ar') }),
+        video.commentCount != null && t('common.commentCount', { count: video.commentCount.toLocaleString('ar') }),
+        displayDate(video) && formatPublishDate(displayDate(video)),
     ].filter(Boolean).join(' · ');
 
     return (
@@ -131,7 +154,8 @@ function VideoDetail() {
                         {stats && <span className="text-xs text-text-muted">{stats}</span>}
                     </div>
 
-                    <div className="flex gap-4 flex-wrap text-sm text-text-secondary mb-4">
+                    <div className="flex gap-4 flex-wrap text-sm text-text-secondary mb-4 items-center">
+                        <SourceBadge sourceType={video.sourceType} showLabel />
                         {meta.map(({ icon: Icon, text }, i) => (
                             <span key={i} className="flex items-center gap-1.5">
                                 <Icon size={14} /> {text}
@@ -140,22 +164,22 @@ function VideoDetail() {
                     </div>
 
                     {video.description && (
-                        <p className="text-text-secondary leading-loose whitespace-pre-wrap">{video.description}</p>
+                        <LinkifiedText text={video.description} className="text-text-secondary leading-loose" />
                     )}
                 </div>
 
-                {seriesData?.series && (
+                {seriesData?.pages?.[0]?.series && (
                     <div className="bg-surface p-4 sm:p-5 rounded-lg border border-border-light mb-6">
                         <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
                             <Link
-                                to={`/series/${seriesData.series.id}`}
+                                to={`/series/${seriesData.pages[0].series.id}`}
                                 className="flex items-center gap-1.5 text-sm text-primary font-semibold hover:underline"
                             >
-                                <Tv size={14} /> {seriesData.series.title}
+                                <Tv size={14} /> {seriesData.pages[0].series.title}
                             </Link>
                             {seriesIndex >= 0 && (
                                 <span className="text-xs text-text-muted">
-                                    الجزء {seriesIndex + 1} من {seriesContent.length}
+                                    {t('video.seriesPart', { index: seriesIndex + 1, total: seriesTotal })}
                                 </span>
                             )}
                         </div>
@@ -167,7 +191,7 @@ function VideoDetail() {
                                 title={nextVideo?.title}
                                 className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-md bg-surface-hover text-text-secondary text-sm font-semibold hover:text-text-primary transition-colors disabled:opacity-40 disabled:pointer-events-none"
                             >
-                                <ChevronLeft size={16} /> التالي
+                                <ChevronLeft size={16} /> {t('video.next')}
                             </button>
                             <button
                                 onClick={() => prevVideo && navigate(`/video/${prevVideo.id}`)}
@@ -175,7 +199,7 @@ function VideoDetail() {
                                 title={prevVideo?.title}
                                 className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-md bg-surface-hover text-text-secondary text-sm font-semibold hover:text-text-primary transition-colors disabled:opacity-40 disabled:pointer-events-none"
                             >
-                                <ChevronRight size={16} /> السابق
+                                <ChevronRight size={16} /> {t('video.previous')}
                             </button>
                         </div>
                     </div>
@@ -185,7 +209,7 @@ function VideoDetail() {
 
                 {related.length > 0 && (
                     <div className="mt-6">
-                        <h2 className="text-lg font-bold mb-3">قد يعجبك أيضاً</h2>
+                        <h2 className="text-lg font-bold mb-3">{t('video.related')}</h2>
                         <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-4">
                             {related.map((item) => (
                                 <VideoCard
@@ -200,9 +224,12 @@ function VideoDetail() {
                 )}
 
                 <div className="mt-6">
-                    <Link to="/" className="flex items-center gap-1.5 text-primary font-semibold w-fit">
-                        <ArrowRight size={16} /> العودة للرئيسية
-                    </Link>
+                    <button
+                        onClick={handleBack}
+                        className="flex items-center gap-1.5 text-primary font-semibold w-fit"
+                    >
+                        <ArrowRight size={16} /> {canGoBack ? t('common.back') : t('common.backHome')}
+                    </button>
                 </div>
             </div>
         </PageShell>
