@@ -158,6 +158,43 @@ export const ar = {
         notFound: 'المحتوى غير موجود أو لم يعد متاحاً',
         forbidden: 'ليس لديك صلاحية لهذا الإجراء',
         server: 'حدث خلل في الخادم، يرجى المحاولة لاحقاً',
+
+        /**
+         * Why an action was refused, keyed by the backend's `reason` code.
+         *
+         * <p>These exist because a refusal with a business reason behind it used to arrive as
+         * «ليس لديك صلاحية لهذا الإجراء» — which, for the case that prompted this, was true of
+         * nothing: the caller was the channel's owner, was authorised, and the channel had simply
+         * not been reviewed yet. The status alone can never say that.
+         *
+         * <p><b>Every sentence here names the reason and then what to do about it</b>, in that
+         * order. A refusal a user can do nothing about is worth wording differently from one that
+         * clears itself, and «حاول لاحقاً» on the first kind is how people learn to ignore it.
+         *
+         * <p>The backend sends codes, never Arabic — it names the situation, this file words it,
+         * so all copy stays in one place and a code with no entry here falls back to the generic
+         * sentence for its status rather than showing English. Adding a code on that side without
+         * adding it here is therefore safe, and silent: grep the backend for
+         * `ActionNotAllowedException(` and the two-argument `InvalidRequestException(` to find the
+         * full set.
+         */
+        reasons: {
+            // Channel review. PENDING is deliberately absent — a channel awaiting review may now
+            // import, precisely so it can be reviewed on its content.
+            CHANNEL_REJECTED: 'تم رفض هذه القناة من قبل إدارة المنصة، ولا يمكن الاستيراد إليها. راسل الإدارة إن كنت ترى أن هذا خطأ.',
+            CHANNEL_SUSPENDED: 'هذه القناة موقوفة مؤقتاً، ولا يمكن الاستيراد إليها حتى يُرفع الإيقاف.',
+
+            // YouTube ownership. The two are separated because the remedy is completely different:
+            // the first is something the owner does, the second is something only they can do and
+            // an admin cannot do for them.
+            YOUTUBE_NOT_VERIFIED: 'لم يتم إثبات ملكيتك لقناة اليوتيوب بعد. ضع رمز التحقق في وصف قناتك ثم اضغط "تحقق".',
+            YOUTUBE_NEEDS_OWNER_VERIFICATION: 'تم ربط هذه القناة بواسطة إدارة المنصة، وهذا يكفي للاستيراد فقط. رفع الملف الأصلي يتطلب أن يثبت صاحب القناة ملكيتها بنفسه عبر رمز التحقق.',
+
+            YOUTUBE_IMPORT_ALREADY_RUN: 'تم استيراد هذه القناة بالفعل، أو هناك استيراد جارٍ الآن.',
+            // A 503, and the one case where "try again later" is actively wrong: nothing will
+            // change until someone configures the deployment.
+            YOUTUBE_NOT_CONFIGURED: 'الاستيراد من يوتيوب غير مفعَّل على هذه المنصة حالياً. راسل الإدارة.',
+        },
     },
 
     auth: {
@@ -447,6 +484,22 @@ export const ar = {
         succeeded: 'تم استيراد {count} فيديو',
         failed: 'فشل الاستيراد: {reason}',
         refresh: 'تحديث',
+        // The count climbs during the walk — it is written per committed page, not once at the
+        // end — so a multi-hour import shows progress instead of a spinner over a zero.
+        progress: 'تم استيراد {count} فيديو',
+        // YouTube's own pageInfo.totalResults, hence the "~": it is the channel's video count as
+        // YouTube reports it, not a number we counted.
+        progressOfTotal: 'تم استيراد {count} من ~{total} فيديو',
+
+        // PARTIAL. Not a failure, and worded so it does not read as one: a catalogue larger than
+        // the platform's shared daily YouTube quota reaches this every day until it is finished.
+        // The backend saved its place, so the same button continues rather than starting over.
+        paused: 'توقف الاستيراد مؤقتاً وحُفِظ موضعه. اضغط "متابعة الاستيراد" للإكمال من حيث توقف.',
+        pausedReason: 'السبب: {reason}',
+        resumeImport: 'متابعة الاستيراد',
+        // Shown when pressing the button itself fails — as opposed to the import failing once it
+        // has started, which is `failed` above and comes back through importStatus.
+        startFailed: 'تعذر بدء الاستيراد: {reason}',
 
         // Shown next to an imported video that still plays from YouTube.
         badge: 'يوتيوب',

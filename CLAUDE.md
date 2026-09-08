@@ -222,6 +222,51 @@ exactly how it was reported.
 - **The panel polls only while an import is `RUNNING`** (`refetchInterval` as a function of the
   data, not a constant). Nothing pushes progress from the server, and a finished import polls
   nothing.
+
+### A channel awaiting review can import now — 2026-09-08
+
+The backend used to require an **approved** channel for `/import` and both verification calls; it
+now requires only that the channel is not REJECTED or SUSPENDED, so **a PENDING channel can import
+and be reviewed on its content rather than on its name**. Nothing it imports is publicly visible —
+the backend gates every public query on the channel being active — so what an owner gets is a
+review copy on their own dashboard.
+
+Two consequences for this repo: the panel's import button no longer 403s on a freshly created
+channel, and the two refusals that remain arrive as `CHANNEL_REJECTED` / `CHANNEL_SUSPENDED` reason
+codes with their own sentences in `errors.reasons` (see above). They are separate codes because
+suspension lifts and rejection does not.
+
+### `PARTIAL`, progress, and a button that said nothing when it failed — 2026-09-08
+
+Three holes in the same panel, all of them invisible: each one looked exactly like a working page.
+
+- **`PARTIAL` had no branch anywhere in this app**, and neither did `importTotalEstimate` — the
+  backend has emitted both since the resumable import landed. A paused import fell through all four
+  conditions, so the panel rendered the «الاستيراد» heading with **nothing under it and no button**:
+  no way to continue, and no way to tell a pause from a broken page. It is not an edge case —
+  a catalogue larger than the platform's shared daily YouTube quota reaches `PARTIAL` as a matter
+  of course, several days running, so **the state that read as broken was the one that happens
+  most**. Now: an amber "paused, press resume" line, the backend's own reason under it, and
+  `importButtonLabel` giving «متابعة الاستيراد» rather than «أعد المحاولة» — the wrong one of those
+  tells an owner their import broke when the quota simply ran out.
+- **`importedVideos` is written per committed page, not once at the end**, so it climbs during a
+  walk that can last hours. Nothing showed it. `importProgress` now renders «تم استيراد 25,000 من
+  ~137,412 فيديو» while `RUNNING` **and** while `PARTIAL` — a pause that already brought in 25,000
+  videos should say so, not only that it stopped. The "~" is deliberate: the denominator is
+  YouTube's own `pageInfo.totalResults`, and it is null before the first page and once the import
+  finishes, so the shape has to read correctly without it.
+- **`startImport.mutate()` had no error handling at all** — no `onError`, and there is no global
+  error interceptor (`api/client.js` handles only the 401 refresh). React Query captured the
+  failure in `startImport.error` and **nothing rendered it**: the button re-enabled and the panel
+  looked identical. Reported as "I press import and get a 403 that is not displayed at all". The
+  reason now renders inline beside the button, not as a toast, because the button stays on screen
+  and the reason should stay next to it.
+
+`importButtonLabel` and `importProgress` are **exported pure functions with their own test**
+(`__tests__/youtubeImportPanel.test.js`), the same shape as `VideoPlayer`'s `watchThreshold` — this
+repo's tests are pure-function, with no jsdom. What they pin is precisely what is not visible in a
+rendered page: that `PARTIAL` is not `FAILED`, and that `RUNNING`/`SUCCESS` get **no button at
+all**, since a second walk of a large catalogue spends the whole platform's daily quota.
 - **Starting an import invalidates `['channel-manage', slug]`** — the import writes videos and
   series into this channel, so the dashboard's own lists are stale the moment it finishes.
   Invalidated on *start* because nothing tells the client when that is; the poll is what notices.
@@ -357,10 +402,65 @@ offline, being rate-limited, asking for something deleted and a server fault all
 and the backend's own Arabic 429 message, which the CORS filter ordering exists to make readable,
 was shown in eight places and dropped everywhere else.
 
-- `describeError(error, fallback)` returns one sentence: offline/timeout, the backend's 429 text
-  when present, 404, 403, 5xx, else the caller's own wording. **Offline and 429 override the
-  caller's fallback** because what to do next is different in those two cases, which is the whole
-  point of the sentence.
+- `describeError(error, fallback)` returns one sentence: offline/timeout, the backend's own
+  sentence on a 4xx that carries one, 404, 403, 5xx, else the caller's own wording. **Offline, and
+  any 4xx the server explained itself, override the caller's fallback** because what to do next is
+  different in those cases, which is the whole point of the sentence.
+
+#### A refusal says why: `reason` codes — 2026-09-08
+
+The layer above everything below it. «ليس لديك صلاحية لهذا الإجراء» on the import button was true
+of nothing — the caller was the channel's owner and was authorised; the channel had not been
+reviewed yet — and **no sentence keyed off a status can express that**, however well worded.
+
+The backend now names the situation in a `reason` field (`CHANNEL_REJECTED`,
+`YOUTUBE_NOT_VERIFIED`, …) and **this repo words it**, in `errors.reasons` in `ar.js`.
+`reasonMessage` is consulted first in `describeError`, ahead of the server's own sentence and the
+caller's fallback alike, because it is the only layer that can say *why* rather than restate the
+status.
+
+- **The backend sends codes, never Arabic.** Deliberate, and asked explicitly: every user-facing
+  message it writes is English ("Channel slug already exists" is shown verbatim to Arabic readers
+  wherever a caller renders it), and this app keeps ~600 strings in one catalog so a rewording is
+  one edit and a second locale stays possible. Copy in Java would have fixed one screen and
+  entrenched the split.
+- **`tOptional`, not `t`** — the key comes from data, so an unknown code is an *expected* answer,
+  not a typo: it returns undefined without warning and falls through to the generic sentence for
+  that status. **That is what lets the two repos deploy separately**; drift costs a specific
+  sentence, never a raw code or an English string on screen.
+- **Read at every status, including 5xx**, unlike the raw-body fallback below. A code selects a
+  sentence we wrote, so it cannot leak internals — and a 503 is exactly where «حدث خلل في الخادم»
+  is least useful, since `YOUTUBE_NOT_CONFIGURED` is not a fault anyone should wait out.
+- **Every sentence names the reason, then what to do about it**, in that order — and a refusal a
+  user can do nothing about is worded differently from one that clears itself. «حاول لاحقاً» on the
+  first kind is how people learn to ignore it.
+- Codes are stable: a rename silently falls back, so add a new one rather than repurposing.
+  `grep` the backend for `ActionNotAllowedException(` and the two-argument
+  `InvalidRequestException(` for the full set.
+
+#### The body is read on every 4xx now, and which key holds it is not obvious — 2026-09-08
+
+Only 429 ever looked at a response body, so `403 {"error":"غير مصرح لك"}` — a sentence the backend
+wrote for the reader — was discarded and «ليس لديك صلاحية لهذا الإجراء» shown instead. That was the
+half that was missing. **The half that is easy to get wrong in the other direction is which key to
+read**, because the backend uses `error` for two different things:
+
+| Answered by | `error` | `message` |
+|---|---|---|
+| `GlobalExceptionHandler.buildResponse` | `"Forbidden"`, `"Not Found"` — the HTTP reason phrase | `"Access denied"`, `"Channel not found"` — internal detail |
+| `EmailNotVerifiedException`, `RateLimitFilter` | `"Too many requests"` | **Arabic** |
+| a controller's own `forbidden()` | **«غير مصرح لك»** | *absent* |
+
+So neither key can simply be preferred: reading `error` first prints **"Forbidden"** at an Arabic
+reader on every 403 the global handler answers, and reading `message` first and trusting it prints
+"Access denied". What separates them is not the key but the **script** — this backend writes
+everything meant for a person in Arabic and everything meant for a log in English. `serverMessage`
+takes `message ?? error` and returns it **only if it contains an Arabic letter**, which fails safe
+in both directions: an English body falls through to our own copy, and a body shape nobody
+anticipated cannot put internals on the screen. **Never extended to 5xx** — there the server knows
+only that it broke. Pinned by `__tests__/describeError.test.js`, whose English-body cases exist to
+catch the "just prefer `error`" fix, which looks correct in review because the body really is being
+used.
 - `QueryState` takes `error` and `onRetry` and renders a retry action by default. **Every list
   page passes its `refetch`**; the detail pages deliberately pass an explicit `errorAction`
   («back home») instead, because their commonest error is a 404 for an item that is gone or not

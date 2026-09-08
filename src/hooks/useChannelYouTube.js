@@ -57,7 +57,15 @@ export const useCheckYouTubeVerification = (slug) => {
     });
 };
 
-/** Starts the one-time import. Returns immediately; the query above polls for the outcome. */
+/**
+ * Starts the one-time import. Returns immediately; the query above polls for the outcome.
+ *
+ * <p><b>A failure here reaches the user only because the panel renders `startImport.error`.</b>
+ * There is no `onError` and no global error interceptor — `api/client.js` handles the 401 refresh
+ * and nothing else — so this mutation used to fail in complete silence: a PENDING channel is
+ * refused with a 403, and the button simply re-enabled with the page unchanged. Any new caller
+ * has to render the error itself.
+ */
 export const useStartYouTubeImport = (slug) => {
     const queryClient = useQueryClient();
     const scope = useUserScope();

@@ -12,6 +12,44 @@ import {
     useAttestYouTubeChannel,
 } from '@/hooks/useChannelYouTube';
 import { t } from '@/i18n';
+import { describeError } from '@/lib/describeError';
+import { formatCount } from '@/lib/numbers';
+
+/**
+ * The label for the one button that starts, retries and resumes an import — or `null` where there
+ * must be no button at all.
+ *
+ * <p>Four statuses, three of which the owner reads as the same intent. `PARTIAL` is the one worth
+ * naming separately: it is <b>not</b> a failure, and «أعد المحاولة» would tell an owner their
+ * import broke when in fact the platform's shared daily YouTube quota ran out and the backend saved
+ * its place. On a catalogue of any size that is the normal path, several days running.
+ */
+export function importButtonLabel(status) {
+    if (!status) return t('youtube.startImport');
+    if (status === 'PARTIAL') return t('youtube.resumeImport');
+    if (status === 'FAILED') return t('youtube.retryImport');
+    // RUNNING is already working and SUCCESS is done; a button on either invites a second walk of
+    // a catalogue that costs the whole platform's quota to walk once.
+    return null;
+}
+
+/**
+ * «تم استيراد 25,000 من ~137,412 فيديو» — or `null` while there is nothing yet to report.
+ *
+ * <p>`importedVideos` is written per committed page rather than once at the end, so this climbs
+ * during a walk that can last hours; without it a multi-day import is a spinner over a zero, which
+ * is indistinguishable from one that is stuck. `importTotalEstimate` is YouTube's own
+ * `pageInfo.totalResults` and is null before the first page and once the import finishes — hence
+ * the "~", and hence a shape that reads correctly with the denominator missing.
+ */
+export function importProgress(state) {
+    const count = Number(state?.importedVideos);
+    if (!Number.isFinite(count) || count <= 0) return null;
+    const total = Number(state?.importTotalEstimate);
+    return Number.isFinite(total) && total > 0
+        ? t('youtube.progressOfTotal', { count: formatCount(count), total: formatCount(total) })
+        : t('youtube.progress', { count: formatCount(count) });
+}
 
 /**
  * Link a YouTube channel, prove you own it, import it once.
@@ -264,16 +302,7 @@ function YouTubeImportPanel({ slug }) {
                     <strong className="text-sm">{t('youtube.importHeading')}</strong>
 
                     {!state.importStatus && (
-                        <>
-                            <p className="text-sm text-text-muted">{t('youtube.importIntro')}</p>
-                            <Button
-                                onClick={() => startImport.mutate()}
-                                disabled={startImport.isPending}
-                                className="w-fit"
-                            >
-                                {t('youtube.startImport')}
-                            </Button>
-                        </>
+                        <p className="text-sm text-text-muted">{t('youtube.importIntro')}</p>
                     )}
 
                     {state.importStatus === 'RUNNING' && (
@@ -286,24 +315,68 @@ function YouTubeImportPanel({ slug }) {
                     {state.importStatus === 'SUCCESS' && (
                         <p className="text-sm text-primary flex items-center gap-1.5">
                             <Check size={16} />
-                            {t('youtube.succeeded', { count: state.importedVideos ?? 0 })}
+                            {t('youtube.succeeded', {
+                                count: formatCount(state.importedVideos ?? 0),
+                            })}
                         </p>
                     )}
 
+                    {/* PARTIAL is a pause, not a failure — the backend saved a resume point and
+                        the button below continues from it. Styled as information rather than as an
+                        error for that reason: a catalogue bigger than the platform's shared daily
+                        YouTube quota lands here every day until it is finished, and colouring the
+                        ordinary path red teaches the owner to ignore the one time it is red. */}
+                    {state.importStatus === 'PARTIAL' && (
+                        <p className="text-sm text-gold">{t('youtube.paused')}</p>
+                    )}
+
                     {state.importStatus === 'FAILED' && (
-                        <>
-                            <p className="text-sm text-red-600 dark:text-red-400">
-                                {t('youtube.failed', { reason: state.importMessage || '' })}
+                        <p className="text-sm text-red-600 dark:text-red-400">
+                            {t('youtube.failed', { reason: state.importMessage || '' })}
+                        </p>
+                    )}
+
+                    {/* The count climbs while a walk is running and is what the owner watches on a
+                        multi-day import. Shown for both, because a paused import that has already
+                        brought in 25,000 videos should say so rather than only that it stopped. */}
+                    {(state.importStatus === 'RUNNING' || state.importStatus === 'PARTIAL') &&
+                        importProgress(state) && (
+                            <p className="text-sm text-text-secondary" dir="auto">
+                                {importProgress(state)}
                             </p>
-                            <Button
-                                onClick={() => startImport.mutate()}
-                                disabled={startImport.isPending}
-                                variant="outline"
-                                className="w-fit"
-                            >
-                                {t('youtube.retryImport')}
-                            </Button>
-                        </>
+                        )}
+
+                    {state.importStatus === 'PARTIAL' && state.importMessage && (
+                        <p className="text-xs text-text-muted" dir="auto">
+                            {t('youtube.pausedReason', { reason: state.importMessage })}
+                        </p>
+                    )}
+
+                    {/* One button for start, retry and resume, because from the owner's side they
+                        are one intent — and `importButtonLabel` returns null for RUNNING and
+                        SUCCESS, which is what keeps a second walk from being one click away. */}
+                    {importButtonLabel(state.importStatus) && (
+                        <Button
+                            onClick={() => startImport.mutate()}
+                            disabled={startImport.isPending}
+                            variant={state.importStatus ? 'outline' : 'primary'}
+                            className="w-fit"
+                        >
+                            {importButtonLabel(state.importStatus)}
+                        </Button>
+                    )}
+
+                    {/* Pressing the button can fail on its own — a PENDING channel is refused with
+                        a 403 whose Arabic body the panel used to throw away, so the click did
+                        nothing visible at all and the button simply re-enabled. Rendered inline
+                        rather than toasted because the button stays on screen and the reason
+                        should stay next to it. */}
+                    {startImport.isError && (
+                        <p className="text-sm text-red-600 dark:text-red-400" dir="auto">
+                            {t('youtube.startFailed', {
+                                reason: describeError(startImport.error),
+                            })}
+                        </p>
                     )}
                 </div>
             )}
