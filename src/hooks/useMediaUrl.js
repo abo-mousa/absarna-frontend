@@ -23,12 +23,20 @@ import { safeExternalUrl } from '@/lib/media';
 const STALE_MS = 30 * 60 * 1000;
 
 /**
- * Returns the whole payload, not just the URL: `{ url, quality, qualities }`.
+ * Returns the whole payload, not just the URL: `{ url, quality, qualities, format }`.
+ *
+ * `format` is `'hls'` or `'progressive'`, and the player needs it before it can decide anything:
+ * an HLS URL goes to hls.js outside Safari and to the <video> tag inside it, while a progressive
+ * MP4 goes straight to the tag everywhere. It is reported rather than inferred because both
+ * shapes are legitimately reachable — a video transcoded before the HLS migration still serves a
+ * `v1/` MP4 ladder, and the pre-transcode fallback always does.
  *
  * `qualities` is the rendition ladder's names, which is everything a selector needs — object
- * keys never leave the backend. `quality` is the rung actually being served, which is not
- * necessarily the one asked for: with no `quality` argument the backend picks the default rung,
- * and the player has no other way to know which that was.
+ * keys never leave the backend. **Under HLS it is no longer the whole selector**: the video
+ * variants come from master.m3u8, which is what the player can actually switch between without
+ * reloading, and this list contributes the audio rung, which is deliberately not in that
+ * manifest. `quality` is the rung actually being served, and is null for a master playlist —
+ * correctly, since no single rung was served.
  *
  * `quality` is part of the query key, so each rung is cached separately and switching back to
  * one already fetched is instant. `placeholderData: keepPreviousData` is what makes switching

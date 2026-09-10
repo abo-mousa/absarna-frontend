@@ -569,6 +569,7 @@ function ChannelManage() {
                             submitIcon={<Upload size={18} />}
                             file={{
                                 label: t('channelManage.forms.video.fileLabel'),
+                                hint: t('channelManage.forms.video.fileHint'),
                                 accept: acceptAttribute('videos'),
                                 onChange: handleVideoFileSelect,
                                 uploading: videoUploading,
@@ -628,6 +629,7 @@ function ChannelManage() {
                             submitLabel={t('channelManage.forms.book.submit')}
                             file={{
                                 label: t('channelManage.forms.book.fileLabel'),
+                                hint: t('channelManage.forms.book.fileHint'),
                                 accept: acceptAttribute('books'),
                                 onChange: handleBookFileSelect,
                                 uploading: bookUploading,

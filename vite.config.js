@@ -20,6 +20,21 @@ const originOf = (url) => {
 }
 
 /**
+ * Every distinct origin in a comma- or space-separated list, in order, with duplicates and
+ * unparseable entries dropped.
+ *
+ * **Storage is no longer one origin, and that is what this exists for.** Under HLS the media
+ * bucket is served from a delivery host (`media.absarna.com`) while book PDFs and an owner's
+ * pre-transcode video preview are still presigned against the S3 endpoint — two hosts, both
+ * reached by `connect-src`, `media-src` and `img-src`. A single-value variable could name only
+ * one of them, and the one it did not name would fail as a console CSP violation on a page that
+ * otherwise works.
+ */
+const originsOf = (value) => [...new Set(
+  (value ?? '').split(/[\s,]+/).map(originOf).filter(Boolean),
+)]
+
+/**
  * Injects a Content-Security-Policy meta tag into index.html.
  *
  * **Why this exists.** The app keeps its access token in `localStorage`, renders URLs that
@@ -62,19 +77,28 @@ const contentSecurityPolicy = (env, isProduction) => ({
       // origin blocks every request the app makes, which is a worse failure than no policy.
       const api = originOf(env.VITE_API_BASE_URL) ?? LOCAL_API
       // Object storage is not otherwise part of the frontend's configuration: bytes are fetched
-      // from presigned URLs the backend mints, so this origin is only ever seen at runtime. It
-      // still has to be declared, because connect-src, media-src and img-src all reach it.
+      // from URLs the backend mints, so these origins are only ever seen at runtime. They still
+      // have to be declared, because connect-src, media-src and img-src all reach them.
+      //
+      // A LIST, not a single value: HLS splits storage in two. Segments come from the media
+      // delivery host while book PDFs and the owner's pre-transcode preview stay presigned
+      // against the S3 endpoint, so both have to be named once those differ.
+      //
       // Unset falls back to the local compose stack in dev, and to nothing in a production build
       // — where guessing localhost would be worse than an explicit failure.
-      const storage = originOf(env.VITE_STORAGE_ORIGIN) ?? (isProduction ? null : LOCAL_STORAGE)
-      if (!storage) {
-        // Loud, because the failure is otherwise deferred and confusing: the app builds, deploys
-        // and renders, and only playing a video or opening a book fails — as a CSP violation in
-        // the console, nowhere near the missing variable that caused it.
-        console.warn(
-          '\n[absarna] VITE_STORAGE_ORIGIN is not set, so the Content-Security-Policy will not\n'
-          + '          allow object storage. Video playback and PDF reading will be blocked.\n'
-          + '          Set it to the bucket origin, e.g. https://nbg1.your-objectstorage.com\n')
+      const storage = originsOf(env.VITE_STORAGE_ORIGIN)
+      if (storage.length === 0) {
+        if (!isProduction) storage.push(LOCAL_STORAGE)
+        else {
+          // Loud, because the failure is otherwise deferred and confusing: the app builds,
+          // deploys and renders, and only playing a video or opening a book fails — as a CSP
+          // violation in the console, nowhere near the missing variable that caused it.
+          console.warn(
+            '\n[absarna] VITE_STORAGE_ORIGIN is not set, so the Content-Security-Policy will not\n'
+            + '          allow object storage. Video playback and PDF reading will be blocked.\n'
+            + '          Set it to every origin media is served from, comma-separated, e.g.\n'
+            + '          https://media.absarna.com,https://<account>.r2.cloudflarestorage.com\n')
+        }
       }
 
       const directives = {
@@ -107,10 +131,10 @@ const contentSecurityPolicy = (env, isProduction) => ({
           "'self'", 'data:', 'blob:',
           'https://img.youtube.com', 'https://i.ytimg.com',
           'https://yt3.ggpht.com', 'https://yt3.googleusercontent.com',
-          storage,
+          ...storage,
         ],
-        'media-src': ["'self'", 'blob:', storage],
-        'connect-src': ["'self'", api, storage],
+        'media-src': ["'self'", 'blob:', ...storage],
+        'connect-src': ["'self'", api, ...storage],
         'frame-src': ['https://www.youtube.com', 'https://www.youtube-nocookie.com'],
         // pdf.js runs its parser in a worker loaded from our own bundle; blob: covers the
         // fallback path where it inlines the worker instead.

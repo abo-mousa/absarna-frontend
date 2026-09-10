@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { Button } from '@/components/ui';
 
 /**
@@ -16,12 +17,15 @@ import { Button } from '@/components/ui';
  * differs is written out.
  *
  * @param heading      the form's own title
- * @param file         optional `{ label, accept, onChange, uploading, progress }` for the types
- *                     backed by a presigned upload
+ * @param file         optional `{ label, hint, accept, onChange, uploading, progress }` for the
+ *                     types backed by a presigned upload. `hint` is shown before a file is
+ *                     picked, because picking one starts the upload — see below.
  * @param submitLabel  the button's text
  * @param submitIcon   optional icon element for the button
  */
 function ContentPublishForm({ heading, onSubmit, file, submitLabel, submitIcon, children }) {
+    const hintId = useId();
+
     return (
         <form onSubmit={onSubmit} className="grid gap-4 bg-surface p-6 rounded-lg border border-border-light">
             <h3 className="text-lg font-bold">{heading}</h3>
@@ -29,6 +33,14 @@ function ContentPublishForm({ heading, onSubmit, file, submitLabel, submitIcon, 
             {file && (
                 <div>
                     <FieldLabel>{file.label}</FieldLabel>
+                    {/* Picking a file starts the upload immediately — the form is filled in while
+                        the bytes travel, and publish only confirms. Said up front, above the
+                        picker, because a user who expects nothing to happen until they press
+                        publish will otherwise pick a file "to see" and spend bandwidth and one
+                        of the channel's five upload slots on it. */}
+                    {file.hint && (
+                        <p id={hintId} className="text-sm text-text-muted mb-2">{file.hint}</p>
+                    )}
                     {/* The backend's own allowlist, never `video/*` — offering .webm or .avi in
                         the picker only moved the rejection to a server error after the user had
                         already committed to the file. */}
@@ -37,6 +49,7 @@ function ContentPublishForm({ heading, onSubmit, file, submitLabel, submitIcon, 
                         accept={file.accept}
                         onChange={file.onChange}
                         disabled={file.uploading}
+                        aria-describedby={file.hint ? hintId : undefined}
                     />
                     {file.uploading && (
                         <div className="mt-2">

@@ -126,6 +126,7 @@ function VideoDetail() {
                             sourceType={video.sourceType}
                             sourceUrl={video.sourceUrl}
                             title={video.title}
+                            poster={thumbnail}
                             startTime={startTime}
                         />
                     )}

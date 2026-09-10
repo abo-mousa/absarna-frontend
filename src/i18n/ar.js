@@ -341,6 +341,12 @@ export const ar = {
          * hence this map: the worker's rung name is an identifier, not copy.
          */
         qualityLabels: {
+            // 'auto' and 'audio' are the two options in the selector that are copy rather than a
+            // measurement. Every other entry ("1080p", "720p") comes from the manifest and is
+            // shown as-is — translating a resolution would be wrong, and tOptional falling
+            // through to the raw name is what keeps a rung the worker adds later from rendering
+            // as a missing-key warning.
+            auto: 'تلقائي',
             audio: 'صوت فقط',
         },
         seriesPart: 'الجزء {index} من {total}',
@@ -577,6 +583,8 @@ export const ar = {
             video: {
                 heading: 'رفع فيديو',
                 fileLabel: 'ملف الفيديو',
+                // Picking a file starts the upload at once; publish only confirms it.
+                fileHint: 'يبدأ رفع الفيديو فور اختياره، ويمكنك إكمال البيانات أثناء الرفع. لن يظهر للمشاهدين إلا بعد الضغط على «نشر الفيديو».',
                 submit: 'نشر الفيديو',
                 listHeading: 'فيديوهاتي ({count})',
                 uploaded: 'تم رفع الفيديو',
@@ -587,6 +595,7 @@ export const ar = {
             book: {
                 heading: 'إضافة كتاب',
                 fileLabel: 'ملف PDF',
+                fileHint: 'يبدأ رفع الملف فور اختياره، ويمكنك إكمال البيانات أثناء الرفع. لن يظهر الكتاب إلا بعد الضغط على «نشر الكتاب».',
                 uploading: 'جاري الرفع...',
                 pagesLabel: 'عدد الصفحات',
                 submit: 'نشر الكتاب',
