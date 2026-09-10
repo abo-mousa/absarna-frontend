@@ -336,6 +336,56 @@ export const ar = {
         watchVideo: 'شاهد الفيديو',
         quality: 'الجودة',
         /**
+         * The player's own settings menu — the gear drawn on top of the video.
+         *
+         * <p>It exists there rather than under the player because a browser renders only the
+         * fullscreen element's subtree: the old quality `<select>` was a sibling of the `<video>`
+         * and so did not exist in fullscreen, which is exactly where a viewer reaches for it.
+         */
+        /**
+         * The player's own control bar. It exists because the browser's does not let a settings
+         * button in — its controls are a closed shadow root — and because its fullscreen button
+         * targets the `<video>`, where nothing of ours can be rendered. Every label here is a
+         * button with only an icon, so these are `aria-label`s rather than visible copy.
+         */
+        controls: {
+            // The focusable player itself, so a keyboard viewer who tabs onto it is told what
+            // they have landed on — the shortcuts below live there.
+            player: 'مشغل الفيديو',
+            play: 'تشغيل',
+            pause: 'إيقاف مؤقت',
+            seek: 'موضع التشغيل',
+            // The timeline's spoken value: a screen reader reading "1263" for a position is
+            // useless, so it hears the two clock readings a viewer would say out loud.
+            timeOf: '{current} من {total}',
+            mute: 'كتم الصوت',
+            unmute: 'إلغاء كتم الصوت',
+            volume: 'مستوى الصوت',
+            // Shown only while Safari reports a receiver on the network. It is the one thing the
+            // browser's own bar gave for free that ours has to earn back, and it matters here: a
+            // lecture is exactly what someone sends to a television.
+            airplay: 'البث إلى شاشة أخرى',
+            // Announced while the player is stalled waiting for data, which on the hls.js path is
+            // most of the first press of play.
+            buffering: 'جارٍ التحميل',
+            enterFullscreen: 'ملء الشاشة',
+            exitFullscreen: 'إنهاء ملء الشاشة',
+        },
+
+        settings: {
+            label: 'إعدادات المشغل',
+            speed: 'سرعة التشغيل',
+            // 1x, which is the absence of a choice rather than a measurement — every other speed
+            // is a Latin-digit number like the rest of the app's figures (lib/numbers.js).
+            normalSpeed: 'عادية',
+            // Repeat. Offered because the catalogue is memorisation material as much as it is
+            // lectures: a passage learned by heart is watched over and over.
+            loop: 'تكرار مستمر',
+            // Only offered where the browser exposes it to the page (Chrome, Edge, Safari on the
+            // Mac); Firefox has its own picture-in-picture with no page-facing API.
+            pictureInPicture: 'صورة داخل صورة',
+        },
+        /**
          * The quality selector's option labels. Anything not listed falls through to the rung's
          * own name, which is what "1080p" and friends want — they are not words. `audio` is,
          * hence this map: the worker's rung name is an identifier, not copy.

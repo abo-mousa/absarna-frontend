@@ -21,8 +21,9 @@ src/
   components/
     ui/        Button, Card, Input, Modal, Badge, Grid, Spinner, EmptyState, QueryState, Avatar
     layout/    Navbar, SideBar, PageShell, SearchBar
-    content/   VideoCard, BookCard, ArticleCard, PostCard, VideoPlayer, PdfReader,
-               CommentsSection, BookmarkButton, LikeButton, SubscribeButton, ShareButton
+    content/   VideoCard, BookCard, ArticleCard, PostCard, VideoPlayer, VideoControlBar,
+               PlayerSettingsMenu, PdfReader, CommentsSection, BookmarkButton, LikeButton,
+               SubscribeButton, ShareButton
     channel/   ContentPublishForm, ContentManageList, ContentEditModal, YouTubeImportPanel
     auth/      EmailVerificationNotice
   pages/       one per route, all lazy-loaded in App.jsx
@@ -71,9 +72,43 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
 
 ## Notable pieces
 
-- **`VideoPlayer`** — native `<video>` for uploaded media, YouTube IFrame API for embeds. Owns the
-  quality selector (built from `playback-url`'s `qualities`), the `?t=` start time, and watch-progress
-  reporting.
+- **`VideoPlayer`** — a `<video>` with `controls` off plus our own `VideoControlBar` for uploaded
+  media, YouTube IFrame API for embeds. Owns the settings the bar's menu offers (quality, playback
+  speed, repeat, picture-in-picture), fullscreen on the wrapper, the `?t=` start time, and
+  watch-progress reporting.
+- **The player's control bar is ours, not the browser's** (`VideoControlBar`), and that is what
+  makes quality reachable in fullscreen. A browser renders only the fullscreen element's own
+  subtree, so a control that is a sibling of the `<video>` does not exist there — and it cannot be
+  fixed from outside the bar: the native fullscreen button targets the element itself, it can't be
+  intercepted (closed shadow root), re-pointing the request at our wrapper needs a second
+  fullscreen request the browser may refuse, and **Safari's button doesn't use that API at all** —
+  it puts the element into its own presentation mode, where no `fullscreenchange` fires. So
+  `controls` is off, the wrapper `<div>` is what goes fullscreen, and the bar (with the settings
+  menu in it) comes along. Turning `controls` off also means **we owe the viewer everything it
+  gave**: play/pause, scrubbing with buffered ranges, the clock, volume, a buffering spinner,
+  AirPlay where Safari reports a receiver, and the keyboard (space/k, ←→, ↑↓, f, m — the wrapper is
+  a focus stop for them). iOS still has element fullscreen only for the `<video>`, so there the
+  system player takes over and the menu cannot follow.
+- **The timeline runs left-to-right in an otherwise fully RTL app.** Time flows left→right in every
+  language (so does YouTube in Arabic), so the bar declares `dir="ltr"` and only the *button order*
+  mirrors; the settings panel re-asserts `dir="rtl"` for its prose, and ArrowRight seeks forward
+  because it follows the timeline, not the document.
+- **`maxBufferLength` is a floor, not a ceiling.** hls.js reaches its 30s target and then keeps
+  doubling towards `maxMaxBufferLength` (default 600s) while `maxBufferSize` (default 60 MB)
+  allows — six minutes of the 480p rung — so a press of play pulled most of a lecture nobody had
+  decided to finish. Capped at `maxMaxBufferLength: 90` / `maxBufferSize: 20 MB`, the same bill
+  `autoStartLoad: false` protects. `backBufferLength: 60` too, since the default keeps every
+  watched second in memory.
+- **Element state lives in the bar, not in `VideoPlayer`**: `timeupdate` fires several times a
+  second, and holding the playhead in the player's state would re-render the `<video>`, the hls.js
+  wiring and the settings tree on every tick.
+- **The settings menu is one level deep, not one flat list**: a root row per setting showing its
+  current value («الجودة … تلقائي»), drilling into that setting's options, with toggles (repeat,
+  picture-in-picture) on the root. Flat, it was every rung and every speed at once — a dozen rows
+  where eleven are noise, and a panel that grows taller with every setting added.
+- **Playback speed and volume persist across videos** (`safeStorage`), and the rate is re-applied on
+  every `loadedmetadata`: the media load algorithm resets it to `defaultPlaybackRate`, and a rung
+  swap is a load, so without that a quality change silently dropped a 1.5× lecture to 1×.
 - **Progress reporting has three layers** (`lib/api/beacon.js`): a throttled checkpoint, a flush on
   React unmount (SPA navigation), and a `pagehide` listener using `fetch(..., {keepalive:true})` —
   React never unmounts on a hard refresh, and a normal XHR is cancelled mid-flight.

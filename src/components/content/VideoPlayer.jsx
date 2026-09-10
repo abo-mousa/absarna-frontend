@@ -5,7 +5,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useVideoPlaybackUrl } from '@/hooks/useMediaUrl';
 import api from '@/lib/api/client';
 import { flushOnUnload } from '@/lib/api/beacon';
+import { safeStorage } from '@/lib/safeStorage';
 import { t, tOptional } from '@/i18n';
+import VideoControlBar, {
+    SEEK_STEP_SECONDS,
+    VOLUME_STEP,
+    keyboardAction,
+} from './VideoControlBar';
 
 // How often onTimeUpdate (fires several times a second) is allowed to actually hit the
 // backend — watch history is a convenience feature, not an analytics stream, so this stays
@@ -180,6 +186,156 @@ const URL_REFRESH_BACKOFF_MS = 1000;
  */
 const AUDIO_QUALITY = 'audio';
 
+/**
+ * The speeds offered in the settings menu.
+ *
+ * <p>Nothing below 0.5 or above 2: the catalogue is hour-long recorded lectures, where the useful
+ * range is "a bit slower to follow a difficult passage" to "twice as fast through material already
+ * known", and a rate outside that either garbles Arabic recitation or is unintelligible.
+ *
+ * <p>Latin digits in the labels, like every other number this app shows (`lib/numbers.js`) — a
+ * menu that reads «١٫٥×» next to a «1:04:22» timeline is the same inconsistency the counts had.
+ */
+export const PLAYBACK_SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+
+// The chosen speed outlives the video, on purpose: someone who watches lectures at 1.5× wants
+// 1.5×, not to re-pick it on every video. Through safeStorage because bare localStorage *throws*
+// when a browser blocks site data, and this one is read during the first render.
+const RATE_STORAGE_KEY = 'playbackRate';
+
+// The element's own limits are wider than PLAYBACK_SPEEDS, and deliberately respected: Chrome's
+// and Safari's native control menus can set a rate we never offer, and the browser is allowed to.
+const MIN_RATE = 0.25;
+const MAX_RATE = 4;
+
+/**
+ * A stored (or browser-reported) playback rate, made safe to assign to a `<video>`.
+ *
+ * <p>Exported and tested because every input to it is outside this app's control: the value comes
+ * from `localStorage`, where a previous version, another tab, or a person with devtools may have
+ * left anything at all, and assigning a non-finite or out-of-range rate throws
+ * `NotSupportedError` — mid-render, from a setter, on a player that had nothing else wrong with
+ * it. Anything unusable reads as "normal speed" rather than as a broken page.
+ *
+ * <p>It accepts any rate *within* range rather than only the offered speeds, so a 0.9 set through
+ * the browser's own control menu survives a reload instead of being quietly reset to 1.
+ */
+export const sanitizeRate = (raw) => {
+    const rate = Number(raw);
+    if (!Number.isFinite(rate) || rate < MIN_RATE || rate > MAX_RATE) return 1;
+    return rate;
+};
+
+// Option ids for the quality group. Prefixed because the two kinds of switch are genuinely
+// different operations — a manifest level swaps at the next segment boundary, an API rung means a
+// new playlist and a reload — and a bare "720p" cannot say which one it is.
+const AUTO_OPTION = 'auto';
+const LEVEL_PREFIX = 'level:';
+const QUALITY_PREFIX = 'quality:';
+
+/**
+ * The rungs a viewer may choose from, and which one is active — one list across three playback
+ * paths that each know a different amount about the ladder.
+ *
+ * <p>Exported and tested because the branching is invisible from any single browser, and getting
+ * it wrong offers a switch that does nothing:
+ *
+ * <ul>
+ *   <li><b>hls-js</b> — the manifest is the authority. `levels` is what the player can actually
+ *       switch between without reloading, so those are the options and `auto` (ABR) is the
+ *       default. On the audio rung `levels` describes the *audio* playlist — a single synthesised
+ *       pseudo-level — so it is suppressed there and `auto` is the way back to the picture.</li>
+ *   <li><b>hls-native</b> — Safari owns switching and exposes no list, so the only real choice
+ *       left is sound-only.</li>
+ *   <li><b>progressive</b> — the pre-HLS `v1/` ladder, where there is no manifest and each rung
+ *       is a separate file: the API's `qualities` is the only list there is, and every switch
+ *       goes through `playback-url` again.</li>
+ * </ul>
+ *
+ * <p>The audio rung is appended from the API's ladder in every mode: it is deliberately kept out
+ * of master.m3u8 (an ABR player must not silently drop the picture on a weak signal), so the
+ * manifest can never offer it.
+ */
+export const qualityOptions = ({
+    mode,
+    levels,
+    qualities = [],
+    selectedQuality = null,
+    servedQuality = null,
+    selectedLevel = -1,
+}) => {
+    const onAudioRung = selectedQuality === AUDIO_QUALITY || servedQuality === AUDIO_QUALITY;
+    const options = [{ id: AUTO_OPTION, label: qualityLabel(AUTO_OPTION) }];
+
+    if (mode === 'hls-js' && !onAudioRung) {
+        for (const level of levels ?? []) {
+            options.push({ id: `${LEVEL_PREFIX}${level.index}`, label: level.label });
+        }
+    } else if (mode === 'progressive') {
+        for (const quality of qualities) {
+            if (quality === AUDIO_QUALITY) continue;
+            options.push({ id: `${QUALITY_PREFIX}${quality}`, label: qualityLabel(quality) });
+        }
+    }
+
+    if (qualities.includes(AUDIO_QUALITY)) {
+        options.push({ id: `${QUALITY_PREFIX}${AUDIO_QUALITY}`, label: qualityLabel(AUDIO_QUALITY) });
+    }
+
+    let activeId = AUTO_OPTION;
+    if (onAudioRung) {
+        activeId = `${QUALITY_PREFIX}${AUDIO_QUALITY}`;
+    } else if (mode === 'hls-js') {
+        if (selectedLevel >= 0) activeId = `${LEVEL_PREFIX}${selectedLevel}`;
+    } else if (selectedQuality) {
+        activeId = `${QUALITY_PREFIX}${selectedQuality}`;
+    }
+
+    return { options, activeId };
+};
+
+/**
+ * How long the control bar stays up after the pointer stops moving.
+ *
+ * <p>Only while something is actually playing: a paused video is not being watched, and hiding
+ * the controls on it just makes them hard to find. Roughly what the browsers' own bars used
+ * (Chrome ~2.5s), because that is the delay this audience already has in its fingers.
+ */
+const CONTROLS_IDLE_MS = 2800;
+
+/** The element the browser is currently showing fullscreen, across the two spellings of it. */
+const fullscreenElementNow = () =>
+    document.fullscreenElement ?? document.webkitFullscreenElement ?? null;
+
+/**
+ * Asks for fullscreen on `el`, ignoring a refusal.
+ *
+ * A refusal is a legitimate outcome, not an error to surface: the API needs user activation and
+ * iOS Safari gives a regular element no fullscreen at all (only the `<video>` has
+ * `webkitEnterFullscreen`). Both promise rejection and synchronous throw are swallowed, because
+ * the two spellings differ on which one they use.
+ */
+const requestFullscreenOn = (el) => {
+    const request = el?.requestFullscreen ?? el?.webkitRequestFullscreen;
+    if (!request) return false;
+    try {
+        request.call(el)?.catch?.(() => {});
+        return true;
+    } catch {
+        return false;
+    }
+};
+
+const exitFullscreenNow = () => {
+    const exit = document.exitFullscreen ?? document.webkitExitFullscreen;
+    if (!exit) return;
+    try {
+        exit.call(document)?.catch?.(() => {});
+    } catch {
+        /* Already out, or never in. */
+    }
+};
+
 // `ref` exposes getCurrentTime() so a parent (VideoDetail's share sheet, for "copy link at
 // this timestamp") can read the playhead on demand without this component re-rendering on
 // every tick — the alternative (lifting currentTime into state) would fire a render several
@@ -207,14 +363,39 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
     const qualities = playback?.qualities ?? [];
     const servedQuality = playback?.quality ?? null;
     // Three paths, decided in one place — see playbackMode for why this is the piece worth
-    // pinning without a browser.
-    const usesHlsJs = playbackMode(playback, supportsNativeHls()) === 'hls-js';
+    // pinning without a browser. The mode itself is kept, not just the hls.js answer: it also
+    // decides what the quality menu can honestly offer (see qualityOptions).
+    const mode = playbackMode(playback, supportsNativeHls());
+    const usesHlsJs = mode === 'hls-js';
 
     // The variants hls.js found in master.m3u8, once it has parsed it. Null until then, and null
     // forever on the native path — Safari owns its own switching and exposes no list.
     const [levels, setLevels] = useState(null);
     // -1 is hls.js's "decide for me", which is the entire point of ABR and therefore the default.
     const [selectedLevel, setSelectedLevel] = useState(-1);
+
+    // The player's box — and, deliberately, the element that goes fullscreen rather than the
+    // <video> inside it, which is what keeps the settings overlay reachable there. See the
+    // fullscreen effect below.
+    const containerRef = useRef(null);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
+    // Restored from the last video watched, not reset per video: someone who watches lectures at
+    // 1.5× wants 1.5×, not to re-pick it every time.
+    const [playbackRate, setPlaybackRate] = useState(
+        () => sanitizeRate(safeStorage.getItem(RATE_STORAGE_KEY)),
+    );
+    // Repeat. Kept off by default and per-video: the reason it exists is memorisation — a short
+    // recitation or a passage being learned by heart — which is a thing a viewer turns on for one
+    // clip, not a standing preference.
+    const [loopEnabled, setLoopEnabled] = useState(false);
+    const [pipActive, setPipActive] = useState(false);
+    // Whether the control bar is showing. See CONTROLS_IDLE_MS.
+    const [controlsVisible, setControlsVisible] = useState(true);
+    const controlsIdleTimerRef = useRef(null);
+    // A bar that fades out from under an open settings panel is unusable, so the panel pins it.
+    const [menuOpen, setMenuOpen] = useState(false);
+
     const hlsRef = useRef(null);
     const urlRefreshesRef = useRef(0);
     // Whether this hls.js instance has been told to start fetching. See handlePlay for why
@@ -264,6 +445,36 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
             });
     };
 
+    /**
+     * Shows the overlay cluster and re-arms the fade.
+     *
+     * <p>Called from the container's pointer handlers and from the shortcut handler, so the bar
+     * appears the moment the viewer looks for it. The fade is only re-armed while something is
+     * playing — the paused state keeps its controls up, and a viewer who paused to change quality
+     * would otherwise watch the menu button vanish under their pointer.
+     */
+    const nudgeControls = useCallback(() => {
+        setControlsVisible(true);
+        clearTimeout(controlsIdleTimerRef.current);
+        const el = videoRef.current;
+        if (el && !el.paused && !el.ended) {
+            controlsIdleTimerRef.current = setTimeout(
+                () => setControlsVisible(false),
+                CONTROLS_IDLE_MS,
+            );
+        }
+    }, []);
+
+    // The pointer leaving the player is the one case that hides them at once rather than after the
+    // delay: the viewer is demonstrably not reaching for a control.
+    const handlePointerLeave = () => {
+        clearTimeout(controlsIdleTimerRef.current);
+        const el = videoRef.current;
+        if (el && !el.paused && !el.ended) setControlsVisible(false);
+    };
+
+    useEffect(() => () => clearTimeout(controlsIdleTimerRef.current), []);
+
     const handleTimeUpdate = (e) => {
         const now = Date.now();
         if (now - lastReportedAtRef.current < PROGRESS_REPORT_INTERVAL_MS) return;
@@ -274,6 +485,10 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
     const handlePauseOrEnded = (e) => {
         lastReportedAtRef.current = Date.now();
         reportProgress(e.currentTarget.currentTime);
+        // A paused video keeps its controls, like every native bar: pausing is often the first
+        // half of reaching for one of them.
+        clearTimeout(controlsIdleTimerRef.current);
+        setControlsVisible(true);
     };
 
     // Flush the last-seen position on unmount — navigating away mid-playback doesn't
@@ -320,7 +535,6 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
     const youtubePlayerRef = useRef(null);
     const youtubeIntervalRef = useRef(null);
     const youtubeContainerId = `yt-player-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
-    const qualitySelectId = `quality-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
     const isYouTube = sourceType === 'YOUTUBE';
     const youtubeVideoId = isYouTube ? extractYouTubeId(sourceUrl) : '';
 
@@ -388,6 +602,11 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
     // earlier is silently ignored by the browser.
     const handleLoadedMetadata = (e) => {
         durationRef.current = e.currentTarget.duration;
+        // The media load algorithm resets `playbackRate` to `defaultPlaybackRate` on every new
+        // source, and a rung swap IS a new source — so without this, changing quality dropped a
+        // 1.5× lecture back to 1×. Re-applied here as well as in the effect below because the
+        // hls.js path can also re-attach media without the URL changing (error recovery).
+        e.currentTarget.playbackRate = playbackRate;
         // A pending seek is a quality switch and takes precedence over `startTime`, which is the
         // deep-link/resume position and was already honoured on the first load.
         if (pendingSeekRef.current != null) {
@@ -437,6 +656,198 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
     const handleQualityChange = (quality) => {
         rememberPosition();
         setSelectedQuality(quality);
+    };
+
+    /**
+     * One menu, two mechanisms — the option's id says which (see qualityOptions).
+     *
+     * <p>`auto` means opposite things on the two paths and both are right: to hls.js it is "hand
+     * the choice back to ABR", which is free; to the API it is "no `?quality=`, serve the
+     * default", which is a new URL and therefore a reload. On the audio rung it is also the way
+     * back to the picture, and that is always a playlist swap.
+     */
+    const handleQualityOption = (id) => {
+        const onAudioRung = selectedQuality === AUDIO_QUALITY || servedQuality === AUDIO_QUALITY;
+        if (id === AUTO_OPTION) {
+            if (usesHlsJs && !onAudioRung) handleLevelChange(-1);
+            else handleQualityChange(null);
+            return;
+        }
+        if (id.startsWith(LEVEL_PREFIX)) {
+            handleLevelChange(Number(id.slice(LEVEL_PREFIX.length)));
+            return;
+        }
+        handleQualityChange(id.slice(QUALITY_PREFIX.length));
+    };
+
+    const handleSpeedOption = (id) => {
+        const rate = sanitizeRate(id);
+        setPlaybackRate(rate);
+        safeStorage.setItem(RATE_STORAGE_KEY, String(rate));
+    };
+
+    /**
+     * Mirrors a rate the *browser* changed.
+     *
+     * Chrome and Safari both offer playback speed in their own control menus, and on the
+     * progressive path a viewer may well use it. Without this the settings menu would keep
+     * claiming 1× while the video played at 2×, and our next assignment would fight it.
+     */
+    const handleRateChange = (e) => {
+        const rate = sanitizeRate(e.currentTarget.playbackRate);
+        setPlaybackRate(rate);
+        safeStorage.setItem(RATE_STORAGE_KEY, String(rate));
+    };
+
+    // Applies a speed the viewer just picked, and `defaultPlaybackRate` with it — that is what
+    // the next source load resets to, so the two together are what make the rate survive a rung
+    // swap (see handleLoadedMetadata, which covers the loads themselves). `playbackUrl` is a
+    // dependency because the <video> does not exist on the renders before the signed URL arrives.
+    useEffect(() => {
+        const el = videoRef.current;
+        if (!el || !playbackUrl) return;
+        el.defaultPlaybackRate = playbackRate;
+        el.playbackRate = playbackRate;
+    }, [playbackRate, playbackUrl]);
+
+    /**
+     * Picture-in-picture: watch on while browsing the rest of the catalogue.
+     *
+     * <p>Only offered where the browser has it — Firefox implements PiP as its own browser
+     * affordance with no page-facing API, and iOS has a different one again, so an unconditional
+     * row would be a dead control for a good share of viewers.
+     */
+    const pipSupported = typeof document !== 'undefined' && document.pictureInPictureEnabled === true;
+
+    const togglePip = async () => {
+        const el = videoRef.current;
+        try {
+            if (document.pictureInPictureElement) {
+                await document.exitPictureInPicture();
+            } else {
+                await el?.requestPictureInPicture?.();
+            }
+        } catch {
+            // Refused rather than broken — the audio rung has no video track to put in a window,
+            // and the request needs user activation the click may have spent. The toggle simply
+            // stays where it was.
+        }
+        setPipActive(Boolean(document.pictureInPictureElement));
+    };
+
+    // The PiP window has its own close button, and a viewer who uses it never touches our toggle.
+    // `playbackUrl` is in the deps (and in the guard) because the <video> does not exist on the
+    // renders before the signed URL arrives, so binding once on mount would bind to nothing.
+    useEffect(() => {
+        const el = videoRef.current;
+        if (!el || !playbackUrl) return undefined;
+        const sync = () => setPipActive(document.pictureInPictureElement === el);
+        el.addEventListener('enterpictureinpicture', sync);
+        el.addEventListener('leavepictureinpicture', sync);
+        return () => {
+            el.removeEventListener('enterpictureinpicture', sync);
+            el.removeEventListener('leavepictureinpicture', sync);
+        };
+    }, [playbackUrl]);
+
+    /**
+     * Fullscreen, on the wrapper rather than on the `<video>`.
+     *
+     * <p><b>This is the fix for "I can't change the quality in fullscreen".</b> A browser renders
+     * only the fullscreen element's own subtree, so anything outside the `<video>` — the settings
+     * menu, and before it the quality `<select>` — does not exist while the `<video>` itself is
+     * the fullscreen element. So the wrapper is what goes fullscreen, and the control bar inside
+     * it comes along.
+     *
+     * <p><b>Which is only possible because the bar is ours.</b> While the browser owned it, its
+     * fullscreen button targeted the `<video>` and there was nothing to be done about it: it
+     * cannot be intercepted (closed shadow root), re-pointing the request at the wrapper needs a
+     * second fullscreen request the browser may refuse, and Safari's button does not use that API
+     * at all — it puts the element into its own presentation mode, where no `fullscreenchange`
+     * fires and there is nothing to re-point. That whole state machine is gone; this listener only
+     * reports what happened, since the browser also leaves fullscreen on its own (Escape, the tab
+     * going to the background) and the bar's icon and the player's sizing follow it.
+     */
+    useEffect(() => {
+        const syncFullscreen = () => {
+            const container = containerRef.current;
+            setIsFullscreen(Boolean(container) && fullscreenElementNow() === container);
+        };
+        document.addEventListener('fullscreenchange', syncFullscreen);
+        document.addEventListener('webkitfullscreenchange', syncFullscreen);
+        return () => {
+            document.removeEventListener('fullscreenchange', syncFullscreen);
+            document.removeEventListener('webkitfullscreenchange', syncFullscreen);
+        };
+    }, []);
+
+    const toggleFullscreen = useCallback(() => {
+        if (fullscreenElementNow()) {
+            exitFullscreenNow();
+            return;
+        }
+        if (requestFullscreenOn(containerRef.current)) return;
+        // iOS Safari gives a plain element no fullscreen at all: the `<video>`'s own presentation
+        // mode is the only one there, and it draws the system player — with the system's controls
+        // — over everything. The one platform where the settings menu cannot follow the viewer
+        // into fullscreen, and still far better than a fullscreen button that does nothing.
+        videoRef.current?.webkitEnterFullscreen?.();
+    }, []);
+
+    /**
+     * The keyboard shortcuts every video player has trained people to expect.
+     *
+     * <p>They exist because turning `controls` off took them away: the native bar brought space,
+     * the arrows and the media keys with it. The map itself is `keyboardAction`, which is exported
+     * and tested — shortcuts are the only controls with no visible affordance, so a missing case
+     * is invisible until someone presses the key.
+     */
+    const handleShortcut = (e) => {
+        const inChrome = e.target !== e.currentTarget;
+        // Never steal a key from something the viewer is typing in, from the volume slider (an
+        // <input>, whose arrows are its own), or from the settings menu, which navigates itself.
+        if (inChrome && e.target.closest('input, textarea, [role="menu"]')) return;
+        const action = keyboardAction(e.key);
+        if (!action) return;
+        // The timeline handles its own seeking, but only that: Space on a focused slider would
+        // otherwise fall through to the browser and scroll the page instead of pausing.
+        if (inChrome
+            && e.target.closest('[role="slider"]')
+            && (action === 'seek-forward' || action === 'seek-back')) {
+            return;
+        }
+        const el = videoRef.current;
+        if (!el) return;
+        e.preventDefault();
+        nudgeControls();
+        switch (action) {
+            case 'toggle-play':
+                if (el.paused || el.ended) el.play().catch(() => {});
+                else el.pause();
+                break;
+            case 'seek-forward':
+            case 'seek-back': {
+                if (!Number.isFinite(el.duration)) break;
+                const delta = action === 'seek-forward' ? SEEK_STEP_SECONDS : -SEEK_STEP_SECONDS;
+                el.currentTime = Math.min(el.duration, Math.max(0, el.currentTime + delta));
+                break;
+            }
+            case 'volume-up':
+            case 'volume-down': {
+                const delta = action === 'volume-up' ? VOLUME_STEP : -VOLUME_STEP;
+                el.volume = Math.min(1, Math.max(0, el.volume + delta));
+                if (el.volume > 0) el.muted = false;
+                break;
+            }
+            case 'toggle-mute':
+                el.muted = !el.muted;
+                break;
+            case 'toggle-fullscreen':
+                toggleFullscreen();
+                break;
+            default:
+                break;
+        }
     };
 
     // Changing the `src` attribute does not itself reload the element — the browser keeps
@@ -504,6 +915,28 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
                 // Also not the default. Without it ABR will happily choose the 1080p rung for a
                 // 640px-wide player, which is bandwidth spent on pixels the element cannot show.
                 capLevelToPlayerSize: true,
+                // How far AHEAD to fetch, and this trio is one setting, not three.
+                //
+                // `maxBufferLength` is a floor, not a ceiling — the name reads like a cap and is
+                // not one. hls.js treats 30s as the target it must reach, then keeps doubling
+                // towards `maxMaxBufferLength` (default 600s) for as long as `maxBufferSize`
+                // (default 60 MB) allows. On a fast connection both defaults are reached almost
+                // at once, so pressing play on this catalogue pulled tens of megabytes of a
+                // lecture nobody had decided to finish yet: 60 MB is six minutes of the 480p rung.
+                // That is the same bill `autoStartLoad: false` above was protecting, spent one
+                // click later, and it is why the buffer looked like it was fetching the whole
+                // video up front — it very nearly was.
+                //
+                // 90s ahead and 20 MB is still several segments of headroom, which is what rides
+                // out a lift or a dropped signal; beyond that the buffer is only insurance against
+                // a network problem the viewer may never have, bought with their data.
+                maxMaxBufferLength: 90,
+                maxBufferSize: 20 * 1000 * 1000,
+                // How far BEHIND to keep, where the default is Infinity: every second watched
+                // stays in memory, so an hour-long lecture ends as a gigabyte of decoded video
+                // held by a tab. A minute is enough for the small scrub-back a viewer actually
+                // does; a longer jump re-fetches, which is what a jump does anyway.
+                backBufferLength: 60,
             });
             hlsRef.current = hls;
 
@@ -619,6 +1052,9 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
      * scrubbed forward and paused — would drag them back to the deep-link timestamp.
      */
     const handlePlay = () => {
+        // Playback starting is what arms the fade — until then `nudgeControls` leaves the cluster
+        // up, because a paused player keeps its controls.
+        nudgeControls();
         if (!usesHlsJs || loadStartedRef.current || !hlsRef.current) return;
         loadStartedRef.current = true;
         hlsRef.current.startLoad(startTime > 0 ? startTime : -1);
@@ -636,18 +1072,87 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
             return <div className="w-full h-[300px] rounded-lg bg-black/80 animate-pulse" />;
         }
 
-        const onAudioRung = selectedQuality === AUDIO_QUALITY || servedQuality === AUDIO_QUALITY;
-        const hasAudioRung = qualities.includes(AUDIO_QUALITY);
-        // On the hls.js path the manifest is the source of truth about what can be switched
-        // between; the audio rung is not in it (deliberately — see MasterPlaylist in the worker)
-        // so it is offered from the API's ladder alongside. Where the browser plays HLS itself,
-        // Safari owns switching and exposes no list, so the only choice left to offer is sound.
-        const selectorVisible = usesHlsJs
-            ? (levels ?? []).length > 1 || hasAudioRung
-            : hasAudioRung;
+        const { options: qualityChoices, activeId: activeQuality } = qualityOptions({
+            mode,
+            levels,
+            qualities,
+            selectedQuality,
+            servedQuality,
+            selectedLevel,
+        });
+
+        // Two groups, because there are two genuinely different kinds of switch and collapsing
+        // them would misrepresent one: a quality is a rung (instant under HLS, a reload for the
+        // audio playlist), a speed is a property of the element. `PlayerSettingsMenu` drops a
+        // group that has nothing to choose between — a source smaller than 480p produces a single
+        // rung, and a lone option is clutter.
+        const settingGroups = [
+            {
+                id: 'quality',
+                title: t('video.quality'),
+                options: qualityChoices,
+                activeId: activeQuality,
+                onSelect: handleQualityOption,
+            },
+            {
+                id: 'speed',
+                title: t('video.settings.speed'),
+                options: PLAYBACK_SPEEDS.map((rate) => ({
+                    id: String(rate),
+                    // 1× is "normal" rather than a number: it is the absence of a choice, and
+                    // reading it as a measurement invites the viewer to wonder what it is
+                    // relative to.
+                    label: rate === 1 ? t('video.settings.normalSpeed') : `${rate}×`,
+                })),
+                activeId: String(playbackRate),
+                onSelect: handleSpeedOption,
+            },
+        ];
+
+        const settingToggles = [
+            {
+                id: 'loop',
+                label: t('video.settings.loop'),
+                active: loopEnabled,
+                onToggle: () => setLoopEnabled((on) => !on),
+            },
+        ];
+        if (pipSupported) {
+            settingToggles.push({
+                id: 'pip',
+                label: t('video.settings.pictureInPicture'),
+                active: pipActive,
+                onToggle: togglePip,
+            });
+        }
 
         return (
-            <div>
+            // `relative` so the bar can position against the player, and the ref because THIS is
+            // the element that goes fullscreen. In fullscreen it IS the screen, so it centres a
+            // letterboxed video on black instead of stretching it.
+            //
+            // Focusable, because turning `controls` off also took the keyboard away: the native
+            // bar was a focus stop that came with space, the arrows and the media keys. `tabIndex`
+            // plus an explicit focus on pointer-down (Safari does not focus a div on click) is
+            // what puts the shortcuts back.
+            <div
+                ref={containerRef}
+                tabIndex={0}
+                role="group"
+                aria-label={t('video.controls.player')}
+                onKeyDown={handleShortcut}
+                // Pointer activity anywhere on the player brings the bar back, including the first
+                // touch — `pointerdown` covers a tap, which is how a phone asks for the controls.
+                onPointerMove={nudgeControls}
+                onPointerDown={(e) => {
+                    nudgeControls();
+                    if (e.currentTarget === e.target) e.currentTarget.focus();
+                }}
+                onPointerLeave={handlePointerLeave}
+                className={`relative outline-none ${isFullscreen
+                    ? 'flex h-full w-full items-center justify-center bg-black'
+                    : ''}`}
+            >
                 <video
                     ref={setVideoEl}
                     // Unset on the hls.js path: the library attaches a MediaSource to this
@@ -657,8 +1162,10 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
                     // Without it the element is black until play: hls.js fetches nothing before
                     // then (autoStartLoad: false), and preload="metadata" yields no frame either.
                     poster={poster ?? undefined}
-                    controls
+                    // No `controls`: the bar below is ours, and that is what lets the settings
+                    // menu exist in fullscreen at all — see the fullscreen effect above.
                     playsInline
+                    loop={loopEnabled}
                     // Honoured by the element on the progressive and Safari paths. hls.js ignores
                     // it entirely and is held back by `autoStartLoad: false` plus onPlay below.
                     preload="metadata"
@@ -667,64 +1174,36 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
                     onPlay={handlePlay}
                     onPause={handlePauseOrEnded}
                     onEnded={handlePauseOrEnded}
-                    className="w-full max-h-[500px] rounded-lg bg-black"
+                    onRateChange={handleRateChange}
+                    // Click to play and double-click for fullscreen, the two gestures the native
+                    // bar brought with it. On the element rather than the wrapper, so a click on
+                    // the bar's own buttons cannot also toggle playback.
+                    onClick={() => {
+                        const el = videoRef.current;
+                        if (!el) return;
+                        containerRef.current?.focus();
+                        if (el.paused || el.ended) el.play().catch(() => {});
+                        else el.pause();
+                    }}
+                    onDoubleClick={toggleFullscreen}
+                    className={`bg-black ${isFullscreen
+                        ? 'h-full w-full max-h-none rounded-none object-contain'
+                        : 'w-full max-h-[500px] rounded-lg'}`}
                 >
                     {t('video.unsupported')}
                 </video>
 
-                {/* Only worth showing when there is a real choice. A source smaller than 480p
-                    produces a single rung, and a lone option is just clutter.
-
-                    Two selectors, because there are two genuinely different kinds of switch and
-                    collapsing them would misrepresent one of them. Levels come from the manifest
-                    and change nothing but the bitrate, instantly. Audio is a different playlist
-                    and a different experience, and reaching it reloads the player. */}
-                {selectorVisible && (
-                    <div className="flex items-center justify-end gap-2 mt-2">
-                        <label htmlFor={qualitySelectId} className="text-sm text-text-muted">
-                            {t('video.quality')}
-                        </label>
-                        <select
-                            id={qualitySelectId}
-                            value={onAudioRung ? AUDIO_QUALITY : String(selectedLevel)}
-                            onChange={(e) => {
-                                const value = e.target.value;
-                                if (value === AUDIO_QUALITY) {
-                                    handleQualityChange(AUDIO_QUALITY);
-                                } else if (onAudioRung) {
-                                    // Coming back to the picture: another playlist swap, so the
-                                    // playhead has to be carried across by hand again.
-                                    handleQualityChange(null);
-                                } else {
-                                    handleLevelChange(Number(value));
-                                }
-                            }}
-                            className="text-sm bg-surface border border-border rounded px-2 py-1
-                                focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                        >
-                            {/* Auto first, and selected by default: with a rendition ladder cut
-                                on aligned keyframes, letting the player choose is better than any
-                                fixed answer a viewer could give — which is the whole reason for
-                                the HLS migration. On the audio rung it is also the way back to
-                                the picture. */}
-                            <option value="-1">{qualityLabel('auto')}</option>
-                            {/* Suppressed on the audio rung, where `levels` describes the AUDIO
-                                playlist. That is a media playlist, not a multivariant one, so
-                                hls.js synthesises a single pseudo-level from it and offering it
-                                would put a bitrate like "64k" in the menu that does nothing but
-                                return the viewer to the video ladder — which "auto" already says
-                                far better. */}
-                            {!onAudioRung && (levels ?? []).map((level) => (
-                                <option key={level.index} value={String(level.index)}>
-                                    {level.label}
-                                </option>
-                            ))}
-                            {hasAudioRung && (
-                                <option value={AUDIO_QUALITY}>{qualityLabel(AUDIO_QUALITY)}</option>
-                            )}
-                        </select>
-                    </div>
-                )}
+                <VideoControlBar
+                    videoRef={videoRef}
+                    mediaKey={playbackUrl}
+                    visible={controlsVisible || menuOpen}
+                    isFullscreen={isFullscreen}
+                    onToggleFullscreen={toggleFullscreen}
+                    groups={settingGroups}
+                    toggles={settingToggles}
+                    onInteract={nudgeControls}
+                    onMenuOpenChange={setMenuOpen}
+                />
             </div>
         );
     }
