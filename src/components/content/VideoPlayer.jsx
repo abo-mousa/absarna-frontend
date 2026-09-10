@@ -458,10 +458,11 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
     /**
      * Drives playback through hls.js where the browser cannot play HLS itself.
      *
-     * <p><b>The library is imported dynamically, and that is not micro-optimisation.</b> It is
-     * ~150 KB and every page in this app that is not a video detail page has no use for it —
-     * including all of Safari, which never reaches this branch at all. A static import would put
-     * it in the main bundle for everyone.
+     * <p><b>The library is imported dynamically, and that is not micro-optimisation.</b> It builds
+     * to ~595 KB (~186 KB gzipped) — larger than every other chunk in this app, React and pdfjs
+     * included — and every page that is not a video detail page has no use for it, including all
+     * of Safari, which never reaches this branch at all. A static import would put it in the main
+     * bundle for everyone.
      */
     useEffect(() => {
         if (!usesHlsJs || !playbackUrl) return undefined;
