@@ -7,6 +7,7 @@ import api from '@/lib/api/client';
 import { flushOnUnload } from '@/lib/api/beacon';
 import { safeStorage } from '@/lib/safeStorage';
 import { t, tOptional } from '@/i18n';
+import { PictureInPicture2 } from 'lucide-react';
 import VideoControlBar, {
     SEEK_STEP_SECONDS,
     VOLUME_STEP,
@@ -1192,6 +1193,31 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
                 >
                     {t('video.unsupported')}
                 </video>
+
+                {/* Picture-in-picture also gets a button of its own, in the corner, because it is
+                    the one setting a viewer reaches for *while leaving* — the thought is "keep
+                    this playing while I go and look at something else", and having to open a menu
+                    to say so is a step in the wrong direction. It stays in the menu too, where it
+                    is discoverable next to the other settings; both press the same toggle.
+
+                    Top-right rather than in the bar: the bar is a row of controls for the video
+                    playing here, and this one is about the video leaving. It fades with the bar,
+                    and comes back on focus so a keyboard viewer can still reach it while faded. */}
+                {pipSupported && (
+                    <button
+                        type="button"
+                        onClick={togglePip}
+                        aria-pressed={pipActive}
+                        aria-label={t('video.settings.pictureInPicture')}
+                        className={`absolute right-2 top-2 z-10 flex h-9 w-9 items-center
+                            justify-center rounded-full bg-black/60 text-white transition-opacity
+                            duration-200 hover:bg-black/80 focus:opacity-100 focus:outline-none
+                            focus-visible:ring-2 focus-visible:ring-white
+                            ${controlsVisible || menuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                    >
+                        <PictureInPicture2 size={18} />
+                    </button>
+                )}
 
                 <VideoControlBar
                     videoRef={videoRef}

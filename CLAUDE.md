@@ -109,6 +109,11 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
 - **Element state lives in the bar, not in `VideoPlayer`**: `timeupdate` fires several times a
   second, and holding the playhead in the player's state would re-render the `<video>`, the hls.js
   wiring and the settings tree on every tick.
+- **Picture-in-picture has a button in the top-right corner as well as a menu row** (both the same
+  toggle): it is the one setting a viewer reaches for *while leaving*, so a menu is a step in the
+  wrong direction — and with native controls gone, ours is the only way to reach PiP at all. The
+  volume slider's fill is painted by hand (a gradient with a hard stop): `appearance-none` stops
+  the browser drawing the fill, and `accent-color` cannot restore it on a track with a background.
 - **The settings menu is one level deep, not one flat list**: a root row per setting showing its
   current value («الجودة … تلقائي»), drilling into that setting's options, with toggles (repeat,
   picture-in-picture) on the root. Flat, it was every rung and every speed at once — a dozen rows

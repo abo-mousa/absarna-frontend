@@ -357,6 +357,8 @@ export default function VideoControlBar({
     const scale = Number.isFinite(shownDuration) && shownDuration > 0 ? shownDuration : 0;
     const playedRatio = scale ? shownTime / scale : 0;
     const bufferedRatio = scale ? buffered / scale : 0;
+    // The gradient stop below, as a whole number: a slider at 0.35 must paint 35% of the track.
+    const volumePercent = Math.round((muted ? 0 : volume) * 100);
     const iconButtonClass = `flex items-center justify-center w-8 h-8 rounded-full text-white
         transition-colors hover:bg-white/20 focus:outline-none focus-visible:ring-2
         focus-visible:ring-white`;
@@ -469,10 +471,36 @@ export default function VideoControlBar({
                                 value={muted ? 0 : volume}
                                 onChange={(e) => changeVolume(Number(e.target.value))}
                                 aria-label={t('video.controls.volume')}
+                                // The filled part of the track, painted by hand. `appearance-none`
+                                // is what stops the browser drawing its own slider — which is the
+                                // point, since the native one cannot be made to look like the rest
+                                // of this bar — but it also takes the *fill* with it, leaving a
+                                // handle sliding along a uniform grey that says nothing about the
+                                // level. `accent-color` cannot put it back either: it only tints
+                                // what the browser draws itself, and never a track that has been
+                                // given a background. Hence a gradient with a hard stop at the
+                                // value, which is the one approach that renders the same in every
+                                // browser. Inline because it is genuinely per-frame runtime data,
+                                // the case Tailwind's JIT cannot see.
+                                style={{
+                                    backgroundImage: `linear-gradient(to right,
+                                        rgb(255 255 255) ${volumePercent}%,
+                                        rgb(255 255 255 / 0.3) ${volumePercent}%)`,
+                                }}
+                                // White rather than the brand colour, and small: the timeline is
+                                // the important slider on this bar and keeps the accent to itself.
                                 className="h-1 w-0 cursor-pointer appearance-none rounded-full bg-white/30
-                                    opacity-0 transition-all accent-primary group-hover/volume:w-16
+                                    opacity-0 transition-all group-hover/volume:w-16
                                     group-hover/volume:opacity-100 focus:w-16 focus:opacity-100
-                                    focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                                    focus:outline-none focus-visible:ring-2 focus-visible:ring-white
+                                    [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3
+                                    [&::-webkit-slider-thumb]:appearance-none
+                                    [&::-webkit-slider-thumb]:rounded-full
+                                    [&::-webkit-slider-thumb]:bg-white
+                                    [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3
+                                    [&::-moz-range-thumb]:border-0
+                                    [&::-moz-range-thumb]:rounded-full
+                                    [&::-moz-range-thumb]:bg-white"
                             />
                         </div>
 
