@@ -340,7 +340,7 @@ const exitFullscreenNow = () => {
 // this timestamp") can read the playhead on demand without this component re-rendering on
 // every tick — the alternative (lifting currentTime into state) would fire a render several
 // times a second for something only ever read once, at share-click time.
-const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourceUrl, title, poster, startTime = 0 }, ref) {
+const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourceUrl, title, poster, duration, startTime = 0 }, ref) {
     // Session token: still the right thing for the watch-progress writes below (they go through
     // axios, which sends it as an Authorization header). Nothing goes into the media URL any
     // more — it arrives already signed from the backend. See useVideoPlaybackUrl.
@@ -1196,6 +1196,9 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
                 <VideoControlBar
                     videoRef={videoRef}
                     mediaKey={playbackUrl}
+                    // The catalogue knows how long the video is; on the HLS path the element does
+                    // not, until the first play. See parseDuration.
+                    durationHint={duration}
                     visible={controlsVisible || menuOpen}
                     isFullscreen={isFullscreen}
                     onToggleFullscreen={toggleFullscreen}

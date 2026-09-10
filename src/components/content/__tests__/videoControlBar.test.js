@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
     formatTime,
     keyboardAction,
+    parseDuration,
     ratioFromPointer,
 } from '@/components/content/VideoControlBar';
 
@@ -103,5 +104,31 @@ describe('keyboardAction', () => {
         expect(keyboardAction('Escape')).toBeNull();
         expect(keyboardAction('K')).toBeNull();
         expect(keyboardAction('Enter')).toBeNull();
+    });
+});
+
+describe('parseDuration', () => {
+    it('reads the catalogue\'s duration string', () => {
+        // `VideoDTO.duration` is formatted by the backend, not a number of seconds — and it is the
+        // only source of a length before playback starts, since the HLS element does not know one
+        // until its level playlist loads on the first play (see parseDuration's own note).
+        expect(parseDuration('11:20')).toBe(680);
+        expect(parseDuration('0:45')).toBe(45);
+        expect(parseDuration('1:04:22')).toBe(3862);
+        expect(parseDuration(' 45:10 ')).toBe(2710);
+    });
+
+    it('treats anything it cannot read as unknown', () => {
+        // Which the bar already renders as '--:--'. The alternative is a NaN reaching a CSS width
+        // and an aria-valuemax, where it is silent in one and nonsense in the other.
+        expect(parseDuration(null)).toBeNaN();
+        expect(parseDuration(undefined)).toBeNaN();
+        expect(parseDuration('')).toBeNaN();
+        expect(parseDuration('680')).toBeNaN();
+        expect(parseDuration('11:20:33:44')).toBeNaN();
+        expect(parseDuration('-1:00')).toBeNaN();
+        expect(parseDuration('11:2.5')).toBeNaN();
+        expect(parseDuration('soon')).toBeNaN();
+        expect(parseDuration(680)).toBeNaN();
     });
 });

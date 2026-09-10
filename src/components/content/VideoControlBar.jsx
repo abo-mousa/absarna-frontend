@@ -31,6 +31,8 @@ import PlayerSettingsMenu from './PlayerSettingsMenu';
  * @param videoRef  the `<video>` — a ref rather than the node, since it does not exist on the
  *                  renders before the signed URL arrives
  * @param mediaKey  changes when the element's source does (a rung swap), to re-read its state
+ * @param durationHint  the catalogue's `VideoDTO.duration` string, shown until the element itself
+ *                  knows the length — which on the HLS path is not until the first play
  * @param visible   whether the bar is showing; it fades on idle like the bar it replaces
  * @param isFullscreen / onToggleFullscreen  owned by `VideoPlayer`, which holds the wrapper that
  *                  actually goes fullscreen
@@ -71,6 +73,36 @@ export const formatTime = (seconds) => {
     const mins = Math.floor(total / 60) % 60;
     const hours = Math.floor(total / 3600);
     return hours > 0 ? `${hours}:${pad(mins)}:${pad(secs)}` : `${mins}:${pad(secs)}`;
+};
+
+/**
+ * The catalogue's own duration string — `"11:20"`, `"1:04:22"` — as seconds.
+ *
+ * <p><b>Why the bar needs this at all.</b> On the HLS path the element does not know how long the
+ * video is until the *level* playlist is loaded, and `autoStartLoad: false` (see VideoPlayer)
+ * deliberately defers that until the first play — the master manifest is parsed, which is where
+ * the quality list comes from, but nothing else is fetched. So the clock read `--:--` until
+ * playback began, on a page that had the answer all along: `VideoDTO.duration` is right there next
+ * to the title. Rather than fetch a playlist to learn something the API already said, the string
+ * is parsed and shown until the element knows better. (A progressive MP4 never had this problem —
+ * `preload="metadata"` gives it a duration before play.)
+ *
+ * <p>Exported and tested because it parses a value formatted by another service: anything
+ * unexpected must read as "unknown", which the bar already renders as `--:--`, rather than become
+ * a `NaN` that ends up in a width or an ARIA value.
+ */
+export const parseDuration = (value) => {
+    if (typeof value !== 'string') return NaN;
+    const parts = value.trim().split(':');
+    if (parts.length < 2 || parts.length > 3) return NaN;
+    let seconds = 0;
+    for (const part of parts) {
+        // Two digits, or three for an hours field that has run away — never a sign, a decimal or
+        // an empty segment, all of which `Number` would happily accept.
+        if (!/^\d{1,3}$/.test(part)) return NaN;
+        seconds = seconds * 60 + Number(part);
+    }
+    return seconds;
 };
 
 /**
@@ -128,6 +160,7 @@ const VolumeIcon = ({ muted, volume }) => {
 export default function VideoControlBar({
     videoRef,
     mediaKey,
+    durationHint,
     visible = true,
     isFullscreen = false,
     onToggleFullscreen,
@@ -314,8 +347,16 @@ export default function VideoControlBar({
     const handleMenuOpenChange = useCallback((open) => onMenuOpenChange?.(open), [onMenuOpenChange]);
 
     const shownTime = scrubTime ?? currentTime;
-    const playedRatio = Number.isFinite(duration) && duration > 0 ? shownTime / duration : 0;
-    const bufferedRatio = Number.isFinite(duration) && duration > 0 ? buffered / duration : 0;
+    // What the viewer is told, versus what the element will actually accept a seek against. The
+    // hint is good enough to print and to announce; it is NOT good enough to seek by, so every
+    // interaction below still gates on the element's own `duration` (a scrub that moved the handle
+    // and then did nothing on release is worse than one that never moved).
+    const hintedDuration = parseDuration(durationHint);
+    const knowsDuration = Number.isFinite(duration) && duration > 0;
+    const shownDuration = knowsDuration ? duration : hintedDuration;
+    const scale = Number.isFinite(shownDuration) && shownDuration > 0 ? shownDuration : 0;
+    const playedRatio = scale ? shownTime / scale : 0;
+    const bufferedRatio = scale ? buffered / scale : 0;
     const iconButtonClass = `flex items-center justify-center w-8 h-8 rounded-full text-white
         transition-colors hover:bg-white/20 focus:outline-none focus-visible:ring-2
         focus-visible:ring-white`;
@@ -352,13 +393,16 @@ export default function VideoControlBar({
                         tabIndex={0}
                         aria-label={t('video.controls.seek')}
                         aria-valuemin={0}
-                        aria-valuemax={Number.isFinite(duration) ? Math.floor(duration) : 0}
+                        aria-valuemax={Number.isFinite(shownDuration) ? Math.floor(shownDuration) : 0}
+                    // The length is known but the media is not loaded yet: honest about the fact
+                    // that this cannot be dragged until playback starts.
+                    aria-disabled={!knowsDuration}
                         aria-valuenow={Math.floor(shownTime)}
                         // A screen reader reading "1263" for a position is useless; the two clock
                         // values are what a viewer would say out loud.
                         aria-valuetext={t('video.controls.timeOf', {
                             current: formatTime(shownTime),
-                            total: formatTime(duration),
+                            total: formatTime(shownDuration),
                         })}
                         onPointerDown={handleTrackPointerDown}
                         onPointerMove={handleTrackPointerMove}
@@ -401,7 +445,7 @@ export default function VideoControlBar({
                         {/* Tabular figures, or the whole row twitches sideways once a second as the
                             digits change width. */}
                         <span className="text-xs text-white/90 tabular-nums">
-                            {formatTime(shownTime)} / {formatTime(duration)}
+                            {formatTime(shownTime)} / {formatTime(shownDuration)}
                         </span>
 
                         <div className="flex-1" />

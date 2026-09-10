@@ -93,6 +93,13 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   language (so does YouTube in Arabic), so the bar declares `dir="ltr"` and only the *button order*
   mirrors; the settings panel re-asserts `dir="rtl"` for its prose, and ArrowRight seeks forward
   because it follows the timeline, not the document.
+- **On the HLS path the element has no `duration` until the first play** — `autoStartLoad: false`
+  defers the *level* playlist (the master is parsed, which is where the quality list comes from),
+  and the length lives in the level playlist. So the bar shows `VideoDTO.duration` (a display
+  string, parsed by `parseDuration`) until the element knows better, rather than fetching a
+  playlist to learn something the API already said. It is a display value only: seeking still
+  gates on the element's own duration, since a scrub that moves the handle and does nothing on
+  release is worse than one that cannot move.
 - **`maxBufferLength` is a floor, not a ceiling.** hls.js reaches its 30s target and then keeps
   doubling towards `maxMaxBufferLength` (default 600s) while `maxBufferSize` (default 60 MB)
   allows — six minutes of the 480p rung — so a press of play pulled most of a lecture nobody had
