@@ -566,13 +566,22 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
             }
             const element = videoRef.current;
             if (!element) return;
-            element.currentTime = target;
+            if (Number.isFinite(element.duration) && element.duration > 0) {
+                element.currentTime = target;
+            } else {
+                // Nothing is loaded yet, so this assignment would be discarded and the play()
+                // below would start the video at its beginning — a reviewer who clicked a
+                // timestamp would be sent to 0:00 with no sign anything went wrong. The position
+                // becomes where loading starts instead; see seekBeforeLoad.
+                seekBeforeLoad(target);
+            }
             // Ignored rather than surfaced: autoplay policies reject this in a tab that has
             // never been interacted with, and the seek itself has already succeeded, which is
-            // the part the caller asked for.
+            // the part the caller asked for. Queued against an element with no data yet, it
+            // begins once `handleLoadedMetadata` has put the playhead on the target.
             element.play?.().catch(() => {});
         },
-    }), [isYouTube]);
+    }), [isYouTube, seekBeforeLoad]);
 
     useEffect(() => {
         if (!isYouTube || !youtubeVideoId) return;
@@ -651,6 +660,38 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
         }
         if (startTime > 0) e.currentTarget.currentTime = startTime;
     };
+
+    /**
+     * Seeking a video that has not been loaded yet.
+     *
+     * <p><b>Why the bar cannot just set `currentTime`.</b> On the hls.js path `autoStartLoad:
+     * false` means that until the first play the master manifest has been parsed and nothing
+     * else: the element has no duration, no seekable range, and an assignment to `currentTime` is
+     * discarded. So a scrub before playback started moved the handle and sprang back, which read
+     * as a broken timeline rather than as a deliberate deferral.
+     *
+     * <p>The position is therefore handed here, where it becomes the place loading STARTS —
+     * cheaper than loading the opening and seeking away from it, and the same move `handlePlay`
+     * makes for a `?t=` deep link. `pendingSeekRef` is set whatever the path: it is what
+     * `handleLoadedMetadata` applies once the element has a timeline, it covers the progressive
+     * and Safari paths (where metadata may simply not have arrived yet), and it covers the race
+     * where the scrub lands before MANIFEST_PARSED — the manifest handler reads the same ref and
+     * starts loading there.
+     *
+     * <p>Playback is deliberately NOT started: the viewer moved the playhead, they did not press
+     * play. `resumePlaybackRef` stays false, so the element seeks, shows that frame and waits.
+     */
+    const seekBeforeLoad = useCallback((seconds) => {
+        pendingSeekRef.current = seconds;
+        const hls = hlsRef.current;
+        if (!usesHlsJs || !hls) return;
+        // Re-issued on a second scrub rather than guarded by `loadStartedRef`: startLoad moves
+        // the position loading starts from, so the last drag before playback begins is the one
+        // that decides where the first bytes come from. The flag is still set, so the viewer's
+        // eventual press of play does not restart the load at `startTime` and drag them back.
+        loadStartedRef.current = true;
+        hls.startLoad(seconds);
+    }, [usesHlsJs]);
 
     /** Snapshots the playhead so a source swap can put the viewer back where they were. */
     const rememberPosition = () => {
@@ -1264,6 +1305,7 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
                     toggles={settingToggles}
                     onInteract={nudgeControls}
                     onMenuOpenChange={setMenuOpen}
+                    onSeekBeforeLoad={seekBeforeLoad}
                     // The container is the focus stop that carries the keyboard shortcuts, and
                     // the bar's centre button unmounts on click — the same hop the picture's own
                     // click-to-play does.

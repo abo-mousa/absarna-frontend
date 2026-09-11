@@ -43,6 +43,11 @@ import PlayerSettingsMenu from './PlayerSettingsMenu';
  * @param groups / toggles  passed straight through to `PlayerSettingsMenu`
  * @param onInteract  any use of the bar counts as activity, so it does not fade mid-drag
  * @param onMenuOpenChange  the bar must stay up while the settings panel is open
+ * @param onSeekBeforeLoad  where to seek when the element has no timeline yet. On the hls.js path
+ *                  `autoStartLoad: false` means nothing is fetched until the viewer asks, so the
+ *                  element has no `duration` and no seekable range before the first play — the
+ *                  player takes this position, starts loading THERE, and applies it on
+ *                  `loadedmetadata`
  * @param onRequestFocus  hands keyboard focus back to the player. The centre overlay button is
  *                  the one control that DISAPPEARS when pressed, so without this the focus it
  *                  took on click falls to the body and the next Space scrolls the page instead
@@ -114,6 +119,28 @@ export const parseDuration = (value) => {
 };
 
 /**
+ * What the timeline is scaled by — and therefore what can be dragged against it — in seconds, or
+ * `0` when nothing knows how long the video is.
+ *
+ * <p><b>This is the rule that decides whether the bar can be scrubbed before the first play.</b>
+ * It used to be the element's `duration` alone, which on the hls.js path does not exist until
+ * playback starts (`autoStartLoad: false` fetches the master manifest and nothing else) — so the
+ * timeline was dead on arrival for exactly the videos this app is made of, on a page that had the
+ * length printed next to the title all along. The catalogue's own string stands in until the
+ * element knows better; `seekTo` is where the two are told apart.
+ *
+ * <p>Exported and tested because every input here is reachable and none announces itself: `NaN`
+ * before metadata, `Infinity` for a stream whose length the server never states, `0` for a source
+ * that failed to load, and a hint that is absent or malformed — each of which must read as "not
+ * draggable" rather than become a scale that maps every pointer position to `NaN`.
+ */
+export const timelineScale = (elementDuration, durationHint) => {
+    if (Number.isFinite(elementDuration) && elementDuration > 0) return elementDuration;
+    const hinted = parseDuration(durationHint);
+    return Number.isFinite(hinted) && hinted > 0 ? hinted : 0;
+};
+
+/**
  * Where along the timeline a pointer is, as 0…1.
  *
  * <p>Exported and tested because it is the arithmetic behind every scrub, and its failures are
@@ -177,6 +204,7 @@ export default function VideoControlBar({
     toggles = [],
     onInteract,
     onMenuOpenChange,
+    onSeekBeforeLoad,
     onRequestFocus,
 }) {
     const [playing, setPlaying] = useState(false);
@@ -310,6 +338,14 @@ export default function VideoControlBar({
         return () => el.removeEventListener('webkitplaybacktargetavailabilitychanged', sync);
     }, [videoRef, mediaKey]);
 
+    // What the timeline is scaled by, and what a scrub is clamped to. Hoisted above the handlers
+    // because they seek against it, not just paint with it: the element's own duration once it
+    // has one, and the catalogue's string until then.
+    const knowsDuration = Number.isFinite(duration) && duration > 0;
+    // What is printed, which may be nothing (`--:--`), versus what can be dragged against.
+    const shownDuration = knowsDuration ? duration : parseDuration(durationHint);
+    const scale = timelineScale(duration, durationHint);
+
     const togglePlay = () => {
         const el = videoRef.current;
         if (!el) return;
@@ -321,8 +357,24 @@ export default function VideoControlBar({
 
     const seekTo = (seconds) => {
         const el = videoRef.current;
-        if (!el || !Number.isFinite(el.duration)) return;
-        el.currentTime = Math.min(el.duration, Math.max(0, seconds));
+        if (!el) return;
+        const target = Math.max(0, Math.min(scale, seconds));
+        if (Number.isFinite(el.duration) && el.duration > 0) {
+            el.currentTime = Math.min(el.duration, target);
+            return;
+        }
+        // No timeline on the element yet, which on the hls.js path is the state a video sits in
+        // until someone presses play — `autoStartLoad: false` has fetched the master manifest and
+        // nothing else. Dropping the seek here is what made the bar read as broken before the
+        // first play: the handle moved under the pointer and sprang back on release. The player
+        // knows how to start loading at a position, so the position goes to it.
+        if (!scale || !onSeekBeforeLoad) return;
+        onSeekBeforeLoad(target);
+        // Optimistic, because the element will not report this position until it has loaded
+        // enough to seek — a second or two away — and until then `currentTime` is still 0. Without
+        // it the handle snaps back to the start and jumps forward again when the media catches up.
+        // The next `seeked` overwrites it with the truth.
+        setCurrentTime(target);
     };
 
     const changeVolume = (value) => {
@@ -346,16 +398,19 @@ export default function VideoControlBar({
 
     // --- Scrubbing. Pointer capture, so a drag that leaves the player (or the window) keeps
     // controlling the timeline instead of stopping wherever the pointer crossed the edge.
+    // `scale` rather than the element's own duration: before the first play on the hls.js path
+    // the only length anyone knows is the catalogue's, and it is enough to drag against — see
+    // seekTo, which is where the difference between the two is actually settled.
     const handleTrackPointerDown = (e) => {
-        if (!Number.isFinite(duration)) return;
+        if (!scale) return;
         e.currentTarget.setPointerCapture?.(e.pointerId);
-        setScrubTime(ratioFromPointer(e.clientX, trackRef.current?.getBoundingClientRect()) * duration);
+        setScrubTime(ratioFromPointer(e.clientX, trackRef.current?.getBoundingClientRect()) * scale);
         onInteract?.();
     };
 
     const handleTrackPointerMove = (e) => {
         if (scrubTime === null) return;
-        setScrubTime(ratioFromPointer(e.clientX, trackRef.current?.getBoundingClientRect()) * duration);
+        setScrubTime(ratioFromPointer(e.clientX, trackRef.current?.getBoundingClientRect()) * scale);
         onInteract?.();
     };
 
@@ -379,14 +434,6 @@ export default function VideoControlBar({
     const handleMenuOpenChange = useCallback((open) => onMenuOpenChange?.(open), [onMenuOpenChange]);
 
     const shownTime = scrubTime ?? currentTime;
-    // What the viewer is told, versus what the element will actually accept a seek against. The
-    // hint is good enough to print and to announce; it is NOT good enough to seek by, so every
-    // interaction below still gates on the element's own `duration` (a scrub that moved the handle
-    // and then did nothing on release is worse than one that never moved).
-    const hintedDuration = parseDuration(durationHint);
-    const knowsDuration = Number.isFinite(duration) && duration > 0;
-    const shownDuration = knowsDuration ? duration : hintedDuration;
-    const scale = Number.isFinite(shownDuration) && shownDuration > 0 ? shownDuration : 0;
     const playedRatio = scale ? shownTime / scale : 0;
     const bufferedRatio = scale ? buffered / scale : 0;
     // The gradient stop below, as a whole number: a slider at 0.35 must paint 35% of the track.
@@ -467,9 +514,11 @@ export default function VideoControlBar({
                         aria-label={t('video.controls.seek')}
                         aria-valuemin={0}
                         aria-valuemax={Number.isFinite(shownDuration) ? Math.floor(shownDuration) : 0}
-                    // The length is known but the media is not loaded yet: honest about the fact
-                    // that this cannot be dragged until playback starts.
-                    aria-disabled={!knowsDuration}
+                        // Disabled only when nothing at all knows how long the video is — neither
+                        // the element nor the catalogue — since that is the one case where a
+                        // pointer position cannot be turned into a time. Not being loaded is no
+                        // longer a reason: a scrub before the first play starts the load there.
+                        aria-disabled={!scale}
                         aria-valuenow={Math.floor(shownTime)}
                         // A screen reader reading "1263" for a position is useless; the two clock
                         // values are what a viewer would say out loud.

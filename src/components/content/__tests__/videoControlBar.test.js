@@ -4,6 +4,7 @@ import {
     keyboardAction,
     parseDuration,
     ratioFromPointer,
+    timelineScale,
 } from '@/components/content/VideoControlBar';
 
 /**
@@ -130,5 +131,52 @@ describe('parseDuration', () => {
         expect(parseDuration('11:2.5')).toBeNaN();
         expect(parseDuration('soon')).toBeNaN();
         expect(parseDuration(680)).toBeNaN();
+    });
+});
+
+/**
+ * Whether the timeline can be dragged at all, which before this was the same question as "has the
+ * media loaded" — and on the hls.js path the answer to that is no until someone presses play.
+ *
+ * <p>`autoStartLoad: false` deliberately fetches the master manifest and nothing else, so the
+ * element has no `duration` and no seekable range on a page that has been showing the video's
+ * length next to its title the whole time. The result was a scrubber that moved under the pointer
+ * and sprang back on release: the one failure a viewer reads as "this player is broken" rather
+ * than as "this is still loading".
+ */
+describe('timelineScale', () => {
+    it('uses the element once it has a duration of its own', () => {
+        // The element is the authority whenever it has an answer — it is what a seek is actually
+        // committed against, and it is right about a file whose catalogue entry is not.
+        expect(timelineScale(2710, '45:10')).toBe(2710);
+        expect(timelineScale(2710, undefined)).toBe(2710);
+        // Even where the two disagree: a hint that says 45:10 cannot make the element's 30:00
+        // seekable past its end.
+        expect(timelineScale(1800, '45:10')).toBe(1800);
+    });
+
+    it('falls back to the catalogue before the media has loaded', () => {
+        // The HLS case, and the whole point: no element duration, but VideoDTO.duration is right
+        // there on the page, so the bar is draggable from the moment it renders.
+        expect(timelineScale(NaN, '45:10')).toBe(2710);
+        expect(timelineScale(0, '12:04')).toBe(724);
+        expect(timelineScale(undefined, '1:04:22')).toBe(3862);
+    });
+
+    it('is zero when neither knows, rather than a scale that maps to NaN', () => {
+        // Nothing to drag against: a pointer position cannot be turned into a time, so the
+        // timeline stays disabled instead of seeking to NaN, which the element rejects silently.
+        expect(timelineScale(NaN, undefined)).toBe(0);
+        expect(timelineScale(NaN, '')).toBe(0);
+        expect(timelineScale(NaN, 'nonsense')).toBe(0);
+        expect(timelineScale(0, null)).toBe(0);
+    });
+
+    it('refuses a duration that is not a length', () => {
+        // Infinity is what a live or open-ended stream reports, and a negative is what a broken
+        // one does. Neither is a timeline, and both would otherwise scale every drag.
+        expect(timelineScale(Infinity, '45:10')).toBe(2710);
+        expect(timelineScale(Infinity, undefined)).toBe(0);
+        expect(timelineScale(-1, undefined)).toBe(0);
     });
 });
