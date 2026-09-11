@@ -39,9 +39,17 @@ function Admin() {
                     <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
                         <Shield size={24} /> {t('admin.title')}
                     </h1>
-                    <Link to="/admin/channels" className="px-5 py-2.5 bg-primary text-white rounded-md font-semibold">
-                        {t('admin.manageChannels')}
-                    </Link>
+                    <div className="flex items-center gap-3 flex-wrap">
+                        {/* A held video is an upload nobody can see until someone opens this
+                            screen, so the way in sits beside the channel queue rather than
+                            behind a URL an admin has to remember. */}
+                        <Link to="/admin/music-review" className="px-5 py-2.5 bg-surface-hover border border-border rounded-md font-semibold">
+                            {t('admin.musicReview.title')}
+                        </Link>
+                        <Link to="/admin/channels" className="px-5 py-2.5 bg-primary text-white rounded-md font-semibold">
+                            {t('admin.manageChannels')}
+                        </Link>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">

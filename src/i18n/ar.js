@@ -335,29 +335,40 @@ export const ar = {
         musicReview: {
             held: {
                 badge: 'قيد المراجعة',
+                // Shown to the REVIEWER, not the owner: why this row is in the queue.
+                queueReason: 'رُصدت موسيقى. الفيديو محجوب عن الزوار حتى تتخذ قرارًا.',
                 title: 'هذا الفيديو قيد المراجعة',
                 body: 'رصدنا موسيقى في الصوت، ولن يظهر الفيديو للزوار حتى يراجعه أحد المشرفين.',
                 bodyWithSpans: 'رصدنا موسيقى في الصوت عند {spans}، ولن يظهر الفيديو للزوار حتى يراجعه أحد المشرفين.',
             },
             rejected: {
                 badge: 'مرفوض',
+                queueReason: 'تم رفض هذا الفيديو سابقًا.',
                 title: 'تم رفض هذا الفيديو',
                 body: 'راجع أحد المشرفين الفيديو ووجد فيه موسيقى، فلن يظهر للزوار. يمكنك رفع نسخة أخرى بدون موسيقى.',
                 bodyWithSpans: 'راجع أحد المشرفين الفيديو ووجد فيه موسيقى عند {spans}، فلن يظهر للزوار. يمكنك رفع نسخة أخرى بدون موسيقى.',
             },
             advisory: {
                 badge: 'ملاحظة',
+                queueReason: 'قد تكون هناك موسيقى خلفية. الفيديو منشور بالفعل.',
                 // Deliberately opens by saying the video is published. It is, and the owner's
                 // first question on seeing any notice at all is whether it still is.
                 title: 'الفيديو منشور، مع ملاحظة',
                 body: 'قد تكون هناك موسيقى خلفية في الصوت. الفيديو منشور ويعمل بشكل طبيعي، وسيلقي أحد المشرفين نظرة عليه.',
                 bodyWithSpans: 'قد تكون هناك موسيقى خلفية في الصوت عند {spans}. الفيديو منشور ويعمل بشكل طبيعي، وسيلقي أحد المشرفين نظرة عليه.',
             },
-            // "and N more places" — the spans are gappy enough that listing them all reads as a
-            // list of separate problems rather than one thing to go and listen to.
-            moreSpans: 'و{count} موضع آخر.',
+            // The tail of a truncated span list, and part of that list's own phrase -- NOT a
+            // sentence of its own. It used to render as a separate paragraph after the body had
+            // already finished, leaving «و5 مواضع أخرى.» hanging with nothing to attach to.
+            //
+            // Two forms because Arabic counted nouns agree: «و1 مواضع أخرى» and «و5 موضع آخر» are
+            // both wrong. One takes the singular; 3-10 takes the plural, which is the range this
+            // realistically covers (the list is capped at three, so the remainder is small).
+            moreSpansOne: 'وموضع آخر',
+            moreSpans: 'و{count} مواضع أخرى',
             unchecked: {
                 badge: 'لم يُفحص',
+                queueReason: 'تعذّر إكمال الفحص التلقائي. الفيديو منشور بالفعل.',
                 title: 'الفيديو منشور، ولم يكتمل فحص الصوت',
                 // Says what happened without blaming the video: nothing is wrong with it, the
                 // check itself did not finish.
@@ -844,6 +855,43 @@ export const ar = {
     admin: {
         title: 'لوحة التحكم',
         manageChannels: 'إدارة القنوات',
+        // The music review queue. Platform-admin only, and the only way a held video ever
+        // becomes visible again -- if nobody reads this screen, uploads sit in it forever, which
+        // is why the backlog count is on the heading rather than buried.
+        musicReview: {
+            title: 'مراجعة الموسيقى',
+            short: 'الموسيقى',
+            heading: 'مقاطع بانتظار المراجعة ({count})',
+            // Names the one number that actually blocks people. ADVISORY and UNCHECKED rows are a
+            // backlog; HELD rows are uploads nobody can see.
+            heldCount: 'محجوب: {count}',
+            advisoryCount: 'ملاحظات: {count}',
+            uncheckedCount: 'لم تُفحص: {count}',
+            empty: 'لا توجد مقاطع بانتظار المراجعة',
+            emptyDescription: 'كل ما رصده الفحص التلقائي تمت مراجعته.',
+            // The list is the queue; the panel is the one video being decided.
+            pickOne: 'اختر مقطعًا من القائمة لمراجعته.',
+            spansHeading: 'المواضع المرصودة ({count})',
+            // The core interaction, and worth saying out loud: these are jump points, not an
+            // edit list. The reviewer listens and decides; nothing trims anything.
+            spansHint: 'اضغط على أي موضع للانتقال إليه والاستماع.',
+            noSpans: 'لم يحدد الفحص مواضع بعينها في هذا المقطع.',
+            coveredSeconds: 'إجمالي المرصود: {seconds} ثانية',
+            openVideo: 'فتح صفحة الفيديو',
+            clear: 'اعتماد ونشر',
+            reject: 'رفض',
+            clearing: 'جاري الاعتماد...',
+            rejecting: 'جاري الرفض...',
+            cleared: 'تم اعتماد المقطع ونشره.',
+            rejected: 'تم رفض المقطع.',
+            decisionFailed: 'تعذّر حفظ القرار.',
+            // Rejection is the one that takes something away from an uploader, so it is the one
+            // that asks first.
+            confirmRejectTitle: 'رفض هذا المقطع؟',
+            confirmRejectBody: 'لن يظهر "{title}" للزوار. يمكنك التراجع لاحقًا باعتماده.',
+            confirmRejectAction: 'نعم، ارفض',
+            playbackUnavailable: 'تعذّر تشغيل هذا المقطع.',
+        },
         pendingHeading: 'قنوات بانتظار الموافقة',
         pendingEmpty: 'لا توجد قنوات بانتظار الموافقة',
         pendingCount: 'بانتظار الموافقة ({count})',

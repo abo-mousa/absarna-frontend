@@ -134,16 +134,6 @@ function VideoDetail() {
                     >
                         <p className="font-semibold mb-1">{music.title}</p>
                         <p className="leading-relaxed">{music.body}</p>
-                        {music.spans && music.spans.total > music.spans.shown && (
-                            // The spans are gappy -- a recording that is music end to end comes
-                            // back as eight stretches -- so only the first few are listed and the
-                            // rest are counted. Listing all eight reads as eight problems.
-                            <p className="mt-1 opacity-80">
-                                {t('video.musicReview.moreSpans', {
-                                    count: music.spans.total - music.spans.shown,
-                                })}
-                            </p>
-                        )}
                     </div>
                 )}
                 <div className="bg-surface rounded-lg overflow-hidden border border-border-light shadow-sm mb-6">

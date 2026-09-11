@@ -337,10 +337,10 @@ const exitFullscreenNow = () => {
     }
 };
 
-// `ref` exposes getCurrentTime() so a parent (VideoDetail's share sheet, for "copy link at
-// this timestamp") can read the playhead on demand without this component re-rendering on
-// every tick — the alternative (lifting currentTime into state) would fire a render several
-// times a second for something only ever read once, at share-click time.
+// `ref` exposes getCurrentTime() and seekTo() so a parent can read or move the playhead on demand
+// without this component re-rendering on every tick — the alternative (lifting currentTime into
+// state) would fire a render several times a second for something read at share-click time and
+// written a handful of times per music review.
 const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourceUrl, title, poster, duration, startTime = 0 }, ref) {
     // Session token: still the right thing for the watch-progress writes below (they go through
     // axios, which sends it as an Authorization header). Nothing goes into the media URL any
@@ -543,6 +543,34 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
         getCurrentTime: () => {
             if (isYouTube) return youtubePlayerRef.current?.getCurrentTime?.() || 0;
             return videoRef.current?.currentTime || 0;
+        },
+        /**
+         * Jump the playhead, for a caller that has somewhere specific to send it — the music
+         * review queue jumping to the start of a flagged span.
+         *
+         * <p>Imperative for the same reason `getCurrentTime` is: the alternative is lifting the
+         * playhead into state and re-rendering this component several times a second for
+         * something that is set a handful of times per review. `startTime` cannot serve, because
+         * it is read once at load and a reviewer jumps between spans repeatedly.
+         *
+         * <p>Plays after seeking. A reviewer clicking a timestamp is asking to hear that moment,
+         * and a silent jump to a paused frame is a worse answer to that than an autoplay they did
+         * not ask for — this is a deliberate action on an admin screen, not a page load.
+         */
+        seekTo: (seconds) => {
+            const target = Math.max(0, Number(seconds) || 0);
+            if (isYouTube) {
+                youtubePlayerRef.current?.seekTo?.(target, true);
+                youtubePlayerRef.current?.playVideo?.();
+                return;
+            }
+            const element = videoRef.current;
+            if (!element) return;
+            element.currentTime = target;
+            // Ignored rather than surfaced: autoplay policies reject this in a tab that has
+            // never been interacted with, and the seek itself has already succeeded, which is
+            // the part the caller asked for.
+            element.play?.().catch(() => {});
         },
     }), [isYouTube]);
 

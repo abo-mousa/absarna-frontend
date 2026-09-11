@@ -32,6 +32,7 @@ const Biography = lazy(() => import('./pages/Biography'));
 const SeriesDetail = lazy(() => import('./pages/SeriesDetail'));
 const VideoDetail = lazy(() => import('./pages/VideoDetail'));
 const AdminChannels = lazy(() => import('./pages/AdminChannels'));
+const AdminMusicReview = lazy(() => import('./pages/AdminMusicReview'));
 const CreateChannel = lazy(() => import('./pages/CreateChannel'));
 const ChannelManage = lazy(() => import('./pages/ChannelManage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
@@ -224,6 +225,12 @@ function AppRoutes() {
                 } />
                 <Route path="/admin/channels" element={
                     <ProtectedRoute adminOnly><AdminChannels /></ProtectedRoute>
+                } />
+                {/* adminOnly here mirrors @PreAuthorize("hasRole('PLATFORM_ADMIN')") on the
+                    backend. The route guard only hides the screen; the endpoint is what actually
+                    refuses, which is the half that matters. */}
+                <Route path="/admin/music-review" element={
+                    <ProtectedRoute adminOnly><AdminMusicReview /></ProtectedRoute>
                 } />
                 <Route path="/create-channel" element={
                     <ProtectedRoute><CreateChannel /></ProtectedRoute>

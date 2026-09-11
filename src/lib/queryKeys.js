@@ -67,6 +67,10 @@ export const queryKeys = {
     channelSeriesManage: (slug, scope) => ['channel-series-manage', slug, scope],
     channelComments: (slug, size, scope) => ['channel-comments', slug, size, scope],
     channelYouTube: (slug, scope) => ['channel-youtube', slug, scope],
+    // Platform-admin only, and user-scoped like everything else here: the queue is a list of
+    // videos nobody else may even see, so a cache surviving a logout would be the worst possible
+    // leak of exactly the rows the whole feature exists to hide.
+    musicReview: (reviews, scope) => ['music-review', reviews, scope],
 
     // ---- platform admin ----
     adminStats: (scope) => ['admin-stats', scope],

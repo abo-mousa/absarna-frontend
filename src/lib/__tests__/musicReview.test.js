@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-    MUSIC_REVIEW, formatSpan, formatSpans, formatTimestamp, hidesVideo, musicBadge, musicNotice,
+    DECISIONS, MUSIC_REVIEW, formatSpan, formatSpans, formatTimestamp, hidesVideo, isolateLtr,
+    musicBadge, musicNotice, reviewRow, seekTargetFor,
 } from '@/lib/musicReview';
 import { ar } from '@/i18n/ar';
 
@@ -65,22 +66,66 @@ describe('formatSpan', () => {
     });
 });
 
+describe('isolateLtr', () => {
+    it('wraps text in a bidi isolate', () => {
+        // U+2066 LRI ... U+2069 PDI. Without it an en dash between two numbers is neutral, takes
+        // the RTL paragraph's direction, and the range renders end-first: `0:45–0:05`. It does not
+        // survive a copy-paste -- the clipboard carries logical order -- so only the screen is
+        // wrong, which is exactly how it got past review the first time.
+        expect(isolateLtr('0:05–0:45')).toBe('\u20660:05–0:45\u2069');
+    });
+
+    it('leaves nothing alone', () => {
+        expect(isolateLtr(null)).toBeNull();
+        expect(isolateLtr('')).toBe('');
+    });
+});
+
 describe('formatSpans', () => {
     const many = [
         { start: 0, end: 31.2 }, { start: 60, end: 75 }, { start: 120, end: 140 },
         { start: 200, end: 215 }, { start: 300, end: 330 },
     ];
 
-    it('shows the first few and counts the rest', () => {
+    it('shows the first few and counts the rest, in one phrase', () => {
         // The spans are gappy by nature: measured on a recording that is music from end to end
         // they come back as eight separate stretches covering 63% of it, because the classifier
         // dips below threshold mid-track. Listing all of them reads as eight problems rather
         // than one thing to go and listen to.
         const result = formatSpans(many);
+
         expect(result.shown).toBe(3);
         expect(result.total).toBe(5);
         expect(result.text).toContain('0:00–0:31');
         expect(result.text).not.toContain('5:00');
+        // The remainder belongs to THIS phrase. It used to render as its own paragraph, landing
+        // the fragment after the body had already finished with a different sentence -- two
+        // sentences away from the list it agrees with.
+        expect(result.text).toContain(ar.video.musicReview.moreSpans.replace('{count}', '2'));
+    });
+
+    it('isolates every range, so none of them renders backwards', () => {
+        const result = formatSpans([{ start: 5, end: 45.2 }, { start: 55, end: 65.2 }]);
+
+        expect(result.text).toContain('\u20660:05–0:45\u2069');
+        expect(result.text).toContain('\u20660:55–1:05\u2069');
+    });
+
+    it('agrees with the number of remaining spans, which Arabic requires', () => {
+        // A single form cannot serve both: one takes the singular and 3-10 takes the plural, so
+        // one of the two readings is always ungrammatical.
+        const one = formatSpans([...many.slice(0, 3), { start: 400, end: 410 }]);
+        expect(one.text).toContain(ar.video.musicReview.moreSpansOne);
+        expect(one.text).not.toContain('{count}');
+
+        expect(formatSpans(many).text).toContain('2');
+    });
+
+    it('says nothing about a remainder when there is none', () => {
+        const result = formatSpans([{ start: 5, end: 45.2 }]);
+
+        expect(result.text).toBe('\u20660:05–0:45\u2069');
+        expect(result.text).not.toContain(ar.video.musicReview.moreSpansOne);
     });
 
     it('is null when there is nothing to point at', () => {
@@ -89,9 +134,15 @@ describe('formatSpans', () => {
         expect(formatSpans(undefined)).toBeNull();
     });
 
-    it('drops unusable spans rather than rendering them', () => {
+    it('counts only the spans it could actually render', () => {
+        // An unusable span must not inflate the "and N more" count, or the owner is told there
+        // are places to go and listen to that were never named and never could be.
         expect(formatSpans([{ start: 'x', end: 'y' }])).toBeNull();
-        expect(formatSpans([{ start: 'x' }, { start: 10, end: 20 }]).shown).toBe(1);
+
+        const mixed = formatSpans([{ start: 'x' }, { start: 10, end: 20 }]);
+        expect(mixed.shown).toBe(1);
+        expect(mixed.total).toBe(1);
+        expect(mixed.text).not.toContain(ar.video.musicReview.moreSpansOne);
     });
 });
 
@@ -189,5 +240,103 @@ describe('musicBadge', () => {
             expect(musicBadge({ musicReview: review }, true).label)
                 .not.toContain('video.musicReview');
         }
+    });
+});
+
+describe('seekTargetFor', () => {
+    it('lands a couple of seconds before the span, not on its boundary', () => {
+        // The flagged window is 10.24s wide and the sound that tripped it can sit anywhere
+        // inside, so seeking to the exact start regularly drops the reviewer into the silence
+        // just before the music — which reads as a false positive when it is not one.
+        expect(seekTargetFor({ start: 30, end: 45 })).toBe(28);
+    });
+
+    it('never seeks before the beginning of the video', () => {
+        // The commonest flagged shape is an intro sting starting at 0.
+        expect(seekTargetFor({ start: 0, end: 15 })).toBe(0);
+        expect(seekTargetFor({ start: 1, end: 15 })).toBe(0);
+    });
+
+    it('is null for a span it cannot seek to', () => {
+        expect(seekTargetFor({ end: 15 })).toBeNull();
+        expect(seekTargetFor({ start: 'x', end: 15 })).toBeNull();
+        expect(seekTargetFor(null)).toBeNull();
+    });
+});
+
+describe('reviewRow', () => {
+    const held = {
+        id: 7,
+        title: 'Lecture',
+        musicReview: MUSIC_REVIEW.HELD,
+        musicSpans: [{ start: 5, end: 45.2 }, { start: 55, end: 65.2 }],
+    };
+
+    it('gives the reviewer every span, unlike the owner notice', () => {
+        // formatSpans truncates to three because it is a notice for the owner, who needs to know
+        // roughly where to look. A reviewer is deciding, and skipping the eighth span is how a
+        // decision gets made on incomplete evidence.
+        const many = {
+            ...held,
+            musicSpans: Array.from({ length: 8 }, (_, i) => ({ start: i * 20, end: i * 20 + 10 })),
+        };
+
+        expect(reviewRow(many).spans).toHaveLength(8);
+    });
+
+    it('carries a seek target and a label for each span', () => {
+        const row = reviewRow(held);
+
+        expect(row.spans[0].label).toBe('0:05–0:45');
+        expect(row.spans[0].seekTo).toBe(3);
+        expect(row.spans[1].seekTo).toBe(53);
+    });
+
+    it('totals the flagged audio, which is what separates a sting from a music video', () => {
+        // 40.2 + 10.2. At a glance this is the difference between "an intro" and "the whole
+        // thing", without the reviewer reading eight timestamps to work it out.
+        expect(reviewRow(held).coveredSeconds).toBeCloseTo(50.4, 1);
+    });
+
+    it('drops a span it cannot label or seek to rather than offering a dead button', () => {
+        const row = reviewRow({ ...held, musicSpans: [{ start: 5, end: 45.2 }, { start: 'x' }] });
+
+        expect(row.spans).toHaveLength(1);
+    });
+
+    it('says why the row is in the queue, in the reviewer\'s terms', () => {
+        // Not the owner's wording: the owner is told what happened to their video, the reviewer
+        // is told what they are being asked to decide.
+        expect(reviewRow(held).reason).toBe(ar.video.musicReview.held.queueReason);
+        expect(reviewRow({ ...held, musicReview: MUSIC_REVIEW.ADVISORY }).reason)
+            .toBe(ar.video.musicReview.advisory.queueReason);
+    });
+
+    it('marks which rows are actually holding a video back', () => {
+        // Three verdicts share the queue and only one of them means an upload is invisible.
+        expect(reviewRow(held).hidden).toBe(true);
+        expect(reviewRow({ ...held, musicReview: MUSIC_REVIEW.ADVISORY }).hidden).toBe(false);
+        expect(reviewRow({ ...held, musicReview: MUSIC_REVIEW.UNCHECKED }).hidden).toBe(false);
+    });
+
+    it('survives a video with no spans at all', () => {
+        // UNSCANNED carries none by construction: the detector never got far enough to find any.
+        const row = reviewRow({ id: 9, title: 'x', musicReview: MUSIC_REVIEW.UNCHECKED });
+
+        expect(row.spans).toEqual([]);
+        expect(row.coveredSeconds).toBe(0);
+    });
+
+    it('is null for nothing', () => {
+        expect(reviewRow(null)).toBeNull();
+    });
+});
+
+describe('DECISIONS', () => {
+    it('offers only the two values a human may write', () => {
+        // HELD/ADVISORY/UNCHECKED are the pipeline's vocabulary and the backend refuses them
+        // here: writing one back would put the row into the set the worker may overwrite, so the
+        // next redelivery would silently undo the reviewer.
+        expect(DECISIONS).toEqual([MUSIC_REVIEW.CLEARED, MUSIC_REVIEW.REJECTED]);
     });
 });
