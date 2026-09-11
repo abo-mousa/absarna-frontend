@@ -170,6 +170,17 @@ What this app relies on; the mirror lives in the backend's `CLAUDE.md`.
 - **An uploaded video is not merely un-transcoded — it is invisible** until `status` is `READY`. There
   is **no notification channel by design**, so re-fetch when the user comes back and never imply a
   quick turnaround.
+- **`musicReview` / `musicSpans` are owner-only and usually absent.** Absarna is an Islamic platform
+  and music is not published on it; the backend sends these two fields *only* to a caller who
+  manages the channel (or is a platform admin), so their presence is already a disclosure decision
+  made server-side — `lib/musicReview.js` checks ownership again as a second lock. **Only `HELD`
+  and `REJECTED` hide the video**; `ADVISORY` and `UNCHECKED` are notes on a video that is
+  published and playing normally, and wording or colouring them like a problem would train owners
+  to ignore the tone by the time the one that matters arrives. A held video is `READY`, `visible`,
+  and reachable by nobody, so **this notice is the entire mechanism by which its owner is ever
+  told** — if it renders nothing, their upload simply vanished. Spans are a jump-list, truncated
+  to three: they are gappy enough that a recording which is music end to end comes back as eight
+  separate stretches.
 - **Confirm is idempotent on `uploadSessionId`**, which is what lets a timed-out publish read as
   "still working" for videos/books — and why it must read as an ordinary failure for articles/posts,
   which have no session.
@@ -191,7 +202,7 @@ What this app relies on; the mirror lives in the backend's `CLAUDE.md`.
 npm run dev      # localhost:5173, expects the backend on localhost:8080
 npm run build    # ALWAYS before trusting a session's changes
 npm run lint     # must be zero errors
-npm test         # vitest, ~190 tests, node environment, no jsdom
+npm test         # vitest, ~237 tests, node environment, no jsdom
 ```
 
 `VITE_API_BASE_URL` overrides the API host. In dev both CSP env vars fall back to the compose stack,

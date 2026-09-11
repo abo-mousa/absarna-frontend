@@ -7,6 +7,7 @@ import { useChannel } from '@/hooks/useChannels';
 import Avatar from '../ui/Avatar';
 import SourceBadge from './SourceBadge';
 import { t } from '@/i18n';
+import { musicBadge } from '@/lib/musicReview';
 import { formatCount } from '@/lib/numbers';
 
 function getThumbnail(video) {
@@ -34,6 +35,10 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
     const [thumbnailFailed, setThumbnailFailed] = useState(false);
     const thumbnail = thumbnailFailed ? null : getThumbnail(video);
     const watchedPercent = getWatchedPercent(video, watchedSeconds);
+    // Null for everyone but the owner, and null for the owner too unless there is a verdict worth
+    // showing. The backend does not send musicReview to a stranger at all, so this is the second
+    // lock on that door rather than the only one.
+    const music = musicBadge(video, isOwner);
     const { data: channel } = useChannel(video.channelId, showChannel && !!video.channelId);
 
     // Nested icon buttons (visibility/delete/channel) already stopPropagation on click; for
@@ -108,6 +113,21 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                         <div className="flex items-center gap-1 bg-black/70 text-white text-xs font-semibold px-2 py-0.5 rounded">
                             <Loader2 size={12} className="animate-spin" />
                             {t('video.processing')}
+                        </div>
+                    )}
+                    {/* Owner-only, same reasoning as the badge above and the same reason it has
+                        to exist at all: a held video is READY and visible and reachable by
+                        nobody, so without this its owner sees a video that simply vanished. Amber
+                        when it is actually hidden, slate when it is only a note on a video that
+                        is published and playing — two of the four verdicts do not hide anything,
+                        and colouring both as a problem would train owners to ignore both. The
+                        reason and the timestamps are on the detail page; a card gets two words. */}
+                    {music && (
+                        <div className={`flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded text-white ${
+                            music.hidden ? 'bg-amber-600/90' : 'bg-slate-600/90'
+                        }`}>
+                            {music.hidden && <EyeOff size={12} />}
+                            {music.label}
                         </div>
                     )}
                 </div>

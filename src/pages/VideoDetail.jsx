@@ -8,6 +8,8 @@ import { useVideo, useRelatedVideo, useWatchProgressMap, useWatchHistory } from 
 import { useChannel } from '../hooks/useChannels';
 import { useSeriesDetail, useSeriesNeighbours } from '../hooks/useSeries';
 import { useAuth } from '../contexts/AuthContext';
+import { canManageChannel } from '@/lib/user';
+import { musicNotice } from '@/lib/musicReview';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { resolveMediaUrl, youtubeThumbnail } from '@/lib/media';
 import { formatPublishDate, displayDate } from '@/lib/dayjsAr';
@@ -25,7 +27,7 @@ function VideoDetail() {
     const { data: channel } = useChannel(video?.channelId, !!video?.channelId);
     const { data: seriesData } = useSeriesDetail(video?.seriesId, 1, !!video?.seriesId);
     const { data: neighbours } = useSeriesNeighbours(video?.seriesId, video?.id, !!video?.seriesId);
-    const { token } = useAuth();
+    const { token, user } = useAuth();
     const watchProgress = useWatchProgressMap(!!token);
     // Same cached `['watch-history']` query `useWatchProgressMap` reads internally — called
     // again here only for its `isLoading`, to gate mounting the player below (React Query
@@ -107,9 +109,43 @@ function VideoDetail() {
         // changes it, and it is the one number here that updates without a reload.
     ].filter(Boolean).join(' · ');
 
+    // The backend does not send musicReview to anyone but the channel's manager or a platform
+    // admin (MusicReviewService.attachOwnerVerdicts), so this check is a second lock on a door
+    // the server already holds shut -- which is the right shape for a disclosure rule, and means
+    // neither side can leak it alone.
+    const music = musicNotice(video, canManageChannel(user, channel));
+
     return (
         <PageShell sidebar={false}>
             <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
+                {/* Above the player, because for a HELD or REJECTED video this is the answer to
+                    the question the owner actually arrived with: their video is READY, visible,
+                    and gone from every listing, and nothing else on this page would say why.
+                    There is no notification channel in this design -- re-fetching is the only way
+                    an owner learns anything -- so this notice is the entire mechanism. */}
+                {music && (
+                    <div
+                        role="status"
+                        className={`mb-6 rounded-lg border p-4 text-sm ${
+                            music.tone === 'warning'
+                                ? 'border-amber-300 bg-amber-50 text-amber-900'
+                                : 'border-border-light bg-surface-muted text-text-secondary'
+                        }`}
+                    >
+                        <p className="font-semibold mb-1">{music.title}</p>
+                        <p className="leading-relaxed">{music.body}</p>
+                        {music.spans && music.spans.total > music.spans.shown && (
+                            // The spans are gappy -- a recording that is music end to end comes
+                            // back as eight stretches -- so only the first few are listed and the
+                            // rest are counted. Listing all eight reads as eight problems.
+                            <p className="mt-1 opacity-80">
+                                {t('video.musicReview.moreSpans', {
+                                    count: music.spans.total - music.spans.shown,
+                                })}
+                            </p>
+                        )}
+                    </div>
+                )}
                 <div className="bg-surface rounded-lg overflow-hidden border border-border-light shadow-sm mb-6">
                     {historyLoading ? (
                         // Holds the player back until we know the real resume point — the

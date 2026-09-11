@@ -322,6 +322,49 @@ export const ar = {
         // Shown only to the channel's owner, on a video whose transcode has not finished. See
         // VideoCard — nobody else can see such a video at all.
         processing: 'جاري المعالجة',
+        // Music moderation, and every one of these is owner-facing only. Absarna is an Islamic
+        // platform and music is not published on it; the detector lives in absarna-worker.
+        //
+        // TWO OF THESE FOUR MEAN THE VIDEO IS HIDDEN AND TWO DO NOT, and the wording has to carry
+        // that difference. `held` and `rejected` are the ones where the owner's video has
+        // disappeared from the platform — with no message at all that is indistinguishable from a
+        // bug, and this design has no notification channel, so these strings are the entire
+        // mechanism by which they are ever told. `advisory` and `unchecked` are notes on a video
+        // that is published and playing normally; wording them like a problem would make owners
+        // think something is wrong when nothing is.
+        musicReview: {
+            held: {
+                badge: 'قيد المراجعة',
+                title: 'هذا الفيديو قيد المراجعة',
+                body: 'رصدنا موسيقى في الصوت، ولن يظهر الفيديو للزوار حتى يراجعه أحد المشرفين.',
+                bodyWithSpans: 'رصدنا موسيقى في الصوت عند {spans}، ولن يظهر الفيديو للزوار حتى يراجعه أحد المشرفين.',
+            },
+            rejected: {
+                badge: 'مرفوض',
+                title: 'تم رفض هذا الفيديو',
+                body: 'راجع أحد المشرفين الفيديو ووجد فيه موسيقى، فلن يظهر للزوار. يمكنك رفع نسخة أخرى بدون موسيقى.',
+                bodyWithSpans: 'راجع أحد المشرفين الفيديو ووجد فيه موسيقى عند {spans}، فلن يظهر للزوار. يمكنك رفع نسخة أخرى بدون موسيقى.',
+            },
+            advisory: {
+                badge: 'ملاحظة',
+                // Deliberately opens by saying the video is published. It is, and the owner's
+                // first question on seeing any notice at all is whether it still is.
+                title: 'الفيديو منشور، مع ملاحظة',
+                body: 'قد تكون هناك موسيقى خلفية في الصوت. الفيديو منشور ويعمل بشكل طبيعي، وسيلقي أحد المشرفين نظرة عليه.',
+                bodyWithSpans: 'قد تكون هناك موسيقى خلفية في الصوت عند {spans}. الفيديو منشور ويعمل بشكل طبيعي، وسيلقي أحد المشرفين نظرة عليه.',
+            },
+            // "and N more places" — the spans are gappy enough that listing them all reads as a
+            // list of separate problems rather than one thing to go and listen to.
+            moreSpans: 'و{count} موضع آخر.',
+            unchecked: {
+                badge: 'لم يُفحص',
+                title: 'الفيديو منشور، ولم يكتمل فحص الصوت',
+                // Says what happened without blaming the video: nothing is wrong with it, the
+                // check itself did not finish.
+                body: 'تعذّر إكمال فحص الصوت تلقائيًا. الفيديو منشور ويعمل بشكل طبيعي، وسيراجعه أحد المشرفين.',
+                bodyWithSpans: 'تعذّر إكمال فحص الصوت تلقائيًا. الفيديو منشور ويعمل بشكل طبيعي، وسيراجعه أحد المشرفين.',
+            },
+        },
         // A video whose file lives on a third-party host (sourceType TELEGRAM). The SPA's own
         // Content-Security-Policy allows media only from our storage, so it cannot be played
         // in place; the link is the honest offer. See VideoPlayer.
