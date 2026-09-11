@@ -1222,6 +1222,10 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
                 <VideoControlBar
                     videoRef={videoRef}
                     mediaKey={playbackUrl}
+                    // The video, as opposed to the source: a rung swap changes `mediaKey` and not
+                    // this one, which is what keeps the centre play button from reappearing over a
+                    // lecture in progress. See the bar's `videoKey`.
+                    videoKey={videoId}
                     // The catalogue knows how long the video is; on the HLS path the element does
                     // not, until the first play. See parseDuration.
                     durationHint={duration}
@@ -1232,6 +1236,10 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
                     toggles={settingToggles}
                     onInteract={nudgeControls}
                     onMenuOpenChange={setMenuOpen}
+                    // The container is the focus stop that carries the keyboard shortcuts, and
+                    // the bar's centre button unmounts on click — the same hop the picture's own
+                    // click-to-play does.
+                    onRequestFocus={() => containerRef.current?.focus()}
                 />
             </div>
         );

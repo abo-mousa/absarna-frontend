@@ -31,6 +31,10 @@ import PlayerSettingsMenu from './PlayerSettingsMenu';
  * @param videoRef  the `<video>` — a ref rather than the node, since it does not exist on the
  *                  renders before the signed URL arrives
  * @param mediaKey  changes when the element's source does (a rung swap), to re-read its state
+ * @param videoKey  identifies the VIDEO, not the source. Distinct from `mediaKey` on purpose: a
+ *                  rung swap changes the source of the same video, and the poster-state overlay
+ *                  below must not come back over the middle of a lecture because the viewer
+ *                  switched to the audio rung
  * @param durationHint  the catalogue's `VideoDTO.duration` string, shown until the element itself
  *                  knows the length — which on the HLS path is not until the first play
  * @param visible   whether the bar is showing; it fades on idle like the bar it replaces
@@ -39,6 +43,10 @@ import PlayerSettingsMenu from './PlayerSettingsMenu';
  * @param groups / toggles  passed straight through to `PlayerSettingsMenu`
  * @param onInteract  any use of the bar counts as activity, so it does not fade mid-drag
  * @param onMenuOpenChange  the bar must stay up while the settings panel is open
+ * @param onRequestFocus  hands keyboard focus back to the player. The centre overlay button is
+ *                  the one control that DISAPPEARS when pressed, so without this the focus it
+ *                  took on click falls to the body and the next Space scrolls the page instead
+ *                  of pausing
  */
 
 // Volume survives the video, like playback speed: a viewer who watches lectures quietly should
@@ -160,6 +168,7 @@ const VolumeIcon = ({ muted, volume }) => {
 export default function VideoControlBar({
     videoRef,
     mediaKey,
+    videoKey,
     durationHint,
     visible = true,
     isFullscreen = false,
@@ -168,8 +177,17 @@ export default function VideoControlBar({
     toggles = [],
     onInteract,
     onMenuOpenChange,
+    onRequestFocus,
 }) {
     const [playing, setPlaying] = useState(false);
+    // Ended is tracked apart from `playing` (which is false for both a pause and an end) because
+    // only one of the two wants the big button back: after the last frame the next action is
+    // "start again", which is the same offer the poster makes.
+    const [ended, setEnded] = useState(false);
+    // Which video has been played, rather than a boolean — so it resets itself when the viewer
+    // opens a different video without the player unmounting (a related-video click keeps this
+    // component mounted), and does NOT reset on a rung swap, which changes `mediaKey` alone.
+    const [startedFor, setStartedFor] = useState(null);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(NaN);
     const [buffered, setBuffered] = useState(0);
@@ -209,7 +227,17 @@ export default function VideoControlBar({
             if (safeStorage.getItem(MUTED_STORAGE_KEY) === 'true') el.muted = true;
         }
 
-        const syncPlayState = () => setPlaying(!el.paused && !el.ended);
+        const syncPlayState = () => {
+            setPlaying(!el.paused && !el.ended);
+            setEnded(el.ended);
+        };
+        // On the event only, never from the element's state at bind time. A rung swap does not
+        // need it — `videoKey` is unchanged, so the value set by the original play still matches
+        // and the centre button stays away — while reading it at bind time gets the CROSS-VIDEO
+        // case wrong: opening a related video keeps this component mounted and re-binds against
+        // an element still playing the previous one, which would mark the new video as started
+        // and leave it with no button on its poster.
+        const markStarted = () => setStartedFor(videoKey);
         const syncTime = () => setCurrentTime(el.currentTime);
         const syncDuration = () => setDuration(el.duration);
         const syncVolume = () => {
@@ -237,10 +265,14 @@ export default function VideoControlBar({
 
         const events = [
             ['play', syncPlayState],
+            ['play', markStarted],
             ['pause', syncPlayState],
             ['ended', syncPlayState],
             ['timeupdate', syncTime],
             ['seeked', syncTime],
+            // Scrubbing back off the last frame clears `ended` on the element, and nothing else
+            // here would notice: the video is still paused, so no play/pause event follows.
+            ['seeked', syncPlayState],
             ['durationchange', syncDuration],
             ['loadedmetadata', syncDuration],
             ['progress', syncBuffered],
@@ -259,7 +291,7 @@ export default function VideoControlBar({
         return () => {
             for (const [event, handler] of events) el.removeEventListener(event, handler);
         };
-    }, [videoRef, mediaKey]);
+    }, [videoRef, mediaKey, videoKey]);
 
     /**
      * AirPlay, offered only once the browser says a receiver is there.
@@ -363,8 +395,47 @@ export default function VideoControlBar({
         transition-colors hover:bg-white/20 focus:outline-none focus-visible:ring-2
         focus-visible:ring-white`;
 
+    // The two moments where the next action is "start" rather than "resume": the poster, before
+    // this video has been played at all, and the last frame after it has ended. Turning
+    // `controls` off took the browser's big centre button with it, and the bar's own 32px one is
+    // not the same offer — on a poster it is the difference between a page that invites a press
+    // and a page that looks like a still image with a strip of chrome under it.
+    //
+    // Deliberately NOT shown on every pause, which is what most players do. A viewer who paused
+    // a lecture usually paused to look at what is on screen — a slide, a line of text — and a
+    // 64px disc in the middle of it is in the way. The bar is up whenever the video is paused
+    // (see nudgeControls), so the small button is right there, and clicking the picture toggles
+    // playback too. Suppressed while buffering, where the spinner is the honest answer.
+    const showCentrePlay = !playing && !buffering && (startedFor !== videoKey || ended);
+
     return (
         <>
+            {showCentrePlay && (
+                // The wrapper takes no pointer events, so the picture around the disc keeps its
+                // own click-to-play instead of being covered by a full-bleed hit target.
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            togglePlay();
+                            // This button is about to unmount — see onRequestFocus.
+                            onRequestFocus?.();
+                        }}
+                        aria-label={ended ? t('video.controls.replay') : t('video.controls.play')}
+                        className="pointer-events-auto flex h-16 w-16 items-center justify-center
+                            rounded-full bg-black/60 text-white transition hover:bg-black/80
+                            hover:scale-105 focus:outline-none focus-visible:ring-2
+                            focus-visible:ring-white"
+                    >
+                        {/* Filled, unlike the bar's outline icons: this one is read as a target to
+                            press rather than as a control in a row of controls. Nudged right
+                            because a triangle's optical centre sits left of its bounding box, so
+                            centring the box leaves it looking off-centre in the disc. */}
+                        <Play size={30} fill="currentColor" className="translate-x-[2px]" />
+                    </button>
+                </div>
+            )}
+
             {buffering && (
                 <div
                     className="pointer-events-none absolute inset-0 flex items-center justify-center"

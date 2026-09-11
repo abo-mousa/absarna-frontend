@@ -353,6 +353,9 @@ export const ar = {
             // they have landed on — the shortcuts below live there.
             player: 'مشغل الفيديو',
             play: 'تشغيل',
+            // The centre button's label on the last frame, where the action is not "play" but
+            // "play it again" — the only text a screen reader gets for that button.
+            replay: 'إعادة التشغيل',
             pause: 'إيقاف مؤقت',
             seek: 'موضع التشغيل',
             // The timeline's spoken value: a screen reader reading "1263" for a position is
