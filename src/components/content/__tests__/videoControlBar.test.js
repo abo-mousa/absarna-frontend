@@ -4,6 +4,7 @@ import {
     keyboardAction,
     parseDuration,
     ratioFromPointer,
+    storedVolume,
     timelineScale,
 } from '@/components/content/VideoControlBar';
 
@@ -178,5 +179,42 @@ describe('timelineScale', () => {
         expect(timelineScale(Infinity, '45:10')).toBe(2710);
         expect(timelineScale(Infinity, undefined)).toBe(0);
         expect(timelineScale(-1, undefined)).toBe(0);
+    });
+});
+
+/**
+ * The remembered volume — the one piece of this bar whose failure is silent in the literal sense.
+ *
+ * <p>`safeStorage.getItem` answers `null` for a key nobody has written, and `Number(null)` is `0`,
+ * which passes every test a level has to pass. So "no preference" restored as "silent": a first
+ * visit played a picture with no sound, a slider at zero and a muted icon, and the only way to
+ * miss it is to have used the slider once — which every developer's profile has.
+ */
+describe('storedVolume', () => {
+    it('reads an absent preference as absent, not as silence', () => {
+        // The bug, pinned: every one of these is what an unwritten key looks like coming back out
+        // of a store, and every one of them used to become volume 0 on the element.
+        expect(storedVolume(null)).toBeNull();
+        expect(storedVolume(undefined)).toBeNull();
+        expect(storedVolume('')).toBeNull();
+    });
+
+    it('keeps a level the viewer actually chose', () => {
+        expect(storedVolume('0.35')).toBe(0.35);
+        expect(storedVolume('1')).toBe(1);
+        // Zero is a real choice when it is written down: someone who dragged the slider to the
+        // bottom gets their silence back. It is only the ABSENCE of a value that must not read
+        // as zero.
+        expect(storedVolume('0')).toBe(0);
+    });
+
+    it('refuses anything that is not a level', () => {
+        // Storage is a string bucket anyone can write to, and a bad value here is inaudible
+        // rather than visible: out of range, not a number, or another tab's idea of the format.
+        expect(storedVolume('2')).toBeNull();
+        expect(storedVolume('-0.5')).toBeNull();
+        expect(storedVolume('loud')).toBeNull();
+        expect(storedVolume('NaN')).toBeNull();
+        expect(storedVolume('Infinity')).toBeNull();
     });
 });

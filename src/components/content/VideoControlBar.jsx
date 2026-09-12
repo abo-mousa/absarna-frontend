@@ -130,6 +130,30 @@ export const parseDuration = (value) => {
 };
 
 /**
+ * The remembered volume, as a level in 0…1, or `null` for "no preference".
+ *
+ * <p><b>This is the difference between a video that plays and a video that plays silently.</b>
+ * `safeStorage.getItem` returns `null` for a key nobody has written, `Number(null)` is `0`, and
+ * `0` passes every check a level has to pass — finite, not negative, not above one. So the
+ * restore read "no preference" as "silent" and set `volume = 0` on the element: every viewer who
+ * had never touched the slider got a picture with no sound, a slider sitting at zero and a muted
+ * icon, on a platform whose entire catalogue is people talking.
+ *
+ * <p>It survives a browser check because it cannot be reproduced in a browser that has ever used
+ * the slider — one drag writes the key and the bug is gone for that profile for good. It is the
+ * first visit, the private window and the cleared profile that get it.
+ *
+ * <p>Exported and tested for that reason, and `''` is in the tests beside `null`: a store that
+ * round-trips an empty string is the other way `Number` produces a confident zero.
+ */
+export const storedVolume = (raw) => {
+    if (raw === null || raw === undefined || raw === '') return null;
+    const level = Number(raw);
+    if (!Number.isFinite(level) || level < 0 || level > 1) return null;
+    return level;
+};
+
+/**
  * What the timeline is scaled by — and therefore what can be dragged against it — in seconds, or
  * `0` when nothing knows how long the video is.
  *
@@ -250,6 +274,9 @@ export default function VideoControlBar({
     // Held across re-binds, so a swap mid-wait cannot leave a spinner scheduled by an element
     // that is gone.
     const bufferingTimerRef = useRef(null);
+    // Where un-muting goes when the slider is at zero. Starts at full, which is where an element
+    // starts, and follows the viewer from there.
+    const lastAudibleVolumeRef = useRef(1);
 
     /**
      * Mirrors the element into state.
@@ -264,8 +291,8 @@ export default function VideoControlBar({
 
         if (!volumeAppliedRef.current) {
             volumeAppliedRef.current = true;
-            const stored = Number(safeStorage.getItem(VOLUME_STORAGE_KEY));
-            if (Number.isFinite(stored) && stored >= 0 && stored <= 1) el.volume = stored;
+            const stored = storedVolume(safeStorage.getItem(VOLUME_STORAGE_KEY));
+            if (stored !== null) el.volume = stored;
             if (safeStorage.getItem(MUTED_STORAGE_KEY) === 'true') el.muted = true;
         }
 
@@ -285,6 +312,15 @@ export default function VideoControlBar({
         const syncVolume = () => {
             setVolume(el.volume);
             setMuted(el.muted);
+            // What to come back to when the viewer un-mutes a slider they had dragged to zero.
+            if (el.volume > 0 && !el.muted) lastAudibleVolumeRef.current = el.volume;
+            // Persisted here rather than in the slider's own handler, because the slider is not
+            // the only way the level changes: the player's ↑/↓ shortcuts write `el.volume`
+            // directly, and so do the media keys and the picture-in-picture window. None of them
+            // passes through this component, so a volume set by keyboard was forgotten on the
+            // next video while one set by dragging was remembered.
+            safeStorage.setItem(VOLUME_STORAGE_KEY, String(el.volume));
+            safeStorage.setItem(MUTED_STORAGE_KEY, String(el.muted));
         };
         const syncBuffered = () => {
             // The range the playhead is inside, not the last one: a viewer who has jumped around
@@ -420,20 +456,30 @@ export default function VideoControlBar({
     const changeVolume = (value) => {
         const el = videoRef.current;
         if (!el) return;
-        const next = Math.min(1, Math.max(0, value));
-        el.volume = next;
+        el.volume = Math.min(1, Math.max(0, value));
         // Moving the slider off zero is also how a viewer un-mutes: leaving `muted` set would
         // make the slider look like it does nothing.
-        if (next > 0 && el.muted) el.muted = false;
-        safeStorage.setItem(VOLUME_STORAGE_KEY, String(next));
-        safeStorage.setItem(MUTED_STORAGE_KEY, String(el.muted));
+        if (el.volume > 0 && el.muted) el.muted = false;
+        // Read back off the element rather than from `value`: the property assignments above are
+        // synchronous, the `volumechange` EVENT is not. This is a controlled input, so waiting for
+        // the event means rendering one more frame with the old level in `value` — the thumb
+        // stutters against the pointer mid-drag, the same lag the timeline had on a seek.
+        setVolume(el.volume);
+        setMuted(el.muted);
     };
 
     const toggleMute = () => {
         const el = videoRef.current;
         if (!el) return;
-        el.muted = !el.muted;
-        safeStorage.setItem(MUTED_STORAGE_KEY, String(el.muted));
+        const next = !el.muted;
+        // Un-muting a slider sitting at zero has to put a level back, or the button reads as
+        // broken: the icon changes, the aria-label changes, and nothing can be heard. Dragging to
+        // zero and pressing the icon is how a viewer silences a lecture to read something, and it
+        // is the obvious way back that has to work.
+        if (!next && el.volume === 0) el.volume = lastAudibleVolumeRef.current;
+        el.muted = next;
+        setVolume(el.volume);
+        setMuted(el.muted);
     };
 
     // --- Scrubbing. Pointer capture, so a drag that leaves the player (or the window) keeps
