@@ -533,6 +533,10 @@ export const ar = {
         // the state, or a screen reader announces the two contradicting each other.
         unsubscribe: 'إلغاء الاشتراك',
         subscribeToggleAria: 'الاشتراك في القناة',
+        // The accessible name only while the button is armed — the touch equivalent of the hover
+        // swap above, where a first press has warned and a second press acts. See SubscribeButton
+        // for why this one state is allowed to move the name off `subscribeToggleAria`.
+        unsubscribeConfirmAria: 'اضغط مرة أخرى لإلغاء الاشتراك',
         noVideos: 'لا توجد فيديوهات بعد',
         noPosts: 'لا توجد منشورات بعد',
     },

@@ -6,6 +6,7 @@ import {
     ratioFromPointer,
     storedVolume,
     timelineScale,
+    volumeIsSettable,
 } from '@/components/content/VideoControlBar';
 
 /**
@@ -216,5 +217,41 @@ describe('storedVolume', () => {
         expect(storedVolume('loud')).toBeNull();
         expect(storedVolume('NaN')).toBeNull();
         expect(storedVolume('Infinity')).toBeNull();
+    });
+});
+
+describe('volumeIsSettable', () => {
+    it('accepts a platform that honours the assignment', () => {
+        // Everything that is not iOS. An ordinary object stands in for the element: the function
+        // is a probe of one property, which is all a `<video>` is to it.
+        expect(volumeIsSettable({ volume: 1 })).toBe(true);
+        expect(volumeIsSettable({ volume: 0 })).toBe(true);
+    });
+
+    it('rejects a platform that ignores it — which is iOS, and is why the slider is not drawn there', () => {
+        // `volume` on iOS is read-only: the assignment is ACCEPTED and does nothing, so there is
+        // no error to catch and nothing but a read-back tells the two apart. A slider left on
+        // screen there drags, paints its fill, and is never heard.
+        const iosLike = { get volume() { return 1; }, set volume(_) {} };
+        expect(volumeIsSettable(iosLike)).toBe(false);
+    });
+
+    it('rejects a setter that throws', () => {
+        const strict = { get volume() { return 1; }, set volume(_) { throw new TypeError('read only'); } };
+        expect(volumeIsSettable(strict)).toBe(false);
+    });
+
+    it('puts the level back, so probing is never audible', () => {
+        // The probe runs against a detached element, but a probe that left a level behind would be
+        // a bug waiting for the day someone points it at the real one.
+        const el = { volume: 0.4 };
+        volumeIsSettable(el);
+        expect(el.volume).toBe(0.4);
+    });
+
+    it('assumes control rather than removing it when there is nothing to probe', () => {
+        // No element yet is not evidence of iOS, and a slider that vanishes on a timing accident
+        // is worse than one shown to a platform that ignores it.
+        expect(volumeIsSettable(null)).toBe(true);
     });
 });

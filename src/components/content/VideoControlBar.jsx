@@ -155,6 +155,63 @@ export const storedVolume = (raw) => {
 };
 
 /**
+ * Whether this platform lets a page set the volume at all.
+ *
+ * <p><b>iOS does not.</b> On an iPhone or an iPad, `HTMLMediaElement.volume` is read-only: the
+ * assignment is accepted, silently ignored, and the property reads back unchanged. Volume there
+ * belongs to the hardware buttons and to nothing else. (`muted` is a separate property and it
+ * *is* settable, which is why the mute button beside the slider stays.)
+ *
+ * <p>So a volume slider on an iPhone is not a control, it is a picture of one: it drags, it
+ * paints its fill from the level it is given, and the level never moves. Better to not offer it
+ * than to offer a thing that does nothing — the mute button is the whole of what the page can
+ * actually do to the sound on that platform.
+ *
+ * <p>Probed rather than sniffed for a user agent, because the rule is about an engine and not
+ * about a brand: iPadOS reports itself as a Mac, every browser on iOS is Safari underneath
+ * whatever name it wears, and a string test would answer the wrong question in both directions.
+ *
+ * <p>Takes the element to probe so this stays a pure function over something with a `volume`
+ * property — call it with a DETACHED `<video>` (see `supportsVolumeControl`), never with the one
+ * the viewer is listening to, since the probe writes a level and writing the real element's
+ * level mid-playback is audible.
+ */
+export const volumeIsSettable = (probe) => {
+    if (!probe) return true;
+    try {
+        const original = probe.volume;
+        // Somewhere the element is not already, in both directions, so a starting level of either
+        // 0 or 1 is still a real change to look for.
+        const target = original > 0.5 ? 0.25 : 0.75;
+        probe.volume = target;
+        const settable = Math.abs(probe.volume - target) < 0.001;
+        probe.volume = original;
+        return settable;
+    } catch {
+        // A throwing setter is a refusal too, and a louder one than iOS's.
+        return false;
+    }
+};
+
+/**
+ * `volumeIsSettable` against a throwaway `<video>`, answered once per page.
+ *
+ * <p>Lazy, not module scope: this runs `document.createElement` and a module that touches the DOM
+ * while it is being imported is the failure `lib/safeStorage.js` exists to prevent — one throw
+ * there is a blank page rather than one broken control.
+ */
+let volumeControlSupport = null;
+
+const supportsVolumeControl = () => {
+    if (volumeControlSupport === null) {
+        volumeControlSupport = typeof document === 'undefined'
+            ? true
+            : volumeIsSettable(document.createElement('video'));
+    }
+    return volumeControlSupport;
+};
+
+/**
  * What the timeline is scaled by — and therefore what can be dragged against it — in seconds, or
  * `0` when nothing knows how long the video is.
  *
@@ -533,6 +590,8 @@ export default function VideoControlBar({
     const bufferedRatio = scale ? buffered / scale : 0;
     // The gradient stop below, as a whole number: a slider at 0.35 must paint 35% of the track.
     const volumePercent = Math.round((muted ? 0 : volume) * 100);
+    // Cached after the first call, so this is a property read and not a probe per render.
+    const volumeIsControllable = supportsVolumeControl();
     const iconButtonClass = `flex items-center justify-center w-8 h-8 rounded-full text-white
         transition-colors hover:bg-white/20 focus:outline-none focus-visible:ring-2
         focus-visible:ring-white`;
@@ -681,8 +740,9 @@ export default function VideoControlBar({
 
                         <div className="flex-1" />
 
-                        {/* The volume group: the slider is revealed by hover or focus, the way every
-                            player does it, so a bar on a phone is not mostly slider. */}
+                        {/* The volume group. Under a mouse the slider is revealed by hover or
+                            focus, the way every player does it, so the bar is not mostly slider.
+                            A finger has neither: see the two notes on the slider itself. */}
                         <div className="group/volume flex items-center">
                             <button
                                 type="button"
@@ -692,45 +752,65 @@ export default function VideoControlBar({
                             >
                                 <VolumeIcon muted={muted} volume={volume} />
                             </button>
-                            <input
-                                type="range"
-                                min={0}
-                                max={1}
-                                step={0.05}
-                                value={muted ? 0 : volume}
-                                onChange={(e) => changeVolume(Number(e.target.value))}
-                                aria-label={t('video.controls.volume')}
-                                // The filled part of the track, painted by hand. `appearance-none`
-                                // is what stops the browser drawing its own slider — which is the
-                                // point, since the native one cannot be made to look like the rest
-                                // of this bar — but it also takes the *fill* with it, leaving a
-                                // handle sliding along a uniform grey that says nothing about the
-                                // level. `accent-color` cannot put it back either: it only tints
-                                // what the browser draws itself, and never a track that has been
-                                // given a background. Hence a gradient with a hard stop at the
-                                // value, which is the one approach that renders the same in every
-                                // browser. Inline because it is genuinely per-frame runtime data,
-                                // the case Tailwind's JIT cannot see.
-                                style={{
-                                    backgroundImage: `linear-gradient(to right,
-                                        rgb(255 255 255) ${volumePercent}%,
-                                        rgb(255 255 255 / 0.3) ${volumePercent}%)`,
-                                }}
-                                // White rather than the brand colour, and small: the timeline is
-                                // the important slider on this bar and keeps the accent to itself.
-                                className="h-1 w-0 cursor-pointer appearance-none rounded-full bg-white/30
-                                    opacity-0 transition-all group-hover/volume:w-16
-                                    group-hover/volume:opacity-100 focus:w-16 focus:opacity-100
-                                    focus:outline-none focus-visible:ring-2 focus-visible:ring-white
-                                    [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3
-                                    [&::-webkit-slider-thumb]:appearance-none
-                                    [&::-webkit-slider-thumb]:rounded-full
-                                    [&::-webkit-slider-thumb]:bg-white
-                                    [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3
-                                    [&::-moz-range-thumb]:border-0
-                                    [&::-moz-range-thumb]:rounded-full
-                                    [&::-moz-range-thumb]:bg-white"
-                            />
+                            {/* Absent entirely where the platform owns the volume — iOS, where
+                                `el.volume` is read-only and this would drag without being heard.
+                                The mute button above it still works there, and is then the whole
+                                of what the page can do to the sound. */}
+                            {volumeIsControllable && (
+                                <input
+                                    type="range"
+                                    min={0}
+                                    max={1}
+                                    step={0.05}
+                                    value={muted ? 0 : volume}
+                                    onChange={(e) => changeVolume(Number(e.target.value))}
+                                    aria-label={t('video.controls.volume')}
+                                    // The filled part of the track, painted by hand. `appearance-none`
+                                    // is what stops the browser drawing its own slider — which is the
+                                    // point, since the native one cannot be made to look like the rest
+                                    // of this bar — but it also takes the *fill* with it, leaving a
+                                    // handle sliding along a uniform grey that says nothing about the
+                                    // level. `accent-color` cannot put it back either: it only tints
+                                    // what the browser draws itself, and never a track that has been
+                                    // given a background. Hence a gradient with a hard stop at the
+                                    // value, which is the one approach that renders the same in every
+                                    // browser. Inline because it is genuinely per-frame runtime data,
+                                    // the case Tailwind's JIT cannot see.
+                                    style={{
+                                        backgroundImage: `linear-gradient(to right,
+                                            rgb(255 255 255) ${volumePercent}%,
+                                            rgb(255 255 255 / 0.3) ${volumePercent}%)`,
+                                    }}
+                                    // White rather than the brand colour, and small: the timeline is
+                                    // the important slider on this bar and keeps the accent to itself.
+                                    //
+                                    // `[@media(hover:none)]` is the touch case, and it is not styling
+                                    // for its own sake: `w-0` plus `opacity-0` is not a hidden control,
+                                    // it is a control with no tap target, and a finger has no hover to
+                                    // open it with. So where nothing can hover the slider is simply
+                                    // always out. Done in CSS rather than from `primaryPointerCanHover`
+                                    // because it is the same slider either way — there is no behaviour
+                                    // to branch, and a media query costs no state and no re-render.
+                                    // Laid out before first paint, so it does not animate open.
+                                    //
+                                    // It keeps its default `flex-shrink`: at `w-16` on a narrow phone
+                                    // the row is close to full, and a slider that gives up a few pixels
+                                    // is better than a bar that overflows.
+                                    className="h-1 w-0 cursor-pointer appearance-none rounded-full bg-white/30
+                                        opacity-0 transition-all group-hover/volume:w-16
+                                        group-hover/volume:opacity-100 focus:w-16 focus:opacity-100
+                                        [@media(hover:none)]:w-16 [@media(hover:none)]:opacity-100
+                                        focus:outline-none focus-visible:ring-2 focus-visible:ring-white
+                                        [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3
+                                        [&::-webkit-slider-thumb]:appearance-none
+                                        [&::-webkit-slider-thumb]:rounded-full
+                                        [&::-webkit-slider-thumb]:bg-white
+                                        [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3
+                                        [&::-moz-range-thumb]:border-0
+                                        [&::-moz-range-thumb]:rounded-full
+                                        [&::-moz-range-thumb]:bg-white"
+                                />
+                            )}
                         </div>
 
                         <PlayerSettingsMenu

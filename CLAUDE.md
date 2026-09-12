@@ -114,6 +114,20 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   wrong direction — and with native controls gone, ours is the only way to reach PiP at all. The
   volume slider's fill is painted by hand (a gradient with a hard stop): `appearance-none` stops
   the browser drawing the fill, and `accent-color` cannot restore it on a track with a background.
+- **A hover-only affordance does not exist on a phone**, and the two in this app are handled
+  differently on purpose. The volume slider is revealed by hover under a mouse; `w-0 opacity-0` is
+  not a hidden control but a control with no *tap target*, so `[@media(hover:none)]` leaves it
+  permanently out — CSS, because it is the same slider either way and there is no behaviour to
+  branch. `SubscribeButton` changes what a press *does*, which CSS cannot express, so it reads
+  `primaryPointerCanHover()` (`lib/pointer.js`) and arms on the first press instead: hover is
+  already a first step, and on touch that step is made pressable. It expires in 3s — an armed
+  button left armed is a trap for whoever presses it next.
+- **On iOS `HTMLMediaElement.volume` is read-only** — the assignment is accepted, ignored, and
+  reads back unchanged, so a volume slider there drags and is never heard. `volumeIsSettable`
+  probes a detached `<video>` (never the playing one, and never a user-agent string: iPadOS reports
+  itself as a Mac) and the slider is not rendered at all where it fails. `muted` is a separate
+  property and *is* settable, so the mute button stays and is the whole of what the page can do to
+  the sound on that platform.
 - **The settings menu is one level deep, not one flat list**: a root row per setting showing its
   current value («الجودة … تلقائي»), drilling into that setting's options, with toggles (repeat,
   picture-in-picture) on the root. Flat, it was every rung and every speed at once — a dozen rows
@@ -202,7 +216,7 @@ What this app relies on; the mirror lives in the backend's `CLAUDE.md`.
 npm run dev      # localhost:5173, expects the backend on localhost:8080
 npm run build    # ALWAYS before trusting a session's changes
 npm run lint     # must be zero errors
-npm test         # vitest, ~237 tests, node environment, no jsdom
+npm test         # vitest, ~270 tests, node environment, no jsdom
 ```
 
 `VITE_API_BASE_URL` overrides the API host. In dev both CSP env vars fall back to the compose stack,
