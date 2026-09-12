@@ -10,6 +10,21 @@ import { t } from '@/i18n';
 import { musicBadge } from '@/lib/musicReview';
 import { formatCount } from '@/lib/numbers';
 
+/**
+ * One metadata row in the card's left-hand column, and the box its leading glyph sits in.
+ *
+ * <p><b>The glyph box has a width of its own, and that is the whole point.</b> The three rows lead
+ * with three different things — a 20px channel avatar, a 12px series glyph, a 12px calendar — and
+ * left to themselves each label began wherever its own glyph happened to end. Three labels meant
+ * to read as one column started on three different vertical lines, off by the 8px the avatar is
+ * wider, which is exactly the kind of misalignment that looks like nothing in isolation and like
+ * carelessness in a grid of twenty cards. A fixed `w-5` slot with the glyph centred in it makes
+ * the text start one place, whatever is in front of it — and keeps working when a row is absent,
+ * since it is the slot and not the sibling that sets the offset.
+ */
+const META_GLYPH = 'w-5 flex justify-center flex-shrink-0';
+const META_ROW = 'flex items-center gap-1.5 text-xs max-w-full';
+
 function getThumbnail(video) {
     if (video.thumbnailUrl) {
         // Returns null for an object key — an uploaded video has no thumbnail until a
@@ -186,7 +201,7 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                             <button
                                 onClick={(e) => { e.stopPropagation(); navigate(`/channel/${channel.slug}`); }}
                                 aria-label={t('video.goToChannelAria', { name: channel.name })}
-                                className="flex items-center gap-1.5 text-xs text-text-secondary hover:text-primary transition-colors max-w-full"
+                                className={`${META_ROW} text-text-secondary hover:text-primary transition-colors`}
                             >
                                 <Avatar src={resolveMediaUrl(channel.logoUrl)} name={channel.name} size="sm" className="!w-5 !h-5 !text-[0.65rem] flex-shrink-0" />
                                 <span className="truncate">{channel.name}</span>
@@ -199,9 +214,9 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                             <button
                                 onClick={(e) => { e.stopPropagation(); navigate(`/series/${video.seriesId}`); }}
                                 title={t('series.partOf', { title: video.seriesTitle })}
-                                className="flex items-center gap-1 text-xs text-text-muted hover:text-primary transition-colors max-w-full"
+                                className={`${META_ROW} text-text-muted hover:text-primary transition-colors`}
                             >
-                                <Tv size={12} className="flex-shrink-0" />
+                                <span className={META_GLYPH}><Tv size={12} /></span>
                                 <span className="truncate">{video.seriesTitle}</span>
                             </button>
                         )}
@@ -211,8 +226,8 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                             above it. `displayDate` prefers originalPublishDate when there is
                             one; see lib/dayjsAr. */}
                         {displayDate(video) && (
-                            <div className="flex items-center gap-1 text-xs text-text-muted">
-                                <Calendar size={12} className="flex-shrink-0" />
+                            <div className={`${META_ROW} text-text-muted`}>
+                                <span className={META_GLYPH}><Calendar size={12} /></span>
                                 <span className="truncate">{formatPublishDate(displayDate(video))}</span>
                             </div>
                         )}
@@ -230,10 +245,17 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
 
                         Read-only here, deliberately not a toggle: the card has no per-viewer
                         `liked` state (VideoDTO carries the public count only), and giving every
-                        card one would mean a status request per card on every feed page. */}
+                        card one would mean a status request per card on every feed page.
+
+                        `text-start`, not `text-end`: the three lines are different lengths, so
+                        whichever edge is not aligned is ragged — and end-aligned put the ragged
+                        edge at the START, which in RTL is the edge the eye lands on first. The
+                        three numbers, the only part anyone is scanning for, stepped inward one
+                        after another. Aligning at the start puts them on one vertical line and
+                        moves the raggedness to the far edge, where nothing is being compared. */}
                     {(video.viewCount != null || video.commentCount != null
                         || video.likeCount != null) && (
-                        <div className="flex-shrink-0 text-xs text-text-muted space-y-1 whitespace-nowrap text-end">
+                        <div className="flex-shrink-0 text-xs text-text-muted space-y-1 whitespace-nowrap text-start">
                             {video.viewCount != null && <div>{t('common.views', { count: formatCount(video.viewCount) })}</div>}
                             {video.commentCount != null && <div>{t('common.commentCount', { count: formatCount(video.commentCount) })}</div>}
                             {video.likeCount != null && <div>{t('likes.count', { count: formatCount(video.likeCount) })}</div>}
