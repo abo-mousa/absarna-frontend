@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { watchThreshold } from '@/components/content/VideoPlayer';
+import { watchThreshold } from '@/lib/player/playback';
 
 /**
  * The arithmetic behind "the video is never added to my watch history".

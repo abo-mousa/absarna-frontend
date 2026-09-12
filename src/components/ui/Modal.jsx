@@ -29,13 +29,28 @@ function Modal({ open, onClose, title, children, maxWidth = '800px' }) {
 
     useFocusTrap(open, dialogRef, onClose);
 
+    // A click closes only if the gesture BOTH started and ended on the backdrop. `click` fires on
+    // mouse-UP, so selecting text in a field, dragging past the dialog's edge and releasing over
+    // the backdrop used to close the modal and throw away whatever had been typed — reliably
+    // annoying on a form-heavy screen like ChannelManage. Tracking where the press began is the
+    // whole fix, and it makes the inner stopPropagation unnecessary: the dialog is never
+    // `currentTarget` here, so a click inside it cannot satisfy the second half of the condition.
+    const pressStartedOnBackdrop = useRef(false);
+
     if (!rendered) return null;
 
     return (
         <div
             className={`fixed inset-0 bg-black/50 z-[2000] flex items-center justify-center p-4
                 transition-opacity duration-200 ${visible ? 'opacity-100' : 'opacity-0'}`}
-            onClick={onClose}
+            onMouseDown={(e) => {
+                pressStartedOnBackdrop.current = e.target === e.currentTarget;
+            }}
+            onClick={(e) => {
+                if (pressStartedOnBackdrop.current && e.target === e.currentTarget) {
+                    onClose?.();
+                }
+            }}
         >
             <div
                 ref={dialogRef}
@@ -46,7 +61,6 @@ function Modal({ open, onClose, title, children, maxWidth = '800px' }) {
                 className={`bg-surface rounded-xl w-full max-h-[90vh] overflow-auto shadow-lg outline-none
                     transition-all duration-200 ${visible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
                 style={{ maxWidth }}
-                onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex justify-between items-center p-6 border-b border-border-light">
                     <h3 id={titleId} className="m-0">{title}</h3>

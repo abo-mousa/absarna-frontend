@@ -229,9 +229,14 @@ function AppRoutes() {
                 {/* adminOnly here mirrors @PreAuthorize("hasRole('PLATFORM_ADMIN')") on the
                     backend. The route guard only hides the screen; the endpoint is what actually
                     refuses, which is the half that matters. */}
-                <Route path="/admin/music-review" element={
+                <Route path="/admin/review" element={
                     <ProtectedRoute adminOnly><AdminReview /></ProtectedRoute>
                 } />
+                {/* The old path, kept as a redirect rather than deleted. The page reviews every
+                    detector now and the URL said music; renaming it without this would 404 an
+                    admin's bookmark, on the one screen whose whole job is that held uploads do not
+                    sit unseen. */}
+                <Route path="/admin/music-review" element={<Navigate to="/admin/review" replace />} />
                 <Route path="/create-channel" element={
                     <ProtectedRoute><CreateChannel /></ProtectedRoute>
                 } />

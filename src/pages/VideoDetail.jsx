@@ -9,7 +9,7 @@ import { useChannel } from '../hooks/useChannels';
 import { useSeriesDetail, useSeriesNeighbours } from '../hooks/useSeries';
 import { useAuth } from '../contexts/AuthContext';
 import { canManageChannel } from '@/lib/user';
-import { musicNotice } from '@/lib/musicReview';
+import { ownerNotices } from '@/lib/review';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { resolveMediaUrl, youtubeThumbnail } from '@/lib/media';
 import { formatPublishDate, displayDate } from '@/lib/dayjsAr';
@@ -109,11 +109,15 @@ function VideoDetail() {
         // changes it, and it is the one number here that updates without a reload.
     ].filter(Boolean).join(' · ');
 
-    // The backend does not send musicReview to anyone but the channel's manager or a platform
-    // admin (MusicReviewService.attachOwnerVerdicts), so this check is a second lock on a door
-    // the server already holds shut -- which is the right shape for a disclosure rule, and means
-    // neither side can leak it alone.
-    const music = musicNotice(video, canManageChannel(user, channel));
+    // The backend does not send `review` to anyone but the channel's manager or a platform admin
+    // (ReviewAttacher.attachOwnerVerdicts), so this check is a second lock on a door the server
+    // already holds shut -- which is the right shape for a disclosure rule, and means neither side
+    // can leak it alone.
+    //
+    // A LIST, worst first. A video can be held for music and noted for explicit content at once,
+    // and those are two different things to do something about; the old single music notice could
+    // not express the question.
+    const notices = ownerNotices(video, canManageChannel(user, channel));
 
     return (
         <PageShell sidebar={false}>
@@ -123,19 +127,20 @@ function VideoDetail() {
                     and gone from every listing, and nothing else on this page would say why.
                     There is no notification channel in this design -- re-fetching is the only way
                     an owner learns anything -- so this notice is the entire mechanism. */}
-                {music && (
+                {notices.map((notice) => (
                     <div
+                        key={notice.type}
                         role="status"
                         className={`mb-6 rounded-lg border p-4 text-sm ${
-                            music.tone === 'warning'
+                            notice.tone === 'warning'
                                 ? 'border-amber-300 bg-amber-50 text-amber-900'
                                 : 'border-border-light bg-surface-muted text-text-secondary'
                         }`}
                     >
-                        <p className="font-semibold mb-1">{music.title}</p>
-                        <p className="leading-relaxed">{music.body}</p>
+                        <p className="font-semibold mb-1">{notice.title}</p>
+                        <p className="leading-relaxed">{notice.body}</p>
                     </div>
-                )}
+                ))}
                 <div className="bg-surface rounded-lg overflow-hidden border border-border-light shadow-sm mb-6">
                     {historyLoading ? (
                         // Holds the player back until we know the real resume point — the

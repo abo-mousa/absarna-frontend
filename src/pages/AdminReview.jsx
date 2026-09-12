@@ -9,7 +9,7 @@ import { usePageMeta } from '../hooks/usePageMeta';
 import { useReviewQueue, useDecideReview } from '../hooks/useReview';
 import { REVIEW_STATE, REVIEW_TYPE, findingRow, groupByType } from '@/lib/review';
 import { resolveMediaUrl } from '@/lib/media';
-import { t } from '@/i18n';
+import { t, tOptional } from '@/i18n';
 
 // Which states read as a problem. HELD and REJECTED hide the video; ADVISORY and UNCHECKED are a
 // backlog on videos that are published and playing. Rendering all four in red would train a
@@ -26,6 +26,19 @@ const BADGE_VARIANT = {
 };
 
 const TABS = [REVIEW_TYPE.MUSIC, REVIEW_TYPE.NUDITY];
+
+// Per tab: a music note on the explicit-content queue described the wrong thing entirely.
+const EMPTY_ICON = {
+    [REVIEW_TYPE.MUSIC]: '🎵',
+    [REVIEW_TYPE.NUDITY]: '🛡️',
+};
+
+// The wire enum is English and the UI is Arabic. tOptional, not t: t() returns the KEY when a
+// string is missing, so an unrecognised state a newer backend sends would render
+// "admin.review.states.whatever" on screen. Falling back to the raw value keeps it readable and
+// keeps the row visible to whoever is looking at the queue.
+const stateLabel = (state) =>
+    state ? (tOptional(`admin.review.states.${String(state).toLowerCase()}`) ?? state) : '';
 
 /**
  * The music review queue: listen to what the detector found, then clear or reject.
@@ -117,15 +130,21 @@ function AdminReview() {
                 {/* One tab per detector. Each carries its own backlog count, because "how big is
                     the queue" is a different question for each -- and because a tab whose count
                     is only visible after clicking it is a queue that stops being read. */}
-                <div className="flex flex-wrap gap-2 mb-6" role="tablist">
+                {/* Plain buttons with aria-pressed, NOT role="tablist"/role="tab". Those roles
+                    promise the ARIA tabs keyboard pattern -- arrow-key navigation, a roving
+                    tabIndex, aria-controls pointing at a role="tabpanel" -- and none of it was
+                    implemented. A screen reader then announces "tab 1 of 2" and the arrow keys do
+                    nothing, which is worse than no semantics at all: it asserts an interaction
+                    model that is not there. Two toggle buttons over a normal page region is what
+                    this actually is, and aria-pressed describes it honestly. */}
+                <div className="flex flex-wrap gap-2 mb-6">
                     {TABS.map((type) => {
                         const count = depth[type] ?? 0;
                         const active = type === tab;
                         return (
                             <button
                                 key={type}
-                                role="tab"
-                                aria-selected={active}
+                                aria-pressed={active}
                                 onClick={() => setTab(type)}
                                 className={`px-4 py-2 rounded-lg border text-sm font-semibold transition-colors ${
                                     active
@@ -151,7 +170,7 @@ function AdminReview() {
                     error={error}
                     onRetry={refetch}
                     isEmpty={rows.length === 0}
-                    emptyIcon="🎵"
+                    emptyIcon={EMPTY_ICON[tab] ?? '📭'}
                     emptyTitle={t('admin.review.empty')}
                     emptyDescription={t('admin.review.emptyDescription')}
                 >
@@ -174,7 +193,7 @@ function AdminReview() {
                                                 {row.title}
                                             </span>
                                             <Badge variant={BADGE_VARIANT[row.state] ?? 'muted'}>
-                                                {row.state}
+                                                {stateLabel(row.state)}
                                             </Badge>
                                         </div>
                                         <p className="text-xs text-text-secondary">

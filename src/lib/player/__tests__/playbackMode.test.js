@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { playbackMode } from '@/components/content/VideoPlayer';
+import { playbackMode } from '@/lib/player/playback';
 
 /**
  * Which player drives a given playback URL — the one decision in VideoPlayer whose failure is

@@ -7,7 +7,7 @@ import { useChannel } from '@/hooks/useChannels';
 import Avatar from '../ui/Avatar';
 import SourceBadge from './SourceBadge';
 import { t } from '@/i18n';
-import { musicBadge } from '@/lib/musicReview';
+import { ownerBadge } from '@/lib/review';
 import { formatCount } from '@/lib/numbers';
 
 /**
@@ -51,9 +51,10 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
     const thumbnail = thumbnailFailed ? null : getThumbnail(video);
     const watchedPercent = getWatchedPercent(video, watchedSeconds);
     // Null for everyone but the owner, and null for the owner too unless there is a verdict worth
-    // showing. The backend does not send musicReview to a stranger at all, so this is the second
-    // lock on that door rather than the only one.
-    const music = musicBadge(video, isOwner);
+    // showing. The backend does not send `review` to a stranger at all, so this is the second lock
+    // on that door rather than the only one. One badge -- the most serious -- because two on a
+    // thumbnail is a layout problem and a reading problem; the page behind it lists every finding.
+    const music = ownerBadge(video, isOwner);
     const { data: channel } = useChannel(video.channelId, showChannel && !!video.channelId);
 
     // Nested icon buttons (visibility/delete/channel) already stopPropagation on click; for

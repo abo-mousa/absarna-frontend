@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
     DECISIONS, REVIEW_STATE, REVIEW_TYPE, detailOf, findingRow, groupByType, holdsVideo,
+    ownerBadge, ownerNotices,
 } from '../review';
+import { ar } from '@/i18n/ar';
 
 describe('which states hide a video', () => {
     it('only HELD and REJECTED hide it', () => {
@@ -108,5 +110,166 @@ describe('grouping for the sub-tabs', () => {
     it('always returns a bucket per type, so a tab can render an empty state', () => {
         const grouped = groupByType([]);
         expect(Object.keys(grouped).sort()).toEqual([REVIEW_TYPE.MUSIC, REVIEW_TYPE.NUDITY].sort());
+    });
+});
+
+/**
+ * What an owner is told about their own video — the last step of a rule that starts in
+ * absarna-worker and ends here.
+ *
+ * <p><b>This notice IS the notification mechanism.</b> A held video is READY, visible, and
+ * reachable by nobody, and there is no email or SSE channel anywhere in this design, so if this
+ * renders nothing the owner's only evidence is that their upload silently vanished.
+ *
+ * <p>Two things make it worth testing rather than eyeballing. Only two of the four states shown
+ * actually hide a video, and flattening that into "there is a problem" would tell owners their
+ * published video is gone. And it is per DETECTOR now: a video can be held for music and noted
+ * for explicit content at once, which the music-only notice it replaced could not express.
+ */
+describe('what an owner is told', () => {
+    const heldForMusic = {
+        review: [{ type: 'MUSIC', state: REVIEW_STATE.HELD, spans: [{ start: 12, end: 31.2 }] }],
+    };
+
+    it('tells the owner of a held video that it is held, and where the music is', () => {
+        const [notice] = ownerNotices(heldForMusic, true);
+
+        expect(notice.hidden).toBe(true);
+        expect(notice.tone).toBe('warning');
+        expect(notice.title).toBe(ar.video.review.music.held.title);
+        // The timestamps are the actionable half -- "held for review" alone gives the owner
+        // nothing to go and check.
+        expect(notice.body).toContain('0:12–0:31');
+        expect(notice.body).not.toContain('{spans}');
+    });
+
+    it('falls back to the span-less wording when there are no usable spans', () => {
+        // UNCHECKED carries no spans at all by construction, and a malformed detail reaches here
+        // as an empty list. Neither may leave a literal {spans} on the page.
+        const [notice] = ownerNotices(
+            { review: [{ type: 'MUSIC', state: REVIEW_STATE.HELD, spans: [] }] }, true);
+
+        expect(notice.body).toBe(ar.video.review.music.held.body);
+        expect(notice.body).not.toContain('{spans}');
+    });
+
+    it('says nothing to anyone who is not the owner', () => {
+        // The backend does not send `review` to a stranger at all, so this is the second lock on
+        // that door. A CLEARED video is fully public, and announcing on it that it was once
+        // moderated is a disclosure nobody asked for.
+        expect(ownerNotices(heldForMusic, false)).toEqual([]);
+    });
+
+    it('says nothing about a clean, cleared, or never-scanned video', () => {
+        // Empty is the answer for almost every video on the platform: everything that never
+        // entered the upload pipeline was never scanned and never will be.
+        expect(ownerNotices({ review: [] }, true)).toEqual([]);
+        expect(ownerNotices({}, true)).toEqual([]);
+        expect(ownerNotices(null, true)).toEqual([]);
+        expect(ownerNotices(
+            { review: [{ type: 'MUSIC', state: REVIEW_STATE.CLEAN }] }, true)).toEqual([]);
+        expect(ownerNotices(
+            { review: [{ type: 'MUSIC', state: REVIEW_STATE.CLEARED }] }, true)).toEqual([]);
+    });
+
+    it('does not dress a published video as a blocked one', () => {
+        // The asymmetry that matters most. A MUSIC advisory or unfinished scan is a note on a
+        // video that is playing normally; rendering it in the same alarming tone as HELD would
+        // train owners to ignore the tone entirely, which is exactly when the one that matters
+        // arrives.
+        for (const state of [REVIEW_STATE.ADVISORY, REVIEW_STATE.UNCHECKED]) {
+            const [notice] = ownerNotices({ review: [{ type: 'MUSIC', state }] }, true);
+            expect(notice.hidden).toBe(false);
+            expect(notice.tone).toBe('info');
+        }
+    });
+
+    it('tells the owner of an unscanned explicit-content video that it is HIDDEN', () => {
+        // The fail-open/fail-closed asymmetry, in the one place an owner meets it. The same
+        // UNCHECKED state publishes for music and hides for nudity, so the music wording -- which
+        // opens by saying the video is published -- would be false here in the direction that
+        // matters most: the owner would go looking for a video nobody can see.
+        const [notice] = ownerNotices(
+            { review: [{ type: 'NUDITY', state: REVIEW_STATE.UNCHECKED }] }, true);
+
+        expect(notice.body).toBe(ar.video.review.nudity.unchecked.body);
+        expect(notice.body).not.toContain('منشور');
+    });
+
+    it('reports one notice per detector, worst first', () => {
+        // The thing one column per video could not express. Order matters because the first
+        // notice is the one read: "your video is hidden" outranks "we have made a note".
+        const notices = ownerNotices({
+            review: [
+                { type: 'MUSIC', state: REVIEW_STATE.ADVISORY },
+                { type: 'NUDITY', state: REVIEW_STATE.HELD },
+            ],
+        }, true);
+
+        expect(notices.map((n) => n.type)).toEqual(['NUDITY', 'MUSIC']);
+        expect(notices[0].hidden).toBe(true);
+    });
+
+    it('has a real string for every type and state it can show', () => {
+        // t() returns the key itself when there is no string for it, so a missing translation is
+        // a dotted key rendered on the page rather than a crash. This is what catches it.
+        for (const type of Object.values(REVIEW_TYPE)) {
+            for (const state of [REVIEW_STATE.HELD, REVIEW_STATE.REJECTED, REVIEW_STATE.ADVISORY,
+                REVIEW_STATE.UNCHECKED]) {
+                const [notice] = ownerNotices(
+                    { review: [{ type, state, spans: [{ start: 1, end: 2 }] }] }, true);
+                expect(notice.title).not.toContain('video.review');
+                expect(notice.body).not.toContain('video.review');
+            }
+        }
+    });
+});
+
+describe('the badge on a card', () => {
+    it('gives a card two words and no reason', () => {
+        // A grid of the owner's own videos is the one place several of these appear at once, and
+        // "music at 0:12–0:31" repeated down a column is noise. The badge says which video to
+        // open; the detail page says why.
+        const badge = ownerBadge(
+            { review: [{ type: 'MUSIC', state: REVIEW_STATE.HELD }] }, true);
+
+        expect(badge.label).toBe(ar.video.review.music.held.badge);
+        expect(badge.hidden).toBe(true);
+    });
+
+    it('shows the most serious finding when there are two', () => {
+        // One badge, not two: two on a thumbnail is a layout problem and a reading problem.
+        const badge = ownerBadge({
+            review: [
+                { type: 'MUSIC', state: REVIEW_STATE.ADVISORY },
+                { type: 'NUDITY', state: REVIEW_STATE.REJECTED },
+            ],
+        }, true);
+
+        expect(badge.label).toBe(ar.video.review.nudity.rejected.badge);
+        expect(badge.hidden).toBe(true);
+    });
+
+    it('marks a published-but-noted video as not hidden', () => {
+        expect(ownerBadge({ review: [{ type: 'MUSIC', state: REVIEW_STATE.ADVISORY }] }, true)
+            .hidden).toBe(false);
+    });
+
+    it('is absent for strangers, cleared videos and unscanned ones', () => {
+        expect(ownerBadge({ review: [{ type: 'MUSIC', state: REVIEW_STATE.HELD }] }, false))
+            .toBeNull();
+        expect(ownerBadge({ review: [{ type: 'MUSIC', state: REVIEW_STATE.CLEARED }] }, true))
+            .toBeNull();
+        expect(ownerBadge({}, true)).toBeNull();
+    });
+
+    it('has a real string for every type and state it can show', () => {
+        for (const type of Object.values(REVIEW_TYPE)) {
+            for (const state of [REVIEW_STATE.HELD, REVIEW_STATE.REJECTED, REVIEW_STATE.ADVISORY,
+                REVIEW_STATE.UNCHECKED]) {
+                expect(ownerBadge({ review: [{ type, state }] }, true).label)
+                    .not.toContain('video.review');
+            }
+        }
     });
 });

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { PLAYBACK_SPEEDS, qualityOptions, sanitizeRate } from '@/components/content/VideoPlayer';
+import { PLAYBACK_SPEEDS, sanitizeRate } from '@/lib/player/rate';
+import { qualityOptions } from '@/lib/player/quality';
 
 /**
  * What the player's settings menu offers, and what it accepts back.

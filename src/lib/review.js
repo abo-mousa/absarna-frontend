@@ -1,12 +1,12 @@
 import { t } from '@/i18n';
-import { formatSpan, seekTargetFor } from '@/lib/musicReview';
+import { formatSpan, formatSpans, seekTargetFor } from '@/lib/spans';
 
 // The moderation queue across every detector, not just music.
 //
 // The unit here is a FINDING, not a video: a video can carry a music verdict and an
 // explicit-content verdict at once, and a reviewer may legitimately clear one and reject the
-// other. lib/musicReview.js stays for the owner-facing notice on a video page, which is still
-// music-only; this file is the reviewer's side.
+// other. This file holds both sides of that: the reviewer's queue, and the owner-facing notice on
+// their own video page. lib/spans.js underneath it is pure formatting and knows about neither.
 
 export const REVIEW_TYPE = {
     MUSIC: 'MUSIC',
@@ -29,7 +29,7 @@ export const REVIEW_STATE = {
     REJECTED: 'REJECTED',
 };
 
-// The two that keep a video off the platform. Same asymmetry lib/musicReview documents: rendering
+// The two that keep a video off the platform. Rendering
 // all four as alarming would train reviewers to ignore all four.
 const HIDING = new Set([REVIEW_STATE.HELD, REVIEW_STATE.REJECTED]);
 
@@ -135,4 +135,90 @@ export const groupByType = (rows) => {
         if (row && grouped[row.type]) grouped[row.type].push(row);
     }
     return grouped;
+};
+
+
+// ------------------------------------------------------------------- the OWNER's side of a finding
+
+// What the owner is told about, and what is silently nothing. CLEAN is a detector that ran and
+// found nothing; CLEARED is a human who looked and said it is fine. Neither is the owner's
+// business any more, and surfacing them would teach owners that a notice means nothing.
+const OWNER_VISIBLE = new Set([
+    REVIEW_STATE.HELD,
+    REVIEW_STATE.REJECTED,
+    REVIEW_STATE.ADVISORY,
+    REVIEW_STATE.UNCHECKED,
+]);
+
+// Worst first, so a card's single badge and a page's first notice both describe the thing that
+// actually happened to the video rather than whichever detector the backend listed first.
+const SEVERITY = [
+    REVIEW_STATE.REJECTED,
+    REVIEW_STATE.HELD,
+    REVIEW_STATE.ADVISORY,
+    REVIEW_STATE.UNCHECKED,
+];
+
+/**
+ * What to tell this viewer about this video's moderation, worst first — or an empty list.
+ *
+ * <p>Empty is the answer for almost every call: an unscanned video, a clean one, a cleared one,
+ * and anybody who is not the owner. <b>The backend does not send `review` to a stranger at all</b>
+ * (ReviewAttacher.attachOwnerVerdicts), so the isOwner check here is a second lock on the same
+ * door rather than the only one — which is the right shape for a disclosure rule, because neither
+ * side can leak it alone.
+ *
+ * <p><b>One notice per FINDING, not one per video.</b> A video can be held for music and noted for
+ * explicit content at the same time, and those are two different things to do something about.
+ * Collapsing them would tell the owner about one problem and hide the other; the old music-only
+ * notice could not express the question at all.
+ *
+ * <p>Replaced `musicNotice`, which read `video.musicReview` — a column that no longer exists.
+ */
+export const ownerNotices = (video, isOwner) => {
+    if (!isOwner || !Array.isArray(video?.review)) return [];
+    return video.review
+        .filter((finding) => OWNER_VISIBLE.has(finding?.state))
+        .slice()
+        .sort((a, b) => SEVERITY.indexOf(a.state) - SEVERITY.indexOf(b.state))
+        .map((finding) => {
+            const spans = formatSpans(finding.spans);
+            const hidden = holdsVideo(finding.state);
+            const key = `video.review.${String(finding.type).toLowerCase()}`
+                + `.${String(finding.state).toLowerCase()}`;
+            return {
+                type: finding.type,
+                state: finding.state,
+                hidden,
+                // `warning` for the states that hide the video and `info` for the ones that do
+                // not. The tone is load-bearing, not decorative: one of these means "nobody can
+                // see your video" and the other means "we have made a note". Rendering both in
+                // red would train owners to ignore both.
+                tone: hidden ? 'warning' : 'info',
+                title: t(`${key}.title`),
+                body: spans ? t(`${key}.bodyWithSpans`, { spans: spans.text }) : t(`${key}.body`),
+                spans,
+            };
+        });
+};
+
+/**
+ * The one badge for a card in a grid, or null.
+ *
+ * <p>Separate from {@link ownerNotices} because a card has room for two words and a detail page
+ * has room for a sentence — and because a card must not carry the reason. A grid of the owner's
+ * own videos is the one place the platform shows several of these at once, and "music at
+ * 0:12–0:31" repeated down a column is noise; the badge says which video to open.
+ *
+ * <p><b>One badge, the most serious.</b> Two badges on a thumbnail is a layout problem and a
+ * reading problem; the page behind it lists every finding.
+ */
+export const ownerBadge = (video, isOwner) => {
+    const worst = ownerNotices(video, isOwner)[0];
+    if (!worst) return null;
+    return {
+        hidden: worst.hidden,
+        label: t(`video.review.${String(worst.type).toLowerCase()}`
+            + `.${String(worst.state).toLowerCase()}.badge`),
+    };
 };

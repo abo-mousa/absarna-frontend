@@ -43,8 +43,8 @@ function Admin() {
                         {/* A held video is an upload nobody can see until someone opens this
                             screen, so the way in sits beside the channel queue rather than
                             behind a URL an admin has to remember. */}
-                        <Link to="/admin/music-review" className="px-5 py-2.5 bg-surface-hover border border-border rounded-md font-semibold">
-                            {t('admin.musicReview.title')}
+                        <Link to="/admin/review" className="px-5 py-2.5 bg-surface-hover border border-border rounded-md font-semibold">
+                            {t('admin.review.title')}
                         </Link>
                         <Link to="/admin/channels" className="px-5 py-2.5 bg-primary text-white rounded-md font-semibold">
                             {t('admin.manageChannels')}

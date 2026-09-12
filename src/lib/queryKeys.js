@@ -70,7 +70,6 @@ export const queryKeys = {
     // Platform-admin only, and user-scoped like everything else here: the queue is a list of
     // videos nobody else may even see, so a cache surviving a logout would be the worst possible
     // leak of exactly the rows the whole feature exists to hide.
-    musicReview: (reviews, scope) => ['music-review', reviews, scope],
     // Keyed by TYPE so the two sub-tabs cache separately -- switching between them
     // must not serve the other's rows from cache while its own request is in flight.
     review: (type, states, scope) => ['review', type, states, scope],

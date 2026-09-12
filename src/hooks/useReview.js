@@ -6,12 +6,12 @@ import { useUserScope } from './useUserScope';
 /**
  * The moderation queue across every detector — platform admin only.
  *
- * Supersedes useMusicReview, which is kept until the last caller moves: the backend serves both
- * endpoints so the two repos never have to deploy together. The difference is the unit. This one
- * pages over FINDINGS, so a video flagged for music and for explicit content appears once under
- * each type — which is the point, because a reviewer may clear one and reject the other.
+ * Replaced useMusicReview and /api/music-review, which paged over VIDEOS. The difference is the
+ * unit: this pages over FINDINGS, so a video flagged for music and for explicit content appears
+ * once under each type — which is the point, because a reviewer may clear one and reject the
+ * other, and one row per video cannot hold two opinions.
  *
- * Platform-scoped rather than channel-scoped, like the music queue: the backend refuses it to a
+ * Platform-scoped rather than channel-scoped: the backend refuses it to a
  * channel owner, because letting an uploader clear their own upload would make the rule advisory
  * in the one case it exists for.
  *
@@ -42,8 +42,8 @@ export const useReviewQueue = (type = null, states = null, enabled = true) => {
 /**
  * Clear or reject ONE detector's finding.
  *
- * Per type, which is the whole reason this exists beside the music endpoint: clearing a video's
- * music says nothing about whether its explicit-content finding is acceptable.
+ * Per type, which is the whole reason the unit is a finding rather than a video: clearing a
+ * video's music says nothing about whether its explicit-content finding is acceptable.
  *
  * Only CLEARED and REJECTED are accepted — see DECISIONS in lib/review. Both are final as far as
  * the pipeline is concerned: the worker replays a completed result for 24 h and a re-transcode
@@ -57,11 +57,11 @@ export const useDecideReview = () => {
             return res.data;
         },
         onSuccess: (_data, { videoId }) => {
-            // Both queues by prefix, so every filter view refreshes rather than only the one that
-            // happened to be open — and the music queue too, because a MUSIC decision here also
-            // writes videos.music_review and the old tab would otherwise show a stale verdict.
+            // By PREFIX, so every filter view refreshes rather than only the one that happened to
+            // be open. The companion invalidation of ['music-review'] went with the endpoint: a
+            // MUSIC decision used to dual-write videos.music_review, and the old tab would
+            // otherwise have shown a verdict this one had already changed.
             queryClient.invalidateQueries({ queryKey: ['review'] });
-            queryClient.invalidateQueries({ queryKey: ['music-review'] });
             // And the video, because a decision changes whether the public can see it at all: a
             // DTO cached from before would show the owner a notice on a video that is now
             // published.

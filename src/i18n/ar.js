@@ -326,41 +326,22 @@ export const ar = {
         // Shown only to the channel's owner, on a video whose transcode has not finished. See
         // VideoCard — nobody else can see such a video at all.
         processing: 'جاري المعالجة',
-        // Music moderation, and every one of these is owner-facing only. Absarna is an Islamic
-        // platform and music is not published on it; the detector lives in absarna-worker.
+        // WHAT AN OWNER IS TOLD ABOUT THEIR OWN VIDEO, per detector and per state.
         //
-        // TWO OF THESE FOUR MEAN THE VIDEO IS HIDDEN AND TWO DO NOT, and the wording has to carry
-        // that difference. `held` and `rejected` are the ones where the owner's video has
-        // disappeared from the platform — with no message at all that is indistinguishable from a
+        // Owner-facing only: the backend does not send `review` to anyone else. Keyed by TYPE
+        // first because the two detectors are not the same conversation -- "we found music" and
+        // "this may contain explicit scenes" need different words, and one shared sentence would
+        // serve neither. It replaced a music-only `musicReview` block that could not say the
+        // second thing at all.
+        //
+        // TWO OF THESE FOUR STATES MEAN THE VIDEO IS HIDDEN AND TWO DO NOT, and the wording has to
+        // carry that difference. `held` and `rejected` are the ones where the owner's video has
+        // disappeared from the platform -- with no message at all that is indistinguishable from a
         // bug, and this design has no notification channel, so these strings are the entire
         // mechanism by which they are ever told. `advisory` and `unchecked` are notes on a video
         // that is published and playing normally; wording them like a problem would make owners
         // think something is wrong when nothing is.
-        musicReview: {
-            held: {
-                badge: 'قيد المراجعة',
-                // Shown to the REVIEWER, not the owner: why this row is in the queue.
-                queueReason: 'رُصدت موسيقى. الفيديو محجوب عن الزوار حتى تتخذ قرارًا.',
-                title: 'هذا الفيديو قيد المراجعة',
-                body: 'رصدنا موسيقى في الصوت، ولن يظهر الفيديو للزوار حتى يراجعه أحد المشرفين.',
-                bodyWithSpans: 'رصدنا موسيقى في الصوت عند {spans}، ولن يظهر الفيديو للزوار حتى يراجعه أحد المشرفين.',
-            },
-            rejected: {
-                badge: 'مرفوض',
-                queueReason: 'تم رفض هذا الفيديو سابقًا.',
-                title: 'تم رفض هذا الفيديو',
-                body: 'راجع أحد المشرفين الفيديو ووجد فيه موسيقى، فلن يظهر للزوار. يمكنك رفع نسخة أخرى بدون موسيقى.',
-                bodyWithSpans: 'راجع أحد المشرفين الفيديو ووجد فيه موسيقى عند {spans}، فلن يظهر للزوار. يمكنك رفع نسخة أخرى بدون موسيقى.',
-            },
-            advisory: {
-                badge: 'ملاحظة',
-                queueReason: 'قد تكون هناك موسيقى خلفية. الفيديو منشور بالفعل.',
-                // Deliberately opens by saying the video is published. It is, and the owner's
-                // first question on seeing any notice at all is whether it still is.
-                title: 'الفيديو منشور، مع ملاحظة',
-                body: 'قد تكون هناك موسيقى خلفية في الصوت. الفيديو منشور ويعمل بشكل طبيعي، وسيلقي أحد المشرفين نظرة عليه.',
-                bodyWithSpans: 'قد تكون هناك موسيقى خلفية في الصوت عند {spans}. الفيديو منشور ويعمل بشكل طبيعي، وسيلقي أحد المشرفين نظرة عليه.',
-            },
+        review: {
             // The tail of a truncated span list, and part of that list's own phrase -- NOT a
             // sentence of its own. It used to render as a separate paragraph after the body had
             // already finished, leaving «و5 مواضع أخرى.» hanging with nothing to attach to.
@@ -370,14 +351,66 @@ export const ar = {
             // realistically covers (the list is capped at three, so the remainder is small).
             moreSpansOne: 'وموضع آخر',
             moreSpans: 'و{count} مواضع أخرى',
-            unchecked: {
-                badge: 'لم يُفحص',
-                queueReason: 'تعذّر إكمال الفحص التلقائي. الفيديو منشور بالفعل.',
-                title: 'الفيديو منشور، ولم يكتمل فحص الصوت',
-                // Says what happened without blaming the video: nothing is wrong with it, the
-                // check itself did not finish.
-                body: 'تعذّر إكمال فحص الصوت تلقائيًا. الفيديو منشور ويعمل بشكل طبيعي، وسيراجعه أحد المشرفين.',
-                bodyWithSpans: 'تعذّر إكمال فحص الصوت تلقائيًا. الفيديو منشور ويعمل بشكل طبيعي، وسيراجعه أحد المشرفين.',
+            music: {
+                held: {
+                    badge: 'قيد المراجعة',
+                    title: 'هذا الفيديو قيد المراجعة',
+                    body: 'رصدنا موسيقى في الصوت، ولن يظهر الفيديو للزوار حتى يراجعه أحد المشرفين.',
+                    bodyWithSpans: 'رصدنا موسيقى في الصوت عند {spans}، ولن يظهر الفيديو للزوار حتى يراجعه أحد المشرفين.',
+                },
+                rejected: {
+                    badge: 'مرفوض',
+                    title: 'تم رفض هذا الفيديو',
+                    body: 'راجع أحد المشرفين الفيديو ووجد فيه موسيقى، فلن يظهر للزوار. يمكنك رفع نسخة أخرى بدون موسيقى.',
+                    bodyWithSpans: 'راجع أحد المشرفين الفيديو ووجد فيه موسيقى عند {spans}، فلن يظهر للزوار. يمكنك رفع نسخة أخرى بدون موسيقى.',
+                },
+                advisory: {
+                    badge: 'ملاحظة',
+                    // Deliberately opens by saying the video is published. It is, and the owner's
+                    // first question on seeing any notice at all is whether it still is.
+                    title: 'الفيديو منشور، مع ملاحظة',
+                    body: 'قد تكون هناك موسيقى خلفية في الصوت. الفيديو منشور ويعمل بشكل طبيعي، وسيلقي أحد المشرفين نظرة عليه.',
+                    bodyWithSpans: 'قد تكون هناك موسيقى خلفية في الصوت عند {spans}. الفيديو منشور ويعمل بشكل طبيعي، وسيلقي أحد المشرفين نظرة عليه.',
+                },
+                unchecked: {
+                    badge: 'لم يُفحص',
+                    title: 'الفيديو منشور، ولم يكتمل فحص الصوت',
+                    // Says what happened without blaming the video: nothing is wrong with it, the
+                    // check itself did not finish.
+                    body: 'تعذّر إكمال فحص الصوت تلقائيًا. الفيديو منشور ويعمل بشكل طبيعي، وسيراجعه أحد المشرفين.',
+                    bodyWithSpans: 'تعذّر إكمال فحص الصوت تلقائيًا. الفيديو منشور ويعمل بشكل طبيعي، وسيراجعه أحد المشرفين.',
+                },
+            },
+            // EXPLICIT CONTENT FAILS CLOSED, which is the one place this block genuinely differs
+            // from music: `unchecked` here means the video is HIDDEN, not published with a note.
+            // Wording it like music's «الفيديو منشور» would be false in the direction that matters
+            // most -- the owner would go looking for a video nobody can see.
+            nudity: {
+                held: {
+                    badge: 'قيد المراجعة',
+                    title: 'هذا الفيديو قيد المراجعة',
+                    body: 'رُصد في الفيديو ما قد يكون مشاهد غير لائقة، ولن يظهر للزوار حتى يراجعه أحد المشرفين.',
+                    bodyWithSpans: 'رُصد في الفيديو ما قد يكون مشاهد غير لائقة عند {spans}، ولن يظهر للزوار حتى يراجعه أحد المشرفين.',
+                },
+                rejected: {
+                    badge: 'مرفوض',
+                    title: 'تم رفض هذا الفيديو',
+                    body: 'راجع أحد المشرفين الفيديو ووجد فيه مشاهد غير لائقة، فلن يظهر للزوار. يمكنك رفع نسخة أخرى.',
+                    bodyWithSpans: 'راجع أحد المشرفين الفيديو ووجد فيه مشاهد غير لائقة عند {spans}، فلن يظهر للزوار. يمكنك رفع نسخة أخرى.',
+                },
+                advisory: {
+                    badge: 'ملاحظة',
+                    title: 'الفيديو منشور، مع ملاحظة',
+                    body: 'قد يحتوي الفيديو على مشاهد غير لائقة. الفيديو منشور ويعمل بشكل طبيعي، وسيلقي أحد المشرفين نظرة عليه.',
+                    bodyWithSpans: 'قد يحتوي الفيديو على مشاهد غير لائقة عند {spans}. الفيديو منشور ويعمل بشكل طبيعي، وسيلقي أحد المشرفين نظرة عليه.',
+                },
+                unchecked: {
+                    badge: 'قيد المراجعة',
+                    title: 'هذا الفيديو قيد المراجعة',
+                    // NOT "الفيديو منشور": an unfinished explicit-content scan hides the video.
+                    body: 'تعذّر إكمال فحص محتوى الفيديو تلقائيًا، ولن يظهر للزوار حتى يراجعه أحد المشرفين.',
+                    bodyWithSpans: 'تعذّر إكمال فحص محتوى الفيديو تلقائيًا، ولن يظهر للزوار حتى يراجعه أحد المشرفين.',
+                },
             },
         },
         // A video whose file lives on a third-party host (sourceType TELEGRAM). The SPA's own
@@ -883,6 +916,19 @@ export const ar = {
                 all: 'الكل',
             },
             depth: '{count}',
+            // The reviewer-facing name of each state. These used to render as the raw English
+            // enum -- HELD, ADVISORY, UNCHECKED -- in an app whose rule is that every user-facing
+            // string lives here and reaches the screen through t(). The i18n test that walks the
+            // source for literal t('...') keys could not catch it, because there was no t() call
+            // to find.
+            states: {
+                held: 'محجوب',
+                advisory: 'ملاحظة',
+                unchecked: 'لم يُفحص',
+                cleared: 'معتمد',
+                rejected: 'مرفوض',
+                clean: 'سليم',
+            },
             // Shown in the decision panel when the video carries a finding from another
             // detector. Not a demand to act on it -- a warning against deciding blind.
             alsoFlagged: 'مرصود أيضًا في:',
