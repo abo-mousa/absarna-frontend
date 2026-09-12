@@ -7,7 +7,7 @@ import { useBookReadUrl } from '@/hooks/useMediaUrl';
 import { flushOnUnload } from '@/lib/api/beacon';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
-import { QueryState } from '../components/ui';
+import { QueryState, ExpandableText } from '../components/ui';
 import { CommentsSection, BookmarkButton, LikeButton, ShareButton } from '../components/content';
 import { useBook, useBookReadProgress, useSaveReadProgress } from '../hooks/useBooks';
 import { usePageMeta } from '../hooks/usePageMeta';
@@ -125,8 +125,16 @@ function BookDetail() {
                             <span>{t('common.views', { count: formatCount(book.viewCount ?? 0) })}</span>
                         </div>
 
+                        {/* Collapsed to four lines, the same as a video's. A book's blurb is the
+                            one thing on this page that has no length anyone agreed to, and whole
+                            it pushed the read/download buttons — the reason the page exists —
+                            below the fold. The toggle only appears when it opens something; see
+                            ExpandableText. `mb-5` moves to the wrapper so the gap sits under the
+                            control rather than between the prose and its own toggle. */}
                         {book.description && (
-                            <p className="text-text-secondary leading-loose mb-5">{book.description}</p>
+                            <ExpandableText className="mb-5">
+                                <p className="text-text-secondary leading-loose">{book.description}</p>
+                            </ExpandableText>
                         )}
 
                         {pdfUrl && (

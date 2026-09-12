@@ -19,7 +19,8 @@ into channels.
 ```
 src/
   components/
-    ui/        Button, Card, Input, Modal, Badge, Grid, Spinner, EmptyState, QueryState, Avatar
+    ui/        Button, Card, Input, Modal, Badge, Grid, Spinner, EmptyState, QueryState, Avatar,
+               LinkifiedText, ExpandableText
     layout/    Navbar, SideBar, PageShell, SearchBar
     content/   VideoCard, BookCard, ArticleCard, PostCard, VideoPlayer, VideoControlBar,
                PlayerSettingsMenu, PdfReader, CommentsSection, BookmarkButton, LikeButton,
@@ -156,6 +157,14 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   presigned URL is a bearer credential, so `BookCard` enables the query on pointer-enter/focus.
 - **`YouTubeImportPanel`** — three states in one panel (not linked → linked → verified), polls only
   while `RUNNING`, and must treat `PARTIAL` as *paused, press resume* rather than an error.
+- **`ExpandableText`** — long prose collapsed to four lines with a fade and a disclosure button,
+  on a video's and a book's description. The toggle is rendered from a **measurement**, never a
+  character count: whether text overflows four lines depends on the width and the face it is laid
+  out with, and a "عرض المزيد" that opens nothing teaches readers to distrust the next one. One
+  `ResizeObserver` on the *unconstrained inner* element catches all three things that move that
+  height — the column resizing, the text changing, and the webfont arriving (`display=swap` means
+  the first measurement runs against a fallback face). Nothing is measured while it is open, or
+  the box would report "fits" and remove the only control that closes it.
 - **`PdfReader`** — react-pdf, lazy-loaded (pdfjs is ~470 KB). TOC, in-document search and page jump
   are all client-side against the loaded document.
 
