@@ -408,11 +408,44 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
     // the final progress report tries to read its position. `currentTime` is still readable off
     // the detached node itself, so holding onto it is what makes that last write possible.
     const videoRef = useRef(null);
+    const pipSupported = typeof document !== 'undefined' && document.pictureInPictureEnabled === true;
+
+    /**
+     * Whether to take the browser's own picture-in-picture button off the video.
+     *
+     * <p><b>Turning `controls` off did not remove it.</b> Chromium draws a picture-in-picture
+     * button over the top corner of a hovered `<video>` that is separate from the control bar and
+     * survives having no controls at all — so an uploaded video showed two of them, ours in the
+     * corner and the browser's floating over the picture, doing the same thing a few pixels
+     * apart. It is not reachable from CSS either: it lives in the element's closed user-agent
+     * shadow root, next to the native bar this player already replaced for the same reason.
+     *
+     * <p>`disablePictureInPicture` is the one opt-out, and it is deliberately all-or-nothing:
+     * it hides every UA affordance for this element (the hover button and the context-menu entry)
+     * AND makes `requestPictureInPicture()` reject with `InvalidStateError`. So it cannot simply
+     * be set — that would take our button down with the browser's. It is held on and lifted for
+     * the single call instead; see `togglePip`.
+     *
+     * <p><b>Conditional on `pipSupported`, and that is the whole point of the flag.</b> The
+     * browser's affordance is only worth removing where ours replaces it. Firefox implements
+     * picture-in-picture as a browser feature with no page-facing API — `pictureInPictureEnabled`
+     * is undefined there, so we render no button of our own — and it honours this attribute all
+     * the same. Setting it unconditionally would not deduplicate anything for a Firefox viewer;
+     * it would delete picture-in-picture for them.
+     */
+    const suppressUaPip = pipSupported;
+
     // Stable identity so React doesn't detach/reattach it on every render (which, with the
     // ignore-null rule, would be harmless but pointless churn).
     const setVideoEl = useCallback((el) => {
-        if (el) videoRef.current = el;
-    }, []);
+        if (!el) return;
+        videoRef.current = el;
+        // Set here, in the callback ref, rather than as JSX or in an effect: this runs
+        // synchronously as React attaches the element, so the browser's own button never gets a
+        // frame to appear in — and React never re-applies a prop that would fight the lift in
+        // `togglePip`. See `suppressUaPip` for what it is suppressing and why it is conditional.
+        if (suppressUaPip) el.disablePictureInPicture = true;
+    }, [suppressUaPip]);
     // The video's length once the player knows it — feeds watchThreshold above.
     const durationRef = useRef(NaN);
     // Where to resume after a quality switch, and whether to keep playing. Swapping a <video>'s
@@ -787,20 +820,28 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
      * affordance with no page-facing API, and iOS has a different one again, so an unconditional
      * row would be a dead control for a good share of viewers.
      */
-    const pipSupported = typeof document !== 'undefined' && document.pictureInPictureEnabled === true;
-
     const togglePip = async () => {
         const el = videoRef.current;
         try {
             if (document.pictureInPictureElement) {
                 await document.exitPictureInPicture();
-            } else {
-                await el?.requestPictureInPicture?.();
+            } else if (el) {
+                // Lifted for exactly this call, and in the same task as the request, so there is
+                // no frame in between for the browser's own button to be painted in.
+                if (suppressUaPip) el.disablePictureInPicture = false;
+                await el.requestPictureInPicture?.();
             }
         } catch {
             // Refused rather than broken — the audio rung has no video track to put in a window,
             // and the request needs user activation the click may have spent. The toggle simply
             // stays where it was.
+        }
+        // Put the suppression back only when the request did NOT land. If it did, restoring it
+        // here would close the window we just opened: setting `disablePictureInPicture` on an
+        // element already in picture-in-picture is specified to exit it. The
+        // `leavepictureinpicture` handler below is what restores it in that case.
+        if (suppressUaPip && el && document.pictureInPictureElement !== el) {
+            el.disablePictureInPicture = true;
         }
         setPipActive(Boolean(document.pictureInPictureElement));
     };
@@ -811,14 +852,22 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
     useEffect(() => {
         const el = videoRef.current;
         if (!el || !playbackUrl) return undefined;
-        const sync = () => setPipActive(document.pictureInPictureElement === el);
+        const sync = () => {
+            const inPip = document.pictureInPictureElement === el;
+            // The other half of the lift in `togglePip`, and the reason it is done on the event
+            // rather than after the await: the viewer can close the window from the window's own
+            // button, which never passes through our toggle. Restored only on the way OUT, since
+            // setting it on an element still in picture-in-picture would evict it.
+            if (suppressUaPip && !inPip) el.disablePictureInPicture = true;
+            setPipActive(inPip);
+        };
         el.addEventListener('enterpictureinpicture', sync);
         el.addEventListener('leavepictureinpicture', sync);
         return () => {
             el.removeEventListener('enterpictureinpicture', sync);
             el.removeEventListener('leavepictureinpicture', sync);
         };
-    }, [playbackUrl]);
+    }, [playbackUrl, suppressUaPip]);
 
     /**
      * Fullscreen, on the wrapper rather than on the `<video>`.

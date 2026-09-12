@@ -114,6 +114,16 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   wrong direction — and with native controls gone, ours is the only way to reach PiP at all. The
   volume slider's fill is painted by hand (a gradient with a hard stop): `appearance-none` stops
   the browser drawing the fill, and `accent-color` cannot restore it on a track with a background.
+- **`controls={false}` does not remove the browser's own PiP button.** Chromium draws one over a
+  hovered `<video>` that is separate from the control bar, so an uploaded video showed two. It is
+  in the closed UA shadow root, so CSS cannot reach it; `disablePictureInPicture` is the only
+  opt-out and it is all-or-nothing — it also makes `requestPictureInPicture()` reject. So the
+  attribute is **held on and lifted for the single call**, and restored on `leavepictureinpicture`
+  rather than after the await (the viewer can close the window from the window's own button) and
+  never while still in PiP (setting it then is specified to evict). Gated on `pipSupported`: the
+  browser's affordance is only worth removing where ours replaces it, and **Firefox honours the
+  attribute while exposing no page-facing PiP API**, so setting it unconditionally would delete
+  picture-in-picture for Firefox rather than deduplicate it.
 - **A hover-only affordance does not exist on a phone**, and the two in this app are handled
   differently on purpose. The volume slider is revealed by hover under a mouse; `w-0 opacity-0` is
   not a hidden control but a control with no *tap target*, so `[@media(hover:none)]` leaves it
