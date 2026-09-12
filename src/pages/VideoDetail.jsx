@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { ArrowRight, ChevronRight, ChevronLeft, Clock, Folder, Tv, User } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
-import { QueryState, Avatar, Spinner, LinkifiedText } from '../components/ui';
+import { QueryState, Avatar, Spinner, LinkifiedText, ExpandableText } from '../components/ui';
 import { VideoPlayer, CommentsSection, VideoCard, BookmarkButton, LikeButton, ShareButton, SourceBadge, SubscribeButton } from '../components/content';
 import { useVideo, useRelatedVideo, useWatchProgressMap, useWatchHistory } from '../hooks/useVideos';
 import { useChannel } from '../hooks/useChannels';
@@ -203,8 +203,14 @@ function VideoDetail() {
                         ))}
                     </div>
 
+                    {/* Collapsed to four lines. An imported YouTube description carries a
+                        table of contents, a block of links and a wall of hashtags, and whole it
+                        pushed the series navigation and the comments off the screen. The toggle
+                        only appears when there is something under it — see ExpandableText. */}
                     {video.description && (
-                        <LinkifiedText text={video.description} className="text-text-secondary leading-loose" />
+                        <ExpandableText>
+                            <LinkifiedText text={video.description} className="text-text-secondary leading-loose" />
+                        </ExpandableText>
                     )}
                 </div>
 

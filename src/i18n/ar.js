@@ -19,6 +19,10 @@ export const ar = {
     common: {
         loading: 'جاري التحميل...',
         loadMore: 'تحميل المزيد',
+        // The disclosure control on a collapsed block of prose (ExpandableText). Distinct from
+        // `loadMore`, which fetches a further page — these two only change what is already here.
+        showMore: 'عرض المزيد',
+        showLess: 'عرض أقل',
         save: 'حفظ',
         saving: 'جاري الحفظ...',
         cancel: 'إلغاء',
