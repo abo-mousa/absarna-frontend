@@ -80,7 +80,13 @@ function AdminReview() {
         [data],
     );
     const grouped = useMemo(() => groupByType(allRows), [allRows]);
-    const rows = grouped[tab] ?? [];
+    // Memoised for the `?? []`, which is the whole reason this cannot be a bare expression: an
+    // empty tab hands back a NEW array on every render, and `rows` is a dependency of the
+    // select-first-row effect below. So on the tab a reviewer has just cleared — the one that is
+    // empty precisely because they did the work — that effect re-ran on every single render. It
+    // does not loop today only because the `setSelectedId` it reaches is conditional and React
+    // bails on setting the same value; an unconditional set added later would spin.
+    const rows = useMemo(() => grouped[tab] ?? [], [grouped, tab]);
     const depth = data?.depth ?? {};
 
     // What ELSE is outstanding on the video being decided. The reason this screen fetches every
