@@ -37,7 +37,8 @@ import PlayerSettingsMenu from './PlayerSettingsMenu';
  *                  switched to the audio rung
  * @param durationHint  the catalogue's `VideoDTO.duration` string, shown until the element itself
  *                  knows the length — which on the HLS path is not until the first play
- * @param visible   whether the bar is showing; it fades on idle like the bar it replaces
+ * @param visible   whether the bar is showing; it fades on idle like the bar it replaces. The
+ *                  pointer's answer only — keyboard focus inside the bar keeps it up on its own
  * @param isFullscreen / onToggleFullscreen  owned by `VideoPlayer`, which holds the wrapper that
  *                  actually goes fullscreen
  * @param groups / toggles  passed straight through to `PlayerSettingsMenu`
@@ -266,6 +267,12 @@ export default function VideoControlBar({
     // seek per pointer-move would ask the network for a segment the viewer is already scrubbing
     // past. The seek is committed once, on release.
     const [scrubTime, setScrubTime] = useState(null);
+    // Whether the keyboard is inside the bar. The fade is driven by the POINTER — it hides on a
+    // timer whenever the video is playing — and it has no idea a viewer has tabbed onto the gear
+    // or the timeline. Without this the settings button a keyboard viewer is standing on fades out
+    // from under them while still focused and still operable: they press Enter on something they
+    // can no longer see.
+    const [focusInside, setFocusInside] = useState(false);
     const trackRef = useRef(null);
     // Volume is applied to the element once per element, not per bind: `mediaKey` re-binds these
     // listeners on a rung swap, but volume and muted survive a source change on their own, and
@@ -519,6 +526,8 @@ export default function VideoControlBar({
 
     const handleMenuOpenChange = useCallback((open) => onMenuOpenChange?.(open), [onMenuOpenChange]);
 
+    // Focus is a kind of attention the fade timer cannot see, so it counts the same as a pointer.
+    const shown = visible || focusInside;
     const shownTime = scrubTime ?? currentTime;
     const playedRatio = scale ? shownTime / scale : 0;
     const bufferedRatio = scale ? buffered / scale : 0;
@@ -585,14 +594,28 @@ export default function VideoControlBar({
                 // `pointer-events-none` on the wrapper with the row re-enabling them, so the scrim over
                 // the bottom of the picture never swallows a click meant for the video.
                 className={`absolute inset-x-0 bottom-0 z-10 pointer-events-none transition-opacity
-                    duration-200 ${visible ? 'opacity-100' : 'opacity-0'}`}
+                    duration-200 ${shown ? 'opacity-100' : 'opacity-0'}`}
                 onPointerMove={onInteract}
+                // focus/blur rather than :focus-within, because the value is needed in JS. React
+                // maps these to focusin/focusout, which bubble; the relatedTarget check is what
+                // tells "left the bar" from "moved between two of its buttons".
+                onFocus={() => setFocusInside(true)}
+                onBlur={(e) => {
+                    if (!e.currentTarget.contains(e.relatedTarget)) setFocusInside(false);
+                }}
             >
                 {/* A scrim, because white controls over a bright frame are unreadable, and a solid bar
                     would cover picture the viewer is watching. */}
                 <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
 
-                <div className="relative flex flex-col gap-0.5 px-2 pb-1.5 pt-6 pointer-events-auto sm:px-3 sm:pb-2">
+                {/* Inert while faded, which the corner picture-in-picture button already got right
+                    and this row did not. An invisible control row still took clicks: on a mouse
+                    the move that carries the pointer down there reveals the bar first, so nobody
+                    saw it — but a TAP has no move before it, and the same tap that asks for the
+                    controls was landing on whatever sits under the finger. At the bottom of the
+                    picture that is the timeline, so tapping to see the controls seeked the video. */}
+                <div className={`relative flex flex-col gap-0.5 px-2 pb-1.5 pt-6 sm:px-3 sm:pb-2
+                    ${shown ? 'pointer-events-auto' : 'pointer-events-none'}`}>
                     <div
                         ref={trackRef}
                         role="slider"
