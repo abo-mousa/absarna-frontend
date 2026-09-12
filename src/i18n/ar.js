@@ -883,6 +883,9 @@ export const ar = {
                 all: 'الكل',
             },
             depth: '{count}',
+            // Shown in the decision panel when the video carries a finding from another
+            // detector. Not a demand to act on it -- a warning against deciding blind.
+            alsoFlagged: 'مرصود أيضًا في:',
             empty: 'لا توجد عناصر بانتظار المراجعة',
             emptyDescription: 'كل ما رصده الفحص التلقائي تمت مراجعته.',
             // Per TYPE, because "possibly music under speech" and "possible explicit content" are
