@@ -866,6 +866,47 @@ export const ar = {
         // The music review queue. Platform-admin only, and the only way a held video ever
         // becomes visible again -- if nobody reads this screen, uploads sit in it forever, which
         // is why the backlog count is on the heading rather than buried.
+        // The moderation queue across every detector. Sits beside musicReview rather than
+        // replacing it: the old tab keeps working until the last caller moves.
+        //
+        // TRANSLATION NEEDS A NATIVE REVIEW, PARTICULARLY THE EXPLICIT-CONTENT WORDING. These
+        // strings are shown to reviewers on an Islamic platform and the register matters; they
+        // were drafted alongside the feature, not by a translator.
+        review: {
+            title: 'مراجعة المحتوى',
+            short: 'المراجعة',
+            // Sub-tabs. One per detector, each with its own backlog count, because "how big is
+            // the queue" is a different question for each.
+            tabs: {
+                music: 'الموسيقى',
+                nudity: 'محتوى صريح',
+                all: 'الكل',
+            },
+            depth: '{count}',
+            empty: 'لا توجد عناصر بانتظار المراجعة',
+            emptyDescription: 'كل ما رصده الفحص التلقائي تمت مراجعته.',
+            // Per TYPE, because "possibly music under speech" and "possible explicit content" are
+            // different problems and one shared sentence would serve neither.
+            reason: {
+                music: {
+                    held: 'رُصدت موسيقى في هذا المقطع، وهو محجوب عن الزوار.',
+                    advisory: 'قد تكون هناك موسيقى خلفية تحت الكلام. المقطع منشور.',
+                    unchecked: 'تعذّر إكمال الفحص. المقطع منشور وبانتظار المراجعة.',
+                    cleared: 'تمت مراجعته واعتماده.',
+                    rejected: 'تمت مراجعته ورفضه.',
+                },
+                nudity: {
+                    // The worker's rule cannot hide a video for this: recall is unmeasured and the
+                    // score distributions overlap, so every automatic finding is advisory. HELD
+                    // here can only come from a human.
+                    held: 'محجوب عن الزوار بقرار مراجعة.',
+                    advisory: 'قد يحتوي المقطع على مشاهد غير لائقة. المقطع منشور وبانتظار المراجعة.',
+                    unchecked: 'تعذّر إكمال الفحص. المقطع منشور وبانتظار المراجعة.',
+                    cleared: 'تمت مراجعته واعتماده.',
+                    rejected: 'تمت مراجعته ورفضه.',
+                },
+            },
+        },
         musicReview: {
             title: 'مراجعة الموسيقى',
             short: 'الموسيقى',
