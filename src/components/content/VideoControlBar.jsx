@@ -60,6 +60,17 @@ import PlayerSettingsMenu from './PlayerSettingsMenu';
 const VOLUME_STORAGE_KEY = 'playerVolume';
 const MUTED_STORAGE_KEY = 'playerMuted';
 
+/**
+ * How long a wait has to last before the spinner appears.
+ *
+ * <p>A seek into data that is already buffered completes in a frame or two, but `seeking` and
+ * `seeked` are separate tasks, so React paints the spinner in between: every arrow key and every
+ * scrub flashed a 40px spinner over the middle of the picture. The indicator is for a wait long
+ * enough to wonder about, and under a quarter of a second is not one — below that the flash reads
+ * as the player glitching rather than as loading.
+ */
+const BUFFERING_INDICATOR_DELAY_MS = 250;
+
 /** How far one arrow-key press seeks, and how much it moves the volume. */
 export const SEEK_STEP_SECONDS = 5;
 export const VOLUME_STEP = 0.1;
@@ -236,6 +247,9 @@ export default function VideoControlBar({
     // listeners on a rung swap, but volume and muted survive a source change on their own, and
     // re-applying the stored value would undo a change the viewer made in between.
     const volumeAppliedRef = useRef(false);
+    // Held across re-binds, so a swap mid-wait cannot leave a spinner scheduled by an element
+    // that is gone.
+    const bufferingTimerRef = useRef(null);
 
     /**
      * Mirrors the element into state.
@@ -291,6 +305,18 @@ export default function VideoControlBar({
         syncDuration();
         syncVolume();
 
+        // Delayed on the way in, immediate on the way out — a spinner that lingers after the
+        // picture has moved is worse than one that arrives late.
+        const showBuffering = () => {
+            clearTimeout(bufferingTimerRef.current);
+            bufferingTimerRef.current = setTimeout(
+                () => setBuffering(true), BUFFERING_INDICATOR_DELAY_MS);
+        };
+        const hideBuffering = () => {
+            clearTimeout(bufferingTimerRef.current);
+            setBuffering(false);
+        };
+
         const events = [
             ['play', syncPlayState],
             ['play', markStarted],
@@ -298,6 +324,12 @@ export default function VideoControlBar({
             ['ended', syncPlayState],
             ['timeupdate', syncTime],
             ['seeked', syncTime],
+            // At the START of a seek as well as the end. The element reports the new position
+            // immediately, and a seek can come from outside this bar — the player's own keyboard
+            // shortcuts, the ref's seekTo(), the media keys, the picture-in-picture window — none
+            // of which pass through `seekTo` above, so without this the handle stays at the old
+            // position until the seek completes.
+            ['seeking', syncTime],
             // Scrubbing back off the last frame clears `ended` on the element, and nothing else
             // here would notice: the video is still paused, so no play/pause event follows.
             ['seeked', syncPlayState],
@@ -306,18 +338,19 @@ export default function VideoControlBar({
             ['progress', syncBuffered],
             ['timeupdate', syncBuffered],
             ['volumechange', syncVolume],
-            ['waiting', () => setBuffering(true)],
-            ['seeking', () => setBuffering(true)],
-            ['stalled', () => setBuffering(true)],
-            ['playing', () => setBuffering(false)],
-            ['canplay', () => setBuffering(false)],
-            ['seeked', () => setBuffering(false)],
-            ['pause', () => setBuffering(false)],
-            ['error', () => setBuffering(false)],
+            ['waiting', showBuffering],
+            ['seeking', showBuffering],
+            ['stalled', showBuffering],
+            ['playing', hideBuffering],
+            ['canplay', hideBuffering],
+            ['seeked', hideBuffering],
+            ['pause', hideBuffering],
+            ['error', hideBuffering],
         ];
         for (const [event, handler] of events) el.addEventListener(event, handler);
         return () => {
             for (const [event, handler] of events) el.removeEventListener(event, handler);
+            clearTimeout(bufferingTimerRef.current);
         };
     }, [videoRef, mediaKey, videoKey]);
 
@@ -358,22 +391,29 @@ export default function VideoControlBar({
     const seekTo = (seconds) => {
         const el = videoRef.current;
         if (!el) return;
-        const target = Math.max(0, Math.min(scale, seconds));
+        let target = Math.max(0, Math.min(scale, seconds));
         if (Number.isFinite(el.duration) && el.duration > 0) {
-            el.currentTime = Math.min(el.duration, target);
-            return;
+            // Clamped again against the element itself: `scale` may be the catalogue's length,
+            // which is not always the file's.
+            target = Math.min(el.duration, target);
+            el.currentTime = target;
+        } else {
+            // No timeline on the element yet, which on the hls.js path is the state a video sits
+            // in until someone presses play — `autoStartLoad: false` has fetched the master
+            // manifest and nothing else. Dropping the seek here is what made the bar read as
+            // broken before the first play: the handle moved under the pointer and sprang back on
+            // release. The player knows how to start loading at a position, so the position goes
+            // to it.
+            if (!scale || !onSeekBeforeLoad) return;
+            onSeekBeforeLoad(target);
         }
-        // No timeline on the element yet, which on the hls.js path is the state a video sits in
-        // until someone presses play — `autoStartLoad: false` has fetched the master manifest and
-        // nothing else. Dropping the seek here is what made the bar read as broken before the
-        // first play: the handle moved under the pointer and sprang back on release. The player
-        // knows how to start loading at a position, so the position goes to it.
-        if (!scale || !onSeekBeforeLoad) return;
-        onSeekBeforeLoad(target);
-        // Optimistic, because the element will not report this position until it has loaded
-        // enough to seek — a second or two away — and until then `currentTime` is still 0. Without
-        // it the handle snaps back to the start and jumps forward again when the media catches up.
-        // The next `seeked` overwrites it with the truth.
+        // Optimistic, and it matters on EVERY seek, not just the deferred one. `currentTime` here
+        // is the last value an event reported, and the element reports a completed seek with
+        // `seeked` — which on the hls.js path is a segment fetch away, up to a second or two.
+        // Meanwhile `handleTrackPointerUp` clears `scrubTime` the moment the pointer lifts, so
+        // without this the handle drops back to where the video still is, sits there, and jumps
+        // forward when the data lands: a drag to 30:00 visibly bounces off 5:00 on the way. The
+        // next event overwrites this with the truth.
         setCurrentTime(target);
     };
 

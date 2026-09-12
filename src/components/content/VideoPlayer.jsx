@@ -529,6 +529,38 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
         return () => window.removeEventListener('pagehide', handlePageHide);
     }, []);
 
+    /**
+     * Seeking a video that has not been loaded yet.
+     *
+     * <p><b>Why the bar cannot just set `currentTime`.</b> On the hls.js path `autoStartLoad:
+     * false` means that until the first play the master manifest has been parsed and nothing
+     * else: the element has no duration, no seekable range, and an assignment to `currentTime` is
+     * discarded. So a scrub before playback started moved the handle and sprang back, which read
+     * as a broken timeline rather than as a deliberate deferral.
+     *
+     * <p>The position is therefore handed here, where it becomes the place loading STARTS —
+     * cheaper than loading the opening and seeking away from it, and the same move `handlePlay`
+     * makes for a `?t=` deep link. `pendingSeekRef` is set whatever the path: it is what
+     * `handleLoadedMetadata` applies once the element has a timeline, it covers the progressive
+     * and Safari paths (where metadata may simply not have arrived yet), and it covers the race
+     * where the scrub lands before MANIFEST_PARSED — the manifest handler reads the same ref and
+     * starts loading there.
+     *
+     * <p>Playback is deliberately NOT started: the viewer moved the playhead, they did not press
+     * play. `resumePlaybackRef` stays false, so the element seeks, shows that frame and waits.
+     */
+    const seekBeforeLoad = useCallback((seconds) => {
+        pendingSeekRef.current = seconds;
+        const hls = hlsRef.current;
+        if (!usesHlsJs || !hls) return;
+        // Re-issued on a second scrub rather than guarded by `loadStartedRef`: startLoad moves
+        // the position loading starts from, so the last drag before playback begins is the one
+        // that decides where the first bytes come from. The flag is still set, so the viewer's
+        // eventual press of play does not restart the load at `startTime` and drag them back.
+        loadStartedRef.current = true;
+        hls.startLoad(seconds);
+    }, [usesHlsJs]);
+
     // --- YouTube-specific: IFrame Player API wiring, so embedded YouTube videos (most of the
     // catalogue) get the same watch-history tracking native <video> elements get for free via
     // onTimeUpdate. Hooks run unconditionally regardless of sourceType; each effect no-ops when
@@ -660,38 +692,6 @@ const VideoPlayer = forwardRef(function VideoPlayer({ videoId, sourceType, sourc
         }
         if (startTime > 0) e.currentTarget.currentTime = startTime;
     };
-
-    /**
-     * Seeking a video that has not been loaded yet.
-     *
-     * <p><b>Why the bar cannot just set `currentTime`.</b> On the hls.js path `autoStartLoad:
-     * false` means that until the first play the master manifest has been parsed and nothing
-     * else: the element has no duration, no seekable range, and an assignment to `currentTime` is
-     * discarded. So a scrub before playback started moved the handle and sprang back, which read
-     * as a broken timeline rather than as a deliberate deferral.
-     *
-     * <p>The position is therefore handed here, where it becomes the place loading STARTS —
-     * cheaper than loading the opening and seeking away from it, and the same move `handlePlay`
-     * makes for a `?t=` deep link. `pendingSeekRef` is set whatever the path: it is what
-     * `handleLoadedMetadata` applies once the element has a timeline, it covers the progressive
-     * and Safari paths (where metadata may simply not have arrived yet), and it covers the race
-     * where the scrub lands before MANIFEST_PARSED — the manifest handler reads the same ref and
-     * starts loading there.
-     *
-     * <p>Playback is deliberately NOT started: the viewer moved the playhead, they did not press
-     * play. `resumePlaybackRef` stays false, so the element seeks, shows that frame and waits.
-     */
-    const seekBeforeLoad = useCallback((seconds) => {
-        pendingSeekRef.current = seconds;
-        const hls = hlsRef.current;
-        if (!usesHlsJs || !hls) return;
-        // Re-issued on a second scrub rather than guarded by `loadStartedRef`: startLoad moves
-        // the position loading starts from, so the last drag before playback begins is the one
-        // that decides where the first bytes come from. The flag is still set, so the viewer's
-        // eventual press of play does not restart the load at `startTime` and drag them back.
-        loadStartedRef.current = true;
-        hls.startLoad(seconds);
-    }, [usesHlsJs]);
 
     /** Snapshots the playhead so a source swap can put the viewer back where they were. */
     const rememberPosition = () => {
