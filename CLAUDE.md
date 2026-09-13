@@ -192,7 +192,25 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
 What this app relies on; the mirror lives in the backend's `CLAUDE.md`.
 
 - **`playback-url` / `read-url` are the only source of a playable media URL**, and refuse with **404,
-  not 403**. Never construct a bucket URL here. `playback-url` returns `{url, quality, qualities}` and
+  not 403**. Never construct a bucket URL here — and note that this stopped being impossible and
+  became merely forbidden. **A video's renditions and poster are served unsigned from a public
+  delivery host** (`media.absarna.com`), because a presigned URL cannot serve HLS at all: a playlist
+  names its segments by relative URI and no player propagates the playlist's query string to them,
+  so a signed `master.m3u8` loads and the first segment 403s. So a hand-built key *would* load. What
+  makes that a bug rather than a shortcut: object keys never appear on a DTO, the key carries an
+  unguessable random segment minted per video that nothing here can reproduce, and constructing one
+  skips the visibility check that is the whole access decision. **A book's PDF is still presigned**
+  against the S3 endpoint — one file, so the relative-URI problem never arises, and it lives in the
+  masters bucket, which never becomes publicly readable. That split is why `VITE_STORAGE_ORIGIN` is
+  a list.
+- **A video media URL does not expire; a book's does.** Do not build on the first half. The backend
+  keeps a signed delivery mode as the upgrade path for gated content, so an app that has learned to
+  cache a playback URL for a week — or to store one for offline instead of the file — breaks on the
+  day that lands. Keep treating every media URL as short-lived, and keep the player's
+  refresh-on-segment-error path: it also recovers from a CDN blip or a purge landing mid-session.
+- **A poster URL is now stable for a given video**, rather than changing on every fetch as a
+  re-signed one did. That makes it properly browser- and edge-cacheable, and it means a changed
+  thumbnail URL is a real change rather than noise. `playback-url` returns `{url, quality, qualities}` and
   takes `?quality=`; `quality` is the rung actually served, which is not necessarily the one asked
   for. Switching rungs restarts a `<video>`, so carry the playhead across by hand and use
   `placeholderData: keepPreviousData` or the element unmounts mid-switch.

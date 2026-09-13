@@ -3,23 +3,43 @@ import api from '@/lib/api/client';
 import { safeExternalUrl } from '@/lib/media';
 
 /**
- * Presigned URLs for media held in object storage.
+ * URLs for media held in object storage.
  *
  * Bytes are served directly by object storage, never by our backend — the backend's only role is
- * to run the visibility check and, if it passes, mint a signed URL. So the URL *is* the access
+ * to run the visibility check and, if it passes, hand back a URL. So the URL *is* the access
  * grant: a caller who may not see the item simply never receives one (the endpoint 404s, matching
  * the detail endpoint so a gated item is indistinguishable from a missing one).
  *
+ * **The two endpoints here are no longer the same mechanism underneath, and neither is signed the
+ * way this file used to say.** A video's renditions and poster come from the public media delivery
+ * host and carry no signature at all, because a presigned URL cannot serve HLS: a playlist names
+ * its segments by relative URI and no player propagates the playlist's query string to them, so a
+ * signed master.m3u8 loads and the first segment 403s. A book's PDF is still a presigned GET
+ * against the S3 endpoint — it is one file, so the problem never arises, and it lives in the
+ * masters bucket, which never becomes publicly readable.
+ *
+ * What does NOT change is the sentence above: nothing here is reachable without asking the backend
+ * first, and a media URL is not guessable, because the backend mints an unguessable segment into
+ * every video's object-key prefix. Do not treat "not signed" as "safe to construct by hand" — see
+ * CLAUDE.md's backend contract.
+ *
  * This replaces `useMediaToken`. That hook existed because the backend served gated bytes from its
  * own /uploads and /stream URLs and an <img>/<video> tag cannot attach an Authorization header, so
- * a short-lived token rode in the query string. A presigned URL carries its own signature, so
- * there is no credential to place there any more.
+ * a short-lived token rode in the query string. Nothing carries a credential in a query string any
+ * more, which is strictly better than a bounded one in a place that reaches access logs and
+ * browser history.
  */
 
-// The signed URL is valid for hours (the backend picks the TTL so it outlives a full viewing
-// session — a player re-requests on every seek, and an expired URL mid-playback is an opaque
-// 403). Cached well inside that: refetching would change the URL, and swapping a <video>'s src
-// mid-playback restarts it from zero.
+// Long, and now for a different reason than when it was written. A book's presigned URL is valid
+// for hours (the backend picks a TTL that outlives a full reading session, since an expired URL
+// mid-read is an opaque 403), and a video's is not time-limited at all. Either way, refetching
+// would hand back a URL that swaps a <video>'s src and restarts playback from zero, which is what
+// this number is really protecting against.
+//
+// **Do not lengthen it towards "forever" on the strength of video URLs not expiring.** Part 2 of
+// the backend's MIGRATION-TO-HLS.md keeps a signed delivery mode as the upgrade path for gated
+// content, and an app that has learned to hold a playback URL for a week is the thing that breaks
+// on the day it lands.
 const STALE_MS = 30 * 60 * 1000;
 
 /**
@@ -60,7 +80,8 @@ export const useVideoPlaybackUrl = (videoId, enabled = true, quality = null) =>
     });
 
 /**
- * The book's file URL — a presigned GET for an uploaded PDF, or the book's own external link for
+ * The book's file URL — a presigned GET for an uploaded PDF (the one media URL still signed), or
+ * the book's own external link for
  * one hosted elsewhere.
  *
  * **Passed through `safeExternalUrl`, and that is not belt-and-braces.** Every caller renders this

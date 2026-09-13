@@ -70,9 +70,9 @@ export const supportsNativeHls = () => {
  * The extension of a URL's PATH, ignoring its query string and fragment.
  *
  * Naively searching the whole URL for `.m3u8` reads a query parameter as the file type — and a
- * query string is precisely where a delivery layer puts things: a presigned URL's signature today,
- * a scoped token tomorrow. Anything unparseable is not a playlist, which leaves `format` to
- * decide, which is the authority anyway.
+ * query string is precisely where a delivery layer puts things: a book's presigned signature today,
+ * a scoped token on the media host tomorrow, a cache-buster at any point. Anything unparseable is
+ * not a playlist, which leaves `format` to decide, which is the authority anyway.
  */
 const looksLikeAPlaylist = (url) => {
     if (!url) return false;

@@ -4,16 +4,23 @@ import { API_BASE_URL } from './env';
 //
 // Only handles URLs that are *already* URLs: an absolute http(s) link (a channel logo, a
 // YouTube thumbnail, an externally hosted PDF) or a site-rooted path. Anything else — notably an
-// object-storage key like `videos/3/7/v1/1080p.mp4` — returns null, because such a key is not
-// addressable by the browser at all. Media in object storage is fetched through a presigned URL
-// minted by the backend instead: see useVideoPlaybackUrl / useBookReadUrl.
+// object-storage key like `videos/3/7/v2-9f3a1c8e7b2d4a60/master.m3u8` — returns null, because
+// such a key is not addressable by the browser at all. Media in object storage is fetched through
+// a URL the backend hands out: see useVideoPlaybackUrl / useBookReadUrl.
+//
+// **Returning null rather than guessing a host is load-bearing, and more so than when this was
+// written.** A video's media now lives on a public delivery host, so a key concatenated onto the
+// right origin WOULD load — which makes "build it here" look tempting and is exactly why it is
+// refused. Nothing in a DTO is a key (the backend keeps them server-side), the key carries an
+// unguessable segment we would have no way to reproduce, and constructing one skips the visibility
+// check that is the entire access decision.
 //
 // The `token` parameter is gone, along with the whole media-token mechanism. It existed because
 // the backend served gated bytes from its own /uploads and /stream URLs and an <img>/<video> tag
 // cannot send an Authorization header, so a short-lived credential rode in the query string.
-// Presigned URLs carry their own signature, so there is no longer a credential to place there —
-// which is strictly better than having a bounded one in a place that reaches access logs and
-// browser history.
+// Nothing carries a credential in a query string now — a video URL is unsigned and a book's is
+// presigned — which is strictly better than having a bounded one in a place that reaches access
+// logs and browser history.
 export const resolveMediaUrl = (url) => {
     if (!url || typeof url !== 'string') return null;
     if (url.startsWith('http://') || url.startsWith('https://')) return url;
@@ -35,7 +42,7 @@ export const resolveMediaUrl = (url) => {
 //
 // Deliberately parsed with no base URL: a scheme-less value like "www.example.com" is rejected
 // rather than silently resolved against the frontend's own origin. For media held in object storage,
-// use the presigned URL from useVideoPlaybackUrl / useBookReadUrl, not this.
+// use the URL from useVideoPlaybackUrl / useBookReadUrl, not this.
 export const safeExternalUrl = (url) => {
     if (!url || typeof url !== 'string') return null;
     let parsed;
