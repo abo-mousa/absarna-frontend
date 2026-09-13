@@ -86,6 +86,16 @@ const contentSecurityPolicy = (env, isProduction) => ({
       //
       // Unset falls back to the local compose stack in dev, and to nothing in a production build
       // — where guessing localhost would be worse than an explicit failure.
+      // The Faro collector, if RUM is configured. It MUST be named in connect-src or the CSP
+      // blocks every beacon — and it fails in the quietest possible way: telemetry whose entire
+      // job is reporting failures cannot report that it is being blocked, so the dashboard is
+      // simply empty and looks like "no errors happened". lib/telemetry swallows its own errors
+      // by design, which is correct for the app and removes the last place this would surface.
+      //
+      // Empty when VITE_FARO_URL is unset, which is the normal state in dev and in any deploy
+      // that has not turned RUM on; originOf returns null and the filter(Boolean) below drops it.
+      const telemetry = originOf(env.VITE_FARO_URL)
+
       const storage = originsOf(env.VITE_STORAGE_ORIGIN)
       if (storage.length === 0) {
         if (!isProduction) storage.push(LOCAL_STORAGE)
@@ -134,7 +144,7 @@ const contentSecurityPolicy = (env, isProduction) => ({
           ...storage,
         ],
         'media-src': ["'self'", 'blob:', ...storage],
-        'connect-src': ["'self'", api, ...storage],
+        'connect-src': ["'self'", api, ...storage, telemetry],
         'frame-src': ['https://www.youtube.com', 'https://www.youtube-nocookie.com'],
         // pdf.js runs its parser in a worker loaded from our own bundle; blob: covers the
         // fallback path where it inlines the worker instead.

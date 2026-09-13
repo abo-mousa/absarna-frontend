@@ -1,5 +1,6 @@
 import { Component } from 'react';
 import { t } from '@/i18n';
+import { reportBoundaryError } from '@/lib/telemetry';
 
 /**
  * The last resort when a render throws.
@@ -27,6 +28,10 @@ class ErrorBoundary extends Component {
 
     componentDidCatch(error, errorInfo) {
         console.error('Error caught by boundary:', error, errorInfo);
+        // console.error is where a DEVELOPER looks; nobody is reading a user's console. This is
+        // the same fact sent somewhere it can be counted. Deduplicated and no-op when telemetry
+        // is unconfigured — see lib/telemetry.
+        reportBoundaryError(error, errorInfo?.componentStack);
     }
 
     componentDidUpdate(prevProps) {

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { reportPlaybackError } from '@/lib/telemetry';
 
 /**
  * How many times one viewing session will re-fetch its playback URL after a fatal network error.
@@ -160,6 +161,23 @@ export function useHlsPlayback({ enabled, playbackUrl, videoId, videoRef, pendin
 
             hls.on(Hls.Events.ERROR, (_event, data) => {
                 if (!data.fatal || cancelled) return;
+
+                // FATAL ONLY, and that guard above is what makes this affordable: hls.js emits
+                // non-fatal errors continuously during healthy playback — a segment it re-fetched,
+                // a gap it jumped — and reporting those would be a beacon per viewer per minute
+                // for a video that played perfectly.
+                //
+                // This is the ONLY place a broken-playback failure becomes visible to anyone. The
+                // backend mints the URL and serves none of the bytes, so a session that fails on
+                // every segment still looks like a successful request from there. The case this
+                // was written for is a missing CORS policy on the media bucket, which breaks
+                // Chrome and Firefox while passing on Safari, on MinIO locally, and in every test
+                // in every repo (see infra/README.md).
+                reportPlaybackError({
+                    type: data.type,
+                    details: data.details,
+                    videoId,
+                });
 
                 // An expired URL and a dead network are the same event here, so both are met the
                 // same way: re-mint, and let hls.js resume once something has changed.

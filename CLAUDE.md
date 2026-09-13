@@ -13,6 +13,8 @@ into channels.
 | `absarna-worker` | Transcode worker. **Nothing here talks to it** — it produces the rendition ladder behind `playback-url`'s `qualities` and the poster frames in `thumbnailUrl`. |
 
 `HISTORY.md` holds closed review passes and the rebrand — archaeology only.
+**Logging and metrics across all three repos are designed once, in `absarna-backend/OBSERVABILITY.md`.**
+This repo's part is `lib/telemetry.js` (Grafana Faro RUM); don't restate the design here.
 
 ## Layout
 
@@ -33,7 +35,7 @@ src/
   contexts/    AuthContext, ThemeContext, ToastContext
   i18n/        index.js (t / tOptional) + ar.js — EVERY user-facing string
   lib/         api/ (axios client + interceptors), queryKeys, queryCache, describeError,
-               safeStorage, media, numbers, dayjsAr, user, uploadResume, env
+               safeStorage, media, numbers, dayjsAr, user, uploadResume, env, telemetry
 ```
 
 Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the individual file.
@@ -177,9 +179,14 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   plausible — the object form matches module ids exactly and silently produces empty chunks.
 - **The host must serve `index.html` as `no-cache` and `/assets/*` as `immutable`.** Stale HTML points
   at chunks that no longer exist; that is a blank page after every deploy.
-- **`vite.config.js` injects the CSP at build time** and reads `VITE_API_BASE_URL` +
-  **`VITE_STORAGE_ORIGIN`**. Omitting the latter in a production build ships an app that renders fine
-  and cannot play a video or open a book. Adding a new remote image host means adding it to `img-src`.
+- **`vite.config.js` injects the CSP at build time** and reads `VITE_API_BASE_URL`,
+  **`VITE_STORAGE_ORIGIN`** and `VITE_FARO_URL`. Omitting the storage origin in a production build
+  ships an app that renders fine and cannot play a video or open a book. Adding a new remote image
+  host means adding it to `img-src`.
+- **A new outbound host must go in `connect-src`, and `VITE_FARO_URL` is the trap.** Telemetry whose
+  whole job is reporting failures cannot report that the CSP is blocking it — `lib/telemetry`
+  swallows its own errors by design, which is right for the app and removes the last place this would
+  surface. The symptom is an empty dashboard that reads as "no errors happened".
 - **Never `dangerouslySetInnerHTML`** — user text (YouTube descriptions) goes through `LinkifiedText`,
   which splits on a URL pattern and renders React children.
 - **Any URL from data passes `safeExternalUrl`** before it becomes an `href` or a `<Document file>`.

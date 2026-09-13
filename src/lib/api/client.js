@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { API_BASE_URL } from '../env';
 import { safeStorage } from '../safeStorage';
+import { reportRequestFailure } from '@/lib/telemetry';
 
 const api = axios.create({
     baseURL: `${API_BASE_URL}/api`,
@@ -108,6 +109,25 @@ api.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
+
+        // 5xx ONLY, and deliberately not 4xx. A 401 on an expired token, a 404 on a deleted video
+        // and a 403 on someone else's channel are ordinary and expected, already counted
+        // server-side in http_server_requests — shipping them would re-create in the frontend
+        // exactly the log spam GlobalExceptionHandler was fixed to stop producing.
+        //
+        // X-Request-Id is the correlation id the backend's LogContextFilter stamped on every log
+        // line this request produced. Carrying it here is what turns "a user saw an error" into
+        // `{service="absarna-backend"} |= "<id>"` and the whole server-side story of the failure.
+        // `url` and not the full URL, so no query string — and therefore no token and no presigned
+        // URL — can ride along.
+        if (error.response?.status >= 500) {
+            reportRequestFailure({
+                status: error.response.status,
+                requestId: error.response.headers?.['x-request-id'],
+                method: originalRequest?.method,
+                path: originalRequest?.url,
+            });
+        }
 
         if (isAuthEndpoint(originalRequest)) {
             return Promise.reject(error);
