@@ -221,17 +221,30 @@ What this app relies on; the mirror lives in the backend's `CLAUDE.md`.
 - **An uploaded video is not merely un-transcoded — it is invisible** until `status` is `READY`. There
   is **no notification channel by design**, so re-fetch when the user comes back and never imply a
   quick turnaround.
-- **`musicReview` / `musicSpans` are owner-only and usually absent.** Absarna is an Islamic platform
-  and music is not published on it; the backend sends these two fields *only* to a caller who
-  manages the channel (or is a platform admin), so their presence is already a disclosure decision
-  made server-side — `lib/musicReview.js` checks ownership again as a second lock. **Only `HELD`
-  and `REJECTED` hide the video**; `ADVISORY` and `UNCHECKED` are notes on a video that is
-  published and playing normally, and wording or colouring them like a problem would train owners
-  to ignore the tone by the time the one that matters arrives. A held video is `READY`, `visible`,
-  and reachable by nobody, so **this notice is the entire mechanism by which its owner is ever
-  told** — if it renders nothing, their upload simply vanished. Spans are a jump-list, truncated
-  to three: they are gappy enough that a recording which is music end to end comes back as eight
-  separate stretches.
+- **`review` is owner-only, opt-in, and usually absent — a LIST, one entry per detector.** It
+  replaced the `musicReview` / `musicSpans` pair, which could describe only one detector; a video can
+  be held for music and noted for explicit content at the same time. Each entry is
+  `{type, state, peak, spans}` — `type` is `MUSIC` / `NUDITY` / …, and `state` is one of `CLEAN`,
+  `ADVISORY`, `HELD`, `UNCHECKED`, `CLEARED`, `REJECTED`. Treat both as open sets: a new detector or
+  a new state must render as an unknown note rather than throwing or falling through to "fine".
+  `lib/review.js` owns all of this.
+  - **Not mapped by default, by design.** A `CLEARED` video is fully public, so a
+    mapped-by-default field would disclose on every feed card that this one had been looked at. The
+    backend attaches it only at owner-facing call sites, so its *presence* is already a
+    server-side disclosure decision — and `lib/review.js` checks ownership again as a second lock.
+  - **Only `HELD` and `REJECTED` hide the video.** `CLEAN`, `ADVISORY`, `UNCHECKED` and `CLEARED` all
+    publish and play normally. Wording or colouring those like a problem trains owners to ignore the
+    tone by the time the one that matters arrives. `UNCHECKED` in particular means *the detector did
+    not finish* — never "it found something" — and is deliberately never silent, because a model
+    outage must not stop publishing and must not pass unnoticed either.
+  - **A held video is `READY`, `visible`, and reachable by nobody.** There is no notification channel
+    in this design, so **this field is the entire mechanism by which its owner is ever told** — if it
+    renders nothing, their upload simply vanished.
+  - **A reviewer decides per type**, so clearing the music says nothing about the explicit-content
+    finding beside it. Never collapse the list to one verdict.
+  - `spans` is a jump-list, **not an edit decision list**, truncated to three: measured on a file
+    that is music end to end they cover only 63% of it, so a recording comes back as many separate
+    stretches. `peak` is the detector's highest score, for ranking a queue.
 - **Confirm is idempotent on `uploadSessionId`**, which is what lets a timed-out publish read as
   "still working" for videos/books — and why it must read as an ordinary failure for articles/posts,
   which have no session.
