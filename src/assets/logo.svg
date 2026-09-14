@@ -1,16 +1,93 @@
-<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img">
+  <!--
+    أَبْصَرْنا — the khatim (two squares of circumradius 40 about 50,50, one rotated 45°,
+    whose union is the eight-pointed star) traced TWICE as concentric rings rather than
+    interlaced. Nothing crosses anything: an interlace has to cut each strap at every
+    other meeting, and eight interruptions read as the two squares slicing each other.
+    Only the radius changes between rings, so every point and notch lines up.
+
+    Inside sits a camera iris — eight blades, each spanning one edge of the octagonal
+    void and sweeping inward to the lit opening. The sweep is exactly 45° and that is
+    load-bearing: an octagon maps onto itself every 45°, so any other angle leaves the
+    opening visibly out of true against the star (50° put it 5° off). At 45° the blades
+    still pinwheel AND the opening they enclose lands square to everything around it.
+
+    Two hues only, turquoise and gold. Everything that would be a shadow is a deeper
+    turquoise rather than a near-black teal, which read as a third colour. Every fill is
+    a gradient; no filters, no blur, no clipping, so it rasterises identically anywhere.
+  -->
   <defs>
-    <linearGradient id="absarna-teal" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#6EF0E4"/>
-      <stop offset="50%" stop-color="#17A398"/>
-      <stop offset="100%" stop-color="#0A4A45"/>
+    <linearGradient id="absarna-teal" x1="10%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#6FF0E0"/>
+      <stop offset="55%" stop-color="#25B5AA"/>
+      <stop offset="100%" stop-color="#0F7480"/>
     </linearGradient>
-    <linearGradient id="absarna-gold" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FFEFC2"/>
-      <stop offset="50%" stop-color="#F2AE30"/>
-      <stop offset="100%" stop-color="#A66E14"/>
+    <linearGradient id="absarna-field" x1="10%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#1FA69E"/>
+      <stop offset="100%" stop-color="#0D6470"/>
     </linearGradient>
+    <linearGradient id="absarna-blade-1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#23AFB2"/>
+      <stop offset="100%" stop-color="#0E6674"/>
+    </linearGradient>
+    <linearGradient id="absarna-blade-2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1A98A0"/>
+      <stop offset="100%" stop-color="#0C606D"/>
+    </linearGradient>
+    <linearGradient id="absarna-gold" x1="10%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#FFE7A8"/>
+      <stop offset="50%" stop-color="#F5B43B"/>
+      <stop offset="100%" stop-color="#CE8A1B"/>
+    </linearGradient>
+    <radialGradient id="absarna-core" cx="50%" cy="46%" r="62%">
+      <stop offset="0%" stop-color="#FFFFFC"/>
+      <stop offset="40%" stop-color="#FFF8EA"/>
+      <stop offset="100%" stop-color="#F6E4C0"/>
+    </radialGradient>
+    <radialGradient id="absarna-glow" cx="50%" cy="48%" r="50%">
+      <stop offset="0%" stop-color="#FFF6E2" stop-opacity=".55"/>
+      <stop offset="40%" stop-color="#FBEBCF" stop-opacity=".24"/>
+      <stop offset="100%" stop-color="#F7E3C2" stop-opacity="0"/>
+    </radialGradient>
   </defs>
-  <rect x="25" y="25" width="50" height="50" fill="url(#absarna-teal)" stroke="#083F3B" stroke-width="1"/>
-  <rect x="25" y="25" width="50" height="50" fill="url(#absarna-gold)" stroke="#7A4F0E" stroke-width="1" transform="rotate(45 50 50)"/>
+
+  <!-- field: fills everything inside the outer ring, so no ground shows through -->
+  <polygon points="86.500,50.000 75.809,60.691 75.809,75.809 60.691,75.809 50.000,86.500 39.309,75.809 24.191,75.809 24.191,60.691 13.500,50.000 24.191,39.309 24.191,24.191 39.309,24.191 50.000,13.500 60.691,24.191 75.809,24.191 75.809,39.309" fill="url(#absarna-field)"/>
+
+  <!-- iris. The base rect covers the corners the blades' octagon does not reach. -->
+  <rect x="25.966" y="25.966" width="48.069" height="48.069" fill="url(#absarna-blade-2)"/>
+    <polygon points="40.046,25.970 59.954,25.970 63.000,44.615 55.385,37.000" fill="url(#absarna-blade-1)"
+             stroke="#5FE6D6" stroke-width="0.55" stroke-opacity=".22"
+             transform="rotate(0 50 50)"/>
+    <polygon points="40.046,25.970 59.954,25.970 63.000,44.615 55.385,37.000" fill="url(#absarna-blade-2)"
+             stroke="#5FE6D6" stroke-width="0.55" stroke-opacity=".22"
+             transform="rotate(45 50 50)"/>
+    <polygon points="40.046,25.970 59.954,25.970 63.000,44.615 55.385,37.000" fill="url(#absarna-blade-1)"
+             stroke="#5FE6D6" stroke-width="0.55" stroke-opacity=".22"
+             transform="rotate(90 50 50)"/>
+    <polygon points="40.046,25.970 59.954,25.970 63.000,44.615 55.385,37.000" fill="url(#absarna-blade-2)"
+             stroke="#5FE6D6" stroke-width="0.55" stroke-opacity=".22"
+             transform="rotate(135 50 50)"/>
+    <polygon points="40.046,25.970 59.954,25.970 63.000,44.615 55.385,37.000" fill="url(#absarna-blade-1)"
+             stroke="#5FE6D6" stroke-width="0.55" stroke-opacity=".22"
+             transform="rotate(180 50 50)"/>
+    <polygon points="40.046,25.970 59.954,25.970 63.000,44.615 55.385,37.000" fill="url(#absarna-blade-2)"
+             stroke="#5FE6D6" stroke-width="0.55" stroke-opacity=".22"
+             transform="rotate(225 50 50)"/>
+    <polygon points="40.046,25.970 59.954,25.970 63.000,44.615 55.385,37.000" fill="url(#absarna-blade-1)"
+             stroke="#5FE6D6" stroke-width="0.55" stroke-opacity=".22"
+             transform="rotate(270 50 50)"/>
+    <polygon points="40.046,25.970 59.954,25.970 63.000,44.615 55.385,37.000" fill="url(#absarna-blade-2)"
+             stroke="#5FE6D6" stroke-width="0.55" stroke-opacity=".22"
+             transform="rotate(315 50 50)"/>
+
+  <!-- the two rings: gold inside, turquoise outside, neither interrupted -->
+  <polygon points="82.000,50.000 72.627,59.373 72.627,72.627 59.373,72.627 50.000,82.000 40.627,72.627 27.373,72.627 27.373,59.373 18.000,50.000 27.373,40.627 27.373,27.373 40.627,27.373 50.000,18.000 59.373,27.373 72.627,27.373 72.627,40.627" fill="none" stroke="url(#absarna-gold)"
+           stroke-width="6.5" stroke-linejoin="miter"/>
+  <polygon points="90.000,50.000 78.284,61.716 78.284,78.284 61.716,78.284 50.000,90.000 38.284,78.284 21.716,78.284 21.716,61.716 10.000,50.000 21.716,38.284 21.716,21.716 38.284,21.716 50.000,10.000 61.716,21.716 78.284,21.716 78.284,38.284" fill="none" stroke="url(#absarna-teal)"
+           stroke-width="7.5" stroke-linejoin="miter"/>
+
+  <!-- the light: a spill over the blades, then the opening the blades enclose -->
+  <circle cx="50" cy="49.5" r="18" fill="url(#absarna-glow)"/>
+  <polygon points="63.000,44.615 63.000,55.385 55.385,63.000 44.615,63.000 37.000,55.385 37.000,44.615 44.615,37.000 55.385,37.000" fill="url(#absarna-core)"/>
 </svg>

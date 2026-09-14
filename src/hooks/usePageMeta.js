@@ -3,7 +3,10 @@ import { t } from '@/i18n';
 
 const DEFAULT_TITLE = t('meta.defaultTitle');
 const DEFAULT_DESCRIPTION = t('meta.defaultDescription');
-const DEFAULT_IMAGE = '/favicon.svg';
+// A PNG, not the SVG favicon: no major link-preview scraper (Facebook, WhatsApp, X,
+// LinkedIn, Slack) accepts image/svg+xml for og:image, so pointing here at the SVG
+// meant every shared link previewed with no image at all.
+const DEFAULT_IMAGE = '/og-image.png';
 
 function setMeta(attr, key, value) {
     let el = document.querySelector(`meta[${attr}="${key}"]`);

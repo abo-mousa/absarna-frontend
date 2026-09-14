@@ -9,11 +9,27 @@
     <meta property="og:site_name" content="أَبْصَرْنا | Absarna"/>
     <meta property="og:title" content="أَبْصَرْنا | Absarna"/>
     <meta property="og:description" content="أَبْصَرْنا — منصة إسلامية للفيديوهات والكتب والمقالات"/>
-    <meta property="og:image" content="/favicon.svg"/>
+    <!-- A raster, not the SVG the app itself uses: Facebook, WhatsApp, X, LinkedIn and
+         Slack all refuse image/svg+xml for og:image, so an SVG here is the same as no
+         preview image at all. Square because twitter:card is "summary". -->
+    <meta property="og:image" content="/og-image.png"/>
+    <meta property="og:image:type" content="image/png"/>
+    <meta property="og:image:width" content="1200"/>
+    <meta property="og:image:height" content="1200"/>
+    <meta property="og:image:alt" content="أَبْصَرْنا"/>
     <meta name="twitter:card" content="summary"/>
     <meta name="twitter:title" content="أَبْصَرْنا | Absarna"/>
     <meta name="twitter:description" content="أَبْصَرْنا — منصة إسلامية للفيديوهات والكتب والمقالات"/>
+    <meta name="twitter:image" content="/og-image.png"/>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+    <!-- iOS ignores the SVG icon and alpha both: without this, "Add to Home Screen"
+         uses a screenshot of the page. The PNG is opaque on the parchment ground on
+         purpose, since iOS composites any transparency onto black. -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"/>
+    <!-- Two values, so the mobile browser chrome follows the theme the inline script
+         below picks. Values are --color-bg from src/index.css, light and dark. -->
+    <meta name="theme-color" content="#FBF7EE" media="(prefers-color-scheme: light)"/>
+    <meta name="theme-color" content="#10141C" media="(prefers-color-scheme: dark)"/>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Rubik:wght@300;400;500;600;700&family=Markazi+Text:wght@500;600;700&display=swap"
