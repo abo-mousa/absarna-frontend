@@ -39,15 +39,25 @@
       <stop offset="50%" stop-color="#F5B43B"/>
       <stop offset="100%" stop-color="#CE8A1B"/>
     </linearGradient>
-    <radialGradient id="absarna-core" cx="50%" cy="46%" r="62%">
-      <stop offset="0%" stop-color="#FFFFFC"/>
-      <stop offset="40%" stop-color="#FFF8EA"/>
-      <stop offset="100%" stop-color="#F6E4C0"/>
+    <!-- Both centred at 50/50. The hotspot used to sit at cy=46%, above the middle, which
+         is the first reason the light did not read as coming from the centre. -->
+    <radialGradient id="absarna-core" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="30%" stop-color="#FFFAEC"/>
+      <stop offset="65%" stop-color="#FCE9B8"/>
+      <stop offset="100%" stop-color="#F3CE84"/>
     </radialGradient>
-    <radialGradient id="absarna-glow" cx="50%" cy="48%" r="50%">
-      <stop offset="0%" stop-color="#FFF6E2" stop-opacity=".55"/>
-      <stop offset="40%" stop-color="#FBEBCF" stop-opacity=".24"/>
-      <stop offset="100%" stop-color="#F7E3C2" stop-opacity="0"/>
+    <!-- The second reason: the core's old stops sat within a few percent of white across
+         its whole width, so the opening read as a flat slab with a brighter rim around it
+         rather than as a source dimming outward. It now falls off properly, and the spill
+         picks up near the value the core ends on so the two read as one gradient with no
+         step at the aperture edge. -->
+    <radialGradient id="absarna-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFF6DE" stop-opacity=".96"/>
+      <stop offset="34%" stop-color="#FDEBC2" stop-opacity=".82"/>
+      <stop offset="58%" stop-color="#FADFA2" stop-opacity=".50"/>
+      <stop offset="80%" stop-color="#F6D189" stop-opacity=".20"/>
+      <stop offset="100%" stop-color="#F2C170" stop-opacity="0"/>
     </radialGradient>
   </defs>
 
@@ -87,7 +97,10 @@
   <polygon points="90.000,50.000 78.284,61.716 78.284,78.284 61.716,78.284 50.000,90.000 38.284,78.284 21.716,78.284 21.716,61.716 10.000,50.000 21.716,38.284 21.716,21.716 38.284,21.716 50.000,10.000 61.716,21.716 78.284,21.716 78.284,38.284" fill="none" stroke="url(#absarna-teal)"
            stroke-width="7.5" stroke-linejoin="miter"/>
 
-  <!-- the light: a spill over the blades, then the opening the blades enclose -->
-  <circle cx="50" cy="49.5" r="18" fill="url(#absarna-glow)"/>
+  <!-- The light. The spill is deliberately dense — it has to read as coming OUT of
+       the aperture, not merely sitting in it — but it stops on the inner blades:
+       past r=22 it starts veiling the iris, which is the whole thing it exists to
+       light. The opening the blades enclose goes on top. -->
+  <circle cx="50" cy="50" r="22" fill="url(#absarna-glow)"/>
   <polygon points="63.000,44.615 63.000,55.385 55.385,63.000 44.615,63.000 37.000,55.385 37.000,44.615 44.615,37.000 55.385,37.000" fill="url(#absarna-core)"/>
 </svg>

@@ -130,3 +130,96 @@
     text-decoration: underline;
   }
 }
+
+/* ----------------------------------------------------------------------------------
+   Spinner.jsx — the mark drawing itself, then settling into a turn.
+
+   The loading state IS the act of drawing: the two rings trace themselves along their
+   own outlines, the iris fades in behind them, and the aperture lights last. Once it is
+   whole the blades keep turning until the content arrives, so the draw happens exactly
+   once per loading episode instead of flickering on a loop.
+
+   `--len` is the true perimeter of each ring (265.10 and 212.08 user units, measured off
+   the geometry, rounded up). stroke-dasharray of one full-length dash plus an offset of
+   the same length puts the whole stroke in the gap; animating the offset to zero walks
+   the visible part around the path. Get the length wrong and the trace either starts
+   part-drawn or never finishes.
+   ---------------------------------------------------------------------------------- */
+
+@keyframes iris-draw {
+  from { stroke-dashoffset: var(--len); }
+  to   { stroke-dashoffset: 0; }
+}
+
+@keyframes iris-emerge {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes iris-bloom {
+  0%   { opacity: 0; transform: scale(0.4); }
+  70%  { opacity: 1; transform: scale(1.06); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* 45deg and not 360: the eight blades are one shape repeated every 45deg, so the frame
+   at 45deg is identical to the frame at 0 and the loop has no seam to hide. */
+@keyframes iris-turn {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(45deg); }
+}
+
+@keyframes iris-fade {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.45; }
+}
+
+.iris-ring {
+  stroke-dasharray: var(--len);
+  stroke-dashoffset: var(--len);
+  animation: iris-draw 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.iris-field   { opacity: 0; animation: iris-emerge 0.5s ease-out forwards; }
+.iris-blades  { opacity: 0; animation: iris-emerge 0.5s ease-out 0.55s forwards; }
+
+.iris-light {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: iris-bloom 0.55s cubic-bezier(0.34, 1.3, 0.64, 1) 0.9s forwards;
+}
+
+/* Starts only once the mark is whole, so nothing turns while it is still being drawn. */
+.iris-spin {
+  transform-box: view-box;
+  transform-origin: 50px 50px;
+  animation: iris-turn 2.4s linear 1.45s infinite;
+}
+
+/* Someone who has asked their OS for reduced motion should not get a rotating object —
+   but a spinner that stops dead reads as a frozen page, the one thing a loading
+   indicator must never say. So the draw and the turn both go, and a fade takes over the
+   job of showing that work is still happening. */
+@media (prefers-reduced-motion: reduce) {
+  .iris-ring {
+    stroke-dashoffset: 0;
+    animation: none;
+  }
+
+  .iris-field,
+  .iris-blades,
+  .iris-light {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+
+  .iris-spin {
+    animation: none;
+  }
+
+  .iris-mark {
+    animation: iris-fade 1.8s ease-in-out infinite;
+  }
+}
