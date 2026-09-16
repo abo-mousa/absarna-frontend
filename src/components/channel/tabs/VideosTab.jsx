@@ -121,7 +121,7 @@ export default function VideosTab({ slug, channel, youtubeState, active }) {
 
             <ManagedContentList
                 type="videos"
-                heading={t('channelManage.forms.video.listHeading', { count: content.items.length })}
+                heading={t('channelManage.forms.video.listHeading', { count: content.totalItems })}
                 content={content}
                 getHref={videoPageHref}
                 extraActions={uploadOriginalAction}

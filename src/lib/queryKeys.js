@@ -63,8 +63,11 @@ export const queryKeys = {
     bookReadProgress: (bookId, scope) => ['book-read-progress', bookId, scope],
 
     // ---- owner dashboard ----
-    channelManage: (slug, type, scope) => ['channel-manage', slug, type, scope],
+    channelManage: (slug, type, page, scope) => ['channel-manage', slug, type, page, scope],
+    // The whole list (the video form's series picker) and one page of it (the series tab). Both
+    // under the same prefix, so every series mutation invalidates both.
     channelSeriesManage: (slug, scope) => ['channel-series-manage', slug, scope],
+    channelSeriesManagePage: (slug, page, scope) => ['channel-series-manage', slug, 'page', page, scope],
     channelComments: (slug, size, scope) => ['channel-comments', slug, size, scope],
     channelYouTube: (slug, scope) => ['channel-youtube', slug, scope],
     // Platform-admin only, and user-scoped like everything else here: the queue is a list of

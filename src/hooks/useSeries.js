@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import api from '@/lib/api/client';
 import { queryKeys } from '@/lib/queryKeys';
 import { useUserScope } from './useUserScope';
@@ -68,6 +68,25 @@ export const useChannelSeriesManage = (slug, enabled = true) => {
             return res.data || [];
         },
         enabled: enabled && !!slug,
+    });
+};
+
+/**
+ * One page (zero-based) of the owner's series, for the dashboard's series tab.
+ *
+ * <p>{@link useChannelSeriesManage} above stays whole on purpose: it feeds the video form's series
+ * `<select>`, which has to offer every series.
+ */
+export const useChannelSeriesManagePage = (slug, page = 0, enabled = true) => {
+    const scope = useUserScope();
+    return useQuery({
+        queryKey: queryKeys.channelSeriesManagePage(slug, page, scope),
+        queryFn: async () => {
+            const res = await api.get(`/channels/${slug}/content/series`, { params: { page, size: 20 } });
+            return res.data;
+        },
+        enabled: enabled && !!slug,
+        placeholderData: keepPreviousData,
     });
 };
 

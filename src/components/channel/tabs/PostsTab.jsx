@@ -41,7 +41,7 @@ export default function PostsTab({ slug, active }) {
 
             <ManagedContentList
                 type="posts"
-                heading={t('channelManage.forms.post.listHeading', { count: content.items.length })}
+                heading={t('channelManage.forms.post.listHeading', { count: content.totalItems })}
                 content={content}
                 editable={false}
                 getLabel={(item) => item.content?.length > 60 ? `${item.content.substring(0, 60)}...` : item.content}

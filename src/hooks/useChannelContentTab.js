@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { useToast } from '@/contexts/ToastContext';
+import { useEmptyPageStepBack } from './useEmptyPageStepBack';
 import { t } from '@/i18n';
 import { describeError } from '@/lib/describeError';
 import {
@@ -26,11 +28,26 @@ import {
  * @param slug   the channel
  * @param type   `videos` | `books` | `articles` | `posts`, i.e. the API path segment
  * @param active whether this tab is the one on screen
+ *
+ * <p><b>The list is paged, and the page lives here</b> rather than in each tab, with the two rules
+ * every tab needs: a publish goes back to page 1, where the new item is, and a delete that empties
+ * the last page steps back to the page that is now last. `items` is the page on screen;
+ * `totalItems` counts the whole list, for the heading.
  */
 export function useChannelContentTab(slug, type, active) {
     const { showToast } = useToast();
 
-    const { data: items = [], isLoading: loading } = useChannelContentList(slug, type, active);
+    const [page, setPage] = useState(0);
+    const { data, isLoading: loading } = useChannelContentList(slug, type, active, page);
+    useEmptyPageStepBack(page, setPage, data, loading);
+    const items = data?.content ?? [];
+    const pageInfo = data ? {
+        page: data.currentPage,
+        totalPages: data.totalPages,
+        hasNext: data.hasNext,
+        hasPrevious: data.hasPrevious,
+    } : null;
+    const totalItems = data?.totalItems ?? 0;
     const create = useCreateChannelContent(slug, type);
     const update = useUpdateChannelContent(slug, type);
     const toggle = useToggleContentVisibility(slug, type);
@@ -48,6 +65,9 @@ export function useChannelContentTab(slug, type, active) {
     const publish = async (payload, { action, successMessage, onSuccess }) => {
         try {
             await create.mutateAsync(payload);
+            // Newest first, so the new item is at the top of page 1 — an owner on page 5 would
+            // otherwise publish and see nothing change.
+            setPage(0);
             onSuccess?.();
             showToast(successMessage, 'success');
         } catch (err) {
@@ -87,7 +107,7 @@ export function useChannelContentTab(slug, type, active) {
         });
     };
 
-    return { items, loading, publish, save, toggleVisibility, deleteItem,
+    return { items, loading, pageInfo, totalItems, setPage, publish, save, toggleVisibility, deleteItem,
         isPublishing: create.isPending, isSaving: update.isPending };
 }
 

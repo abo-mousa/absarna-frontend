@@ -1,15 +1,22 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
-import { Input } from '@/components/ui';
+import { Input, Pager } from '@/components/ui';
 import ContentPublishForm from '../ContentPublishForm';
-import { useChannelSeriesManage, useCreateSeries, useDeleteSeries } from '@/hooks/useSeries';
+import { useChannelSeriesManagePage, useCreateSeries, useDeleteSeries } from '@/hooks/useSeries';
+import { useEmptyPageStepBack } from '@/hooks/useEmptyPageStepBack';
 import { stripEmpty } from '@/lib/forms';
 import { t } from '@/i18n';
 
 export default function SeriesTab({ slug, active }) {
     const { showToast } = useToast();
-    const { data: seriesList = [], isLoading } = useChannelSeriesManage(slug, active);
+    // Paged: an import creates a series per playlist. Same rules as the content tabs — see
+    // useChannelContentTab.
+    const [page, setPage] = useState(0);
+    const { data, isLoading } = useChannelSeriesManagePage(slug, page, active);
+    useEmptyPageStepBack(page, setPage, data, isLoading);
+    const seriesList = data?.content ?? [];
+    const listRef = useRef(null);
     const createSeries = useCreateSeries(slug);
     const deleteSeries = useDeleteSeries(slug);
     const [form, setForm] = useState({ title: '', description: '' });
@@ -19,6 +26,7 @@ export default function SeriesTab({ slug, active }) {
         try {
             await createSeries.mutateAsync(stripEmpty(form));
             setForm({ title: '', description: '' });
+            setPage(0);
             showToast(t('channelManage.seriesCreated'), 'success');
         } catch (err) {
             showToast(t('channelManage.seriesCreateFailed', {
@@ -58,8 +66,8 @@ export default function SeriesTab({ slug, active }) {
                 />
             </ContentPublishForm>
 
-            <div>
-                <h3 className="text-lg font-bold mb-3">{t('channelManage.seriesListHeading', { count: seriesList.length })}</h3>
+            <div ref={listRef} className="scroll-mt-[76px]">
+                <h3 className="text-lg font-bold mb-3">{t('channelManage.seriesListHeading', { count: data?.totalItems ?? 0 })}</h3>
                 {isLoading ? (
                     <p className="text-sm text-text-muted py-2">{t('common.loading')}</p>
                 ) : seriesList.length === 0 ? (
@@ -86,6 +94,18 @@ export default function SeriesTab({ slug, active }) {
                             </div>
                         ))}
                     </div>
+                )}
+                {data && (
+                    <Pager
+                        page={data.currentPage}
+                        totalPages={data.totalPages}
+                        hasPrevious={data.hasPrevious}
+                        hasNext={data.hasNext}
+                        onChange={(next) => {
+                            setPage(next);
+                            listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }}
+                    />
                 )}
             </div>
         </div>

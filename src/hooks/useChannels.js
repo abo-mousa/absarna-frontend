@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { UPLOAD_CONFIRM_TIMEOUT_MS } from '@/lib/api/client';
 import { queryKeys } from '@/lib/queryKeys';
 import { useUserScope } from './useUserScope';
@@ -174,15 +174,29 @@ export const useMyChannels = (enabled = true) => {
 
 // ============ Owner management (ChannelManage.jsx) ============
 
-export const useChannelContentList = (slug, type, enabled = true) => {
+/** Rows per page of the owner's paged lists. */
+export const MANAGE_PAGE_SIZE = 20;
+
+/**
+ * One page (zero-based) of the owner's list of one content type, as the backend's usual page
+ * object (`content`, `currentPage`, `totalPages`, `totalItems`, `hasNext`, `hasPrevious`).
+ *
+ * <p>Paged because an import put 1,928 videos on one dashboard, which fetched and rendered every
+ * one of them per visit — and the other types use the same list, so they page the same way.
+ */
+export const useChannelContentList = (slug, type, enabled = true, page = 0) => {
     const scope = useUserScope();
     return useQuery({
-        queryKey: queryKeys.channelManage(slug, type, scope),
+        queryKey: queryKeys.channelManage(slug, type, page, scope),
         queryFn: async () => {
-            const res = await api.get(`/channels/${slug}/content/${type}`);
-            return res.data || [];
+            const res = await api.get(`/channels/${slug}/content/${type}`,
+                { params: { page, size: MANAGE_PAGE_SIZE } });
+            return res.data;
         },
         enabled: enabled && !!slug && !!type,
+        // The current page stays on screen while the next loads, so the list does not collapse
+        // to "loading" and yank the scroll position between pages.
+        placeholderData: keepPreviousData,
     });
 };
 

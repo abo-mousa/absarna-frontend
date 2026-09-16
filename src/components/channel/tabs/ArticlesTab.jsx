@@ -41,7 +41,7 @@ export default function ArticlesTab({ slug, active }) {
 
             <ManagedContentList
                 type="articles"
-                heading={t('channelManage.forms.article.listHeading', { count: content.items.length })}
+                heading={t('channelManage.forms.article.listHeading', { count: content.totalItems })}
                 content={content}
                 getHref={(article) => `/articles/${article.id}`}
             />

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { Pager } from '@/components/ui';
 import ContentManageList from '../ContentManageList';
 import ContentEditModal from '../ContentEditModal';
 
@@ -19,10 +20,18 @@ export default function ManagedContentList({
     type, heading, content, getLabel, getHref, extraActions, renderStatus, editable = true,
 }) {
     const [editing, setEditing] = useState(null);
+    const listRef = useRef(null);
+
+    const changePage = (page) => {
+        content.setPage(page);
+        // The pager is under twenty rows; without this the owner lands at the bottom of the next
+        // page and has to scroll back up to its first item.
+        listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
 
     return (
         <>
-            <div>
+            <div ref={listRef} className="scroll-mt-[76px]">
                 <h3 className="text-lg font-bold mb-3">{heading}</h3>
                 <ContentManageList
                     items={content.items}
@@ -35,6 +44,15 @@ export default function ManagedContentList({
                     extraActions={extraActions}
                     renderStatus={renderStatus}
                 />
+                {content.pageInfo && (
+                    <Pager
+                        page={content.pageInfo.page}
+                        totalPages={content.pageInfo.totalPages}
+                        hasPrevious={content.pageInfo.hasPrevious}
+                        hasNext={content.pageInfo.hasNext}
+                        onChange={changePage}
+                    />
+                )}
             </div>
 
             {editable && (
