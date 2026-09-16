@@ -72,7 +72,7 @@ export const queryKeys = {
     // leak of exactly the rows the whole feature exists to hide.
     // Keyed by TYPE so the two sub-tabs cache separately -- switching between them
     // must not serve the other's rows from cache while its own request is in flight.
-    review: (type, states, scope) => ['review', type, states, scope],
+    review: (type, states, page, scope) => ['review', type, states, page, scope],
 
     // ---- platform admin ----
     adminStats: (scope) => ['admin-stats', scope],

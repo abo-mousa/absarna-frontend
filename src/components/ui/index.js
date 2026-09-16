@@ -9,5 +9,6 @@ export { default as IrisMark } from './IrisMark';
 export { default as EmptyState } from './EmptyState';
 export { default as Avatar } from './Avatar';
 export { default as QueryState } from './QueryState';
+export { default as Pager } from './Pager';
 export { default as LinkifiedText } from './LinkifiedText';
 export { default as ExpandableText } from './ExpandableText';

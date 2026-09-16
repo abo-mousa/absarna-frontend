@@ -984,6 +984,13 @@ export const ar = {
             alsoFlagged: 'مرصود أيضًا في:',
             empty: 'لا توجد عناصر بانتظار المراجعة',
             emptyDescription: 'كل ما رصده الفحص التلقائي تمت مراجعته.',
+            // The queue is fetched UNFILTERED -- one page holds the findings of every detector,
+            // so a reviewer may open a tab whose backlog count is large and find nothing on the
+            // page they happen to be on. Saying so is the difference between a working pager and
+            // an empty screen that reads as a bug.
+            pagesSpanTypes: 'الصفحة الواحدة تضم نتائج كل أنواع الفحص، فقد تجد تبويباً فارغاً في صفحة وممتلئاً في غيرها.',
+            emptyOnThisPage: 'لا يوجد في هذه الصفحة شيء من هذا النوع',
+            emptyOnThisPageDescription: 'ما زال هناك {count} بانتظار المراجعة في صفحات أخرى. تنقّل بين الصفحات بالأسفل.',
             // Per TYPE, because "possibly music under speech" and "possible explicit content" are
             // different problems and one shared sentence would serve neither.
             reason: {
@@ -1113,6 +1120,24 @@ export const ar = {
     notFound: {
         title: 'الصفحة غير موجودة',
         description: 'هذه الصفحة غير موجودة أو تم نقلها',
+    },
+
+    /**
+     * Paging controls, shared by the two moderation queues.
+     *
+     * <p>Its own namespace rather than a corner of `common`, because the rule at the top of this
+     * file is that `common` holds words that genuinely mean the same thing everywhere — and these
+     * three are not words, they are one control's vocabulary. Kept together so a reworded
+     * "previous" cannot end up disagreeing with "next" two hundred lines away.
+     */
+    pager: {
+        previous: 'السابق',
+        next: 'التالي',
+        // Latin digits, like every other number in the app (lib/numbers.js). The page numbers
+        // here are ONE-BASED while the API is zero-based: the pager is read by a person.
+        position: 'صفحة {page} من {total}',
+        // The accessible name for the whole control, which is otherwise two unlabelled arrows.
+        label: 'تنقّل بين الصفحات',
     },
 };
 

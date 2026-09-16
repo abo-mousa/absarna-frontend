@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Check, ExternalLink, Play, X } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
 import { VideoPlayer } from '../components/content';
-import { Badge, Button, Modal, QueryState } from '../components/ui';
+import { Badge, Button, Modal, Pager, QueryState } from '../components/ui';
 import { useToast } from '../contexts/ToastContext';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { useReviewQueue, useDecideReview } from '../hooks/useReview';
@@ -67,7 +67,16 @@ function AdminReview() {
     // BOTH detectors is invisible from inside a single-type view, so a reviewer clearing its music
     // would never learn it was also flagged for explicit content -- and clearing the music is
     // exactly what would then publish it.
-    const { data, isLoading, isError, error, refetch } = useReviewQueue();
+    //
+    // PAGED, which it was not. The endpoint's old response shape carried `page`/`size`/
+    // `totalElements` where every other list on the platform carries `currentPage`/`totalPages`/
+    // `hasNext`, so this screen requested one page and offered no way to reach another: the
+    // moderation queue was capped at its first twenty findings for as long as it existed. With
+    // explicit-content detection enabled an UNCHECKED finding queues whenever a scan does not
+    // finish, so the backlog grows on its own and a reviewer who cannot reach page 2 cannot empty
+    // it.
+    const [page, setPage] = useState(0);
+    const { data, isLoading, isError, error, refetch } = useReviewQueue({ page });
     const decide = useDecideReview();
     const playerRef = useRef(null);
 
@@ -88,6 +97,12 @@ function AdminReview() {
     // bails on setting the same value; an unconditional set added later would spin.
     const rows = useMemo(() => grouped[tab] ?? [], [grouped, tab]);
     const depth = data?.depth ?? {};
+    const totalPages = data?.totalPages ?? 0;
+    // A page spans every detector (the fetch is deliberately unfiltered — see above), so this tab
+    // can be empty on this page while its own backlog is not. Those are two completely different
+    // things to tell a reviewer: one means the work is done, the other means keep paging.
+    const backlogForTab = depth[tab] ?? 0;
+    const emptyElsewhere = rows.length === 0 && backlogForTab > 0 && totalPages > 1;
 
     // What ELSE is outstanding on the video being decided. The reason this screen fetches every
     // type at once.
@@ -170,6 +185,12 @@ function AdminReview() {
                     })}
                 </div>
 
+                {/* Only once there is more than one page: before that a page IS the queue and the
+                    sentence would be explaining a situation nobody is in. */}
+                {totalPages > 1 && (
+                    <p className="text-xs text-text-muted mb-4">{t('admin.review.pagesSpanTypes')}</p>
+                )}
+
                 <QueryState
                     isLoading={isLoading}
                     isError={isError}
@@ -177,8 +198,12 @@ function AdminReview() {
                     onRetry={refetch}
                     isEmpty={rows.length === 0}
                     emptyIcon={EMPTY_ICON[tab] ?? '📭'}
-                    emptyTitle={t('admin.review.empty')}
-                    emptyDescription={t('admin.review.emptyDescription')}
+                    emptyTitle={emptyElsewhere
+                        ? t('admin.review.emptyOnThisPage')
+                        : t('admin.review.empty')}
+                    emptyDescription={emptyElsewhere
+                        ? t('admin.review.emptyOnThisPageDescription', { count: backlogForTab })
+                        : t('admin.review.emptyDescription')}
                 >
                     <div className="grid gap-6 lg:grid-cols-[320px_1fr] items-start">
                         {/* The queue */}
@@ -341,6 +366,17 @@ function AdminReview() {
                         )}
                     </div>
                 </QueryState>
+
+                {/* Outside QueryState on purpose: it renders the empty state INSTEAD of its
+                    children, and the moment a reviewer most needs the pager is exactly a tab that
+                    is empty on this page and full on the next. */}
+                <Pager
+                    page={data?.currentPage ?? page}
+                    totalPages={totalPages}
+                    hasPrevious={data?.hasPrevious ?? page > 0}
+                    hasNext={data?.hasNext ?? false}
+                    onChange={setPage}
+                />
 
                 <Modal
                     open={!!confirmingReject}
