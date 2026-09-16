@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/contexts/ToastContext';
 import { Input, Button } from '@/components/ui';
 import { FieldLabel } from '../ContentPublishForm';
-import YouTubeImportPanel from '../YouTubeImportPanel';
+import YouTubeImportPanel, { importReasonText } from '../YouTubeImportPanel';
 import { useUpdateChannel } from '@/hooks/useChannels';
 import { t } from '@/i18n';
 import { describeError } from '@/lib/describeError';
@@ -98,8 +98,18 @@ function useImportCompletionToast(slug, youtubeState) {
             // The import wrote videos and series straight into this channel; every list is stale.
             queryClient.invalidateQueries({ queryKey: ['channel-manage', slug] });
             queryClient.invalidateQueries({ queryKey: ['channel-series-manage', slug] });
+        } else if (status === 'PARTIAL') {
+            // Not an error — the place is saved and the same button continues — but not silent
+            // either: an owner who started a long import and moved on down the tab would otherwise
+            // not learn that it stopped. Held longer than a success, because it asks for an action.
+            showToast(importReasonText(youtubeState) || t('youtube.pausedToast'), 'info', 8000);
+            // The videos committed before the pause are real rows; the lists should show them.
+            queryClient.invalidateQueries({ queryKey: ['channel-manage', slug] });
+            queryClient.invalidateQueries({ queryKey: ['channel-series-manage', slug] });
         } else if (status === 'FAILED') {
-            showToast(t('youtube.failed', { reason: youtubeState?.importMessage || '' }), 'error');
+            showToast(t('youtube.failed', {
+                reason: importReasonText(youtubeState) || youtubeState?.importMessage || '',
+            }), 'error');
         }
         // Keyed on the status TRANSITION alone, per the note above. `importedVideos` climbs on
         // every poll while the import runs, so listing it would re-fire this effect — and its toast

@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useState } from 'react';
-import { CheckCircle, XCircle, X } from 'lucide-react';
+import { CheckCircle, XCircle, Info, X } from 'lucide-react';
 import { t } from '@/i18n';
 
 const ToastContext = createContext();
@@ -13,6 +13,9 @@ const EXIT_TRANSITION_MS = 200;
 const STYLES = {
     success: { wrapper: 'bg-emerald-600 text-white', Icon: CheckCircle },
     error: { wrapper: 'bg-red-600 text-white', Icon: XCircle },
+    // Something the user should know that is not a failure — a paused import, say, which has lost
+    // nothing and continues from the same button. Red there would read as broken.
+    info: { wrapper: 'bg-gold text-gray-900', Icon: Info },
 };
 
 let idCounter = 0;

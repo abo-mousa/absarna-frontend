@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { importButtonLabel, importProgress } from '@/components/channel/YouTubeImportPanel';
+import { importButtonLabel, importProgress, importReasonText } from '@/components/channel/YouTubeImportPanel';
 import { t } from '@/i18n';
 
 /**
@@ -66,5 +66,29 @@ describe('importProgress', () => {
 
     it('groups the digits, since the numbers this reports are five and six figures', () => {
         expect(importProgress({ importedVideos: 137412 })).toContain('137,412');
+    });
+});
+
+describe('importReasonText', () => {
+    it('words the codes the backend sends about a run', () => {
+        // The pause that used to read «السبب: I/O error on GET request for …: Read timed out».
+        expect(importReasonText({ importReason: 'YOUTUBE_UNREACHABLE' }))
+            .toBe(t('youtube.importReasons.YOUTUBE_UNREACHABLE'));
+        expect(importReasonText({ importReason: 'YOUTUBE_RETRYING' }))
+            .toBe(t('youtube.importReasons.YOUTUBE_RETRYING'));
+        expect(importReasonText({ importReason: 'YOUTUBE_QUOTA_EXHAUSTED' }))
+            .toBe(t('youtube.importReasons.YOUTUBE_QUOTA_EXHAUSTED'));
+    });
+
+    it('returns null for a code this build does not know, so importMessage can stand in', () => {
+        // A code added on the backend first must not render as its own key — t() would print
+        // "youtube.importReasons.SOMETHING_NEW" on screen.
+        expect(importReasonText({ importReason: 'SOMETHING_NEW' })).toBeNull();
+    });
+
+    it('returns null when there is no code', () => {
+        expect(importReasonText({ importReason: null })).toBeNull();
+        expect(importReasonText({})).toBeNull();
+        expect(importReasonText(undefined)).toBeNull();
     });
 });

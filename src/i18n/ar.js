@@ -699,6 +699,22 @@ export const ar = {
         paused: 'توقف الاستيراد مؤقتاً وحُفِظ موضعه. اضغط "متابعة الاستيراد" للإكمال من حيث توقف.',
         pausedReason: 'السبب: {reason}',
         resumeImport: 'متابعة الاستيراد',
+        // Toasted when a run the owner is watching goes from RUNNING to PARTIAL. The panel already
+        // says it in place; this is for an owner looking at another part of the settings tab.
+        pausedToast: 'توقف استيراد يوتيوب مؤقتاً — يمكنك متابعته من حيث توقف.',
+
+        // The backend's `importReason` on a run — a code, worded here. Kept apart from
+        // `errors.reasons` because these are not a request being refused: they describe a run
+        // that is already going, or has stopped. A code with no entry falls back to the English
+        // `importMessage`, so the two repos still deploy separately.
+        importReasons: {
+            // Set while RUNNING: a call went unanswered and the import is waiting to ask again.
+            // Without it, a count that stops climbing for two minutes reads as a stuck import.
+            YOUTUBE_RETRYING: 'يوتيوب لا يستجيب حالياً، وسنعيد المحاولة تلقائياً بعد لحظات. لا حاجة لفعل أي شيء.',
+            // PARTIAL after every retry went unanswered. The place is saved, so nothing is lost.
+            YOUTUBE_UNREACHABLE: 'لم يستجب يوتيوب رغم عدة محاولات، فأوقفنا الاستيراد وحفظنا موضعه. انتظر قليلاً ثم اضغط "متابعة الاستيراد".',
+            YOUTUBE_QUOTA_EXHAUSTED: 'استُهلكت حصة المنصة اليومية من طلبات يوتيوب. تابع الاستيراد غداً وسيكمل من حيث توقف.',
+        },
         // Shown when pressing the button itself fails — as opposed to the import failing once it
         // has started, which is `failed` above and comes back through importStatus.
         startFailed: 'تعذر بدء الاستيراد: {reason}',

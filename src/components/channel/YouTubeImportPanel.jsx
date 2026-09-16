@@ -11,7 +11,7 @@ import {
     useStartYouTubeImport,
     useAttestYouTubeChannel,
 } from '@/hooks/useChannelYouTube';
-import { t } from '@/i18n';
+import { t, tOptional } from '@/i18n';
 import { describeError } from '@/lib/describeError';
 import { formatCount } from '@/lib/numbers';
 
@@ -49,6 +49,21 @@ export function importProgress(state) {
     return Number.isFinite(total) && total > 0
         ? t('youtube.progressOfTotal', { count: formatCount(count), total: formatCount(total) })
         : t('youtube.progress', { count: formatCount(count) });
+}
+
+/**
+ * The Arabic sentence for the run's `importReason` code — or `null` when there is no code, or none
+ * this build knows.
+ *
+ * <p>Why a run paused used to be `importMessage` alone, an English string that could be a quoted
+ * Spring exception («السبب: I/O error on GET request for …: Read timed out»). The code says the
+ * same thing in words an owner can act on; `importMessage` stays as the fallback for a code added
+ * on the backend before this side learned it.
+ */
+export function importReasonText(state) {
+    const reason = state?.importReason;
+    if (typeof reason !== 'string' || !reason) return null;
+    return tOptional(`youtube.importReasons.${reason}`) ?? null;
 }
 
 /**
@@ -312,6 +327,13 @@ function YouTubeImportPanel({ slug }) {
                         </p>
                     )}
 
+                    {/* The one reason a RUNNING run carries: YouTube stopped answering and the
+                        backend is waiting out a retry. The poll picks it up, and the next page
+                        committed clears it. */}
+                    {state.importStatus === 'RUNNING' && importReasonText(state) && (
+                        <p className="text-sm text-gold">{importReasonText(state)}</p>
+                    )}
+
                     {state.importStatus === 'SUCCESS' && (
                         <p className="text-sm text-primary flex items-center gap-1.5">
                             <Check size={16} />
@@ -332,7 +354,9 @@ function YouTubeImportPanel({ slug }) {
 
                     {state.importStatus === 'FAILED' && (
                         <p className="text-sm text-red-600 dark:text-red-400">
-                            {t('youtube.failed', { reason: state.importMessage || '' })}
+                            {t('youtube.failed', {
+                                reason: importReasonText(state) || state.importMessage || '',
+                            })}
                         </p>
                     )}
 
@@ -346,11 +370,14 @@ function YouTubeImportPanel({ slug }) {
                             </p>
                         )}
 
-                    {state.importStatus === 'PARTIAL' && state.importMessage && (
-                        <p className="text-xs text-text-muted" dir="auto">
-                            {t('youtube.pausedReason', { reason: state.importMessage })}
-                        </p>
-                    )}
+                    {state.importStatus === 'PARTIAL' &&
+                        (importReasonText(state) || state.importMessage) && (
+                            <p className="text-xs text-text-muted" dir="auto">
+                                {t('youtube.pausedReason', {
+                                    reason: importReasonText(state) || state.importMessage,
+                                })}
+                            </p>
+                        )}
 
                     {/* One button for start, retry and resume, because from the owner's side they
                         are one intent — and `importButtonLabel` returns null for RUNNING and
