@@ -45,6 +45,8 @@ export const ar = {
         chooseFile: 'اختيار ملف',
         changeFile: 'تغيير الملف',
         noFileChosen: 'لم يتم اختيار أي ملف',
+        // Read after a link's text by screen readers, for links that open a new browser tab.
+        opensInNewTab: '(يفتح في نافذة جديدة)',
         // Joins items in a run-on list. Arabic uses ، rather than , — punctuation is locale
         // data too, and hardcoding a comma at a call site is the same bug as hardcoding a word.
         listSeparator: '، ',

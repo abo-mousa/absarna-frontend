@@ -80,6 +80,8 @@ export default function BooksTab({ slug, active }) {
                 type="books"
                 heading={t('channelManage.forms.book.listHeading', { count: content.items.length })}
                 content={content}
+                // Readable the moment it is created: a book has no pipeline step after confirm.
+                getHref={(book) => `/books/${book.id}`}
             />
         </div>
     );

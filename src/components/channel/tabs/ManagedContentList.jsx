@@ -11,11 +11,12 @@ import ContentEditModal from '../ContentEditModal';
  * same `saving` wiring.
  *
  * @param content  a `useChannelContentTab` result
+ * @param getHref  optional, see ContentManageList
  * @param editable false for a type with no editor (a post is its own content; there is nothing to
  *                 open)
  */
 export default function ManagedContentList({
-    type, heading, content, getLabel, extraActions, renderStatus, editable = true,
+    type, heading, content, getLabel, getHref, extraActions, renderStatus, editable = true,
 }) {
     const [editing, setEditing] = useState(null);
 
@@ -27,6 +28,7 @@ export default function ManagedContentList({
                     items={content.items}
                     loading={content.loading}
                     getLabel={getLabel}
+                    getHref={getHref}
                     onEdit={editable ? setEditing : undefined}
                     onToggleVisibility={content.toggleVisibility}
                     onDelete={content.deleteItem}

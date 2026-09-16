@@ -24,6 +24,18 @@ const EMPTY_FORM = {
     category: '', seriesId: '', orderInSeries: '', originalPublishDate: '',
 };
 
+/**
+ * A video's public page, or null while it has nothing to play.
+ *
+ * <p>READY only. An UPLOADED video is still transcoding and a FAILED one never finished, so their
+ * pages would open on a player with no source; the row's own status block already says which of
+ * the two it is. A HELD video <em>is</em> READY and does get the link — its page shows its owner
+ * the notice saying why nobody else can see it, which is the reason to open it.
+ */
+export function videoPageHref(video) {
+    return video?.status === 'READY' ? `/video/${video.id}` : null;
+}
+
 export default function VideosTab({ slug, channel, youtubeState, active }) {
     const content = useChannelContentTab(slug, 'videos', active);
     const upload = useChannelUpload(slug, 'videos');
@@ -111,6 +123,7 @@ export default function VideosTab({ slug, channel, youtubeState, active }) {
                 type="videos"
                 heading={t('channelManage.forms.video.listHeading', { count: content.items.length })}
                 content={content}
+                getHref={videoPageHref}
                 extraActions={uploadOriginalAction}
                 // The transcode state, the retry out of a failed one, and the moderation verdicts
                 // — on the screen an owner actually opens. A held video is READY, visible and

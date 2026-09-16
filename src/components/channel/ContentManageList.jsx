@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { Eye, EyeOff, Trash2, Pencil } from 'lucide-react';
 import { t } from '@/i18n';
 
@@ -15,6 +16,11 @@ import { t } from '@/i18n';
  *                     videos tab uses it for "upload the original file" on YouTube-backed rows.
  *                     A slot rather than a prop per action, so this component does not grow a
  *                     union of every content type's capabilities.
+ * @param getHref      optional — the item's public page, which its title then links to, or null for
+ *                     an item with nothing to show there yet. Opens in a NEW browser tab, and that
+ *                     is not a preference: leaving this page cancels an upload in progress (see
+ *                     useChannelUpload), so a same-tab link clicked mid-way through a 2 GB lecture
+ *                     would abort it. Omitted for posts, which have no page of their own.
  * @param renderStatus optional render function for a block UNDER a row's title, for whatever that
  *                     content type has to say about its own state. A second slot rather than an
  *                     extension of `extraActions`, because the two sit in different places and
@@ -26,7 +32,7 @@ import { t } from '@/i18n';
  *                     dashboard showed them nothing.
  */
 function ContentManageList({ items, loading, onToggleVisibility, onDelete, onEdit,
-                             getLabel = (item) => item.title, extraActions, renderStatus }) {
+                             getLabel = (item) => item.title, getHref, extraActions, renderStatus }) {
     if (loading) return <p className="text-sm text-text-muted py-2">{t('common.loading')}</p>;
     if (items.length === 0) return <p className="text-sm text-text-muted py-4">{t('channelManage.emptyContent')}</p>;
 
@@ -43,7 +49,19 @@ function ContentManageList({ items, loading, onToggleVisibility, onDelete, onEdi
                     }`}
                 >
                     <div className="min-w-0">
-                        <strong className={`block truncate ${item.visible ? '' : 'text-text-muted'}`}>{getLabel(item)}</strong>
+                        <strong className={`block truncate ${item.visible ? '' : 'text-text-muted'}`}>
+                            {getHref?.(item) ? (
+                                <Link
+                                    to={getHref(item)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="hover:text-primary hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
+                                >
+                                    {getLabel(item)}
+                                    <span className="sr-only"> {t('common.opensInNewTab')}</span>
+                                </Link>
+                            ) : getLabel(item)}
+                        </strong>
                         {!item.visible && <span className="text-xs text-text-muted">{t('common.hiddenFromVisitors')}</span>}
                         {renderStatus?.(item)}
                     </div>

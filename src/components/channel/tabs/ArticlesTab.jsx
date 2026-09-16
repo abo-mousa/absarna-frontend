@@ -43,6 +43,7 @@ export default function ArticlesTab({ slug, active }) {
                 type="articles"
                 heading={t('channelManage.forms.article.listHeading', { count: content.items.length })}
                 content={content}
+                getHref={(article) => `/articles/${article.id}`}
             />
         </div>
     );
