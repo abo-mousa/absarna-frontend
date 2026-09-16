@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { Pager } from '@/components/ui';
+import { useKeepScrollPlace } from '@/hooks/useKeepScrollPlace';
 import ContentManageList from '../ContentManageList';
 import ContentEditModal from '../ContentEditModal';
 
@@ -23,41 +24,46 @@ export default function ManagedContentList({
 }) {
     const [editing, setEditing] = useState(null);
     const listRef = useRef(null);
+    const [heldHeight, holdPlace] = useKeepScrollPlace(listRef);
 
+    // The page stays where it is: no scrolling to the top of the list. A last page shorter than
+    // the one before would otherwise shrink the document and pull the pager out from under the
+    // click, so the height is held through the change (useKeepScrollPlace).
     const changePage = (page) => {
+        holdPlace();
         content.setPage(page);
-        // The pager is under twenty rows; without this the owner lands at the bottom of the next
-        // page and has to scroll back up to its first item.
-        listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
 
     return (
         <>
-            <div ref={listRef} className="scroll-mt-[76px]">
-                <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
-                    <h3 className="text-lg font-bold">{heading}</h3>
-                    {action}
-                </div>
-                <ContentManageList
-                    items={content.items}
-                    loading={content.loading}
-                    getLabel={getLabel}
-                    getHref={getHref}
-                    onEdit={editable ? setEditing : undefined}
-                    onToggleVisibility={content.toggleVisibility}
-                    onDelete={content.deleteItem}
-                    extraActions={extraActions}
-                    renderStatus={renderStatus}
-                />
-                {content.pageInfo && (
-                    <Pager
-                        page={content.pageInfo.page}
-                        totalPages={content.pageInfo.totalPages}
-                        hasPrevious={content.pageInfo.hasPrevious}
-                        hasNext={content.pageInfo.hasNext}
-                        onChange={changePage}
+            {/* Inline style: the held height is a runtime value, which Tailwind cannot see. */}
+            <div style={heldHeight ? { minHeight: heldHeight } : undefined}>
+                <div ref={listRef}>
+                    <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+                        <h3 className="text-lg font-bold">{heading}</h3>
+                        {action}
+                    </div>
+                    <ContentManageList
+                        items={content.items}
+                        loading={content.loading}
+                        getLabel={getLabel}
+                        getHref={getHref}
+                        onEdit={editable ? setEditing : undefined}
+                        onToggleVisibility={content.toggleVisibility}
+                        onDelete={content.deleteItem}
+                        extraActions={extraActions}
+                        renderStatus={renderStatus}
                     />
-                )}
+                    {content.pageInfo && (
+                        <Pager
+                            page={content.pageInfo.page}
+                            totalPages={content.pageInfo.totalPages}
+                            hasPrevious={content.pageInfo.hasPrevious}
+                            hasNext={content.pageInfo.hasNext}
+                            onChange={changePage}
+                        />
+                    )}
+                </div>
             </div>
 
             {editable && (

@@ -12,6 +12,7 @@ import {
     useUpdateSeries,
 } from '@/hooks/useSeries';
 import { useEmptyPageStepBack } from '@/hooks/useEmptyPageStepBack';
+import { useKeepScrollPlace } from '@/hooks/useKeepScrollPlace';
 import { stripEmpty } from '@/lib/forms';
 import { t } from '@/i18n';
 
@@ -245,13 +246,14 @@ export default function SeriesBrowser({ slug, active, onOpen }) {
     useEmptyPageStepBack(page, setPage, data, isLoading);
     const seriesList = data?.content ?? [];
     const listRef = useRef(null);
+    const [heldHeight, holdPlace] = useKeepScrollPlace(listRef);
 
     const rowClass = 'flex items-center justify-between gap-3 p-3 rounded-md border border-border-light';
     const openClass = 'flex items-center gap-3 min-w-0 flex-1 text-right rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary';
 
     return (
-        <div>
-            <div ref={listRef} className="scroll-mt-[76px]">
+        <div style={heldHeight ? { minHeight: heldHeight } : undefined}>
+            <div ref={listRef}>
                 <h3 className="text-lg font-bold mb-3">
                     {t('channelManage.seriesListHeading', { count: data?.totalItems ?? 0 })}
                 </h3>
@@ -297,8 +299,9 @@ export default function SeriesBrowser({ slug, active, onOpen }) {
                         hasPrevious={data.hasPrevious}
                         hasNext={data.hasNext}
                         onChange={(next) => {
+                            // Stays where it is — see ManagedContentList's changePage.
+                            holdPlace();
                             setPage(next);
-                            listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                         }}
                     />
                 )}

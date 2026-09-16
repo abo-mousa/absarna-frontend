@@ -7,6 +7,7 @@ import ManagedContentList from './ManagedContentList';
 import VideoManageStatus from '../VideoManageStatus';
 import SeriesBrowser, { NewSeriesModal, SeriesActions } from '../SeriesBrowser';
 import { useChannelContentTab } from '@/hooks/useChannelContentTab';
+import { useKeepScrollPlace } from '@/hooks/useKeepScrollPlace';
 import { useChannelUpload } from '@/hooks/useChannelUpload';
 import { useChannelSeriesManage } from '@/hooks/useSeries';
 import { usePresignedUpload, acceptAttribute } from '@/hooks/usePresignedUpload';
@@ -64,13 +65,9 @@ export default function VideosTab({ slug, channel, youtubeState, active }) {
 
     // Switching view or opening a series swaps the list for one that is, at least while it loads,
     // shorter — and a page that gets shorter under the reader is clamped upward by the browser, so
-    // the screen jumped away from where the owner had just clicked. The list area keeps the height
-    // it had at the moment of the switch as a minimum, so nothing above or at the click moves.
-    // Measured on the inner element, whose height is the list's own, so switching back and forth
-    // does not ratchet the minimum up.
+    // the screen jumped away from where the owner had just clicked. See useKeepScrollPlace.
     const listRef = useRef(null);
-    const [heldHeight, setHeldHeight] = useState(0);
-    const holdPlace = () => setHeldHeight(listRef.current?.offsetHeight ?? 0);
+    const [heldHeight, holdPlace] = useKeepScrollPlace(listRef);
     const openSeriesView = (series) => { holdPlace(); setOpenSeries(series); };
     const switchView = (next) => {
         if (next === view && !openSeries) return;
