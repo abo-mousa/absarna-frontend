@@ -1,0 +1,43 @@
+# أَبْصَرْنا (Absarna) — https://absarna.com
+#
+# There was no robots.txt at all, which is not the same as this file: a missing one means every
+# crawler guesses, and some of them guess conservatively. The platform's whole purpose is that
+# this material is found and read, so crawling is allowed explicitly.
+#
+# NO Sitemap: LINE ON PURPOSE. Nothing generates a sitemap — there is no sitemap endpoint on the
+# API and no build step that writes one — and pointing a crawler at a URL that 404s is worse than
+# saying nothing: it is a fetch error reported in every search console, on a file whose job is to
+# be trustworthy. Add the line in the same change that adds the sitemap, never before.
+#
+# Note this is a client-rendered SPA with no server-side rendering, so a crawler that does not
+# execute JavaScript sees only the shell in index.html. That is a separate problem from this file
+# and cannot be fixed here.
+
+User-agent: *
+Allow: /
+
+# Signed-in surfaces. Every one of these redirects to /login for anyone without a session, so a
+# crawler that follows them spends its budget collecting copies of the same login page. Excluded
+# to save the crawl, not to hide anything — the authorization that matters is on the API.
+Disallow: /admin
+Disallow: /profile
+Disallow: /bookmarks
+Disallow: /history
+Disallow: /subscriptions
+Disallow: /create-channel
+
+# Auth flows, and the two that carry a single-use token in the URL. A reset link is an account
+# takeover for as long as it is valid; it has no business in anybody's index.
+Disallow: /login
+Disallow: /register
+Disallow: /verify-email
+Disallow: /forgot-password
+Disallow: /reset-password
+
+# A crawl trap rather than a page: /search?q=… is unbounded, and every result on it is already
+# reachable through the channel, book and article listings that it searches.
+Disallow: /search
+
+# Non-standard (Yandex reads it; most others ignore it), and harmless where it is ignored. www
+# 301s here, so this names the one origin the content actually lives on.
+Host: https://absarna.com
