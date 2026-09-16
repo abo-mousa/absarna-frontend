@@ -7,6 +7,7 @@ import { ToastProvider } from './contexts/ToastContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { isPlatformAdmin } from '@/lib/user';
 import { safeSessionStorage } from '@/lib/safeStorage';
+import { PRELOAD_RELOAD_FLAG, mayReloadAfterPreloadError } from '@/lib/preloadReload';
 import ErrorBoundary from './components/ErrorBoundary';
 import { Spinner } from './components/ui';
 import { t } from '@/i18n';
@@ -114,16 +115,6 @@ const RouteFallback = () => (
 );
 
 /**
- * The flag that stops a reload loop.
- *
- * <p>Session storage, not local: it should survive the one reload this handler performs and
- * nothing beyond the tab. Through `safeSessionStorage`, because a browser blocking site data
- * throws on the accessor — and the failure mode without the flag is an infinite reload, which is
- * far worse than not reloading at all.
- */
-const PRELOAD_RELOAD_FLAG = 'absarna.preload-reload';
-
-/**
  * Recovers from a lazy chunk that 404s.
  *
  * <p>Every page here is `React.lazy`, so the running app holds hashed filenames for chunks it has
@@ -133,21 +124,32 @@ const PRELOAD_RELOAD_FLAG = 'absarna.preload-reload';
  * after *every* deploy, and it is why "it broke until I refreshed" is the classic SPA report.
  *
  * <p>Vite emits `vite:preloadError` for exactly this. One reload fixes it, because the reload
- * fetches a fresh `index.html` naming the new chunks. Guarded by a flag so a preload error with
- * some *other* cause — the chunk genuinely missing, a proxy serving HTML for a JS request —
- * cannot turn into an endless reload loop; the second failure is left to surface as an error the
- * boundary above can show.
+ * fetches a fresh `index.html` naming the new chunks. Requires the deploy to serve `index.html`
+ * as `no-cache` — see CLAUDE.md's deploy notes.
  *
- * <p>The flag is cleared on a successful load, so the next deploy gets its own single reload.
- * Requires the deploy to serve `index.html` as `no-cache` — see CLAUDE.md's deploy notes.
+ * <h4>How the loop is actually bounded</h4>
+ *
+ * <p>By a <b>timestamp in session storage that is never cleared by this hook</b>, and a refusal to
+ * reload again within `PRELOAD_RELOAD_COOLDOWN_MS` of the one it records. Nothing here runs on
+ * mount, which is the entire fix: the previous version cleared its flag on mount and set it just
+ * before reloading, and since the reload remounts the app the clear undid the set every time. The
+ * flag was never once read as set, so a permanently missing chunk reloaded until the tab was
+ * closed. `lib/preloadReload.js` holds the rule and the reasoning.
+ *
+ * <p><b>`preventDefault()` only when we are actually reloading.</b> Vite rethrows the preload
+ * error unless the event is cancelled, and that throw is what rejects the `React.lazy` import and
+ * puts the failure in front of the error boundary. Cancelling unconditionally — as this did —
+ * swallowed the error on the suppressed path too, so a chunk that stayed missing produced a route
+ * that rendered nothing at all and reported nothing either. Left uncancelled, the second failure
+ * surfaces as the boundary's error screen, which is the outcome the guard exists to reach.
  */
 const usePreloadErrorReload = () => {
     useEffect(() => {
-        safeSessionStorage.removeItem(PRELOAD_RELOAD_FLAG);
         const handler = (event) => {
+            const now = Date.now();
+            if (!mayReloadAfterPreloadError(safeSessionStorage.getItem(PRELOAD_RELOAD_FLAG), now)) return;
             event.preventDefault();
-            if (safeSessionStorage.getItem(PRELOAD_RELOAD_FLAG)) return;
-            safeSessionStorage.setItem(PRELOAD_RELOAD_FLAG, '1');
+            safeSessionStorage.setItem(PRELOAD_RELOAD_FLAG, String(now));
             window.location.reload();
         };
         window.addEventListener('vite:preloadError', handler);
