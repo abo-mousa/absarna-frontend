@@ -41,6 +41,10 @@ export const ar = {
         comingSoon: 'سيتم إضافة المحتوى قريباً',
         tryAnotherSearch: 'جرّب كلمة بحث أو تصنيفاً آخر',
         irreversible: 'لا يمكن التراجع عن هذا الإجراء.',
+        // FilePicker — our own words for what the browser's file input used to print in English.
+        chooseFile: 'اختيار ملف',
+        changeFile: 'تغيير الملف',
+        noFileChosen: 'لم يتم اختيار أي ملف',
         // Joins items in a run-on list. Arabic uses ، rather than , — punctuation is locale
         // data too, and hardcoding a comma at a call site is the same bug as hardcoding a word.
         listSeparator: '، ',

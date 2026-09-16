@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import { Button } from '@/components/ui';
+import { Button, FilePicker } from '@/components/ui';
 
 /**
  * The shell every publish form on the channel dashboard shares: the card, its heading, the
@@ -17,8 +17,8 @@ import { Button } from '@/components/ui';
  * differs is written out.
  *
  * @param heading      the form's own title
- * @param file         optional `{ label, hint, accept, onChange, uploading, progress }` for the
- *                     types backed by a presigned upload. `hint` is shown before a file is
+ * @param file         optional `{ label, hint, accept, onChange, uploading, progress, fileName }`
+ *                     for the types backed by a presigned upload. `hint` is shown before a file is
  *                     picked, because picking one starts the upload — see below.
  * @param submitLabel  the button's text
  * @param submitIcon   optional icon element for the button
@@ -44,12 +44,13 @@ function ContentPublishForm({ heading, onSubmit, file, submitLabel, submitIcon, 
                     {/* The backend's own allowlist, never `video/*` — offering .webm or .avi in
                         the picker only moved the rejection to a server error after the user had
                         already committed to the file. */}
-                    <input
-                        type="file"
+                    <FilePicker
                         accept={file.accept}
                         onChange={file.onChange}
                         disabled={file.uploading}
-                        aria-describedby={file.hint ? hintId : undefined}
+                        fileName={file.fileName}
+                        done={Boolean(file.fileName) && !file.uploading}
+                        describedBy={file.hint ? hintId : undefined}
                     />
                     {file.uploading && (
                         <div className="mt-2">

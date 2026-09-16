@@ -63,6 +63,7 @@ export default function BooksTab({ slug, active }) {
                     onChange: handleFileSelect,
                     uploading: upload.uploading,
                     progress: upload.progress,
+                    fileName: upload.fileName,
                 }}
             >
                 <Input label={t('fields.title')} value={form.title} onChange={field('title')} required />

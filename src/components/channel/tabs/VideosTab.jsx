@@ -73,6 +73,7 @@ export default function VideosTab({ slug, channel, youtubeState, active }) {
                     onChange: handleFileSelect,
                     uploading: upload.uploading,
                     progress: upload.progress,
+                    fileName: upload.fileName,
                 }}
             >
                 <Input label={t('fields.title')} value={form.title} onChange={field('title')} required />

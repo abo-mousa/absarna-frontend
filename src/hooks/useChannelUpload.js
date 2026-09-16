@@ -30,6 +30,10 @@ export function useChannelUpload(slug, kind) {
     const { showToast } = useToast();
     const upload = usePresignedUpload();
     const [uploading, setUploading] = useState(false);
+    // The picked file's name, for the picker to show. Kept here rather than read off the input,
+    // because selectFile clears the input on every path (see its finally) — the input alone would
+    // say nothing is picked under an upload that finished.
+    const [fileName, setFileName] = useState(null);
 
     const { cancel } = upload;
     useEffect(() => () => cancel(), [cancel]);
@@ -106,11 +110,14 @@ export function useChannelUpload(slug, kind) {
         if (!file) return;
 
         setUploading(true);
+        setFileName(file.name);
         try {
             const uploadSessionId = await uploadResuming(file);
             onUploaded(uploadSessionId, file.name.replace(/\.[^/.]+$/, ''));
         } catch (err) {
             if (err.name !== 'AbortError') {
+                // Nothing usable was picked: showing the name would read as "this one is attached".
+                setFileName(null);
                 showToast(failureMessage(err.response?.data?.message || err.message), 'error');
             }
         } finally {
@@ -124,8 +131,14 @@ export function useChannelUpload(slug, kind) {
         }
     }, [uploadResuming, showToast]);
 
-    /** Call after a successful publish: the session is spent, so stop offering to resume it. */
-    const forget = useCallback(() => forgetSession(slug, kind), [slug, kind]);
+    /**
+     * Call after a successful publish: the session is spent, so stop offering to resume it — and
+     * the form is empty again, so the picker is too.
+     */
+    const forget = useCallback(() => {
+        forgetSession(slug, kind);
+        setFileName(null);
+    }, [slug, kind]);
 
-    return { selectFile, uploading, progress: upload.progress, forget };
+    return { selectFile, uploading, progress: upload.progress, forget, fileName };
 }
