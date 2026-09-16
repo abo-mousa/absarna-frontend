@@ -15,9 +15,18 @@ import { t } from '@/i18n';
  *                     videos tab uses it for "upload the original file" on YouTube-backed rows.
  *                     A slot rather than a prop per action, so this component does not grow a
  *                     union of every content type's capabilities.
+ * @param renderStatus optional render function for a block UNDER a row's title, for whatever that
+ *                     content type has to say about its own state. A second slot rather than an
+ *                     extension of `extraActions`, because the two sit in different places and
+ *                     have different shapes: an action is an icon in the row's trailing controls,
+ *                     while a status is prose and may be several lines. The videos tab uses it for
+ *                     the transcode state and the moderation verdicts — <b>a held video is READY,
+ *                     visible and reachable by nobody</b>, and this list is the screen its owner
+ *                     actually opens, so until now the home feed showed them a badge and the
+ *                     dashboard showed them nothing.
  */
 function ContentManageList({ items, loading, onToggleVisibility, onDelete, onEdit,
-                             getLabel = (item) => item.title, extraActions }) {
+                             getLabel = (item) => item.title, extraActions, renderStatus }) {
     if (loading) return <p className="text-sm text-text-muted py-2">{t('common.loading')}</p>;
     if (items.length === 0) return <p className="text-sm text-text-muted py-4">{t('channelManage.emptyContent')}</p>;
 
@@ -26,13 +35,17 @@ function ContentManageList({ items, loading, onToggleVisibility, onDelete, onEdi
             {items.map((item) => (
                 <div
                     key={item.id}
-                    className={`flex items-center justify-between gap-3 p-3 rounded-md border border-border-light ${
+                    // `items-start`, not `items-center`: a row can now carry a status block
+                    // several lines tall (a transcode failure and its retry button), and centring
+                    // that would float the trailing icons into the middle of the paragraph.
+                    className={`flex items-start justify-between gap-3 p-3 rounded-md border border-border-light ${
                         item.visible ? 'bg-surface' : 'bg-surface-hover'
                     }`}
                 >
                     <div className="min-w-0">
                         <strong className={`block truncate ${item.visible ? '' : 'text-text-muted'}`}>{getLabel(item)}</strong>
                         {!item.visible && <span className="text-xs text-text-muted">{t('common.hiddenFromVisitors')}</span>}
+                        {renderStatus?.(item)}
                     </div>
                     <div className="flex gap-1 flex-shrink-0 items-center">
                         {extraActions?.(item)}

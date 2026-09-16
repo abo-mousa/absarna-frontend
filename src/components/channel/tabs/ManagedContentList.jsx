@@ -15,7 +15,7 @@ import ContentEditModal from '../ContentEditModal';
  *                 open)
  */
 export default function ManagedContentList({
-    type, heading, content, getLabel, extraActions, editable = true,
+    type, heading, content, getLabel, extraActions, renderStatus, editable = true,
 }) {
     const [editing, setEditing] = useState(null);
 
@@ -31,6 +31,7 @@ export default function ManagedContentList({
                     onToggleVisibility={content.toggleVisibility}
                     onDelete={content.deleteItem}
                     extraActions={extraActions}
+                    renderStatus={renderStatus}
                 />
             </div>
 

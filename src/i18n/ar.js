@@ -213,6 +213,13 @@ export const ar = {
             // field the form failed to send, the second is a value the user got wrong.
             CURRENT_PASSWORD_REQUIRED: 'تغيير البريد الإلكتروني يتطلب تأكيد كلمة المرور الحالية. أدخلها ثم أعد المحاولة.',
             CURRENT_PASSWORD_INVALID: 'كلمة المرور الحالية غير صحيحة. تأكد منها ثم أعد المحاولة.',
+
+            // Re-queueing a failed transcode. Refused when the video is not FAILED (there may be
+            // a job still running, and a second one would be a duplicate full transcode) or when
+            // it has no uploaded file at all (an imported video plays from YouTube and never had
+            // one). Both read to the owner as "this row is not in the state you think it is",
+            // which is why the sentence sends them to refresh rather than to try again.
+            TRANSCODE_NOT_RETRYABLE: 'لا يمكن إعادة معالجة هذا الفيديو الآن: إمّا أن معالجته لم تفشل، أو أنه ليس مرفوعاً على المنصة أصلاً. حدّث الصفحة لترى حالته الحالية.',
         },
     },
 
@@ -342,6 +349,13 @@ export const ar = {
         // Shown only to the channel's owner, on a video whose transcode has not finished. See
         // VideoCard — nobody else can see such a video at all.
         processing: 'جاري المعالجة',
+        // The other end of that story, and the half that was missing: a transcode can FAIL, and
+        // nothing retries it automatically -- a source ffmpeg cannot decode fails identically
+        // every time, so the reconciler deliberately leaves it alone. Until this existed the card
+        // rendered exactly like a video still being processed, forever, and the owner's only
+        // recourse was deleting it and uploading the whole file again. Two words on the card; the
+        // explanation and the retry button are on the dashboard, where an owner can act.
+        transcodeFailed: 'فشلت المعالجة',
         // WHAT AN OWNER IS TOLD ABOUT THEIR OWN VIDEO, per detector and per state.
         //
         // Owner-facing only: the backend does not send `review` to anyone else. Keyed by TYPE
@@ -737,6 +751,22 @@ export const ar = {
 
         emptyContent: 'لا يوجد محتوى بعد',
         edit: 'تعديل',
+
+        // The owner's dashboard row for a video, which is where an owner actually looks -- the
+        // badge on the home feed told them a video was held and this list said nothing at all.
+        videoStatus: {
+            processing: 'جاري المعالجة',
+            processingHint: 'يعمل الخادم على تجهيز الفيديو. لا يظهر للزوار قبل انتهاء المعالجة، ولا يوجد إشعار — حدّث الصفحة بعد قليل.',
+            failed: 'فشلت المعالجة',
+            // Says what failed, what did NOT fail (the file is still on the servers), and what to
+            // do. The last part matters most: before the retry button existed the only way out
+            // was deleting the video and uploading it again from scratch.
+            failedHint: 'تعثّرت معالجة هذا الملف. الملف الأصلي ما زال محفوظاً، فلا داعي لرفعه من جديد — اضغط «إعادة المعالجة» للمحاولة مرة أخرى. إن تكرّر الفشل فالغالب أن الملف نفسه لا يمكن قراءته.',
+            retry: 'إعادة المعالجة',
+            retrying: 'جاري الإرسال...',
+            retryQueued: 'أُعيد الفيديو إلى قائمة المعالجة.',
+            retryFailed: 'تعذّرت إعادة المعالجة.',
+        },
         editTitle: 'تعديل المحتوى',
         // Shown when editing a video that still plays from YouTube: the change applies here only.
         editYoutubeNote: 'هذا التعديل يظهر على أبصرنا فقط ولا يغيّر شيئاً على يوتيوب.',

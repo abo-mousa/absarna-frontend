@@ -4,6 +4,7 @@ import { useToast } from '@/contexts/ToastContext';
 import { Input } from '@/components/ui';
 import ContentPublishForm, { FieldLabel } from '../ContentPublishForm';
 import ManagedContentList from './ManagedContentList';
+import VideoManageStatus from '../VideoManageStatus';
 import { useChannelContentTab } from '@/hooks/useChannelContentTab';
 import { useChannelUpload } from '@/hooks/useChannelUpload';
 import { useChannelSeriesManage } from '@/hooks/useSeries';
@@ -110,6 +111,10 @@ export default function VideosTab({ slug, channel, youtubeState, active }) {
                 heading={t('channelManage.forms.video.listHeading', { count: content.items.length })}
                 content={content}
                 extraActions={uploadOriginalAction}
+                // The transcode state, the retry out of a failed one, and the moderation verdicts
+                // — on the screen an owner actually opens. A held video is READY, visible and
+                // reachable by nobody, and before this the dashboard said nothing about it at all.
+                renderStatus={(video) => <VideoManageStatus video={video} slug={slug} />}
             />
         </div>
     );

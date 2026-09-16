@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Eye, EyeOff, Trash2, Tv, Calendar, Loader2 } from 'lucide-react';
+import { Play, Eye, EyeOff, Trash2, Tv, Calendar, Loader2, AlertTriangle } from 'lucide-react';
 import { resolveMediaUrl, youtubeThumbnail, durationToSeconds } from '@/lib/media';
 import { formatPublishDate, displayDate } from '@/lib/dayjsAr';
 import { useChannel } from '@/hooks/useChannels';
@@ -129,6 +129,21 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                         <div className="flex items-center gap-1 bg-black/70 text-white text-xs font-semibold px-2 py-0.5 rounded">
                             <Loader2 size={12} className="animate-spin" />
                             {t('video.processing')}
+                        </div>
+                    )}
+                    {/* THE OTHER END OF THAT STORY, and the half that was missing. A transcode
+                        can FAIL, and nothing retries it automatically — a source ffmpeg cannot
+                        decode fails identically every time, so the reconciler deliberately leaves
+                        FAILED alone and only re-queues videos stuck in UPLOADED. With no branch
+                        for it here, a failed upload rendered as a card that never plays and says
+                        nothing, indefinitely, indistinguishable from one still being processed.
+                        Red rather than the neutral black above: this one is not going to resolve
+                        by waiting. Two words on a card — the explanation and the retry control
+                        are on the dashboard, which is where an owner can act on it. */}
+                    {isOwner && video.status === 'FAILED' && (
+                        <div className="flex items-center gap-1 bg-red-600/90 text-white text-xs font-semibold px-2 py-0.5 rounded">
+                            <AlertTriangle size={12} />
+                            {t('video.transcodeFailed')}
                         </div>
                     )}
                     {/* Owner-only, same reasoning as the badge above and the same reason it has

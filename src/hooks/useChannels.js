@@ -294,6 +294,37 @@ export const useDeleteContent = (slug, type) => {
     });
 };
 
+/**
+ * Re-queues a transcode the pipeline gave up on.
+ *
+ * <p><b>The owner's only route out of a FAILED upload, and until it existed there was none.</b>
+ * Nothing retries these automatically and that is deliberate on the backend's side: a source
+ * ffmpeg cannot decode fails identically every time, and re-queueing it forever burns hours of
+ * CPU per attempt. But plenty of failures are not about the file — the worker ran out of disk, the
+ * box restarted mid-encode, storage was briefly refusing writes — and for those the right answer
+ * is a person who can see the failure and press a button. Before this the whole recourse was
+ * deleting the video and uploading the entire file again.
+ *
+ * <p>Refused with `TRANSCODE_NOT_RETRYABLE` when the video is not FAILED (a job may still be
+ * running, and a second one would be a duplicate full transcode) or has no uploaded file at all
+ * (an imported video plays from YouTube and never had a master). `describeError` words both.
+ *
+ * <p>Invalidated through the shared helper, so the owner's list and every public list that mirrors
+ * it pick up the status going back to UPLOADED — which is the only way the owner ever learns
+ * anything here, there being no notification channel by design.
+ */
+export const useRetryTranscode = (slug) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (videoId) => {
+            const res = await api.post(`/channels/${slug}/content/videos/${videoId}/retry-transcode`);
+            return res.data;
+        },
+        onSuccess: () => invalidateChannelContent(queryClient, slug, 'videos'),
+    });
+};
+
 // Home's feed mixes videos from many owned channels, so (unlike the tab hooks above, which are
 // scoped to one fixed slug via useParams) the slug varies per call and is passed with the video.
 export const useToggleVideoVisibilityByChannelId = () => {
