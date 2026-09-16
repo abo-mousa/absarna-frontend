@@ -68,7 +68,14 @@ function ChannelPage() {
     // Still read here for the subscriber count in the header; the toggle itself moved into
     // SubscribeButton, which runs this same cached query.
     const { data: subscriptionStatus } = useSubscriptionStatus(channel?.id, !!token && !!channel);
-    const { data: series = [] } = useChannelSeries(slug, !!channel);
+    const {
+        data: seriesPages,
+        fetchNextPage: fetchNextSeriesPage,
+        hasNextPage: hasNextSeriesPage,
+        isFetchingNextPage: isFetchingNextSeriesPage,
+    } = useChannelSeries(slug, !!channel);
+    const series = seriesPages?.pages.flatMap((page) => page.content) || [];
+    const seriesCount = seriesPages?.pages[0]?.totalItems ?? series.length;
 
     const subscriberCount = subscriptionStatus?.subscriberCount || 0;
 
@@ -85,7 +92,7 @@ function ChannelPage() {
         { id: 'books', label: t('common.books'), icon: BookOpen, count: bookCount },
         { id: 'articles', label: t('common.articles'), icon: FileText, count: articleCount },
         { id: 'posts', label: t('common.posts'), icon: MessageSquare, count: postCount },
-        { id: 'series', label: t('common.series'), icon: Tv, count: series.length },
+        { id: 'series', label: t('common.series'), icon: Tv, count: seriesCount },
     ];
 
     if (channelLoading || !channel) {
@@ -281,6 +288,18 @@ function ChannelPage() {
                             </Link>
                         ))}
                     </div>
+
+                    {hasNextSeriesPage && (
+                        <div className="text-center mt-6">
+                            <button
+                                onClick={fetchNextSeriesPage}
+                                disabled={isFetchingNextSeriesPage}
+                                className="px-8 py-2.5 bg-primary text-white rounded-md font-semibold disabled:opacity-60"
+                            >
+                                {isFetchingNextSeriesPage ? t('common.loading') : t('common.loadMore')}
+                            </button>
+                        </div>
+                    )}
                 </QueryState>
             )}
         </PageShell>

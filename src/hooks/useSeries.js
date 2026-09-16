@@ -46,13 +46,21 @@ export const useSeriesNeighbours = (seriesId, videoId, enabled = true) => {
 };
 
 // A channel's list of series (e.g. a "series" tab on the channel page).
-export const useChannelSeries = (slug, enabled = true) => {
-    return useQuery({
-        queryKey: ['channel-series', slug],
-        queryFn: async () => {
-            const res = await api.get(`/channels/${slug}/series`);
-            return res.data || [];
+/**
+ * A channel's series, a page at a time — the channel page's series tab.
+ *
+ * <p>An import creates a series per playlist, so this is as long as a migrating channel's
+ * playlist count; it used to come back whole.
+ */
+export const useChannelSeries = (slug, enabled = true, size = 24) => {
+    return useInfiniteQuery({
+        queryKey: ['channel-series', slug, size],
+        queryFn: async ({ pageParam = 0 }) => {
+            const res = await api.get(`/channels/${slug}/series`, { params: { page: pageParam, size } });
+            return res.data;
         },
+        initialPageParam: 0,
+        getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.currentPage + 1 : undefined),
         enabled: enabled && !!slug,
     });
 };
