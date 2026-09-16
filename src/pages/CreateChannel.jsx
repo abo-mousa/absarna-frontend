@@ -206,7 +206,7 @@ function CreateChannel() {
                             </div>
                             {/* The link is stored but NOT acted on. Importing needs the owner to
                                 prove they control that channel first, and that happens from the
-                                channel's own settings once it exists — see YouTubeImportPanel.
+                                channel's YouTube tab once it exists — see YouTubeImportPanel.
                                 Fetching details here asserts no relationship to the channel; it
                                 reads what YouTube already shows on its public page. */}
                             {foundChannel && (

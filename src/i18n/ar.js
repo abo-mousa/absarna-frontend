@@ -742,7 +742,7 @@ export const ar = {
         submitting: 'جاري الإنشاء...',
         submit: 'إنشاء القناة',
         youtubeLabel: 'رابط قناتك على يوتيوب (اختياري)',
-        youtubeHint: 'إن كان لديك محتوى على يوتيوب، يمكنك استيراده لاحقاً من إعدادات القناة',
+        youtubeHint: 'إن كان لديك محتوى على يوتيوب، يمكنك استيراده لاحقاً من تبويب "الاستيراد من يوتيوب" في إدارة القناة',
         youtubeFetch: 'جلب البيانات',
         youtubeFetching: 'جاري الجلب...',
         // Says what was filled in, because silently overwriting fields the user may have already
@@ -767,20 +767,36 @@ export const ar = {
     channelManage: {
         title: 'إدارة القناة',
         titleFor: 'إدارة {name}',
-        heading: 'إدارة: {name}',
         notFound: 'القناة غير موجودة',
         notFoundDescription: 'لم نتمكن من العثور على هذه القناة',
         forbidden: 'غير مصرح لك',
         forbiddenDescription: 'ليس لديك صلاحية لإدارة هذه القناة',
 
         tabs: {
-            overview: 'نظرة عامة',
             videos: 'الفيديوهات',
             books: 'الكتب',
             articles: 'المقالات',
             posts: 'المنشورات',
             series: 'السلاسل',
             comments: 'التعليقات',
+            youtube: 'الاستيراد من يوتيوب',
+            // Was «نظرة عامة», over a tab that held a settings form and nothing to overview.
+            settings: 'إعدادات القناة',
+        },
+
+        // The side menu. Groups say which sections are worked in daily and which are set up once.
+        subtitle: 'إدارة القناة',
+        viewChannel: 'عرض القناة',
+        navLabel: 'أقسام إدارة القناة',
+        sections: {
+            content: 'المحتوى',
+            community: 'التفاعل',
+            channel: 'القناة',
+        },
+        // The dot on the YouTube item, read aloud and shown on hover.
+        importIndicator: {
+            running: 'استيراد يوتيوب جارٍ',
+            paused: 'استيراد يوتيوب متوقف مؤقتاً',
         },
 
         emptyContent: 'لا يوجد محتوى بعد',

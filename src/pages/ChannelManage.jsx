@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Video, BookOpen, FileText, MessageSquare, Settings, ArrowRight, Tv } from 'lucide-react';
+import { useEffect } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePageMeta } from '@/hooks/usePageMeta';
 import PageShell from '@/components/layout/PageShell';
@@ -8,6 +7,7 @@ import { QueryState, Button } from '@/components/ui';
 import { canManageChannel } from '@/lib/user';
 import { useChannel } from '@/hooks/useChannels';
 import { useChannelYouTube } from '@/hooks/useChannelYouTube';
+import ChannelManageNav, { resolveTab } from '@/components/channel/ChannelManageNav';
 import ChannelSettingsTab from '@/components/channel/tabs/ChannelSettingsTab';
 import VideosTab from '@/components/channel/tabs/VideosTab';
 import BooksTab from '@/components/channel/tabs/BooksTab';
@@ -15,17 +15,8 @@ import ArticlesTab from '@/components/channel/tabs/ArticlesTab';
 import PostsTab from '@/components/channel/tabs/PostsTab';
 import SeriesTab from '@/components/channel/tabs/SeriesTab';
 import CommentsTab from '@/components/channel/tabs/CommentsTab';
+import YouTubeTab from '@/components/channel/tabs/YouTubeTab';
 import { t } from '@/i18n';
-
-const TABS = [
-    { id: 'overview', label: t('channelManage.tabs.overview'), icon: Settings },
-    { id: 'videos', label: t('channelManage.tabs.videos'), icon: Video },
-    { id: 'books', label: t('channelManage.tabs.books'), icon: BookOpen },
-    { id: 'articles', label: t('channelManage.tabs.articles'), icon: FileText },
-    { id: 'posts', label: t('channelManage.tabs.posts'), icon: MessageSquare },
-    { id: 'series', label: t('channelManage.tabs.series'), icon: Tv },
-    { id: 'comments', label: t('channelManage.tabs.comments'), icon: MessageSquare },
-];
 
 /** One tab's contents, hidden rather than unmounted while another tab is showing. */
 function TabPanel({ active, children }) {
@@ -50,13 +41,20 @@ function ErrorScreen({ emoji, title, description, onBack }) {
  *
  * <p>This file is the frame: who may be here, which tab is showing, and the chrome around it. Each
  * tab owns its own queries, form state and mutations, so adding a content type is one component and
- * one row in `TABS` rather than another four hooks and another copy of the handlers here.
+ * one row in `MANAGE_SECTIONS` rather than another four hooks and another copy of the handlers here.
+ *
+ * <p><b>The open tab lives in the URL (`?tab=videos`)</b>, not in component state. In state, a
+ * refresh always dropped the owner back on the first tab and no section could be linked to.
+ * Written with `replace`, so switching sections does not fill the history: Back leaves the
+ * dashboard, which is where an owner expects it to go.
  */
 function ChannelManage() {
     const { slug } = useParams();
     const navigate = useNavigate();
     const { user, loading: authLoading } = useAuth();
-    const [activeTab, setActiveTab] = useState('overview');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const activeTab = resolveTab(searchParams.get('tab'));
+    const setActiveTab = (tab) => setSearchParams({ tab }, { replace: true });
 
     const {
         data: channel, isLoading: channelLoading, isError: channelError, error: channelFetchError,
@@ -67,12 +65,11 @@ function ChannelManage() {
             : t('channelManage.title'),
     });
 
-    // Wanted by two tabs — the settings tab watches the import finish, the videos tab needs the
-    // verification level to decide whether a row may claim its original file — so it is fetched
-    // once here rather than by each.
-    const { data: youtubeState } = useChannelYouTube(
-        slug, activeTab === 'overview' || activeTab === 'videos',
-    );
+    // Fetched once here and enabled on every tab, unlike the per-tab queries below. The menu's dot
+    // shows a running or paused import from whichever section the owner is in, and the YouTube
+    // tab's completion toast needs the same live status to fire from there; the videos tab also
+    // reads the verification level from it. One GET per visit, polling only while RUNNING.
+    const { data: youtubeState } = useChannelYouTube(slug, Boolean(channel));
 
     useEffect(() => {
         if (!authLoading && !user) navigate('/');
@@ -106,68 +103,60 @@ function ChannelManage() {
 
     return (
         <PageShell sidebar={false}>
-            <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-6">
-                <div className="flex items-center gap-3 mb-6">
-                    <button onClick={() => navigate(`/channel/${slug}`)} className="text-text-secondary">
-                        <ArrowRight size={20} />
-                    </button>
-                    <h1 className="text-xl font-bold">{t('channelManage.heading', { name: channel.name })}</h1>
-                </div>
+            {/* The menu against the screen's edge, and only the content centred beside it — see
+                ChannelManageNav. First in the row, which in RTL is the right. */}
+            <div className="lg:flex lg:items-start">
+                <ChannelManageNav
+                    channel={channel}
+                    activeTab={activeTab}
+                    onSelect={setActiveTab}
+                    youtubeState={youtubeState}
+                />
 
-                <div className="flex gap-2 mb-6 flex-wrap">
-                    {TABS.map((tab) => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-full font-semibold text-sm transition-colors ${
-                                activeTab === tab.id
-                                    ? 'bg-primary text-white border-2 border-primary'
-                                    : 'bg-surface text-text-secondary border border-border'
-                            }`}
-                        >
-                            <tab.icon size={16} /> {tab.label}
-                        </button>
-                    ))}
+                <div className="flex-1 min-w-0 px-4 sm:px-6 py-6">
+                    <div className="max-w-[1000px] mx-auto">
+                        {/* Every tab stays MOUNTED and is hidden rather than unmounted, and that is
+                            load-bearing rather than tidy. A half-finished upload lives in its tab — the
+                            transfer itself, its progress, and the session id the publish form is holding —
+                            so unmounting on a tab switch would abort a 2 GB lecture and lose the form that
+                            was about to publish it. Each tab is told whether it is on screen and gates its
+                            own queries on that, so a tab nobody has opened still costs a disabled query
+                            rather than a request. */}
+                        <TabPanel active={activeTab === 'videos'}>
+                            <VideosTab
+                                slug={slug}
+                                channel={channel}
+                                youtubeState={youtubeState}
+                                active={activeTab === 'videos'}
+                            />
+                        </TabPanel>
+                        <TabPanel active={activeTab === 'books'}>
+                            <BooksTab slug={slug} active={activeTab === 'books'} />
+                        </TabPanel>
+                        <TabPanel active={activeTab === 'articles'}>
+                            <ArticlesTab slug={slug} active={activeTab === 'articles'} />
+                        </TabPanel>
+                        <TabPanel active={activeTab === 'posts'}>
+                            <PostsTab slug={slug} active={activeTab === 'posts'} />
+                        </TabPanel>
+                        <TabPanel active={activeTab === 'series'}>
+                            <SeriesTab slug={slug} active={activeTab === 'series'} />
+                        </TabPanel>
+                        <TabPanel active={activeTab === 'comments'}>
+                            <CommentsTab slug={slug} active={activeTab === 'comments'} />
+                        </TabPanel>
+                        <TabPanel active={activeTab === 'youtube'}>
+                            <YouTubeTab
+                                slug={slug}
+                                youtubeState={youtubeState}
+                                active={activeTab === 'youtube'}
+                            />
+                        </TabPanel>
+                        <TabPanel active={activeTab === 'settings'}>
+                            <ChannelSettingsTab slug={slug} channel={channel} />
+                        </TabPanel>
+                    </div>
                 </div>
-
-                {/* Every tab stays MOUNTED and is hidden rather than unmounted, and that is
-                    load-bearing rather than tidy. A half-finished upload lives in its tab — the
-                    transfer itself, its progress, and the session id the publish form is holding —
-                    so unmounting on a tab switch would abort a 2 GB lecture and lose the form that
-                    was about to publish it. Each tab is told whether it is on screen and gates its
-                    own queries on that, so a tab nobody has opened still costs a disabled query
-                    rather than a request. */}
-                <TabPanel active={activeTab === 'overview'}>
-                    <ChannelSettingsTab
-                        slug={slug}
-                        channel={channel}
-                        youtubeState={youtubeState}
-                        active={activeTab === 'overview'}
-                    />
-                </TabPanel>
-                <TabPanel active={activeTab === 'videos'}>
-                    <VideosTab
-                        slug={slug}
-                        channel={channel}
-                        youtubeState={youtubeState}
-                        active={activeTab === 'videos'}
-                    />
-                </TabPanel>
-                <TabPanel active={activeTab === 'books'}>
-                    <BooksTab slug={slug} active={activeTab === 'books'} />
-                </TabPanel>
-                <TabPanel active={activeTab === 'articles'}>
-                    <ArticlesTab slug={slug} active={activeTab === 'articles'} />
-                </TabPanel>
-                <TabPanel active={activeTab === 'posts'}>
-                    <PostsTab slug={slug} active={activeTab === 'posts'} />
-                </TabPanel>
-                <TabPanel active={activeTab === 'series'}>
-                    <SeriesTab slug={slug} active={activeTab === 'series'} />
-                </TabPanel>
-                <TabPanel active={activeTab === 'comments'}>
-                    <CommentsTab slug={slug} active={activeTab === 'comments'} />
-                </TabPanel>
             </div>
         </PageShell>
     );

@@ -74,11 +74,10 @@ export function importReasonText(state) {
  * owner to another website and back, and a wizard that loses its place while they are gone is
  * worse than a page that simply shows where they got to.
  *
- * <p><b>Lives in the overview tab, not a tab of its own.</b> A YouTube link is a property of the
- * channel, like its name and colour — every other tab is a content type, and a source is not one.
- * Imported videos land in the videos tab beside uploaded ones, which is the entire reason to
- * import into this platform rather than link out: they can join a series, be searched, be
- * bookmarked and be resumed.
+ * <p><b>Rendered by its own tab (`tabs/YouTubeTab`)</b>, which says why it moved out from under
+ * the settings form. The <em>videos</em> it imports still land in the videos tab beside uploaded
+ * ones, which is the entire reason to import into this platform rather than link out: they can
+ * join a series, be searched, be bookmarked and be resumed.
  */
 function YouTubeImportPanel({ slug }) {
     const { showToast } = useToast();
