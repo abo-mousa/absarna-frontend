@@ -6,6 +6,7 @@ import { changePassword } from '@/lib/api/auth';
 import PageShell from '../components/layout/PageShell';
 import { Input, Button } from '../components/ui';
 import { getPasswordRules, getPasswordStrengthLabel, isPasswordValid } from '@/lib/validation';
+import { describeError } from '@/lib/describeError';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { t } from '@/i18n';
 import { EMAIL_MAX_LENGTH, FULL_NAME_MAX_LENGTH, BIO_MAX_LENGTH } from '@/lib/validation';
@@ -131,6 +132,22 @@ function UserProfile() {
     const { showToast } = useToast();
     const [form, setForm] = useState({ fullName: '', bio: '', email: '', profilePictureUrl: '' });
     const [saving, setSaving] = useState(false);
+    /**
+     * The address currently stored on the account, and the only thing "did this edit change the
+     * email" can be measured against.
+     *
+     * <p>Separate state rather than reading `user.email` directly, because `user` is not refetched
+     * when this form saves: after a successful email change the context still holds the old
+     * address, so a comparison against it would leave the password field revealed and demand the
+     * password a second time for an edit that is no longer an edit. Moved forward on save instead.
+     */
+    const [savedEmail, setSavedEmail] = useState('');
+    /**
+     * Held out of `form` on purpose. `form` is the request body and is spread into the PUT;
+     * keeping a password in it would make it a field that ships on every save, including the ones
+     * that do not touch the email and must keep working without one.
+     */
+    const [currentPassword, setCurrentPassword] = useState('');
 
     useEffect(() => {
         if (user) {
@@ -140,18 +157,43 @@ function UserProfile() {
                 email: user.email || '',
                 profilePictureUrl: user.profilePictureUrl || '',
             });
+            setSavedEmail(user.email || '');
         }
     }, [user]);
 
+    // Trimmed on both sides: the input keeps whatever was typed, and a stray space is not a change
+    // of address — asking for a password over one would be unexplainable.
+    const emailChanged = form.email.trim() !== savedEmail.trim();
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // Checked here as well as by the input's own `required`, because the input only exists
+        // while `emailChanged` holds — and without it the refusal arrives as a round trip and a
+        // CURRENT_PASSWORD_REQUIRED, which says the same thing far more slowly.
+        if (emailChanged && !currentPassword) {
+            showToast(t('profile.emailChangeNeedsPassword'), 'error');
+            return;
+        }
+
         setSaving(true);
 
         try {
-            await api.put('/user/profile', form);
+            // `currentPassword` is added ONLY when the email actually changes. The backend asks for
+            // it on exactly that condition, so sending it unconditionally would turn every profile
+            // save — a bio edit, a name correction — into a password prompt, and would be a
+            // password travelling for no reason on most of them.
+            await api.put('/user/profile', emailChanged ? { ...form, currentPassword } : form);
             showToast(t('profile.saved'), 'success');
+            // Both, in this order: the field disappears because the edit is no longer pending, and
+            // the password is not left sitting in a state the next save could resend.
+            setSavedEmail(form.email.trim());
+            setCurrentPassword('');
         } catch (err) {
-            showToast(err.response?.data?.message || t('profile.saveFailed'), 'error');
+            // `describeError`, not `data.message`: CURRENT_PASSWORD_REQUIRED and
+            // CURRENT_PASSWORD_INVALID arrive as `reason` codes and are worded in `errors.reasons`,
+            // and the raw `message` on a Bean Validation 400 here is the constraint's English.
+            showToast(describeError(err, t('profile.saveFailed')), 'error');
         } finally {
             setSaving(false);
         }
@@ -181,6 +223,35 @@ function UserProfile() {
                             dir="ltr"
                             placeholder="email@example.com"
                         />
+
+                        {/*
+                          * Revealed by the edit rather than always present: changing the address is
+                          * a step in taking the account over — every verification and reset link
+                          * follows it — so the backend requires a password for that one change and
+                          * for nothing else on this form. A permanently visible password box would
+                          * read as "this page needs your password", which is false for the bio and
+                          * the name and is how people learn to type it without asking why.
+                          *
+                          * The sentence above it is the reason the field appeared, not an
+                          * instruction: it materialises mid-form under someone who was editing a
+                          * name a moment ago, and an unexplained password prompt is exactly what a
+                          * phishing page looks like.
+                          */}
+                        {emailChanged && (
+                            <div>
+                                <p className="text-text-muted text-xs mb-1.5">{t('profile.emailChangeNeedsPassword')}</p>
+                                <Input
+                                    label={t('profile.currentPassword')}
+                                    type="password"
+                                    value={currentPassword}
+                                    onChange={(e) => setCurrentPassword(e.target.value)}
+                                    required
+                                    autoComplete="current-password"
+                                    placeholder="••••••••"
+                                    dir="ltr"
+                                />
+                            </div>
+                        )}
                         <Input
                             label={t('profile.bioLabel')}
                             textarea

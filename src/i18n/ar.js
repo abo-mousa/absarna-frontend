@@ -205,6 +205,14 @@ export const ar = {
             // A 503, and the one case where "try again later" is actively wrong: nothing will
             // change until someone configures the deployment.
             YOUTUBE_NOT_CONFIGURED: 'الاستيراد من يوتيوب غير مفعَّل على هذه المنصة حالياً. راسل الإدارة.',
+
+            // Changing the address on the account is a step in taking the account over — the
+            // verification and reset links both go to whatever is stored — so the backend asks
+            // for the current password whenever, and only when, PUT /api/user/profile would
+            // change it. The two codes are separated because the remedy differs: the first is a
+            // field the form failed to send, the second is a value the user got wrong.
+            CURRENT_PASSWORD_REQUIRED: 'تغيير البريد الإلكتروني يتطلب تأكيد كلمة المرور الحالية. أدخلها ثم أعد المحاولة.',
+            CURRENT_PASSWORD_INVALID: 'كلمة المرور الحالية غير صحيحة. تأكد منها ثم أعد المحاولة.',
         },
     },
 
@@ -899,6 +907,10 @@ export const ar = {
         bioPlaceholder: 'اكتب نبذة قصيرة...',
         saved: 'تم حفظ الملف الشخصي',
         saveFailed: 'فشل في الحفظ',
+        // Shown only once the email field differs from the stored address. Worded as the reason
+        // the field appeared rather than as an instruction on its own, because it materialises
+        // mid-form under someone who was editing a name a moment ago.
+        emailChangeNeedsPassword: 'تغيير البريد الإلكتروني يتطلب تأكيد كلمة المرور الحالية.',
     },
 
     admin: {
