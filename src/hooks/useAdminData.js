@@ -23,21 +23,6 @@ export const useStats = () => {
 
 // ============ BOOKS ============
 
-// /admin/books is now paginated (it used to return every book in one response) — same
-// bounded-first-page approach admin listings use rather than adding "load more" to the admin
-// table.
-export const useBooks = () => {
-    const scope = useUserScope();
-    return useQuery({
-        queryKey: queryKeys.adminBooks(scope),
-        queryFn: async () => {
-            const res = await api.get('/admin/books?page=0&size=100');
-            return res.data?.content || res.data || [];
-        },
-        staleTime: 10 * 60 * 1000,
-    });
-};
-
 export const useCreateBook = () => {
     const queryClient = useQueryClient();
 
@@ -69,19 +54,6 @@ export const useDeleteBook = () => {
 };
 
 // ============ ARTICLES ============
-
-// Same pagination change as useBooks above.
-export const useArticles = () => {
-    const scope = useUserScope();
-    return useQuery({
-        queryKey: queryKeys.adminArticles(scope),
-        queryFn: async () => {
-            const res = await api.get('/admin/articles?page=0&size=100');
-            return res.data?.content || res.data || [];
-        },
-        staleTime: 10 * 60 * 1000,
-    });
-};
 
 export const useCreateArticle = () => {
     const queryClient = useQueryClient();
