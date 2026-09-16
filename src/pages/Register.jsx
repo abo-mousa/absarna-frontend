@@ -30,6 +30,7 @@ function Register() {
     const { showToast } = useToast();
     const [form, setForm] = useState({
         username: '', email: '', password: '', confirmPassword: '', fullName: '', gender: '',
+        acceptedTerms: false,
     });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -65,9 +66,19 @@ function Register() {
             setError(t('auth.passwordTooWeak'));
             return;
         }
+        // Same reason the gender check is duplicated here: the input's own `required` only fires
+        // on a native submit, and a signup that reaches the API without this comes back as an
+        // English «The terms of use and privacy policy must be accepted». It is checked LAST so
+        // that ticking the box is the final thing asked of someone whose other fields are already
+        // right — an agreement collected before the form is valid is one the person re-confirms
+        // by reflex after fixing a password.
+        if (!form.acceptedTerms) {
+            setError(t('validation.termsRequired'));
+            return;
+        }
 
         setLoading(true);
-        const result = await register(form.username, form.email, form.password, form.fullName, form.gender);
+        const result = await register(form.username, form.email, form.password, form.fullName, form.gender, form.acceptedTerms);
         if (result.success) {
             showToast(t('auth.register.created'), 'success');
             navigate('/');
@@ -218,6 +229,53 @@ function Register() {
                             <p className="text-red-600 dark:text-red-400 text-xs mt-1">{t('auth.passwordMismatch')}</p>
                         )}
                     </div>
+
+                    {/*
+                      * The agreement, and the only place on the platform it is actually asked for.
+                      *
+                      * <p>Unticked by default and it cannot be otherwise: a pre-ticked box is not
+                      * consent in any jurisdiction that has looked at the question, and the whole
+                      * point of `users.terms_accepted_at` is to be a record somebody can rely on.
+                      *
+                      * <p>Both documents open in a NEW TAB. A router navigation from here throws
+                      * away every field already typed, so a reader who does the thing the sentence
+                      * invites them to do is punished with an empty form — which is how you teach
+                      * people not to read it. `rel="noopener noreferrer"` because `target="_blank"`
+                      * otherwise hands the opened page a live `window.opener`.
+                      *
+                      * <p>The label wraps the input, so the text is part of the 44px tap target
+                      * rather than a 16px square next to it; `items-start` keeps the box aligned to
+                      * the first line when the sentence wraps on a narrow phone.
+                      */}
+                    <label className="flex items-start gap-2.5 cursor-pointer text-sm text-text-secondary leading-relaxed">
+                        <input
+                            type="checkbox"
+                            checked={form.acceptedTerms}
+                            onChange={(e) => setForm({ ...form, acceptedTerms: e.target.checked })}
+                            required
+                            className="mt-0.5 h-4 w-4 shrink-0 accent-primary cursor-pointer"
+                        />
+                        <span>
+                            {t('auth.register.acceptPrefix')}{' '}
+                            <Link
+                                to="/terms"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary font-semibold hover:underline"
+                            >
+                                {t('auth.register.acceptTerms')}
+                            </Link>{' '}
+                            {t('auth.register.acceptConjunction')}
+                            <Link
+                                to="/privacy"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary font-semibold hover:underline"
+                            >
+                                {t('auth.register.acceptPrivacy')}
+                            </Link>
+                        </span>
+                    </label>
 
                     {error && (
                         <p className="text-red-600 dark:text-red-400 text-sm bg-red-100 dark:bg-red-950/40 p-2.5 rounded-md">{error}</p>

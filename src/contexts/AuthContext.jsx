@@ -128,9 +128,9 @@ export const AuthProvider = ({ children }) => {
     // same object out, and when the backend made `gender` required only one of them would ever
     // have been updated — which is the shape of the bug that made every signup a 400. One
     // definition of the body, in the module whose job is the request.
-    const register = async (username, email, password, fullName, gender) => {
+    const register = async (username, email, password, fullName, gender, acceptedTerms) => {
         try {
-            const res = await registerRequest(username, email, password, fullName, gender);
+            const res = await registerRequest(username, email, password, fullName, gender, acceptedTerms);
             applySession(res.data);
             setUser(res.data.user);
             return { success: true };
