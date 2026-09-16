@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Check, X, Pause, Trash2 } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
-import { QueryState, Avatar, Badge, Button, Modal, Input } from '../components/ui';
+import { QueryState, Avatar, Badge, Button, Modal, Input, Pager } from '../components/ui';
 import { useToast } from '../contexts/ToastContext';
+import { useEmptyPageStepBack } from '../hooks/useEmptyPageStepBack';
 import { usePageMeta } from '../hooks/usePageMeta';
 import {
     usePendingChannels,
@@ -32,7 +33,12 @@ function AdminChannels() {
     usePageMeta({ title: t('admin.manageChannels') });
     const { showToast } = useToast();
     const { data: pendingChannels = [], isLoading: pendingLoading } = usePendingChannels();
-    const { data: allChannels = [], isLoading: allLoading } = useAllAdminChannels();
+    // Paged: every channel on the platform. Pending ones stay a whole list above it — that is a
+    // queue an admin empties, not a catalogue.
+    const [page, setPage] = useState(0);
+    const { data: allChannelsPage, isLoading: allLoading } = useAllAdminChannels(page);
+    useEmptyPageStepBack(page, setPage, allChannelsPage, allLoading);
+    const allChannels = allChannelsPage?.content ?? [];
     const approveChannel = useApproveChannel();
     const rejectChannel = useRejectChannel();
     const suspendChannel = useSuspendChannel();
@@ -104,7 +110,7 @@ function AdminChannels() {
                         </div>
                     )}
 
-                    <h2 className="text-base font-bold mb-3">{t('admin.allChannelsCount', { count: allChannels.length })}</h2>
+                    <h2 className="text-base font-bold mb-3">{t('admin.allChannelsCount', { count: allChannelsPage?.totalItems ?? 0 })}</h2>
 
                     <div className="grid gap-3">
                         {allChannels.map((channel) => (
@@ -131,6 +137,15 @@ function AdminChannels() {
                             </div>
                         ))}
                     </div>
+                    {allChannelsPage && (
+                        <Pager
+                            page={allChannelsPage.currentPage}
+                            totalPages={allChannelsPage.totalPages}
+                            hasPrevious={allChannelsPage.hasPrevious}
+                            hasNext={allChannelsPage.hasNext}
+                            onChange={setPage}
+                        />
+                    )}
                 </QueryState>
 
                 <Modal

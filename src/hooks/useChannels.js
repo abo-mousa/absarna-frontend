@@ -121,13 +121,22 @@ export const useToggleSubscription = (channelId) => {
 // GET /channels is now paginated (it used to return every active channel in one response) —
 // the sidebar's "discover" list only ever needs a bounded first page, not full pagination UI,
 // so this just requests the max page size rather than adding "load more" to a nav rail.
-export const useAllChannels = (enabled = true) => {
-    return useQuery({
-        queryKey: ['all-channels'],
-        queryFn: async () => {
-            const res = await api.get('/channels?page=0&size=100');
-            return res.data?.content || res.data || [];
+/**
+ * Active channels, alphabetical, a page at a time — the sidebar's "discover" list.
+ *
+ * <p>Used to be one request for `page=0&size=100` and nothing after it: loaded on nearly every
+ * page, heavier with every channel created, and past the hundredth channel the rest silently did
+ * not exist. Now twenty, and the sidebar asks for more.
+ */
+export const useAllChannels = (enabled = true, size = 20) => {
+    return useInfiniteQuery({
+        queryKey: ['all-channels', size],
+        queryFn: async ({ pageParam = 0 }) => {
+            const res = await api.get('/channels', { params: { page: pageParam, size } });
+            return res.data;
         },
+        initialPageParam: 0,
+        getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.currentPage + 1 : undefined),
         enabled,
         staleTime: 5 * 60 * 1000,
     });
@@ -380,16 +389,18 @@ export const usePendingChannels = (enabled = true) => {
     });
 };
 
-export const useAllAdminChannels = (enabled = true) => {
+/** One page (zero-based) of every channel on the platform, newest first. */
+export const useAllAdminChannels = (page = 0, enabled = true) => {
     const scope = useUserScope();
     return useQuery({
-        queryKey: queryKeys.adminAllChannels(scope),
+        queryKey: queryKeys.adminAllChannels(page, scope),
         queryFn: async () => {
-            const res = await api.get('/channels/admin/all');
-            return res.data || [];
+            const res = await api.get('/channels/admin/all', { params: { page, size: 20 } });
+            return res.data;
         },
         enabled,
         staleTime: 30 * 1000,
+        placeholderData: keepPreviousData,
     });
 };
 

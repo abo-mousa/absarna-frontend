@@ -88,7 +88,7 @@ export const queryKeys = {
     adminArticles: (scope) => ['admin-articles', scope],
     adminBiography: (scope) => ['admin-biography', scope],
     adminPendingChannels: (scope) => ['admin-pending-channels', scope],
-    adminAllChannels: (scope) => ['admin-all-channels', scope],
+    adminAllChannels: (page, scope) => ['admin-all-channels', page, scope],
     // The viewer-report moderation queue. Keyed by every filter AND the page, so switching a
     // filter or stepping a page never serves the previous view's rows while its own request is in
     // flight — the same reason the review queue is keyed by type.

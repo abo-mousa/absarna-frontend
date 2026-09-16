@@ -57,7 +57,10 @@ function SideBar({ currentChannel, open = false, onClose }) {
     const { token } = useAuth();
     const location = useLocation();
     const asideRef = useRef(null);
-    const { data: channels = [], isLoading: loading } = useAllChannels();
+    const {
+        data: channelPages, isLoading: loading, hasNextPage, fetchNextPage, isFetchingNextPage,
+    } = useAllChannels();
+    const channels = channelPages?.pages.flatMap((page) => page.content) ?? [];
     const { data: subscriptions = [] } = useSubscriptions(!!token);
     const { data: myChannels = [] } = useMyChannels(!!token);
 
@@ -177,7 +180,7 @@ function SideBar({ currentChannel, open = false, onClose }) {
                     </h4>
                     {loading ? (
                         <p className="text-[0.8rem] text-text-muted px-3">{t('common.loading')}</p>
-                    ) : discoverChannels.length === 0 ? (
+                    ) : discoverChannels.length === 0 && !hasNextPage ? (
                         <p className="text-[0.8rem] text-text-muted px-3">{t('sidebar.noOtherChannels')}</p>
                     ) : (
                         discoverChannels.map((channel) => (
@@ -190,6 +193,19 @@ function SideBar({ currentChannel, open = false, onClose }) {
                                 onClose={onClose}
                             />
                         ))
+                    )}
+                    {/* Twenty at a time. Offered even when this page filtered down to nothing
+                        (every channel on it is one the viewer owns or follows), because the next
+                        page may not be. */}
+                    {hasNextPage && (
+                        <button
+                            type="button"
+                            onClick={() => fetchNextPage()}
+                            disabled={isFetchingNextPage}
+                            className="w-full text-right px-3 py-1.5 text-[0.8rem] font-semibold text-primary hover:bg-surface-hover rounded-md disabled:opacity-60"
+                        >
+                            {isFetchingNextPage ? t('common.loading') : t('sidebar.moreChannels')}
+                        </button>
                     )}
                 </div>
             </aside>

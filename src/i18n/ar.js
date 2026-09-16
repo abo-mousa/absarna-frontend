@@ -149,6 +149,8 @@ export const ar = {
         myChannels: 'قنواتي',
         yourSubscriptions: 'اشتراكاتك',
         discoverChannels: 'اكتشف قنوات أخرى',
+        // Under the sidebar's discover list, which loads twenty channels at a time.
+        moreChannels: 'عرض المزيد من القنوات',
         noOtherChannels: 'لا توجد قنوات أخرى',
     },
 
