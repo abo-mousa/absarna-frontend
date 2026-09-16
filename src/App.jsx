@@ -37,6 +37,9 @@ const AdminReview = lazy(() => import('./pages/AdminReview'));
 const AdminReports = lazy(() => import('./pages/AdminReports'));
 const CreateChannel = lazy(() => import('./pages/CreateChannel'));
 const ChannelManage = lazy(() => import('./pages/ChannelManage'));
+const Privacy = lazy(() => import('./pages/Privacy'));
+const Terms = lazy(() => import('./pages/Terms'));
+const Contact = lazy(() => import('./pages/Contact'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 /**
@@ -202,6 +205,14 @@ function AppRoutes() {
                 <Route path="/articles/:id" element={<ArticleDetail />} />
                 <Route path="/biography" element={<Biography />} />
                 <Route path="/series/:id" element={<SeriesDetail />} />
+
+                {/* Legal / contact. Public and unauthenticated on purpose: a takedown notice comes
+                    from someone who does not have an account here and never will, and a privacy
+                    policy behind a login is not a privacy policy. Linked from the footer, which
+                    PageShell renders on every page. */}
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/contact" element={<Contact />} />
 
                 {/* Auth */}
                 <Route path="/login" element={<Login />} />
