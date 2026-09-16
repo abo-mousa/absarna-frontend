@@ -159,6 +159,12 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   presigned URL is a bearer credential, so `BookCard` enables the query on pointer-enter/focus.
 - **`YouTubeImportPanel`** — three states in one panel (not linked → linked → verified), polls only
   while `RUNNING`, and must treat `PARTIAL` as *paused, press resume* rather than an error.
+  "Verify with Google" appears **only when the status says `oauthAvailable`**, above the token steps
+  and never instead of them — the token is the fallback while the backend has OAuth switched off.
+  It leaves the SPA for Google and returns through `pages/YouTubeOAuthCallback` at
+  `/youtube/oauth/callback`, a path registered verbatim on the Google client: **don't move it**.
+  The page strips the one-time code off the URL before doing anything else (history, RUM), and
+  `lib/youtubeOAuth.js` refuses to navigate anywhere but `https://accounts.google.com`.
 - **`ExpandableText`** — long prose collapsed to four lines with a fade and a disclosure button,
   on a video's and a book's description. The toggle is rendered from a **measurement**, never a
   character count: whether text overflows four lines depends on the width and the face it is laid

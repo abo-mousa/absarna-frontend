@@ -10,7 +10,9 @@ import {
     useCheckYouTubeVerification,
     useStartYouTubeImport,
     useAttestYouTubeChannel,
+    useStartYouTubeOAuth,
 } from '@/hooks/useChannelYouTube';
+import { isGoogleConsentUrl, rememberOAuthReturn } from '@/lib/youtubeOAuth';
 import { t, tOptional } from '@/i18n';
 import { describeError } from '@/lib/describeError';
 import { formatCount } from '@/lib/numbers';
@@ -91,6 +93,7 @@ function YouTubeImportPanel({ slug }) {
     const check = useCheckYouTubeVerification(slug);
     const startImport = useStartYouTubeImport(slug);
     const attest = useAttestYouTubeChannel(slug);
+    const startOAuth = useStartYouTubeOAuth(slug);
 
     const [source, setSource] = useState('');
 
@@ -144,6 +147,50 @@ function YouTubeImportPanel({ slug }) {
             showToast(t('youtube.adminAttestFailed'), 'error');
         }
     };
+
+    /**
+     * "Verify with Google": fetch the consent URL and leave for it. The callback page brings the
+     * owner back to this tab. Nothing to clean up on the way out — the backend holds no state for
+     * a flow that is never finished.
+     */
+    const handleGoogle = async () => {
+        let authorizationUrl;
+        try {
+            ({ authorizationUrl } = await startOAuth.mutateAsync());
+        } catch (error) {
+            showToast(describeError(error, t('youtube.oauth.startFailed')), 'error');
+            return;
+        }
+        if (!isGoogleConsentUrl(authorizationUrl)) {
+            showToast(t('youtube.oauth.startFailed'), 'error');
+            return;
+        }
+        rememberOAuthReturn(slug);
+        window.location.assign(authorizationUrl);
+    };
+
+    /**
+     * Offered only when the backend says the deployment has it (`oauthAvailable`). When it does not
+     * — no OAuth client yet, or switched off while Google has not approved the app — the token
+     * steps are the whole flow, so there is no disabled button explaining a feature nobody can use.
+     */
+    const googleVerify = (hint) =>
+        state?.oauthAvailable ? (
+            <div className="grid gap-1.5">
+                <Button
+                    type="button"
+                    onClick={handleGoogle}
+                    // Stays disabled after success too: the page is navigating away.
+                    disabled={startOAuth.isPending || startOAuth.isSuccess}
+                    className="w-fit"
+                >
+                    {startOAuth.isPending || startOAuth.isSuccess
+                        ? t('youtube.oauth.redirecting')
+                        : t('youtube.oauth.button')}
+                </Button>
+                <p className="text-xs text-text-muted">{hint}</p>
+            </div>
+        ) : null;
 
     const adminAttestButton = (
         <div className="grid gap-1.5">
@@ -199,6 +246,15 @@ function YouTubeImportPanel({ slug }) {
             </h3>
             <p className="text-sm text-text-muted">{t('youtube.intro')}</p>
 
+            {/* Not linked yet: signing in with Google links AND verifies in one step, so it goes
+                first. The URL form stays below as the other way in. */}
+            {!state?.youtubeChannelId && state?.oauthAvailable && (
+                <div className="grid gap-3">
+                    {googleVerify(t('youtube.oauth.hintUnlinked'))}
+                    <p className="text-sm text-text-secondary">{t('youtube.oauth.orManual')}</p>
+                </div>
+            )}
+
             {!state?.youtubeChannelId && (
                 <form onSubmit={handleLink} className="grid gap-3">
                     <Input
@@ -234,6 +290,14 @@ function YouTubeImportPanel({ slug }) {
             {state?.youtubeChannelId && !state.verified && state.token && (
                 <div className="grid gap-2 p-4 rounded-md bg-surface-hover border border-border">
                     <strong className="text-sm">{t('youtube.verifyHeading')}</strong>
+                    {state.oauthAvailable && (
+                        <>
+                            {googleVerify(t('youtube.oauth.hintLinked'))}
+                            <p className="text-sm text-text-secondary pt-2 mt-1 border-t border-border">
+                                {t('youtube.oauth.orToken')}
+                            </p>
+                        </>
+                    )}
                     <p className="text-sm text-text-secondary">{t('youtube.verifyIntro')}</p>
                     <p className="text-sm text-text-secondary">{t('youtube.verifyStep1')}</p>
                     {/* The whole row copies, not just the icon. On a phone, tapping a 12-point
@@ -310,6 +374,11 @@ function YouTubeImportPanel({ slug }) {
                 // and stops short of letting the platform host the file itself.
                 <p className="text-xs text-text-muted">{t('youtube.adminAttestWarning')}</p>
             )}
+
+            {/* The only route from an admin link to the owner's own: attesting clears the token, so
+                the description method has nothing to offer this owner. Hidden for the admin who
+                made the link — it is the owner's Google account that has to sign in. */}
+            {state?.verifiedBy === 'ADMIN' && !isAdmin && googleVerify(t('youtube.oauth.hintUpgrade'))}
 
             {state?.verified && (
                 <div className="grid gap-2 pt-2 border-t border-border-light">

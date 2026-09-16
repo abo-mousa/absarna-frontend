@@ -207,7 +207,21 @@ export const ar = {
             // the first is something the owner does, the second is something only they can do and
             // an admin cannot do for them.
             YOUTUBE_NOT_VERIFIED: 'لم يتم إثبات ملكيتك لقناة اليوتيوب بعد. ضع رمز التحقق في وصف قناتك ثم اضغط "تحقق".',
-            YOUTUBE_NEEDS_OWNER_VERIFICATION: 'تم ربط هذه القناة بواسطة إدارة المنصة، وهذا يكفي للاستيراد فقط. رفع الملف الأصلي يتطلب أن يثبت صاحب القناة ملكيتها بنفسه عبر رمز التحقق.',
+            YOUTUBE_NEEDS_OWNER_VERIFICATION: 'تم ربط هذه القناة بواسطة إدارة المنصة، وهذا يكفي للاستيراد فقط. رفع الملف الأصلي يتطلب أن يثبت صاحب القناة ملكيتها بنفسه، بتسجيل الدخول بحساب Google من تبويب يوتيوب.',
+
+            // "Verify with Google". Every one of these ends by pointing somewhere the owner can go:
+            // the description token needs none of this machinery, so it is always the way out.
+            YOUTUBE_OAUTH_NOT_CONFIGURED: 'التحقق عبر حساب Google غير متاح حالياً. استخدم رمز التحقق في وصف القناة بدلاً منه.',
+            // Expired (ten minutes), or started by another account on this browser.
+            YOUTUBE_OAUTH_STATE_INVALID: 'انتهت صلاحية عملية التحقق أو لم تعد صالحة. ارجع إلى تبويب يوتيوب وابدأ من جديد.',
+            YOUTUBE_OAUTH_FAILED: 'لم يكتمل تسجيل الدخول بحساب Google. حاول مرة أخرى.',
+            YOUTUBE_OAUTH_SCOPE_DENIED: 'لم تمنح الإذن بعرض حساب يوتيوب الخاص بك، وهو ما نحتاجه لمعرفة قناتك. حاول مرة أخرى ووافق على هذا الإذن، أو استخدم رمز التحقق.',
+            YOUTUBE_OAUTH_UNAVAILABLE: 'تعذر الاتصال بـ Google الآن. حاول لاحقاً، أو استخدم رمز التحقق في وصف القناة.',
+            YOUTUBE_OAUTH_QUOTA_EXHAUSTED: 'استُهلكت حصة المنصة اليومية من طلبات يوتيوب. استخدم رمز التحقق في وصف القناة، أو حاول غداً.',
+            // By far the likeliest: the right person, the wrong account in Google's chooser — a
+            // channel run under a Brand Account is a separate entry there from the personal one.
+            YOUTUBE_OAUTH_CHANNEL_MISMATCH: 'الحساب الذي سجلت الدخول به يدير قناة يوتيوب مختلفة عن القناة المربوطة هنا. أعد المحاولة واختر الحساب الذي يدير القناة المربوطة (إن كانت القناة تابعة لحساب علامة تجارية فاختره من القائمة).',
+            YOUTUBE_OAUTH_NO_CHANNEL: 'لا توجد قناة يوتيوب على الحساب الذي اخترته. أعد المحاولة واختر الحساب الذي يدير قناتك.',
 
             YOUTUBE_IMPORT_ALREADY_RUN: 'تم استيراد هذه القناة بالفعل، أو هناك استيراد جارٍ الآن.',
             // A 503, and the one case where "try again later" is actively wrong: nothing will
@@ -647,6 +661,18 @@ export const ar = {
      * owner leaves the app, edits something on another site, and comes back — so these are
      * sentences rather than labels.
      */
+    // The page Google sends the owner back to after "verify with Google".
+    youtubeOAuth: {
+        title: 'التحقق من قناة يوتيوب',
+        verifying: 'جاري التحقق من قناتك...',
+        success: 'تم التحقق من ملكيتك للقناة',
+        failedHeading: 'لم يكتمل التحقق',
+        denied: 'ألغيت تسجيل الدخول بحساب Google، فلم يتم التحقق.',
+        invalidLink: 'رابط العودة من Google غير صالح أو ناقص.',
+        tokenStillWorks: 'يمكنك دائماً التحقق بوضع الرمز في وصف القناة بدلاً من ذلك.',
+        backToChannel: 'العودة إلى تبويب يوتيوب',
+    },
+
     youtube: {
         heading: 'استيراد من يوتيوب',
         intro: 'استورد فيديوهاتك وقوائم التشغيل من قناتك على يوتيوب مرة واحدة.',
@@ -685,6 +711,19 @@ export const ar = {
         notFoundYet: 'لم نجد الرمز في وصف القناة بعد. قد يستغرق يوتيوب دقيقة، حاول مرة أخرى.',
         verified: 'تم التحقق من ملكيتك لهذه القناة',
         verifiedByAdmin: 'تم ربط هذه القناة بواسطة إدارة المنصة',
+
+        // "Verify with Google". Shown only when the deployment offers it; the token steps are the
+        // fallback and stay on screen beneath it.
+        oauth: {
+            button: 'تحقق عبر حساب Google',
+            redirecting: 'جاري الانتقال إلى Google...',
+            hintUnlinked: 'الطريقة الأسرع: سجّل الدخول بحساب Google الذي يدير قناتك، فنربطها ونتحقق منها في خطوة واحدة دون تعديل أي شيء على يوتيوب.',
+            hintLinked: 'سجّل الدخول بحساب Google الذي يدير هذه القناة، ولن تحتاج إلى تعديل وصفها.',
+            hintUpgrade: 'إن كنت صاحب القناة، سجّل الدخول بحساب Google الذي يديرها لتثبت ملكيتك بنفسك، فيصبح بإمكانك رفع الملفات الأصلية.',
+            orManual: 'أو اربط القناة برابطها وتحقق برمز في وصفها:',
+            orToken: 'أو ضع رمز التحقق في وصف القناة:',
+            startFailed: 'تعذر بدء التحقق عبر Google. حاول مرة أخرى أو استخدم رمز التحقق.',
+        },
 
         // Admin-only. Worded as an assertion the admin is making, not as a step being skipped —
         // it is a different check, not a shortcut past one, and it is recorded as such.

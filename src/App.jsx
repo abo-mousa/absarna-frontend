@@ -18,6 +18,7 @@ const Admin = lazy(() => import('./pages/Admin'));
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
+const YouTubeOAuthCallback = lazy(() => import('./pages/YouTubeOAuthCallback'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const UserProfile = lazy(() => import('./pages/UserProfile'));
@@ -260,6 +261,11 @@ function AppRoutes() {
                 } />
                 <Route path="/create-channel" element={
                     <ProtectedRoute><CreateChannel /></ProtectedRoute>
+                } />
+                {/* Google's redirect after "verify with Google". The path is registered on the OAuth
+                    client verbatim (YOUTUBE_OAUTH_REDIRECT_URI), so it must not move. */}
+                <Route path="/youtube/oauth/callback" element={
+                    <ProtectedRoute><YouTubeOAuthCallback /></ProtectedRoute>
                 } />
                 <Route path="/channel/:slug/manage" element={
                     <ProtectedRoute><ChannelManage /></ProtectedRoute>

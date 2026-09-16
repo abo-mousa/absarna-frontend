@@ -58,6 +58,34 @@ export const useCheckYouTubeVerification = (slug) => {
 };
 
 /**
+ * Starts "verify with Google": asks the backend for Google's consent URL. The caller navigates the
+ * browser there — nothing is cached, because the next thing that happens is leaving the SPA.
+ *
+ * <p>Offered only when the status carries `oauthAvailable`. When it does not (no OAuth client, or
+ * switched off while Google has not approved the app), the description token is the whole flow.
+ */
+export const useStartYouTubeOAuth = (slug) =>
+    useMutation({
+        mutationFn: async () =>
+            (await api.post(`/channels/${slug}/youtube/verification/oauth`)).data,
+    });
+
+/**
+ * Finishes "verify with Google" from the callback page. The backend answers with the channel's
+ * slug — it comes out of the signed state, not from anything this side remembered — and the
+ * panel's status is invalidated by that slug so it shows "verified" on arrival.
+ */
+export const useCompleteYouTubeOAuth = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ code, state }) =>
+            (await api.post('/youtube/oauth/complete', { code, state })).data,
+        onSuccess: (data) =>
+            queryClient.invalidateQueries({ queryKey: ['channel-youtube', data.slug] }),
+    });
+};
+
+/**
  * Starts the one-time import. Returns immediately; the query above polls for the outcome.
  *
  * <p><b>A failure here reaches the user only because the panel renders `startImport.error`.</b>
