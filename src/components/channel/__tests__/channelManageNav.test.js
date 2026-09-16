@@ -26,6 +26,8 @@ describe('resolveTab', () => {
         expect(resolveTab(null)).toBe('videos');
         expect(resolveTab('')).toBe('videos');
         expect(resolveTab('overview')).toBe('videos');
+        // Series became part of the videos section; a saved ?tab=series link lands there.
+        expect(resolveTab('series')).toBe('videos');
     });
 });
 

@@ -103,6 +103,46 @@ const invalidateSeries = (queryClient, slug) => {
     queryClient.invalidateQueries({ queryKey: ['channel-series', slug] });
 };
 
+/**
+ * After a change to a series' videos themselves (hidden, shown, deleted): the series lists, the
+ * owner's video lists, and every public list those videos appear in.
+ */
+const invalidateSeriesAndVideos = (queryClient, slug) => {
+    invalidateSeries(queryClient, slug);
+    queryClient.invalidateQueries({ queryKey: ['channel-manage', slug, 'videos'] });
+    queryClient.invalidateQueries({ queryKey: ['channel-videos', slug] });
+    queryClient.invalidateQueries({ queryKey: ['series'] });
+    queryClient.invalidateQueries({ queryKey: ['feed'] });
+    queryClient.invalidateQueries({ queryKey: ['videos'] });
+};
+
+/** Edits a series' title and description. Sends only what changed, like ContentEditModal. */
+export const useUpdateSeries = (slug) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ id, changes }) => {
+            const res = await api.patch(`/channels/${slug}/content/series/${id}`, changes);
+            return res.data;
+        },
+        onSuccess: () => invalidateSeries(queryClient, slug),
+    });
+};
+
+/**
+ * Hides or shows a whole series. The backend sets every video's own visibility, and showing
+ * undoes only what hiding did: a video hidden on its own stays hidden.
+ */
+export const useSetSeriesVisibility = (slug) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ id, visible }) => {
+            const res = await api.patch(`/channels/${slug}/content/series/${id}/visibility`, { visible });
+            return res.data;
+        },
+        onSuccess: () => invalidateSeriesAndVideos(queryClient, slug),
+    });
+};
+
 export const useCreateSeries = (slug) => {
     const queryClient = useQueryClient();
     return useMutation({
@@ -114,17 +154,17 @@ export const useCreateSeries = (slug) => {
     });
 };
 
+/**
+ * Deletes a series. `withVideos: false` keeps its videos, which simply leave the series (backend:
+ * ON DELETE SET NULL); `withVideos: true` deletes them too, objects and all. Either way the video
+ * lists are stale — their seriesId changed, or they are gone.
+ */
 export const useDeleteSeries = (slug) => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async (id) => {
-            await api.delete(`/channels/${slug}/content/series/${id}`);
+        mutationFn: async ({ id, withVideos = false }) => {
+            await api.delete(`/channels/${slug}/content/series/${id}`, { params: { withVideos } });
         },
-        onSuccess: () => {
-            invalidateSeries(queryClient, slug);
-            // Videos that were in the deleted series are now detached (backend: ON DELETE SET
-            // NULL, not cascaded) — their seriesId changed, so the owner's video list is stale too.
-            queryClient.invalidateQueries({ queryKey: ['channel-manage', slug, 'videos'] });
-        },
+        onSuccess: () => invalidateSeriesAndVideos(queryClient, slug),
     });
 };

@@ -19,6 +19,7 @@ const FIELDS = {
     videos: ['title', 'description', 'category', 'originalPublishDate'],
     books: ['title', 'description', 'category', 'pages', 'originalPublishDate'],
     articles: ['title', 'content', 'category', 'originalPublishDate'],
+    series: ['title', 'description'],
 };
 
 const LABELS = {

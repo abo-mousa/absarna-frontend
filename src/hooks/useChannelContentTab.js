@@ -33,12 +33,15 @@ import {
  * every tab needs: a publish goes back to page 1, where the new item is, and a delete that empties
  * the last page steps back to the page that is now last. `items` is the page on screen;
  * `totalItems` counts the whole list, for the heading.
+ *
+ * @param series videos only: narrow the list to one series (its id) or to videos in none
+ *               ('none'). Mount a separate list per series — the page starts at 1 for each.
  */
-export function useChannelContentTab(slug, type, active) {
+export function useChannelContentTab(slug, type, active, series = null) {
     const { showToast } = useToast();
 
     const [page, setPage] = useState(0);
-    const { data, isLoading: loading } = useChannelContentList(slug, type, active, page);
+    const { data, isLoading: loading } = useChannelContentList(slug, type, active, page, series);
     useEmptyPageStepBack(page, setPage, data, loading);
     const items = data?.content ?? [];
     const pageInfo = data ? {

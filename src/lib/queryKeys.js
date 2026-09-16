@@ -63,7 +63,9 @@ export const queryKeys = {
     bookReadProgress: (bookId, scope) => ['book-read-progress', bookId, scope],
 
     // ---- owner dashboard ----
-    channelManage: (slug, type, page, scope) => ['channel-manage', slug, type, page, scope],
+    // `series` narrows the videos list: a series id, 'none', or null for every video.
+    channelManage: (slug, type, page, scope, series = null) =>
+        ['channel-manage', slug, type, series, page, scope],
     // The whole list (the video form's series picker) and one page of it (the series tab). Both
     // under the same prefix, so every series mutation invalidates both.
     channelSeriesManage: (slug, scope) => ['channel-series-manage', slug, scope],

@@ -13,7 +13,6 @@ import VideosTab from '@/components/channel/tabs/VideosTab';
 import BooksTab from '@/components/channel/tabs/BooksTab';
 import ArticlesTab from '@/components/channel/tabs/ArticlesTab';
 import PostsTab from '@/components/channel/tabs/PostsTab';
-import SeriesTab from '@/components/channel/tabs/SeriesTab';
 import CommentsTab from '@/components/channel/tabs/CommentsTab';
 import YouTubeTab from '@/components/channel/tabs/YouTubeTab';
 import { t } from '@/i18n';
@@ -138,9 +137,6 @@ function ChannelManage() {
                         </TabPanel>
                         <TabPanel active={activeTab === 'posts'}>
                             <PostsTab slug={slug} active={activeTab === 'posts'} />
-                        </TabPanel>
-                        <TabPanel active={activeTab === 'series'}>
-                            <SeriesTab slug={slug} active={activeTab === 'series'} />
                         </TabPanel>
                         <TabPanel active={activeTab === 'comments'}>
                             <CommentsTab slug={slug} active={activeTab === 'comments'} />

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Video, BookOpen, FileText, MessageSquare, MessagesSquare, Settings, Tv, Import, ExternalLink } from 'lucide-react';
+import { Video, BookOpen, FileText, MessageSquare, MessagesSquare, Settings, Import, ExternalLink } from 'lucide-react';
 import { Avatar } from '@/components/ui';
 import { t } from '@/i18n';
 
@@ -11,7 +11,9 @@ import { t } from '@/i18n';
  * in daily (content, community) and which are set up once (the channel itself), and put the latter
  * last.
  *
- * <p>An id is also the `?tab=` value, so renaming one breaks links people have saved.
+ * <p>An id is also the `?tab=` value, so renaming one breaks links people have saved. There is no
+ * `series` section: series are browsed inside videos, where their videos are, and an old
+ * `?tab=series` link opens videos through {@link resolveTab}'s default.
  */
 export const MANAGE_SECTIONS = [
     {
@@ -21,7 +23,6 @@ export const MANAGE_SECTIONS = [
             { id: 'books', icon: BookOpen },
             { id: 'articles', icon: FileText },
             { id: 'posts', icon: MessageSquare },
-            { id: 'series', icon: Tv },
         ],
     },
     {

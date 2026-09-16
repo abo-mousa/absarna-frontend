@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import { Upload } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { ArrowRight, Plus, Upload } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
-import { Input } from '@/components/ui';
+import { Button, Input, Modal } from '@/components/ui';
 import ContentPublishForm, { FieldLabel } from '../ContentPublishForm';
 import ManagedContentList from './ManagedContentList';
 import VideoManageStatus from '../VideoManageStatus';
+import SeriesBrowser, { NewSeriesModal, SeriesActions } from '../SeriesBrowser';
 import { useChannelContentTab } from '@/hooks/useChannelContentTab';
 import { useChannelUpload } from '@/hooks/useChannelUpload';
 import { useChannelSeriesManage } from '@/hooks/useSeries';
@@ -36,10 +37,49 @@ export function videoPageHref(video) {
     return video?.status === 'READY' ? `/video/${video.id}` : null;
 }
 
+/**
+ * The videos section: the upload form, then the channel's videos either as one list or by series.
+ *
+ * <p>Series were a dashboard tab of their own, apart from the videos they hold. Owners think of a
+ * course and its lectures as one thing, so they are one section now: «كل الفيديوهات» is the flat
+ * newest-first list, still where an upload is watched through transcoding, and «حسب السلسلة»
+ * lists the series and opens one onto its own videos, where the whole series can be hidden or
+ * deleted.
+ *
+ * <p><b>The list is the screen; the forms are dialogs.</b> The upload form and the new-series form
+ * used to sit above the list, so opening the section showed a form and the videos began a screen
+ * further down. Both open from buttons beside the view switch now. The upload runs in this
+ * component's state, not the dialog's, so closing the dialog mid-upload loses nothing — the button
+ * shows the progress, and reopening it shows the form as it was left.
+ */
 export default function VideosTab({ slug, channel, youtubeState, active }) {
-    const content = useChannelContentTab(slug, 'videos', active);
+    const [view, setView] = useState('all');
+    // A series object, 'none' for the videos in no series, or null for the series list.
+    const [openSeries, setOpenSeries] = useState(null);
+    const [uploadOpen, setUploadOpen] = useState(false);
+    const [creatingSeries, setCreatingSeries] = useState(false);
+    // Every series, for the upload form's <select> — fetched when that form is opened, not on every
+    // visit to the section.
+    const { data: seriesList = [] } = useChannelSeriesManage(slug, active && uploadOpen);
+
+    // Switching view or opening a series swaps the list for one that is, at least while it loads,
+    // shorter — and a page that gets shorter under the reader is clamped upward by the browser, so
+    // the screen jumped away from where the owner had just clicked. The list area keeps the height
+    // it had at the moment of the switch as a minimum, so nothing above or at the click moves.
+    // Measured on the inner element, whose height is the list's own, so switching back and forth
+    // does not ratchet the minimum up.
+    const listRef = useRef(null);
+    const [heldHeight, setHeldHeight] = useState(0);
+    const holdPlace = () => setHeldHeight(listRef.current?.offsetHeight ?? 0);
+    const openSeriesView = (series) => { holdPlace(); setOpenSeries(series); };
+    const switchView = (next) => {
+        if (next === view && !openSeries) return;
+        holdPlace();
+        setView(next);
+        setOpenSeries(null);
+    };
+    const content = useChannelContentTab(slug, 'videos', active && view === 'all');
     const upload = useChannelUpload(slug, 'videos');
-    const { data: seriesList = [] } = useChannelSeriesManage(slug, active);
     const [form, setForm] = useState(EMPTY_FORM);
     const uploadOriginalAction = useUploadOriginalAction(slug, youtubeState);
 
@@ -67,67 +107,172 @@ export default function VideosTab({ slug, channel, youtubeState, active }) {
                 // The session is spent: confirm assembled the object and created the row.
                 upload.forget();
                 setForm(EMPTY_FORM);
+                setUploadOpen(false);
             },
         });
     };
 
     return (
         <div className="grid gap-6">
-            <ContentPublishForm
-                heading={t('channelManage.forms.video.heading')}
-                onSubmit={handleSubmit}
-                submitLabel={t('channelManage.forms.video.submit')}
-                submitIcon={<Upload size={18} />}
-                file={{
-                    label: t('channelManage.forms.video.fileLabel'),
-                    hint: t('channelManage.forms.video.fileHint'),
-                    accept: acceptAttribute('videos'),
-                    onChange: handleFileSelect,
-                    uploading: upload.uploading,
-                    progress: upload.progress,
-                    fileName: upload.fileName,
-                }}
-            >
-                <Input label={t('fields.title')} value={form.title} onChange={field('title')} required />
-                <Input label={t('fields.description')} textarea rows={3} value={form.description} onChange={field('description')} />
-                <Input label={t('fields.category')} value={form.category} onChange={field('category')} />
-
-                <div className="grid grid-cols-1 xs:grid-cols-2 gap-4">
-                    <div>
-                        <FieldLabel>{t('channelManage.seriesSelectLabel')}</FieldLabel>
-                        <select
-                            value={form.seriesId}
-                            onChange={field('seriesId')}
-                            className="w-full px-3.5 py-2.5 rounded-md border border-border outline-none focus:border-primary transition-colors bg-surface"
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex gap-1 p-1 rounded-lg bg-surface border border-border-light w-fit">
+                    {['all', 'bySeries'].map((id) => (
+                        <button
+                            key={id}
+                            type="button"
+                            aria-pressed={view === id}
+                            onClick={() => switchView(id)}
+                            className={`px-4 py-1.5 rounded-md text-sm transition-colors ${
+                                view === id
+                                    ? 'bg-primary-light text-primary font-semibold'
+                                    : 'text-text-secondary font-medium hover:bg-surface-hover'
+                            }`}
                         >
-                            <option value="">{t('channelManage.seriesSelectNone')}</option>
-                            {seriesList.map((s) => (
-                                <option key={s.id} value={s.id}>{s.title}</option>
-                            ))}
-                        </select>
+                            {t(`channelManage.seriesView.${id}`)}
+                        </button>
+                    ))}
+                </div>
+
+                <div className="flex gap-2 flex-wrap">
+                    {view === 'bySeries' && !openSeries && (
+                        <Button variant="outline" size="sm" icon={<Plus size={16} />} onClick={() => setCreatingSeries(true)}>
+                            {t('channelManage.newSeriesHeading')}
+                        </Button>
+                    )}
+                    <Button size="sm" icon={<Upload size={16} />} onClick={() => setUploadOpen(true)}>
+                        {upload.uploading
+                            ? t('channelManage.forms.uploadingProgress', { progress: upload.progress })
+                            : t('channelManage.forms.video.heading')}
+                    </Button>
+                </div>
+            </div>
+
+            <NewSeriesModal slug={slug} open={creatingSeries} onClose={() => setCreatingSeries(false)} />
+
+            <Modal
+                open={uploadOpen}
+                onClose={() => setUploadOpen(false)}
+                title={t('channelManage.forms.video.heading')}
+                maxWidth="720px"
+            >
+                <ContentPublishForm
+                    bare
+                    heading={t('channelManage.forms.video.heading')}
+                    onSubmit={handleSubmit}
+                    submitLabel={t('channelManage.forms.video.submit')}
+                    submitIcon={<Upload size={18} />}
+                    file={{
+                        label: t('channelManage.forms.video.fileLabel'),
+                        hint: t('channelManage.forms.video.fileHint'),
+                        accept: acceptAttribute('videos'),
+                        onChange: handleFileSelect,
+                        uploading: upload.uploading,
+                        progress: upload.progress,
+                        fileName: upload.fileName,
+                    }}
+                >
+                    <Input label={t('fields.title')} value={form.title} onChange={field('title')} required />
+                    <Input label={t('fields.description')} textarea rows={3} value={form.description} onChange={field('description')} />
+                    <Input label={t('fields.category')} value={form.category} onChange={field('category')} />
+
+                    <div className="grid grid-cols-1 xs:grid-cols-2 gap-4">
+                        <div>
+                            <FieldLabel>{t('channelManage.seriesSelectLabel')}</FieldLabel>
+                            <select
+                                value={form.seriesId}
+                                onChange={field('seriesId')}
+                                className="w-full px-3.5 py-2.5 rounded-md border border-border outline-none focus:border-primary transition-colors bg-surface"
+                            >
+                                <option value="">{t('channelManage.seriesSelectNone')}</option>
+                                {seriesList.map((s) => (
+                                    <option key={s.id} value={s.id}>{s.title}</option>
+                                ))}
+                            </select>
+                        </div>
+                        {form.seriesId && (
+                            <Input
+                                label={t('channelManage.seriesOrderLabel')}
+                                type="number"
+                                min="1"
+                                value={form.orderInSeries}
+                                onChange={field('orderInSeries')}
+                            />
+                        )}
                     </div>
-                    {form.seriesId && (
-                        <Input
-                            label={t('channelManage.seriesOrderLabel')}
-                            type="number"
-                            min="1"
-                            value={form.orderInSeries}
-                            onChange={field('orderInSeries')}
+                    <Input label={t('fields.originalPublishDateOptional')} type="date" value={form.originalPublishDate} onChange={field('originalPublishDate')} />
+                </ContentPublishForm>
+            </Modal>
+
+            {/* Inline style: the held height is a runtime value, which Tailwind cannot see. */}
+            <div style={heldHeight ? { minHeight: heldHeight } : undefined}>
+                <div ref={listRef} className="grid gap-6">
+                    {view === 'all' && (
+                        <ManagedContentList
+                            type="videos"
+                            heading={t('channelManage.forms.video.listHeading', { count: content.totalItems })}
+                            content={content}
+                            getHref={videoPageHref}
+                            extraActions={uploadOriginalAction}
+                            // The transcode state, the retry out of a failed one, and the moderation verdicts
+                            // — on the screen an owner actually opens. A held video is READY, visible and
+                            // reachable by nobody, and before this the dashboard said nothing about it at all.
+                            renderStatus={(video) => <VideoManageStatus video={video} slug={slug} />}
+                        />
+                    )}
+
+                    {view === 'bySeries' && !openSeries && (
+                        <SeriesBrowser slug={slug} active={active} onOpen={openSeriesView} />
+                    )}
+
+                    {view === 'bySeries' && openSeries && (
+                        <SeriesVideos
+                            // Keyed so each series starts on its own page 1.
+                            key={openSeries === 'none' ? 'none' : openSeries.id}
+                            slug={slug}
+                            series={openSeries}
+                            active={active}
+                            onBack={() => openSeriesView(null)}
+                            onSeriesChange={setOpenSeries}
+                            extraActions={uploadOriginalAction}
                         />
                     )}
                 </div>
-                <Input label={t('fields.originalPublishDateOptional')} type="date" value={form.originalPublishDate} onChange={field('originalPublishDate')} />
-            </ContentPublishForm>
+            </div>
+        </div>
+    );
+}
+
+/**
+ * One series opened: its videos, a page at a time in the series' own order, with the series'
+ * actions above them. `series` is `'none'` for the videos in no series, which has no actions.
+ */
+function SeriesVideos({ slug, series, active, onBack, onSeriesChange, extraActions }) {
+    const none = series === 'none';
+    const content = useChannelContentTab(slug, 'videos', active, none ? 'none' : String(series.id));
+    const title = none ? t('channelManage.seriesView.noSeries') : series.title;
+
+    return (
+        <div className="grid gap-4">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+                <button
+                    type="button"
+                    onClick={onBack}
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
+                >
+                    <ArrowRight size={16} />
+                    {t('channelManage.seriesView.backToSeries')}
+                </button>
+                {!none && (
+                    <SeriesActions slug={slug} series={series} onChanged={onSeriesChange} onDeleted={onBack} />
+                )}
+            </div>
 
             <ManagedContentList
                 type="videos"
-                heading={t('channelManage.forms.video.listHeading', { count: content.totalItems })}
+                heading={t('channelManage.seriesView.seriesVideosHeading', { title, count: content.totalItems })}
                 content={content}
                 getHref={videoPageHref}
-                extraActions={uploadOriginalAction}
-                // The transcode state, the retry out of a failed one, and the moderation verdicts
-                // — on the screen an owner actually opens. A held video is READY, visible and
-                // reachable by nobody, and before this the dashboard said nothing about it at all.
+                extraActions={extraActions}
                 renderStatus={(video) => <VideoManageStatus video={video} slug={slug} />}
             />
         </div>

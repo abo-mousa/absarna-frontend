@@ -193,13 +193,15 @@ export const MANAGE_PAGE_SIZE = 20;
  * <p>Paged because an import put 1,928 videos on one dashboard, which fetched and rendered every
  * one of them per visit — and the other types use the same list, so they page the same way.
  */
-export const useChannelContentList = (slug, type, enabled = true, page = 0) => {
+export const useChannelContentList = (slug, type, enabled = true, page = 0, series = null) => {
     const scope = useUserScope();
     return useQuery({
-        queryKey: queryKeys.channelManage(slug, type, page, scope),
+        queryKey: queryKeys.channelManage(slug, type, page, scope, series),
         queryFn: async () => {
-            const res = await api.get(`/channels/${slug}/content/${type}`,
-                { params: { page, size: MANAGE_PAGE_SIZE } });
+            const params = { page, size: MANAGE_PAGE_SIZE };
+            // Videos only: a series id for that series in its own order, or 'none'.
+            if (series !== null) params.series = series;
+            const res = await api.get(`/channels/${slug}/content/${type}`, { params });
             return res.data;
         },
         enabled: enabled && !!slug && !!type,

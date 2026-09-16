@@ -785,7 +785,6 @@ export const ar = {
             books: 'الكتب',
             articles: 'المقالات',
             posts: 'المنشورات',
-            series: 'السلاسل',
             comments: 'التعليقات',
             youtube: 'الاستيراد من يوتيوب',
             // Was «نظرة عامة», over a tab that held a settings form and nothing to overview.
@@ -889,6 +888,38 @@ export const ar = {
         seriesDeleteFailed: 'فشل في حذف السلسلة',
         deleteSeries: 'حذف السلسلة',
         deleteSeriesConfirm: 'هل تريد حذف سلسلة "{title}"؟ ستبقى الفيديوهات نفسها، فقط تُفصل عن السلسلة.',
+
+        // The videos section browsed by series (SeriesBrowser). Series used to be a tab of their
+        // own, apart from the videos they hold.
+        seriesView: {
+            all: 'كل الفيديوهات',
+            bySeries: 'حسب السلسلة',
+            backToSeries: 'كل السلاسل',
+            // The videos in no series: uploads never assigned, and imports found in no playlist.
+            // Without this entry a view organised by series would lose them.
+            noSeries: 'فيديوهات بلا سلسلة',
+            noSeriesHint: 'الفيديوهات غير المضافة إلى أي سلسلة',
+            seriesVideosHeading: '{title} ({count})',
+            allHidden: 'السلسلة مخفية عن الزوار',
+            someHidden: '{hidden} من {count} مخفي',
+            hide: 'إخفاء السلسلة',
+            show: 'إظهار السلسلة',
+            // Hiding hides every video in it; showing undoes only that, so the sentence says so.
+            hidden: 'تم إخفاء السلسلة وكل فيديوهاتها',
+            shown: 'تم إظهار السلسلة. الفيديوهات التي أخفيتها بنفسك بقيت مخفية.',
+            visibilityFailed: 'تعذر تغيير ظهور السلسلة',
+            edit: 'تعديل السلسلة',
+            saved: 'تم حفظ السلسلة',
+            saveFailed: 'فشل في حفظ السلسلة',
+            deleteTitle: 'حذف سلسلة "{title}"',
+            // Two separate choices, the keeping one first: for an imported channel the second
+            // deletes a whole course in one click.
+            deleteKeep: 'حذف السلسلة فقط',
+            deleteKeepHint: 'تبقى الفيديوهات منشورة كما هي، وتُفصل عن السلسلة.',
+            deleteWithVideos: 'حذف السلسلة و{count} فيديو',
+            deleteWithVideosHint: 'تُحذف الفيديوهات نهائياً مع ملفاتها وتعليقاتها. لا يمكن التراجع عن هذا الإجراء.',
+            deletedWithVideos: 'تم حذف السلسلة وفيديوهاتها',
+        },
 
         commentsHeading: 'تعليقات على محتوى قناتك ({count})',
         noComments: 'لا توجد تعليقات بعد',
