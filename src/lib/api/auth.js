@@ -3,8 +3,22 @@ import api from './client';
 export const login = (username, password) =>
     api.post('/auth/login', { username, password });
 
-export const register = (username, email, password, fullName) =>
-    api.post('/auth/register', { username, email, password, fullName });
+/**
+ * The one definition of the signup body.
+ *
+ * <p>`gender` is REQUIRED — `RegisterRequest.gender` is `@NotNull` and its enum has exactly two
+ * values (`MALE`/`FEMALE`), so omitting it makes every signup a 400 whose only explanation is an
+ * English Bean Validation string. That is precisely how it broke: this module and `AuthContext`
+ * each spelled the body out, so the field could be added on one side of the app and not the
+ * other. `AuthContext.register` now calls this rather than posting its own object, so there is
+ * one place a new required field has to be added.
+ *
+ * <p>`country` is deliberately NOT here even though `RegisterRequest` accepts it: it is optional
+ * on that side on purpose, and a 250-entry dropdown is the most expensive control a signup form
+ * can carry. `ProfileUpdateRequest` is where a country is meant to be set.
+ */
+export const register = (username, email, password, fullName, gender) =>
+    api.post('/auth/register', { username, email, password, fullName, gender });
 
 export const getProfile = () => api.get('/user/profile');
 

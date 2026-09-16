@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api/client';
 import { safeStorage } from '@/lib/safeStorage';
+import { register as registerRequest } from '@/lib/api/auth';
 import { authFailureMessage } from '@/lib/authErrors';
 import { isProtectedPath } from '@/lib/navigation';
 import { useToast } from './ToastContext';
@@ -123,11 +124,13 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const register = async (username, email, password, fullName) => {
+    // Through `lib/api/auth`'s `register` rather than posting the body here. Both spelled the
+    // same object out, and when the backend made `gender` required only one of them would ever
+    // have been updated — which is the shape of the bug that made every signup a 400. One
+    // definition of the body, in the module whose job is the request.
+    const register = async (username, email, password, fullName, gender) => {
         try {
-            const res = await api.post('/auth/register', {
-                username, email, password, fullName
-            });
+            const res = await registerRequest(username, email, password, fullName, gender);
             applySession(res.data);
             setUser(res.data.user);
             return { success: true };

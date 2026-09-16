@@ -94,6 +94,13 @@ export const ar = {
         confirmPassword: 'تأكيد كلمة المرور *',
         showPassword: 'إظهار كلمة المرور',
         hidePassword: 'إخفاء كلمة المرور',
+        // Registration only. The backend's Gender enum has exactly two values and the field is
+        // @NotNull on RegisterRequest, so there is no «أفضل عدم الإفصاح» option to word here —
+        // an empty submit is a 400, not a stored null. It is also write-once: ProfileUpdateRequest
+        // deliberately has no gender field, so these strings have no profile-screen counterpart.
+        gender: 'الجنس',
+        genderMale: 'ذكر',
+        genderFemale: 'أنثى',
     },
 
     meta: {
@@ -291,6 +298,7 @@ export const ar = {
         usernameTooLong: 'اسم المستخدم يجب ألا يتجاوز {max} حرفاً',
         fullNameTooLong: 'الاسم يجب ألا يتجاوز {max} حرفاً',
         emailTooLong: 'البريد الإلكتروني يجب ألا يتجاوز {max} حرفاً',
+        genderRequired: 'يرجى اختيار الجنس',
         ruleLength: '{min} أحرف على الأقل',
         ruleUppercase: 'حرف كبير (A-Z)',
         ruleLowercase: 'حرف صغير (a-z)',

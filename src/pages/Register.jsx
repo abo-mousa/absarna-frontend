@@ -11,13 +11,25 @@ import {
 } from '@/lib/validation';
 import { t } from '@/i18n';
 
+/**
+ * The two values `com.absarna.authentication.model.Gender` has, in the order they are offered.
+ *
+ * <p>The raw enum names, not localised keys — this is the wire value, and the backend's binder
+ * rejects anything else as a 400 before `@NotNull` is even reached. The Arabic beside each one is
+ * looked up at render time so the catalog stays the only place a word is written.
+ *
+ * <p>There is no third "prefer not to say" option because the field is `@NotNull` on the server:
+ * offering one would build a control whose most considerate answer cannot be submitted.
+ */
+const GENDERS = ['MALE', 'FEMALE'];
+
 function Register() {
     usePageMeta({ title: t('auth.register.heading') });
     const navigate = useNavigate();
     const { register } = useAuth();
     const { showToast } = useToast();
     const [form, setForm] = useState({
-        username: '', email: '', password: '', confirmPassword: '', fullName: '',
+        username: '', email: '', password: '', confirmPassword: '', fullName: '', gender: '',
     });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -36,6 +48,15 @@ function Register() {
             setError(usernameValidationError);
             return;
         }
+        // Before the password rules, not after: this is the one field with no inline feedback as
+        // you type (there is nothing to type), so it is also the one most likely to be the reason
+        // a submit bounces. Checked here as well as by the radios' own `required` because the
+        // native constraint only fires on a real form submission — and a signup that reaches the
+        // API without it comes back as an English «Gender is required».
+        if (!GENDERS.includes(form.gender)) {
+            setError(t('validation.genderRequired'));
+            return;
+        }
         if (form.password !== form.confirmPassword) {
             setError(t('auth.passwordMismatch'));
             return;
@@ -46,7 +67,7 @@ function Register() {
         }
 
         setLoading(true);
-        const result = await register(form.username, form.email, form.password, form.fullName);
+        const result = await register(form.username, form.email, form.password, form.fullName, form.gender);
         if (result.success) {
             showToast(t('auth.register.created'), 'success');
             navigate('/');
@@ -88,6 +109,48 @@ function Register() {
                         maxLength={FULL_NAME_MAX_LENGTH}
                         placeholder={t('fields.fullNamePlaceholder')}
                     />
+
+                    {/*
+                      * A two-option segmented control, not a <select>: with exactly two answers a
+                      * dropdown costs a tap to open, a scroll on a phone, and renders as the
+                      * platform's own picker sheet — while both choices fit on one line here and
+                      * are visible without interacting at all.
+                      *
+                      * Real radio inputs underneath (sr-only, styled through `peer-checked`)
+                      * rather than buttons with aria-pressed: that gives arrow-key navigation
+                      * within the group, a single tab stop, the `required` constraint, and the
+                      * announcement a screen reader expects, for free. `grid-cols-2` mirrors
+                      * itself under the page's `dir="rtl"`, so the first option sits on the right
+                      * with no logical-property juggling, and each label is a full grid cell so
+                      * the tap target is the whole box rather than the word in it.
+                      */}
+                    <fieldset>
+                        <legend className="block mb-1.5 font-semibold text-sm text-text-secondary">
+                            {t('fields.gender')}
+                            <span className="text-red-600 dark:text-red-500"> *</span>
+                        </legend>
+                        <div className="grid grid-cols-2 gap-2">
+                            {GENDERS.map((value) => (
+                                <label key={value} className="block cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="gender"
+                                        value={value}
+                                        checked={form.gender === value}
+                                        onChange={() => setForm({ ...form, gender: value })}
+                                        required
+                                        className="peer sr-only"
+                                    />
+                                    {/* The styled box is the input's SIBLING, not its parent, so
+                                        `peer-checked` can reach it. Doing it the other way round
+                                        needs `:has()`, which Firefox only shipped in 121. */}
+                                    <span className="flex min-h-[44px] items-center justify-center rounded-md border border-border bg-surface px-3 py-2.5 text-[0.95rem] transition-colors hover:bg-surface-hover peer-checked:border-primary peer-checked:bg-primary/10 peer-checked:font-semibold peer-checked:text-primary peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-1">
+                                        {value === 'MALE' ? t('fields.genderMale') : t('fields.genderFemale')}
+                                    </span>
+                                </label>
+                            ))}
+                        </div>
+                    </fieldset>
 
                     <Input
                         label={t('fields.email')}
