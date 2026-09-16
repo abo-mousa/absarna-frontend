@@ -44,6 +44,15 @@ import {
  * whole TTL, and media URLs pass through this app constantly. The same rule as the backend's:
  * never log one.
  *
+ * **That was true of the payloads this module builds and false of everything else Faro sends.**
+ * The SDK attaches a `page` meta to *every* event, and its default is `page.url = location.href`
+ * (`metas/page/meta.js`) — the whole href, query string included. `/reset-password?token=…` and
+ * `/verify-email?token=…` both carry their token there, so a single web-vital measurement or an
+ * unrelated uncaught error on either route shipped a live account-takeover credential to the
+ * collector, with a full hour to use it. Nothing in this file was wrong; the claim was simply
+ * about the wrong half of the request. `pageMeta` below overrides it, and the redaction in
+ * `beforeSend` covers the second path the SDK can reach a raw href by.
+ *
  * The `requestId` is what makes this worth having rather than merely reassuring: it is the exact id
  * the backend stamped on that request's log lines, so a Faro error links to the server-side story
  * of the same failure.
@@ -62,6 +71,60 @@ const reported = new Set();
 /** Bounded so a pathological loop generating unique messages cannot grow this without limit. */
 const MAX_DISTINCT_REPORTS = 50;
 
+/**
+ * A URL with its query string and fragment removed.
+ *
+ * <p>Both halves matter: the two token-bearing routes use `?token=`, and a fragment is the other
+ * place a link-borne secret conventionally hides. Everything this app ever wants from a URL for
+ * telemetry — which route was the reader on — survives the trim.
+ */
+export const withoutQuery = (url) => (typeof url === 'string' ? url.replace(/[?#].*$/, '') : url);
+
+/**
+ * The `page` meta this app sends, replacing the SDK's default.
+ *
+ * <p>Origin and pathname only. A later meta wins: `makeCoreConfig`'s `createDefaultMetas` appends
+ * `config.metas` after its own `createPageMeta`, and the metas API reduces them with
+ * `Object.assign`, which replaces the whole `page` object rather than merging into it — so this
+ * returns every field of `page` that should exist, and `url` is deliberately the only one.
+ *
+ * <p>Not `pageTracking.page`, which would do the same thing: this is the more explicit of the two,
+ * and it reads as what it is — an override of a default that is unsafe here.
+ */
+export const pageMeta = () => ({ page: { url: withoutQuery(location.href) } });
+
+/**
+ * Strips a query string off every stack-frame filename on its way out.
+ *
+ * <p>The second, quieter path to the same leak, and the reason the meta override alone is not
+ * enough. `ErrorsInstrumentation` builds a frame with `filename: filename || document.location.href`
+ * (`stackFrames/buildStackFrame.js`), and the fallback is reached whenever `window.onerror` has no
+ * source — which is the normal shape of a cross-origin script error, the "Script error." with an
+ * empty filename that every browser reports for a third-party script. On `/reset-password?token=…`
+ * that frame is the raw href.
+ *
+ * <p>Applied to every item rather than to exceptions alone, and it never drops one: telemetry that
+ * discards reports is worse than telemetry that trims them.
+ */
+export const redactItemUrls = (item) => {
+    const frames = item?.payload?.stacktrace?.frames;
+    if (!Array.isArray(frames)) return item;
+    return {
+        ...item,
+        payload: {
+            ...item.payload,
+            stacktrace: {
+                ...item.payload.stacktrace,
+                frames: frames.map((frame) => (
+                    frame?.filename === withoutQuery(frame?.filename)
+                        ? frame
+                        : { ...frame, filename: withoutQuery(frame.filename) }
+                )),
+            },
+        },
+    };
+};
+
 const alreadyReported = (signature) => {
     if (reported.has(signature)) return true;
     if (reported.size >= MAX_DISTINCT_REPORTS) return true;
@@ -76,6 +139,14 @@ export function initTelemetry() {
         faro = initializeFaro({
             url: FARO_URL,
             app: { name: 'absarna-frontend', version: APP_VERSION },
+
+            // Appended after the SDK's own page meta, so it wins. See `pageMeta`: without it every
+            // event carries `location.href`, and two routes of this app keep a password-reset or
+            // email-verification token in the query string.
+            metas: [pageMeta],
+
+            // The last gate before anything leaves the browser. See `redactItemUrls`.
+            beforeSend: redactItemUrls,
 
             // Listed one by one, NOT getWebInstrumentations(). That helper turns on the whole
             // default bundle — including ConsoleInstrumentation, which ships every console call,
