@@ -231,19 +231,26 @@ What this app relies on; the mirror lives in the backend's `CLAUDE.md`.
 - **`review` is owner-only, opt-in, and usually absent — a LIST, one entry per detector.** It
   replaced the `musicReview` / `musicSpans` pair, which could describe only one detector; a video can
   be held for music and noted for explicit content at the same time. Each entry is
-  `{type, state, peak, spans}` — `type` is `MUSIC` / `NUDITY` / …, and `state` is one of `CLEAN`,
-  `ADVISORY`, `HELD`, `UNCHECKED`, `CLEARED`, `REJECTED`. Treat both as open sets: a new detector or
-  a new state must render as an unknown note rather than throwing or falling through to "fine".
-  `lib/review.js` owns all of this.
+  `{type, state, holds, peak, spans}` — `type` is `MUSIC` / `NUDITY` / …, and `state` is one of
+  `CLEAN`, `ADVISORY`, `HELD`, `UNCHECKED`, `CLEARED`, `REJECTED`. Treat both as open sets: a new
+  detector or a new state must render as an unknown note rather than throwing or falling through
+  to "fine" — `ownerNotices` shows every finding that is not `CLEAN`/`CLEARED`, with the generic
+  `video.review.unknown.*` copy when it has no words for the pair, and `groupByType` gives an
+  unknown detector its own tab. `lib/review.js` owns all of this.
   - **Not mapped by default, by design.** A `CLEARED` video is fully public, so a
     mapped-by-default field would disclose on every feed card that this one had been looked at. The
     backend attaches it only at owner-facing call sites, so its *presence* is already a
     server-side disclosure decision — and `lib/review.js` checks ownership again as a second lock.
-  - **Only `HELD` and `REJECTED` hide the video.** `CLEAN`, `ADVISORY`, `UNCHECKED` and `CLEARED` all
-    publish and play normally. Wording or colouring those like a problem trains owners to ignore the
-    tone by the time the one that matters arrives. `UNCHECKED` in particular means *the detector did
-    not finish* — never "it found something" — and is deliberately never silent, because a model
-    outage must not stop publishing and must not pass unnoticed either.
+  - **Whether a finding hides the video is `holds`, read from the backend — never derived from
+    the state here.** `HELD` and `REJECTED` hide for every detector, and `CLEAN`, `ADVISORY` and
+    `CLEARED` publish, but `UNCHECKED` is *per type*: it publishes a music finding and hides an
+    explicit-content one, because which types fail closed is a rule stated once in the backend's
+    `ReviewFindingType` and this repo must not hold a copy. `lib/review.js` derived "hidden" from
+    the state alone once, and told the owner of an unscanned explicit-content video, in the
+    informational tone, that it was published — while nobody could see it. Wording or colouring a
+    published note like a problem trains owners to ignore the tone by the time the one that
+    matters arrives. `UNCHECKED` in particular means *the detector did not finish* — never "it
+    found something" — and is deliberately never silent.
   - **A held video is `READY`, `visible`, and reachable by nobody.** There is no notification channel
     in this design, so **this field is the entire mechanism by which its owner is ever told** — if it
     renders nothing, their upload simply vanished.

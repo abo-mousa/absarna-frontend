@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-    DECISIONS, REVIEW_STATE, REVIEW_TYPE, detailOf, findingRow, groupByType, holdsVideo,
-    ownerBadge, ownerNotices,
+    DECISIONS, REVIEW_STATE, REVIEW_TYPE, detailOf, findingRow, groupByType, hidesVideo,
+    holdsVideo, ownerBadge, ownerNotices,
 } from '../review';
 import { ar } from '@/i18n/ar';
 
@@ -111,6 +111,34 @@ describe('grouping for the sub-tabs', () => {
         const grouped = groupByType([]);
         expect(Object.keys(grouped).sort()).toEqual([REVIEW_TYPE.MUSIC, REVIEW_TYPE.NUDITY].sort());
     });
+
+    it('keeps a finding from a detector this build has never heard of', () => {
+        // The open-set rule on the reading side. A new detector lands on the backend before this
+        // repo learns its name, and its findings are still videos held for review; dropping them
+        // here would leave a queue that no reviewer can empty and nobody can see is non-empty.
+        const grouped = groupByType([
+            findingRow({ videoId: 9, type: 'SPEAKER', state: REVIEW_STATE.HELD, holds: true }),
+        ]);
+        expect(grouped.SPEAKER).toHaveLength(1);
+        expect(grouped[REVIEW_TYPE.MUSIC]).toEqual([]);
+    });
+});
+
+describe('whether a finding hides the video', () => {
+    it('reads the backend’s answer, which is per (type, state)', () => {
+        // The fail-open/fail-closed rule lives in the backend's ReviewFindingType and this repo
+        // must not hold a copy. The same UNCHECKED state hides an explicit-content finding and
+        // publishes a music one, and only `holds` can say which.
+        expect(hidesVideo({ type: 'NUDITY', state: REVIEW_STATE.UNCHECKED, holds: true })).toBe(true);
+        expect(hidesVideo({ type: 'MUSIC', state: REVIEW_STATE.UNCHECKED, holds: false })).toBe(false);
+        expect(hidesVideo({ type: 'MUSIC', state: REVIEW_STATE.HELD, holds: true })).toBe(true);
+    });
+
+    it('falls back to the state alone only when holds is missing', () => {
+        expect(hidesVideo({ type: 'MUSIC', state: REVIEW_STATE.HELD })).toBe(true);
+        expect(hidesVideo({ type: 'MUSIC', state: REVIEW_STATE.ADVISORY })).toBe(false);
+        expect(hidesVideo(null)).toBe(false);
+    });
 });
 
 /**
@@ -194,6 +222,59 @@ describe('what an owner is told', () => {
 
         expect(notice.body).toBe(ar.video.review.nudity.unchecked.body);
         expect(notice.body).not.toContain('منشور');
+    });
+
+    it('colours and sorts a hidden unscanned video by the backend’s holds, not by its state', () => {
+        // The bug this closes: the sentence above said "hidden" while the chip beside it was in
+        // the informational tone and the badge reported hidden: false, because both were derived
+        // from the state alone -- and UNCHECKED, read without its type, publishes. On the wire the
+        // backend says `holds: true` for this finding, and that is what decides the tone.
+        const video = {
+            review: [
+                { type: 'MUSIC', state: REVIEW_STATE.ADVISORY, holds: false },
+                { type: 'NUDITY', state: REVIEW_STATE.UNCHECKED, holds: true },
+            ],
+        };
+        const notices = ownerNotices(video, true);
+
+        expect(notices.map((n) => n.type)).toEqual(['NUDITY', 'MUSIC']);
+        expect(notices[0].hidden).toBe(true);
+        expect(notices[0].tone).toBe('warning');
+        expect(notices[1].hidden).toBe(false);
+        expect(notices[1].tone).toBe('info');
+        expect(ownerBadge(video, true)).toEqual({
+            hidden: true,
+            label: ar.video.review.nudity.unchecked.badge,
+        });
+    });
+
+    it('renders a state it does not recognise as a note, never as silence', () => {
+        // A new state on the backend must degrade to "unknown note", not fall through to "fine":
+        // with no notice at all, a hidden video is indistinguishable from a bug. Which of the two
+        // generic notes is chosen comes from `holds`, the one thing the backend can still tell us.
+        const [hiddenNote] = ownerNotices(
+            { review: [{ type: 'MUSIC', state: 'QUARANTINED', holds: true }] }, true);
+        expect(hiddenNote.hidden).toBe(true);
+        expect(hiddenNote.tone).toBe('warning');
+        expect(hiddenNote.title).toBe(ar.video.review.unknown.hidden.title);
+        expect(hiddenNote.body).toBe(ar.video.review.unknown.hidden.body);
+        expect(hiddenNote.title).not.toContain('video.review');
+
+        const [publishedNote] = ownerNotices(
+            { review: [{ type: 'MUSIC', state: 'NOTED', holds: false }] }, true);
+        expect(publishedNote.hidden).toBe(false);
+        expect(publishedNote.tone).toBe('info');
+        expect(publishedNote.body).toBe(ar.video.review.unknown.published.body);
+    });
+
+    it('renders a detector it does not recognise the same way', () => {
+        const [notice] = ownerNotices(
+            { review: [{ type: 'SPEAKER', state: REVIEW_STATE.HELD, holds: true }] }, true);
+        expect(notice.hidden).toBe(true);
+        expect(notice.title).toBe(ar.video.review.unknown.hidden.title);
+        expect(ownerBadge(
+            { review: [{ type: 'SPEAKER', state: REVIEW_STATE.HELD, holds: true }] }, true))
+            .toEqual({ hidden: true, label: ar.video.review.unknown.hidden.badge });
     });
 
     it('reports one notice per detector, worst first', () => {

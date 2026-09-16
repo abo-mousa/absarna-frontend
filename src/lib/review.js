@@ -1,4 +1,4 @@
-import { t } from '@/i18n';
+import { t, tOptional } from '@/i18n';
 import { formatSpan, formatSpans, seekTargetFor } from '@/lib/spans';
 
 // The moderation queue across every detector, not just music.
@@ -21,7 +21,9 @@ export const REVIEW_STATE = {
     // Hides the video. The case that MUST be explained: with no notice it is indistinguishable
     // from a bug, and the owner's only evidence is that their upload vanished.
     HELD: 'HELD',
-    // The detector broke. Published, and queued -- a model outage must not stop publishing.
+    // The detector broke. Queued -- and whether it hides the video is PER TYPE: music publishes
+    // (a model outage must not stop publishing), explicit content hides. That rule lives on the
+    // backend, which is why a finding carries `holds` rather than this repo knowing the types.
     UNCHECKED: 'UNCHECKED',
     // A human looked and said it is fine.
     CLEARED: 'CLEARED',
@@ -29,11 +31,30 @@ export const REVIEW_STATE = {
     REJECTED: 'REJECTED',
 };
 
-// The two that keep a video off the platform. Rendering
-// all four as alarming would train reviewers to ignore all four.
+// The two STATES that keep a video off the platform for every detector. Rendering all four as
+// alarming would train reviewers to ignore all four.
 const HIDING = new Set([REVIEW_STATE.HELD, REVIEW_STATE.REJECTED]);
 
+/**
+ * Whether a STATE, on its own, hides a video. This is the half of the answer a state can give:
+ * HELD and REJECTED hide for every detector. It is NOT the whole answer -- UNCHECKED hides an
+ * explicit-content finding and publishes a music one, and which types do that is a rule this
+ * repo must not hold a copy of. Prefer {@link hidesVideo}, which reads the backend's answer.
+ */
 export const holdsVideo = (state) => HIDING.has(state);
+
+/**
+ * Whether THIS finding hides the video: the backend's `holds`, computed per (type, state) where
+ * the fail-open/fail-closed rule lives, falling back to the state alone only for a finding that
+ * did not carry it. The fallback exists for older payloads and for tests; on the wire `holds`
+ * is always present.
+ *
+ * <p>Deriving this from the state here is what went wrong once: an UNCHECKED explicit-content
+ * finding was shown in the informational tone, under a sentence that correctly said the video was
+ * hidden, and sorted beneath a music note on a video that was playing fine.
+ */
+export const hidesVideo = (finding) =>
+    (typeof finding?.holds === 'boolean' ? finding.holds : holdsVideo(finding?.state));
 
 // What a reviewer may write. Mirrors ReviewService.DECISIONS, and deliberately NOT the machine's
 // vocabulary: writing HELD/ADVISORY/UNCHECKED/CLEAN back would put the row into the set the worker
@@ -95,7 +116,7 @@ export const findingRow = (finding) => {
         channelId: finding.channelId,
         type,
         state,
-        hidden: finding.holds ?? holdsVideo(state),
+        hidden: hidesVideo(finding),
         detectedAt: finding.detectedAt,
         peak,
         label,
@@ -127,12 +148,19 @@ export const findingRow = (finding) => {
  * ONE ROW PER FINDING, so a video flagged by two detectors appears under both tabs. That is the
  * shape the backend serves and the right one for deciding: the two verdicts are independent, and
  * collapsing them into one row would force a reviewer to answer both questions at once.
+ *
+ * A bucket for every KNOWN type even when empty (so a tab can render its empty state), and a
+ * bucket for any type this build has never heard of. A new detector on the backend must show up
+ * in the queue before this repo learns its name -- a finding silently dropped here is a video held
+ * for review that no reviewer can reach.
  */
 export const groupByType = (rows) => {
     const grouped = {};
     for (const type of Object.values(REVIEW_TYPE)) grouped[type] = [];
     for (const row of rows ?? []) {
-        if (row && grouped[row.type]) grouped[row.type].push(row);
+        if (!row || !row.type) continue;
+        if (!grouped[row.type]) grouped[row.type] = [];
+        grouped[row.type].push(row);
     }
     return grouped;
 };
@@ -143,21 +171,51 @@ export const groupByType = (rows) => {
 // What the owner is told about, and what is silently nothing. CLEAN is a detector that ran and
 // found nothing; CLEARED is a human who looked and said it is fine. Neither is the owner's
 // business any more, and surfacing them would teach owners that a notice means nothing.
-const OWNER_VISIBLE = new Set([
-    REVIEW_STATE.HELD,
-    REVIEW_STATE.REJECTED,
-    REVIEW_STATE.ADVISORY,
-    REVIEW_STATE.UNCHECKED,
-]);
+//
+// Everything ELSE is shown -- including a state this build does not recognise, because the
+// alternative is a video that has vanished with no message, which is the one outcome this field
+// exists to prevent. A new state must degrade to an "unknown note", never to silence.
+const QUIET = new Set([REVIEW_STATE.CLEAN, REVIEW_STATE.CLEARED]);
 
-// Worst first, so a card's single badge and a page's first notice both describe the thing that
-// actually happened to the video rather than whichever detector the backend listed first.
+// Worst first. Hidden outranks published whatever the state -- "your video is hidden" is the
+// notice that gets read -- then within each the order below; a state not listed sorts after the
+// known ones.
 const SEVERITY = [
     REVIEW_STATE.REJECTED,
     REVIEW_STATE.HELD,
     REVIEW_STATE.ADVISORY,
     REVIEW_STATE.UNCHECKED,
 ];
+const severityOf = (state) => {
+    const index = SEVERITY.indexOf(state);
+    return index === -1 ? SEVERITY.length : index;
+};
+const worstFirst = (a, b) =>
+    (Number(b.hidden) - Number(a.hidden)) || (severityOf(a.state) - severityOf(b.state));
+
+/**
+ * The owner-facing words for one finding. Per (type, state) when this build has them; otherwise
+ * the generic note for "hidden" or "published", chosen by the backend's `holds` -- so a new
+ * detector or a new state is still described truthfully in the dimension that matters, even
+ * before this repo knows its name.
+ */
+const copyFor = (type, state, hidden, spans) => {
+    const key = `video.review.${String(type).toLowerCase()}.${String(state).toLowerCase()}`;
+    const title = tOptional(`${key}.title`);
+    if (title !== undefined) {
+        return {
+            title,
+            body: spans ? t(`${key}.bodyWithSpans`, { spans: spans.text }) : t(`${key}.body`),
+            badge: t(`${key}.badge`),
+        };
+    }
+    const fallback = `video.review.unknown.${hidden ? 'hidden' : 'published'}`;
+    return {
+        title: t(`${fallback}.title`),
+        body: t(`${fallback}.body`),
+        badge: t(`${fallback}.badge`),
+    };
+};
 
 /**
  * What to tell this viewer about this video's moderation, worst first — or an empty list.
@@ -173,33 +231,32 @@ const SEVERITY = [
  * Collapsing them would tell the owner about one problem and hide the other; the old music-only
  * notice could not express the question at all.
  *
- * <p>Replaced `musicNotice`, which read `video.musicReview` — a column that no longer exists.
+ * <p>THIS IS THE NOTIFICATION MECHANISM: a held video is READY, visible and reachable by nobody,
+ * and there is no email or SSE anywhere in this design, so if this returns nothing the owner's
+ * only evidence is that their upload vanished. Two consequences: `hidden` and `tone` come from the
+ * backend's `holds`, never from the state alone (see {@link hidesVideo} for the bug that closes),
+ * and a state or type this build does not know is rendered as a generic note rather than dropped.
  */
 export const ownerNotices = (video, isOwner) => {
     if (!isOwner || !Array.isArray(video?.review)) return [];
     return video.review
-        .filter((finding) => OWNER_VISIBLE.has(finding?.state))
-        .slice()
-        .sort((a, b) => SEVERITY.indexOf(a.state) - SEVERITY.indexOf(b.state))
+        .filter((finding) => finding && (hidesVideo(finding) || !QUIET.has(finding.state)))
         .map((finding) => {
             const spans = formatSpans(finding.spans);
-            const hidden = holdsVideo(finding.state);
-            const key = `video.review.${String(finding.type).toLowerCase()}`
-                + `.${String(finding.state).toLowerCase()}`;
+            const hidden = hidesVideo(finding);
+            const { title, body, badge } = copyFor(finding.type, finding.state, hidden, spans);
             return {
                 type: finding.type,
                 state: finding.state,
                 hidden,
-                // `warning` for the states that hide the video and `info` for the ones that do
-                // not. The tone is load-bearing, not decorative: one of these means "nobody can
-                // see your video" and the other means "we have made a note". Rendering both in
-                // red would train owners to ignore both.
                 tone: hidden ? 'warning' : 'info',
-                title: t(`${key}.title`),
-                body: spans ? t(`${key}.bodyWithSpans`, { spans: spans.text }) : t(`${key}.body`),
+                title,
+                body,
+                badge,
                 spans,
             };
-        });
+        })
+        .sort(worstFirst);
 };
 
 /**
@@ -216,9 +273,5 @@ export const ownerNotices = (video, isOwner) => {
 export const ownerBadge = (video, isOwner) => {
     const worst = ownerNotices(video, isOwner)[0];
     if (!worst) return null;
-    return {
-        hidden: worst.hidden,
-        label: t(`video.review.${String(worst.type).toLowerCase()}`
-            + `.${String(worst.state).toLowerCase()}.badge`),
-    };
+    return { hidden: worst.hidden, label: worst.badge };
 };

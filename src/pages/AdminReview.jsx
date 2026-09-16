@@ -25,7 +25,15 @@ const BADGE_VARIANT = {
     [REVIEW_STATE.UNCHECKED]: 'muted',
 };
 
-const TABS = [REVIEW_TYPE.MUSIC, REVIEW_TYPE.NUDITY];
+// The detectors this build knows. A type the backend sends that is not here still gets a tab
+// (see `tabs` below), labelled with its raw name: a held video whose detector this SPA has never
+// heard of is still a held video, and a queue that hides it is a queue nobody can empty.
+const KNOWN_TABS = [REVIEW_TYPE.MUSIC, REVIEW_TYPE.NUDITY];
+
+// tOptional for the same reason as stateLabel: t() would render "admin.review.tabs.speaker" for
+// a detector newer than this build, and the raw wire name is at least the truth.
+const tabLabel = (type) =>
+    tOptional(`admin.review.tabs.${String(type).toLowerCase()}`) ?? String(type);
 
 // Per tab: a music note on the explicit-content queue described the wrong thing entirely.
 const EMPTY_ICON = {
@@ -89,6 +97,11 @@ function AdminReview() {
         [data],
     );
     const grouped = useMemo(() => groupByType(allRows), [allRows]);
+    // Known tabs first and always; then any type on this page that this build does not know.
+    const tabs = useMemo(
+        () => [...KNOWN_TABS, ...Object.keys(grouped).filter((type) => !KNOWN_TABS.includes(type))],
+        [grouped],
+    );
     // Memoised for the `?? []`, which is the whole reason this cannot be a bare expression: an
     // empty tab hands back a NEW array on every render, and `rows` is a dependency of the
     // select-first-row effect below. So on the tab a reviewer has just cleared — the one that is
@@ -159,7 +172,7 @@ function AdminReview() {
                     model that is not there. Two toggle buttons over a normal page region is what
                     this actually is, and aria-pressed describes it honestly. */}
                 <div className="flex flex-wrap gap-2 mb-6">
-                    {TABS.map((type) => {
+                    {tabs.map((type) => {
                         const count = depth[type] ?? 0;
                         const active = type === tab;
                         return (
@@ -173,7 +186,7 @@ function AdminReview() {
                                         : 'border-border-light bg-surface hover:bg-surface-hover'
                                 }`}
                             >
-                                {t(`admin.review.tabs.${type.toLowerCase()}`)}
+                                {tabLabel(type)}
                                 {/* Wrapped rather than spaced with a class on Badge: Badge takes
                                     only `variant` and `children`, so a className would be dropped
                                     silently and the count would sit flush against the label. */}
@@ -274,7 +287,7 @@ function AdminReview() {
                                                         <Badge
                                                             variant={BADGE_VARIANT[other.state] ?? 'muted'}
                                                         >
-                                                            {t(`admin.review.tabs.${other.type.toLowerCase()}`)}
+                                                            {tabLabel(other.type)}
                                                             {' · '}
                                                             {other.state}
                                                         </Badge>

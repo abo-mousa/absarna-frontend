@@ -364,13 +364,15 @@ export const ar = {
         // serve neither. It replaced a music-only `musicReview` block that could not say the
         // second thing at all.
         //
-        // TWO OF THESE FOUR STATES MEAN THE VIDEO IS HIDDEN AND TWO DO NOT, and the wording has to
+        // SOME OF THESE STATES MEAN THE VIDEO IS HIDDEN AND SOME DO NOT, and the wording has to
         // carry that difference. `held` and `rejected` are the ones where the owner's video has
         // disappeared from the platform -- with no message at all that is indistinguishable from a
         // bug, and this design has no notification channel, so these strings are the entire
-        // mechanism by which they are ever told. `advisory` and `unchecked` are notes on a video
-        // that is published and playing normally; wording them like a problem would make owners
-        // think something is wrong when nothing is.
+        // mechanism by which they are ever told. `advisory` is a note on a video that is published
+        // and playing normally; wording it like a problem would make owners think something is
+        // wrong when nothing is. `unchecked` is PER TYPE: it publishes for music and HIDES for
+        // explicit content, so its two blocks below say opposite things on purpose. Which applies
+        // is the backend's `holds`, not something this file decides.
         review: {
             // The tail of a truncated span list, and part of that list's own phrase -- NOT a
             // sentence of its own. It used to render as a separate paragraph after the body had
@@ -440,6 +442,22 @@ export const ar = {
                     // NOT "الفيديو منشور": an unfinished explicit-content scan hides the video.
                     body: 'تعذّر إكمال فحص محتوى الفيديو تلقائيًا، ولن يظهر للزوار حتى يراجعه أحد المشرفين.',
                     bodyWithSpans: 'تعذّر إكمال فحص محتوى الفيديو تلقائيًا، ولن يظهر للزوار حتى يراجعه أحد المشرفين.',
+                },
+            },
+            // A detector or a state this build has never heard of. The backend can grow either
+            // before this repo is deployed, and a finding with no words is a video that vanished
+            // with no message -- so the fallback says the one thing the backend's `holds` flag
+            // does tell us, which is whether anyone can see the video, and no more.
+            unknown: {
+                hidden: {
+                    badge: 'قيد المراجعة',
+                    title: 'هذا الفيديو قيد المراجعة',
+                    body: 'رُصد في الفيديو ما يستدعي مراجعة، ولن يظهر للزوار حتى يراجعه أحد المشرفين.',
+                },
+                published: {
+                    badge: 'ملاحظة',
+                    title: 'الفيديو منشور، مع ملاحظة',
+                    body: 'سُجّلت ملاحظة على هذا الفيديو. الفيديو منشور ويعمل بشكل طبيعي، وسيلقي أحد المشرفين نظرة عليه.',
                 },
             },
         },
@@ -1002,12 +1020,15 @@ export const ar = {
                     rejected: 'تمت مراجعته ورفضه.',
                 },
                 nudity: {
-                    // The worker's rule cannot hide a video for this: recall is unmeasured and the
-                    // score distributions overlap, so every automatic finding is advisory. HELD
-                    // here can only come from a human.
-                    held: 'محجوب عن الزوار بقرار مراجعة.',
+                    // HELD here comes from the detector as well as from a human: the worker
+                    // reports BLOCKED when both models agree on a dwelling scene. And UNCHECKED
+                    // HIDES for this type -- explicit content fails closed -- so it must not be
+                    // worded like music's, which correctly says the clip is published. The row's
+                    // hidden/published column reads the backend's `holds`; these sentences have
+                    // to agree with it.
+                    held: 'رُصدت في هذا المقطع مشاهد قد تكون غير لائقة، وهو محجوب عن الزوار.',
                     advisory: 'قد يحتوي المقطع على مشاهد غير لائقة. المقطع منشور وبانتظار المراجعة.',
-                    unchecked: 'تعذّر إكمال الفحص. المقطع منشور وبانتظار المراجعة.',
+                    unchecked: 'تعذّر إكمال الفحص، والمقطع محجوب عن الزوار حتى تتم مراجعته.',
                     cleared: 'تمت مراجعته واعتماده.',
                     rejected: 'تمت مراجعته ورفضه.',
                 },
