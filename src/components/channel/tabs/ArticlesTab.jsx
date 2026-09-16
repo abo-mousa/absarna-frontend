@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Input } from '@/components/ui';
+import { PenLine } from 'lucide-react';
+import { Button, Input, Modal } from '@/components/ui';
 import ContentPublishForm from '../ContentPublishForm';
 import ManagedContentList from './ManagedContentList';
 import { useChannelContentTab } from '@/hooks/useChannelContentTab';
@@ -11,6 +12,8 @@ const EMPTY_FORM = { title: '', content: '', category: '', originalPublishDate: 
 export default function ArticlesTab({ slug, active }) {
     const content = useChannelContentTab(slug, 'articles', active);
     const [form, setForm] = useState(EMPTY_FORM);
+    // The tab opens onto the list; the form is a dialog, like the videos section.
+    const [adding, setAdding] = useState(false);
 
     const field = (key) => (e) => setForm({ ...form, [key]: e.target.value });
 
@@ -19,30 +22,41 @@ export default function ArticlesTab({ slug, active }) {
         content.publish(stripEmpty(form), {
             action: t('channelManage.forms.article.submit'),
             successMessage: t('channelManage.forms.article.published'),
-            onSuccess: () => setForm(EMPTY_FORM),
+            onSuccess: () => {
+                setForm(EMPTY_FORM);
+                setAdding(false);
+            },
         });
     };
 
     return (
         <div className="grid gap-6">
-            <ContentPublishForm
-                heading={t('channelManage.forms.article.heading')}
-                onSubmit={handleSubmit}
-                submitLabel={t('channelManage.forms.article.submit')}
-            >
-                <Input label={t('fields.title')} value={form.title} onChange={field('title')} required />
-                <Input label={t('fields.content')} textarea rows={15} className="min-h-[300px]" value={form.content} onChange={field('content')} required />
+            <Modal open={adding} onClose={() => setAdding(false)} title={t('channelManage.forms.article.heading')} maxWidth="800px">
+                <ContentPublishForm
+                    bare
+                    heading={t('channelManage.forms.article.heading')}
+                    onSubmit={handleSubmit}
+                    submitLabel={t('channelManage.forms.article.submit')}
+                >
+                    <Input label={t('fields.title')} value={form.title} onChange={field('title')} required />
+                    <Input label={t('fields.content')} textarea rows={15} className="min-h-[300px]" value={form.content} onChange={field('content')} required />
 
-                <div className="grid grid-cols-1 xs:grid-cols-2 gap-4">
-                    <Input label={t('fields.category')} value={form.category} onChange={field('category')} />
-                    <Input label={t('fields.originalPublishDateOptional')} type="date" value={form.originalPublishDate} onChange={field('originalPublishDate')} />
-                </div>
-            </ContentPublishForm>
+                    <div className="grid grid-cols-1 xs:grid-cols-2 gap-4">
+                        <Input label={t('fields.category')} value={form.category} onChange={field('category')} />
+                        <Input label={t('fields.originalPublishDateOptional')} type="date" value={form.originalPublishDate} onChange={field('originalPublishDate')} />
+                    </div>
+                </ContentPublishForm>
+            </Modal>
 
             <ManagedContentList
                 type="articles"
                 heading={t('channelManage.forms.article.listHeading', { count: content.totalItems })}
                 content={content}
+                action={(
+                    <Button size="sm" icon={<PenLine size={16} />} onClick={() => setAdding(true)}>
+                        {t('channelManage.forms.article.heading')}
+                    </Button>
+                )}
                 getHref={(article) => `/articles/${article.id}`}
             />
         </div>

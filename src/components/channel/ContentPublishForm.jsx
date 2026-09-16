@@ -22,13 +22,17 @@ import { Button, FilePicker } from '@/components/ui';
  *                     picked, because picking one starts the upload — see below.
  * @param submitLabel  the button's text
  * @param submitIcon   optional icon element for the button
+ * @param bare         drop the card and the heading — for a form inside a Modal, which has both
  */
-function ContentPublishForm({ heading, onSubmit, file, submitLabel, submitIcon, children }) {
+function ContentPublishForm({ heading, onSubmit, file, submitLabel, submitIcon, bare = false, children }) {
     const hintId = useId();
 
     return (
-        <form onSubmit={onSubmit} className="grid gap-4 bg-surface p-6 rounded-lg border border-border-light">
-            <h3 className="text-lg font-bold">{heading}</h3>
+        <form
+            onSubmit={onSubmit}
+            className={bare ? 'grid gap-4' : 'grid gap-4 bg-surface p-6 rounded-lg border border-border-light'}
+        >
+            {!bare && <h3 className="text-lg font-bold">{heading}</h3>}
 
             {file && (
                 <div>

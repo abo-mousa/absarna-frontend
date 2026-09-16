@@ -13,11 +13,13 @@ import ContentEditModal from '../ContentEditModal';
  *
  * @param content  a `useChannelContentTab` result
  * @param getHref  optional, see ContentManageList
+ * @param action   optional element beside the heading — the tab's "add" button, which opens its
+ *                 form in a dialog so the list, not a form, is what the tab opens onto
  * @param editable false for a type with no editor (a post is its own content; there is nothing to
  *                 open)
  */
 export default function ManagedContentList({
-    type, heading, content, getLabel, getHref, extraActions, renderStatus, editable = true,
+    type, heading, content, getLabel, getHref, extraActions, renderStatus, editable = true, action,
 }) {
     const [editing, setEditing] = useState(null);
     const listRef = useRef(null);
@@ -32,7 +34,10 @@ export default function ManagedContentList({
     return (
         <>
             <div ref={listRef} className="scroll-mt-[76px]">
-                <h3 className="text-lg font-bold mb-3">{heading}</h3>
+                <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+                    <h3 className="text-lg font-bold">{heading}</h3>
+                    {action}
+                </div>
                 <ContentManageList
                     items={content.items}
                     loading={content.loading}

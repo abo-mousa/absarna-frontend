@@ -832,6 +832,9 @@ export const ar = {
 
         // Every content tab: one publish form, then the owner's own list of that type.
         forms: {
+            // On a section's upload button (videos, books) while a file is on its way and the
+            // dialog is closed.
+            uploadingProgress: 'جاري الرفع {progress}%',
             video: {
                 heading: 'رفع فيديو',
                 fileLabel: 'ملف الفيديو',
