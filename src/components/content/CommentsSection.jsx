@@ -28,14 +28,16 @@ function formatDate(dateStr) {
     return date.format(t('comments.absoluteDateFormat'));
 }
 
-function countComments(comments) {
-    return comments.reduce((total, c) => total + 1 + (c.replies?.length || 0), 0);
-}
-
 function CommentsSection({ type, id }) {
     const { token, user } = useAuth();
     const { showToast } = useToast();
-    const { data: comments = [], isLoading } = useComments(type, id);
+    const {
+        data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage,
+    } = useComments(type, id);
+    const comments = data?.pages.flatMap((page) => page.content) ?? [];
+    // From the server, replies included: counting the loaded pages would make the heading grow
+    // each time the reader pressed "load more".
+    const totalComments = data?.pages[0]?.totalComments ?? 0;
     const createComment = useCreateComment(type, id);
     const replyComment = useReplyComment(type, id);
     const updateComment = useUpdateComment(type, id);
@@ -190,7 +192,7 @@ function CommentsSection({ type, id }) {
 
     return (
         <div className="mt-8">
-            <h3 className="mb-4 text-lg font-bold">{t('comments.heading', { count: countComments(comments) })}</h3>
+            <h3 className="mb-4 text-lg font-bold">{t('comments.heading', { count: totalComments })}</h3>
 
             {token ? (
                 <form onSubmit={handleSubmit} className="grid gap-3 mb-6 bg-surface p-5 rounded-lg border border-border-light">
@@ -301,6 +303,18 @@ function CommentsSection({ type, id }) {
                             )}
                         </div>
                     ))}
+                </div>
+            )}
+
+            {hasNextPage && (
+                <div className="text-center mt-4">
+                    <button
+                        onClick={() => fetchNextPage()}
+                        disabled={isFetchingNextPage}
+                        className="px-6 py-2 rounded-md border border-border text-text-secondary font-semibold text-sm hover:bg-surface-hover transition-colors disabled:opacity-60"
+                    >
+                        {isFetchingNextPage ? t('common.loading') : t('comments.loadMore')}
+                    </button>
                 </div>
             )}
 

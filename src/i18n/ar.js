@@ -914,6 +914,8 @@ export const ar = {
     },
 
     comments: {
+        // Under a thread, which loads twenty top-level comments at a time.
+        loadMore: 'عرض المزيد من التعليقات',
         heading: 'التعليقات ({count})',
         commentingAs: 'التعليق باسم',
         placeholder: 'اكتب تعليقك هنا...',

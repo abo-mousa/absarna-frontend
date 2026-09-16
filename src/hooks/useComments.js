@@ -1,13 +1,29 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api/client';
 
+export const COMMENTS_PAGE_SIZE = 20;
+
+/**
+ * A thread, twenty top-level comments at a time, each with all of its replies.
+ *
+ * <p>"Load more" rather than numbered pages: a thread is read from the top down. It used to come
+ * back whole, so the most-discussed item on the platform was also its heaviest page. Each page
+ * also carries `totalComments` — every visible comment including replies — because a heading
+ * counted from the loaded pages would change every time the reader pressed "load more".
+ *
+ * <p>The mutations below invalidate `['comments', type, id]`, which refetches every page already
+ * loaded, so a new comment appears without the reader losing their place.
+ */
 export const useComments = (type, id) => {
-    return useQuery({
+    return useInfiniteQuery({
         queryKey: ['comments', type, id],
-        queryFn: async () => {
-            const res = await api.get(`/${type}s/${id}/comments`);
-            return res.data || [];
+        queryFn: async ({ pageParam = 0 }) => {
+            const res = await api.get(`/${type}s/${id}/comments`,
+                { params: { page: pageParam, size: COMMENTS_PAGE_SIZE } });
+            return res.data;
         },
+        initialPageParam: 0,
+        getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.currentPage + 1 : undefined),
         enabled: !!type && !!id,
         staleTime: 30 * 1000,
     });
