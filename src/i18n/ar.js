@@ -612,6 +612,14 @@ export const ar = {
         backToChannel: 'العودة إلى قناة {name}',
         empty: 'لا توجد فيديوهات في هذه السلسلة بعد',
         emptyOnChannel: 'لا توجد سلاسل بعد',
+        // Owner-only: on their own channel page, a series no visitor can see. Feminine, agreeing
+        // with «سلسلة» — common.hiddenFromVisitors is worded for a video.
+        hiddenBadge: 'مخفية عن الزوار',
+        hiddenNoticeTitle: 'هذه السلسلة مخفية عن الزوار',
+        // Covers every way a series ends up unlisted, since the page cannot tell them apart and
+        // the remedy is the same place for all of them.
+        hiddenNoticeBody: 'لا تظهر هذه السلسلة لأحد غيرك لأنه لا يوجد فيها فيديو منشور: إما أن فيديوهاتها مخفية، أو لم تنتهِ معالجتها، أو محجوبة للمراجعة، أو لم تُضف إليها فيديوهات بعد.',
+        manageInDashboard: 'إدارتها من لوحة القناة',
     },
 
     channel: {

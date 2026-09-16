@@ -51,10 +51,16 @@ export const useSeriesNeighbours = (seriesId, videoId, enabled = true) => {
  *
  * <p>An import creates a series per playlist, so this is as long as a migrating channel's
  * playlist count; it used to come back whole.
+ *
+ * <p><b>User-scoped, unlike the channel's other public lists</b>, because the answer depends on
+ * who asks: a visitor gets the listed series, the channel's owner gets every series with
+ * `publiclyListed` marking the hidden ones. Unscoped, an owner's cached list would be served to
+ * the next account on the same browser.
  */
 export const useChannelSeries = (slug, enabled = true, size = 24) => {
+    const scope = useUserScope();
     return useInfiniteQuery({
-        queryKey: ['channel-series', slug, size],
+        queryKey: ['channel-series', slug, size, scope],
         queryFn: async ({ pageParam = 0 }) => {
             const res = await api.get(`/channels/${slug}/series`, { params: { page: pageParam, size } });
             return res.data;

@@ -53,6 +53,25 @@ function SeriesDetail() {
                     </Link>
                 </div>
 
+                {/* `publiclyListed` is sent only to the channel's owner (and a platform admin). A series
+                    with no publicly playable video is not listed and 404s for everyone else, and
+                    its list below is empty for the same reason — which, unexplained, reads to its
+                    owner as a broken page. */}
+                {series.publiclyListed === false && (
+                    <div role="status" className="mb-6 rounded-lg border p-4 text-sm border-amber-300 bg-amber-50 text-amber-900">
+                        <p className="font-semibold mb-1">{t('series.hiddenNoticeTitle')}</p>
+                        <p className="leading-relaxed">{t('series.hiddenNoticeBody')}</p>
+                        {channel && (
+                            <Link
+                                to={`/channel/${channel.slug}/manage?tab=videos`}
+                                className="inline-block mt-2 font-semibold underline"
+                            >
+                                {t('series.manageInDashboard')}
+                            </Link>
+                        )}
+                    </div>
+                )}
+
                 <div className="bg-surface p-5 sm:p-6 rounded-lg border border-border-light mb-6">
                     <div className="flex items-center gap-2 text-primary font-semibold text-sm mb-2">
                         <Tv size={16} /> {t('series.badge')}

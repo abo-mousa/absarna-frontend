@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Video, BookOpen, FileText, MessageSquare, Settings, Tv } from 'lucide-react';
+import { Video, BookOpen, FileText, MessageSquare, Settings, Tv, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
 import { QueryState, Avatar } from '../components/ui';
@@ -272,13 +272,25 @@ function ChannelPage() {
                 <QueryState isEmpty={series.length === 0} emptyTitle={t('series.emptyOnChannel')}>
                     <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-4">
                         {series.map((s) => (
+                            // `publiclyListed === false` reaches only the channel's owner: a series
+                            // no visitor can see, marked the way a hidden video card is — dashed
+                            // border and a badge — so it reads as hidden rather than as missing.
                             <Link
                                 key={s.id}
                                 to={`/series/${s.id}`}
-                                className="block bg-surface rounded-lg p-5 border border-border-light shadow-sm hover:shadow-md transition-shadow"
+                                className={`block bg-surface rounded-lg p-5 border shadow-sm hover:shadow-md transition-shadow ${
+                                    s.publiclyListed === false ? 'border-dashed border-border' : 'border-border-light'
+                                }`}
                             >
-                                <div className="flex items-center gap-2 text-primary font-semibold text-xs mb-2">
-                                    <Tv size={14} /> {t('series.badge')}
+                                <div className="flex items-center justify-between gap-2 mb-2">
+                                    <span className="flex items-center gap-2 text-primary font-semibold text-xs">
+                                        <Tv size={14} /> {t('series.badge')}
+                                    </span>
+                                    {s.publiclyListed === false && (
+                                        <span className="flex items-center gap-1 bg-black/70 text-white text-xs font-semibold px-2 py-0.5 rounded">
+                                            <EyeOff size={12} /> {t('series.hiddenBadge')}
+                                        </span>
+                                    )}
                                 </div>
                                 <h3 className="text-base font-semibold mb-2 leading-snug line-clamp-2">{s.title}</h3>
                                 {s.description && (
