@@ -46,6 +46,12 @@ function Admin() {
                         <Link to="/admin/review" className="px-5 py-2.5 bg-surface-hover border border-border rounded-md font-semibold">
                             {t('admin.review.title')}
                         </Link>
+                        {/* Beside the review queue, for the same reason it is: a report is a
+                            reader waiting on a human, and a queue reachable only by remembering a
+                            URL is a queue nobody reads. */}
+                        <Link to="/admin/reports" className="px-5 py-2.5 bg-surface-hover border border-border rounded-md font-semibold">
+                            {t('adminReports.title')}
+                        </Link>
                         <Link to="/admin/channels" className="px-5 py-2.5 bg-primary text-white rounded-md font-semibold">
                             {t('admin.manageChannels')}
                         </Link>

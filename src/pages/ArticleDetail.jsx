@@ -3,7 +3,7 @@ import { ArrowRight, Type, Clock, Calendar, Eye } from 'lucide-react';
 import { formatPublishDate, displayDate } from '@/lib/dayjsAr';
 import PageShell from '../components/layout/PageShell';
 import { QueryState } from '../components/ui';
-import { CommentsSection, BookmarkButton, LikeButton, ShareButton } from '../components/content';
+import { CommentsSection, BookmarkButton, LikeButton, ReportButton, ShareButton } from '../components/content';
 import { useArticle } from '../hooks/useArticles';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { t } from '@/i18n';
@@ -44,6 +44,7 @@ function ArticleDetail() {
                             <ShareButton title={article.title} path={`/articles/${article.id}`} />
                             <LikeButton type="article" id={article.id} />
                             <BookmarkButton type="article" id={article.id} />
+                            <ReportButton type="article" id={article.id} />
                         </div>
                     </div>
 

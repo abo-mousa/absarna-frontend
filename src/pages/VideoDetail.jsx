@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { ArrowRight, ChevronRight, ChevronLeft, Clock, Folder, Tv, User } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
 import { QueryState, Avatar, Spinner, LinkifiedText, ExpandableText } from '../components/ui';
-import { VideoPlayer, CommentsSection, VideoCard, BookmarkButton, LikeButton, ShareButton, SourceBadge, SubscribeButton } from '../components/content';
+import { VideoPlayer, CommentsSection, VideoCard, BookmarkButton, LikeButton, ReportButton, ShareButton, SourceBadge, SubscribeButton } from '../components/content';
 import { useVideo, useRelatedVideo, useWatchProgressMap, useWatchHistory } from '../hooks/useVideos';
 import { useChannel } from '../hooks/useChannels';
 import { useSeriesDetail, useSeriesNeighbours } from '../hooks/useSeries';
@@ -177,6 +177,12 @@ function VideoDetail() {
                                 does not flash 0 while the status query resolves. */}
                             <LikeButton type="video" id={video.id} initialCount={video.likeCount} />
                             <BookmarkButton type="video" id={video.id} />
+                            {/* Last in the row, and deliberately not hidden from the channel's
+                                own manager: the owner of a video is not the person this control
+                                exists for, but a manager of ONE channel is an ordinary reader of
+                                every other, and a control that appears and disappears depending
+                                on who owns what is harder to find than one that is always there. */}
+                            <ReportButton type="video" id={video.id} />
                         </div>
                     </div>
 

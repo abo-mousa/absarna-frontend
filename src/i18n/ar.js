@@ -1139,6 +1139,168 @@ export const ar = {
         // The accessible name for the whole control, which is otherwise two unlabelled arrows.
         label: 'تنقّل بين الصفحات',
     },
+
+    /**
+     * Viewer content reporting — the button, and the dialog behind it.
+     *
+     * <h4>The wording carries two things the UI cannot</h4>
+     *
+     * <p><b>That a human reads it, and that nothing is removed automatically.</b> A report button
+     * that says nothing about what happens next is read one of two wrong ways: as a delete button
+     * (so people press it on things they merely disagree with) or as a void (so people stop
+     * pressing it at all). Saying plainly that a person from the platform reads it, and that the
+     * content is not taken down by the press itself, is what makes the queue worth reading.
+     *
+     * <p><b>That the reason list is a routing decision, not a survey.</b> Each reason names what
+     * a reviewer would do about it, which is why «نسبة خاطئة» is first: no detector on this
+     * platform will ever have an opinion about a lecture credited to the wrong scholar, and the
+     * readers are the only people who can catch it. See `lib/reports.js` for the ordering.
+     */
+    report: {
+        action: 'إبلاغ',
+        // A CONSTANT accessible name, like SubscribeButton's: what the control is FOR does not
+        // change when its state does. The already-reported state has its own name below because
+        // there the difference is what the control does next, not merely how it looks.
+        aria: 'الإبلاغ عن هذا المحتوى',
+        reported: 'تم الإبلاغ',
+        reportedAria: 'سبق أن أبلغت عن هذا المحتوى',
+        // Shown as the control's tooltip once reported, because a disabled control with no
+        // explanation reads as broken. Says the report arrived AND that nothing more is expected
+        // of the reader.
+        reportedHint: 'وصلنا بلاغك وهو بانتظار مراجعة أحد المشرفين. لا حاجة لتكراره.',
+
+        title: 'الإبلاغ عن مخالفة',
+        // The two facts above, in the order a reader needs them.
+        intro: 'اختر أقرب سبب لما تراه. يقرأ البلاغَ إنسانٌ من إدارة المنصة، ولا يُحذف المحتوى ولا يُخفى بمجرّد الإبلاغ.',
+        reasonLegend: 'سبب البلاغ',
+        noteLabel: 'تفاصيل إضافية (اختياري)',
+        // Names the one piece of information that most often makes a misattribution report
+        // actionable, since a reviewer who cannot verify the claim can do nothing with it.
+        notePlaceholder: 'ما الذي ينبغي أن يعرفه المراجع؟ إن كان البلاغ عن نسبة خاطئة فاذكر القائل الصحيح أو المصدر إن عرفته.',
+        noteCounter: '{count}/{max}',
+        submit: 'إرسال البلاغ',
+        submitting: 'جاري الإرسال...',
+        success: 'وصل بلاغك، وسيراجعه أحد المشرفين.',
+        failed: 'تعذّر إرسال البلاغ.',
+
+        /**
+         * The reasons, each a label and a line saying what it covers.
+         *
+         * <p>The hints are not decoration: without them «معلومة غير صحيحة» and «نسبة خاطئة» are
+         * picked interchangeably, and the code then routes nothing. Read in the order of
+         * REPORT_REASONS in `lib/reports.js`, which is where the ordering is argued.
+         */
+        reasons: {
+            MISATTRIBUTION: {
+                label: 'نسبة خاطئة',
+                hint: 'كلام أو كتاب منسوب إلى عالم أو مؤلف لم يقله ولم يكتبه.',
+            },
+            MISINFORMATION: {
+                label: 'معلومة غير صحيحة',
+                hint: 'خبر أو حكم يُقدَّم على أنه ثابت وليس كذلك.',
+            },
+            SEXUAL_CONTENT: {
+                label: 'مشاهد أو صور غير لائقة',
+                hint: 'محتوى جنسي أو صور عارية.',
+            },
+            VIOLENCE: {
+                label: 'عنف أو مشاهد دموية',
+                hint: 'مشاهد قاسية أو دموية.',
+            },
+            HATE_OR_ABUSE: {
+                label: 'إساءة أو تحريض',
+                hint: 'سبّ أو تحقير أو تحريض على شخص أو فئة.',
+            },
+            COPYRIGHT: {
+                label: 'مخالفة حقوق النشر',
+                hint: 'نُشر دون إذن صاحب الحق.',
+            },
+            SPAM_OR_SCAM: {
+                label: 'إعلانات أو احتيال',
+                hint: 'دعاية مكرّرة أو محاولة نصب.',
+            },
+            OTHER: {
+                label: 'سبب آخر',
+                hint: 'اكتب ما تريد قوله في حقل التفاصيل أدناه.',
+            },
+        },
+    },
+
+    /**
+     * The platform's queue of viewer reports — admin only.
+     *
+     * <p><b>The sentence this screen cannot do without is `decisionOnly`.</b> A moderator
+     * pressing «تم التصرف» records that a human looked and acted; it does not hide, delete or
+     * suspend anything. A button that a reviewer believes takes the video down, and does not, is
+     * the single worst thing this screen could be wrong about — so it is said at the top of the
+     * page and again beside the buttons.
+     */
+    adminReports: {
+        title: 'بلاغات الزوار',
+        short: 'البلاغات',
+        // The size of the whole backlog, which one page cannot answer. Beside the heading rather
+        // than inside the list for the same reason the review queue's depth is: a number only
+        // visible after paging to the end is a number nobody reads.
+        openTotal: 'بلاغات مفتوحة: {count}',
+        decisionOnly: 'القرار هنا تسجيل لِما رآه المراجع، ولا يغيّر المحتوى: لا يُخفيه ولا يحذفه. للتصرف في المحتوى نفسه افتح العنصر واستخدم أدوات الإخفاء أو الحذف، أو علّق القناة من إدارة القنوات.',
+
+        filters: {
+            status: 'الحالة',
+            targetType: 'نوع المحتوى',
+            all: 'الكل',
+        },
+        // Reviewer-facing names for the wire enums. Looked up with tOptional, so a value a newer
+        // backend sends renders as itself rather than as a dotted key in the middle of the page.
+        statuses: {
+            open: 'مفتوح',
+            actioned: 'تم التصرف',
+            dismissed: 'لا مخالفة',
+        },
+        targetTypes: {
+            video: 'فيديو',
+            book: 'كتاب',
+            article: 'مقال',
+            post: 'منشور',
+            comment: 'تعليق',
+        },
+
+        empty: 'لا توجد بلاغات',
+        emptyDescription: 'لا شيء بانتظار المراجعة ضمن هذا التصنيف.',
+        loadFailed: 'تعذّر تحميل البلاغات',
+
+        reporter: 'المُبلِّغ رقم {id}',
+        reportedAt: 'أُبلغ عنه: {date}',
+        decidedAt: 'تاريخ القرار: {date}',
+        decidedBy: 'قرار المشرف رقم {id}',
+        // Rendered only when it is more than one — see `corroboration` in lib/reports.js. This is
+        // the line that turns a list of separate objections into one case.
+        corroboration: '{count} بلاغات مفتوحة على العنصر نفسه',
+        openTarget: 'فتح المحتوى المبلَّغ عنه',
+        openChannel: 'فتح القناة',
+        // A post has no page of its own and a comment lives under whatever it was written on, so
+        // the link falls back to the channel. Said plainly rather than left as a dead control.
+        noDirectLink: 'لا توجد صفحة مستقلة لهذا العنصر.',
+
+        noteHeading: 'كلام المُبلِّغ',
+        noNote: 'لم يكتب المُبلِّغ تفاصيل.',
+        moderatorNoteLabel: 'ملاحظة المراجع (اختيارية)',
+        moderatorNoteHeading: 'ملاحظة المراجع',
+        moderatorNotePlaceholder: 'ماذا فعلت، ولماذا؟ تُقرأ لاحقاً عند تكرار البلاغات على القناة نفسها.',
+
+        actioned: 'تم التصرف',
+        dismiss: 'لا مخالفة',
+        deciding: 'جاري الحفظ...',
+        decided: 'تم حفظ القرار.',
+        decisionFailed: 'تعذّر حفظ القرار.',
+
+        otherReports: 'بقية البلاغات على العنصر نفسه',
+        showOtherReports: 'عرض بقية البلاغات ({count})',
+        hideOtherReports: 'إخفاء بقية البلاغات',
+        otherReportsFailed: 'تعذّر تحميل بقية البلاغات.',
+        // Absolute, never relative: «منذ 3 أيام» is the wrong unit for a queue whose whole
+        // question is how long someone has been waiting. Latin digits, like every number here.
+        dateFormat: 'D MMMM YYYY، HH:mm',
+    },
 };
 
 export default ar;

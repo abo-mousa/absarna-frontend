@@ -74,6 +74,11 @@ export const queryKeys = {
     // must not serve the other's rows from cache while its own request is in flight.
     review: (type, states, page, scope) => ['review', type, states, page, scope],
 
+    // Whether THIS viewer has already reported THIS item. User-scoped for the ordinary reason —
+    // the answer is about the caller and nobody else, and a cached `true` surviving a logout
+    // would render the next person's report button as already pressed.
+    reportStatus: (targetType, targetId, scope) => ['report-status', targetType, targetId, scope],
+
     // ---- platform admin ----
     adminStats: (scope) => ['admin-stats', scope],
     adminBooks: (scope) => ['admin-books', scope],
@@ -81,6 +86,14 @@ export const queryKeys = {
     adminBiography: (scope) => ['admin-biography', scope],
     adminPendingChannels: (scope) => ['admin-pending-channels', scope],
     adminAllChannels: (scope) => ['admin-all-channels', scope],
+    // The viewer-report moderation queue. Keyed by every filter AND the page, so switching a
+    // filter or stepping a page never serves the previous view's rows while its own request is in
+    // flight — the same reason the review queue is keyed by type.
+    adminReports: (statuses, targetType, page, scope) =>
+        ['admin-reports', statuses, targetType, page, scope],
+    // Every report against one target, for reading a complaint in context.
+    adminReportsForTarget: (targetType, targetId, scope) =>
+        ['admin-reports-target', targetType, targetId, scope],
 };
 
 export default queryKeys;

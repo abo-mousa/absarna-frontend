@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { EmailVerificationNotice } from '../auth';
 import { Modal } from '../ui';
+import ReportButton from './ReportButton';
 import dayjs from '@/lib/dayjsAr';
 import {
     useComments,
@@ -107,8 +108,32 @@ function CommentsSection({ type, id }) {
         });
     };
 
-    const renderOwnerActions = (comment) => {
-        if (!user || comment.userId !== user.id) return null;
+    /**
+     * The controls beside one comment's timestamp.
+     *
+     * <p><b>The author gets edit/delete; everybody else gets report.</b> The two are mutually
+     * exclusive on purpose — a report button on your own comment is an invitation to file a
+     * complaint about yourself, and the delete button beside it already does the thing you would
+     * have wanted. This is also why the check is `comment.userId !== user.id` rather than an
+     * ownership check on the channel: a channel's manager reading their own channel's comments is
+     * an ordinary reader of everyone else's, and comment moderation for them lives on the
+     * dashboard, not here.
+     *
+     * <p>A signed-out reader gets the report control too. It sends them to /login on press, like
+     * every other action in this app that needs an account.
+     */
+    const renderActions = (comment) => {
+        if (!user || comment.userId !== user.id) {
+            // Unlabelled and small: a comment's header row is already carrying a name and a
+            // timestamp, and the word would push the date off a phone. The accessible name and
+            // the tooltip both come from ReportButton itself.
+            //
+            // `trackStatus={false}`, because a thread with thirty replies would otherwise fire
+            // thirty "have I reported this?" requests on mount to grey out controls almost none
+            // of which have been pressed. A press is idempotent on the backend, so the only thing
+            // lost is the already-reported state surviving a reload.
+            return <ReportButton type="comment" id={comment.id} size={14} trackStatus={false} />;
+        }
         return (
             <div className="flex gap-1">
                 <button
@@ -212,7 +237,7 @@ function CommentsSection({ type, id }) {
                                 <strong className="text-primary">{comment.userName}</strong>
                                 <div className="flex items-center gap-2">
                                     <span className="text-xs text-text-muted">{formatDate(comment.createdAt)}</span>
-                                    {renderOwnerActions(comment)}
+                                    {renderActions(comment)}
                                 </div>
                             </div>
 
@@ -262,7 +287,7 @@ function CommentsSection({ type, id }) {
                                                 <strong className="text-sm text-primary">{reply.userName}</strong>
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-xs text-text-muted">{formatDate(reply.createdAt)}</span>
-                                                    {renderOwnerActions(reply)}
+                                                    {renderActions(reply)}
                                                 </div>
                                             </div>
                                             {editingId === reply.id ? (

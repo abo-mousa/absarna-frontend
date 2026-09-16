@@ -8,7 +8,7 @@ import { flushOnUnload } from '@/lib/api/beacon';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
 import { QueryState, ExpandableText } from '../components/ui';
-import { CommentsSection, BookmarkButton, LikeButton, ShareButton } from '../components/content';
+import { CommentsSection, BookmarkButton, LikeButton, ReportButton, ShareButton } from '../components/content';
 import { useBook, useBookReadProgress, useSaveReadProgress } from '../hooks/useBooks';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { t } from '@/i18n';
@@ -113,6 +113,7 @@ function BookDetail() {
                                 <ShareButton title={book.title} path={`/books/${book.id}`} />
                                 <LikeButton type="book" id={book.id} />
                                 <BookmarkButton type="book" id={book.id} />
+                                <ReportButton type="book" id={book.id} />
                             </div>
                         </div>
 

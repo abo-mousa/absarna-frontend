@@ -34,6 +34,7 @@ const SeriesDetail = lazy(() => import('./pages/SeriesDetail'));
 const VideoDetail = lazy(() => import('./pages/VideoDetail'));
 const AdminChannels = lazy(() => import('./pages/AdminChannels'));
 const AdminReview = lazy(() => import('./pages/AdminReview'));
+const AdminReports = lazy(() => import('./pages/AdminReports'));
 const CreateChannel = lazy(() => import('./pages/CreateChannel'));
 const ChannelManage = lazy(() => import('./pages/ChannelManage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
@@ -239,6 +240,13 @@ function AppRoutes() {
                     admin's bookmark, on the one screen whose whole job is that held uploads do not
                     sit unseen. */}
                 <Route path="/admin/music-review" element={<Navigate to="/admin/review" replace />} />
+                {/* Viewer reports. Platform admin like the review queue and unlike comment
+                    moderation, which is channel-scoped — a report is frequently ABOUT the channel
+                    that would otherwise be judging it. `adminOnly` mirrors the backend's
+                    @PreAuthorize; the endpoint is the half that actually refuses. */}
+                <Route path="/admin/reports" element={
+                    <ProtectedRoute adminOnly><AdminReports /></ProtectedRoute>
+                } />
                 <Route path="/create-channel" element={
                     <ProtectedRoute><CreateChannel /></ProtectedRoute>
                 } />

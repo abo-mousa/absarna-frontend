@@ -7,6 +7,7 @@ export { default as BookmarkButton } from './BookmarkButton';
 export { default as LikeButton } from './LikeButton';
 export { default as SubscribeButton } from './SubscribeButton';
 export { default as ShareButton } from './ShareButton';
+export { default as ReportButton } from './ReportButton';
 // PdfReader is intentionally NOT re-exported here — it pulls in pdfjs (a ~470KB dependency),
 // and this barrel is imported broadly. Import it directly with React.lazy() where needed
 // (see BookDetail.jsx) so that cost only ships to visitors who actually open a book.
