@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isProtectedPath, safeInternalPath } from '../navigation';
+import { channelTabPath, isProtectedPath, resolveChannelTab, safeInternalPath } from '../navigation';
 
 /**
  * Both halves of the post-login return-to, which is the one place this app turns a value it was
@@ -61,5 +61,29 @@ describe('isProtectedPath', () => {
     it('is safe with a non-string', () => {
         expect(isProtectedPath(undefined)).toBe(false);
         expect(isProtectedPath(null)).toBe(false);
+    });
+});
+
+/**
+ * The public channel page's tab is in the URL so a return from a series lands on the series list.
+ */
+describe('resolveChannelTab', () => {
+    it('keeps a tab the page has', () => {
+        expect(resolveChannelTab('series')).toBe('series');
+        expect(resolveChannelTab('books')).toBe('books');
+    });
+
+    it('falls back to videos for anything else', () => {
+        expect(resolveChannelTab(null)).toBe('videos');
+        expect(resolveChannelTab('')).toBe('videos');
+        expect(resolveChannelTab('manage')).toBe('videos');
+    });
+});
+
+describe('channelTabPath', () => {
+    it('names the tab, except the default one', () => {
+        expect(channelTabPath('abc', 'series')).toBe('/channel/abc?tab=series');
+        expect(channelTabPath('abc', 'videos')).toBe('/channel/abc');
+        expect(channelTabPath('abc', 'nonsense')).toBe('/channel/abc');
     });
 });

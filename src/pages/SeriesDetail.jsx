@@ -8,6 +8,7 @@ import { useWatchProgressMap } from '../hooks/useVideos';
 import { useChannel } from '../hooks/useChannels';
 import { useAuth } from '../contexts/AuthContext';
 import { usePageMeta } from '../hooks/usePageMeta';
+import { channelTabPath } from '@/lib/navigation';
 import { t } from '@/i18n';
 
 function SeriesDetail() {
@@ -23,9 +24,11 @@ function SeriesDetail() {
     // A series always belongs to exactly one channel — that's its natural "back to" destination
     // (there's no standalone /series listing page the way Articles/Books have one), so this goes
     // back to the owning channel rather than always to Home regardless of where the visitor came
-    // from (a channel's "سلاسل" tab, or a video's "part X of Y" block).
+    // from (a channel's "سلاسل" tab, or a video's "part X of Y" block). To that channel's series
+    // tab, not its front: the channel page opens on videos, and a return from a course belongs
+    // back in the list of courses.
     const { data: channel } = useChannel(series?.channelId, !!series?.channelId);
-    const backTo = channel ? `/channel/${channel.slug}` : '/';
+    const backTo = channel ? channelTabPath(channel.slug, 'series') : '/';
     const backLabel = channel ? t('series.backToChannel', { name: channel.name }) : t('common.backHome');
 
     usePageMeta({ title: series?.title, description: series?.description?.slice(0, 200) });

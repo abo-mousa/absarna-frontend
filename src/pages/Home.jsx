@@ -93,6 +93,15 @@ function Home() {
     const feedTail = (infiniteData?.pages.flatMap((page) => page.content) || [])
         .filter((video) => !feedShownIds.has(video.id));
 
+    /*
+     * Empty means the sections AND the tail. The empty state used to look at the sections alone,
+     * and it replaces everything inside it — so a first-time visitor with no subscriptions, on a
+     * platform with nothing featured, got "nothing here yet" over a catalogue that had videos.
+     * While the sections are empty the tail is the whole page, so wait for it before deciding.
+     */
+    const sectionsEmpty = feedSections.every((section) => !(feedQuery.data?.[section.key]?.length));
+    const feedEmpty = sectionsEmpty && feedTail.length === 0;
+
     const toggleVisibility = useToggleVideoVisibilityByChannelId();
     const deleteVideo = useDeleteVideoByChannelId();
 
@@ -157,11 +166,11 @@ function Home() {
 
             {isDefaultView ? (
                 <QueryState
-                    isLoading={feedQuery.isLoading}
+                    isLoading={feedQuery.isLoading || (sectionsEmpty && infiniteLoading)}
                     isError={feedQuery.isError}
                     error={feedQuery.error}
                     onRetry={feedQuery.refetch}
-                    isEmpty={feedSections.every((section) => !(feedQuery.data?.[section.key]?.length))}
+                    isEmpty={feedEmpty}
                     errorTitle={t('home.loadFailed')}
                     emptyTitle={t('home.empty')}
                     emptyDescription={t('common.comingSoon')}

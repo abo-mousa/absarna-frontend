@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Video, BookOpen, FileText, MessageSquare, Settings, Tv, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
@@ -9,6 +9,7 @@ import { useWatchProgressMap, useReadingProgressMap } from '../hooks/useVideos';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { resolveMediaUrl } from '@/lib/media';
 import { isChannelOwner } from '@/lib/user';
+import { channelTabPath, resolveChannelTab } from '@/lib/navigation';
 import {
     useChannel,
     useChannelVideos,
@@ -24,7 +25,11 @@ function ChannelPage() {
     const { slug } = useParams();
     const navigate = useNavigate();
     const { token, user } = useAuth();
-    const [activeTab, setActiveTab] = useState('videos');
+    // In the URL, not in state — see resolveChannelTab. `replace`, as on the dashboard: switching
+    // tabs does not fill the history, so Back still leaves the channel.
+    const [searchParams] = useSearchParams();
+    const activeTab = resolveChannelTab(searchParams.get('tab'));
+    const setActiveTab = (tab) => navigate(channelTabPath(slug, tab), { replace: true });
     const [bannerFailed, setBannerFailed] = useState(false);
     const watchProgress = useWatchProgressMap(!!token);
     const readingProgress = useReadingProgressMap(!!token);

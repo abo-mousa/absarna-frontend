@@ -36,3 +36,24 @@ export const safeInternalPath = (path) => {
     if (/^\/[^/?#]*:/.test(path)) return null;
     return path;
 };
+
+/**
+ * The public channel page's tabs, in the order they are shown. The first is the default.
+ */
+export const CHANNEL_TABS = ['videos', 'books', 'articles', 'posts', 'series'];
+
+/**
+ * The tab a `?tab=` value names on the public channel page, or the default for anything else.
+ *
+ * <p>The tab lives in the URL rather than in component state because leaving the page loses
+ * state: open a series from the «سلاسل» tab and come back — with Back or with the series page's own
+ * link — and the page reopened on videos, so every return from a course meant finding the series
+ * list again.
+ */
+export const resolveChannelTab = (param) => (CHANNEL_TABS.includes(param) ? param : CHANNEL_TABS[0]);
+
+/** A link to one tab of a channel's public page. The default tab gets the bare path. */
+export const channelTabPath = (slug, tab) =>
+    resolveChannelTab(tab) === CHANNEL_TABS[0]
+        ? `/channel/${slug}`
+        : `/channel/${slug}?tab=${resolveChannelTab(tab)}`;
