@@ -172,3 +172,21 @@ describe('describeError', () => {
         expect(describeError(storageRefusal, 'فشل في رفع الفيديو')).toBe('فشل في رفع الفيديو');
     });
 });
+
+describe('the email-verification gate', () => {
+    it('says what to do, rather than "you are not allowed"', () => {
+        // The backend's message is English by design, so the only usable signal is the flag.
+        const refused = {
+            response: {
+                status: 403,
+                data: {
+                    message: 'Email must be verified before liking content',
+                    emailVerificationRequired: true,
+                },
+            },
+        };
+
+        expect(describeError(refused)).toBe(t('auth.verificationNotice.defaultMessage'));
+        expect(describeError(refused)).not.toBe(t('errors.forbidden'));
+    });
+});

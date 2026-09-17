@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { EmailVerificationNotice } from '../auth';
 import Navbar from './Navbar';
 import SideBar from './SideBar';
 import Footer from './Footer';
@@ -28,6 +30,11 @@ import { t } from '@/i18n';
 // which takes it out of the flow entirely.
 function PageShell({ children, sidebar = true, currentChannel, contentClassName = '' }) {
     const [drawerOpen, setDrawerOpen] = useState(false);
+    const { user } = useAuth();
+    // `=== false` rather than `!`: the profile arrives a moment after the token does, and a
+    // truthy-test on an absent field announces "your account is not verified" to every verified
+    // user for that moment.
+    const unverified = !!user && user.emailVerified === false;
 
     return (
         <div className="min-h-screen flex flex-col bg-bg">
@@ -38,6 +45,16 @@ function PageShell({ children, sidebar = true, currentChannel, contentClassName 
                 {t('nav.skipToContent')}
             </a>
             <Navbar onMenuClick={() => setDrawerOpen(true)} />
+
+            {/* The only place the unverified state is visible without trying a blocked action.
+                It used to appear solely inside the comment box and the create-channel form, so
+                someone who never tried either was never told — and the ten-minute link they
+                missed, or never received, looked like nothing was wrong. */}
+            {unverified && (
+                <div className="max-w-[1400px] w-full mx-auto px-3 sm:px-6 pt-3">
+                    <EmailVerificationNotice message={t('auth.verificationNotice.banner')} />
+                </div>
+            )}
             <div className="flex flex-1">
                 {sidebar && (
                     <SideBar

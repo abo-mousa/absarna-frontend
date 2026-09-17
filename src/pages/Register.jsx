@@ -163,11 +163,15 @@ function Register() {
                         </div>
                     </fieldset>
 
+                    {/* Required, here and in RegisterRequest. An account with no address can
+                        never verify, so it can never comment, like, subscribe or open a channel —
+                        and cannot recover a forgotten password either. */}
                     <Input
-                        label={t('fields.email')}
+                        label={t('fields.emailRequired')}
                         type="email"
                         value={form.email}
                         onChange={(e) => setForm({ ...form, email: e.target.value })}
+                        required
                         maxLength={EMAIL_MAX_LENGTH}
                         placeholder="email@example.com"
                         dir="ltr"
@@ -281,7 +285,12 @@ function Register() {
                         <p className="text-red-600 dark:text-red-400 text-sm bg-red-100 dark:bg-red-950/40 p-2.5 rounded-md">{error}</p>
                     )}
 
-                    <Button type="submit" disabled={loading} fullWidth>
+                    {/* Disabled until the box is ticked, rather than submitting and refusing. The
+                        agreement is the one field where a refusal after the fact reads as a bug —
+                        everything else the form asks for is visibly empty or wrong, while an
+                        unticked box looks like a step you chose to skip. The check in handleSubmit
+                        stays: it is what catches a submit by Enter from a text field. */}
+                    <Button type="submit" disabled={loading || !form.acceptedTerms} fullWidth>
                         {loading ? t('auth.register.submitting') : t('auth.register.submit')}
                     </Button>
                 </form>

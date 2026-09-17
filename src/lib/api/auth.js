@@ -38,5 +38,14 @@ export const forgotPassword = (email) => api.post('/auth/forgot-password', { ema
 export const resetPassword = (token, newPassword) =>
     api.post('/auth/reset-password', { token, newPassword });
 
+/**
+ * Deletes the signed-in account and everything the platform holds about them. Irreversible.
+ *
+ * <p>A DELETE with a body, which axios spells `data` — the password does not go in the URL, for
+ * the reason no password ever does.
+ */
+export const deleteAccount = (currentPassword) =>
+    api.delete('/user/account', { data: { currentPassword } });
+
 export const changePassword = (currentPassword, newPassword) =>
     api.post('/user/change-password', { currentPassword, newPassword });

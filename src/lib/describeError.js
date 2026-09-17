@@ -112,6 +112,14 @@ export function describeError(error, fallback) {
         return generic;
     }
 
+    // The verification gate, before the generic 403 below. The backend's own sentence is English
+    // by design and serverMessage drops it, so without this an unverified viewer pressing like or
+    // subscribe got «ليس لديك صلاحية» — which reads as "not allowed", not as "finish signing up".
+    // The flag is the backend's, set by GlobalExceptionHandler for EmailNotVerifiedException.
+    if (error?.response?.data?.emailVerificationRequired) {
+        return t('auth.verificationNotice.defaultMessage');
+    }
+
     // A named business reason wins over everything, at any status: it is the only layer that can
     // say *why*, and the sentence it selects is one we wrote.
     const explained = reasonMessage(error);

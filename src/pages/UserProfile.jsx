@@ -2,14 +2,122 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import api from '@/lib/api/client';
-import { changePassword } from '@/lib/api/auth';
+import { changePassword, deleteAccount } from '@/lib/api/auth';
 import PageShell from '../components/layout/PageShell';
-import { Input, Button } from '../components/ui';
+import { Input, Button, Modal } from '../components/ui';
+import { EmailVerificationNotice } from '../components/auth';
+import { useMyChannels } from '../hooks/useChannels';
+import { useNavigate } from 'react-router-dom';
 import { getPasswordRules, getPasswordStrengthLabel, isPasswordValid } from '@/lib/validation';
 import { describeError } from '@/lib/describeError';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { t } from '@/i18n';
 import { EMAIL_MAX_LENGTH, FULL_NAME_MAX_LENGTH, BIO_MAX_LENGTH } from '@/lib/validation';
+
+/**
+ * Whether this account has proved it owns its address, said plainly and in one place.
+ *
+ * <p>Before this, the only way to find out was to try something the gate blocks. Someone whose
+ * ten-minute link expired, or landed in spam, saw nothing at all here — the page that is otherwise
+ * about their account.
+ */
+function VerificationCard({ verified }) {
+    return (
+        <div className="bg-surface p-6 sm:p-8 rounded-lg shadow-sm border border-border-light mt-6">
+            <h2 className="text-lg font-bold mb-4">{t('profile.verification.heading')}</h2>
+            {verified ? (
+                <p className="text-sm text-text-secondary">✓ {t('profile.verification.verified')}</p>
+            ) : (
+                <EmailVerificationNotice message={t('profile.verification.notVerified')} />
+            )}
+        </div>
+    );
+}
+
+/**
+ * Self-service account deletion: the privacy policy's promise, actioned by the person rather than
+ * by hand from the contact mailbox.
+ *
+ * <p><b>The channel count is named before the password box, not after it.</b> Deleting an account
+ * takes its channels with them — every video, book, article and post, and the objects behind them
+ * — and an owner who has not thought about that is one click from losing a catalogue. The dialog
+ * is where it is said, because that is the last screen before it happens.
+ */
+function DeleteAccountCard() {
+    const { showToast } = useToast();
+    const { logout, token } = useAuth();
+    const navigate = useNavigate();
+    const { data: myChannels = [] } = useMyChannels(!!token);
+    const [open, setOpen] = useState(false);
+    const [password, setPassword] = useState('');
+    const [deleting, setDeleting] = useState(false);
+
+    const handleDelete = async (e) => {
+        e.preventDefault();
+        setDeleting(true);
+        try {
+            await deleteAccount(password);
+            // logout() before the toast: it clears the token and every user-scoped query, so
+            // nothing left on screen refetches with credentials for a user that no longer exists.
+            logout();
+            navigate('/');
+            showToast(t('profile.deleteAccount.done'), 'success');
+        } catch (err) {
+            showToast(describeError(err, t('profile.deleteAccount.failed')), 'error');
+            setDeleting(false);
+        }
+    };
+
+    return (
+        <div className="bg-surface p-6 sm:p-8 rounded-lg shadow-sm border border-red-300 dark:border-red-900 mt-6">
+            <h2 className="text-lg font-bold mb-3 text-red-700 dark:text-red-400">
+                {t('profile.deleteAccount.heading')}
+            </h2>
+            <p className="text-sm text-text-secondary mb-2">{t('profile.deleteAccount.intro')}</p>
+            <p className="text-sm text-text-muted mb-2 leading-relaxed">{t('profile.deleteAccount.whatGoes')}</p>
+            {myChannels.length > 0 && (
+                <p className="text-sm text-text-muted mb-4 leading-relaxed">
+                    {t('profile.deleteAccount.channelsGo', { count: myChannels.length })}
+                </p>
+            )}
+
+            <Button variant="danger" onClick={() => setOpen(true)}>
+                {t('profile.deleteAccount.button')}
+            </Button>
+
+            <Modal
+                open={open}
+                onClose={() => setOpen(false)}
+                title={t('profile.deleteAccount.confirmTitle')}
+                maxWidth="460px"
+            >
+                <form onSubmit={handleDelete} className="grid gap-4">
+                    <p className="text-sm text-text-secondary leading-relaxed">
+                        {t('profile.deleteAccount.confirmBody')}
+                    </p>
+                    {myChannels.length > 0 && (
+                        <p className="text-sm text-red-700 dark:text-red-400 leading-relaxed">
+                            {t('profile.deleteAccount.channelsGo', { count: myChannels.length })}
+                        </p>
+                    )}
+                    <Input
+                        label={t('profile.currentPassword')}
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        autoComplete="current-password"
+                        placeholder="••••••••"
+                        dir="ltr"
+                    />
+                    <Button type="submit" variant="danger" disabled={deleting || !password} fullWidth>
+                        {deleting ? t('profile.deleteAccount.deleting') : t('profile.deleteAccount.confirmButton')}
+                    </Button>
+                </form>
+            </Modal>
+        </div>
+    );
+}
 
 function ChangePasswordCard() {
     const { showToast } = useToast();
@@ -268,7 +376,11 @@ function UserProfile() {
                     </form>
                 </div>
 
+                <VerificationCard verified={user?.emailVerified !== false} />
+
                 <ChangePasswordCard />
+
+                <DeleteAccountCard />
             </div>
         </PageShell>
     );

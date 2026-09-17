@@ -95,6 +95,7 @@ export const ar = {
         fullName: 'الاسم الكامل',
         fullNamePlaceholder: 'محمد أحمد',
         email: 'البريد الإلكتروني',
+        emailRequired: 'البريد الإلكتروني *',
         password: 'كلمة المرور',
         passwordRequired: 'كلمة المرور *',
         confirmPassword: 'تأكيد كلمة المرور *',
@@ -234,15 +235,17 @@ export const ar = {
             // tomorrow", here there is nothing in progress to continue.
             YOUTUBE_QUOTA_EXHAUSTED: 'استُهلكت حصة المنصة اليومية من طلبات يوتيوب. حاول غداً.',
 
-            // Changing the address on the account is a step in taking the account over — the
-            // verification and reset links both go to whatever is stored — so the backend asks
-            // for the current password whenever, and only when, PUT /api/user/profile would
-            // change it. The two codes are separated because the remedy differs: the first is a
-            // field the form failed to send, the second is a value the user got wrong.
-            CURRENT_PASSWORD_REQUIRED: 'تغيير البريد الإلكتروني يتطلب تأكيد كلمة المرور الحالية. أدخلها ثم أعد المحاولة.',
+            // Two actions ask for the password: changing the email address (a step in taking the
+            // account over — the verification and reset links both go to whatever is stored) and
+            // deleting the account. So the wording names neither: one string, both callers. The
+            // two codes are separated because the remedy differs: the first is a field the form
+            // failed to send, the second is a value the user got wrong.
+            CURRENT_PASSWORD_REQUIRED: 'هذا الإجراء يتطلب تأكيد كلمة المرور الحالية. أدخلها ثم أعد المحاولة.',
+            ADMIN_ACCOUNT_CANNOT_BE_DELETED: 'لا يمكن حذف حساب إدارة المنصة من هنا.',
             CURRENT_PASSWORD_INVALID: 'كلمة المرور الحالية غير صحيحة. تأكد منها ثم أعد المحاولة.',
-            // Email is optional at signup, so an account can ask to verify an address it never
-            // gave. Adding one on the profile page sends the link by itself.
+            // Email is required at signup now, so this reaches only accounts created before that
+            // — a profile edit cannot clear the field, since a blank one is read as "no change".
+            // Adding an address on the profile page sends the link by itself.
             EMAIL_ADDRESS_MISSING: 'لا يوجد بريد إلكتروني مسجّل في حسابك. أضف بريدك من صفحة الملف الشخصي وسيصلك رابط التوثيق.',
 
             // Re-queueing a failed transcode. Refused when the video is not FAILED (there may be
@@ -328,6 +331,7 @@ export const ar = {
         },
         verificationNotice: {
             defaultMessage: 'يجب توثيق بريدك الإلكتروني للقيام بهذا الإجراء',
+            banner: 'حسابك غير موثّق بعد. افتح رابط التوثيق المُرسَل إلى بريدك الإلكتروني لتتمكن من التعليق والإعجاب والاشتراك وإنشاء قناة.',
             beforeComment: 'يجب توثيق بريدك الإلكتروني قبل إضافة تعليق',
             beforeChannel: 'يجب توثيق بريدك الإلكتروني قبل إنشاء قناة',
             sent: 'تم إرسال رابط التوثيق، تحقق من بريدك',
@@ -1131,6 +1135,24 @@ export const ar = {
         // the field appeared rather than as an instruction on its own, because it materialises
         // mid-form under someone who was editing a name a moment ago.
         emailChangeNeedsPassword: 'تغيير البريد الإلكتروني يتطلب تأكيد كلمة المرور الحالية.',
+        verification: {
+            heading: 'توثيق البريد الإلكتروني',
+            verified: 'بريدك الإلكتروني موثّق.',
+            notVerified: 'بريدك الإلكتروني غير موثّق بعد. لن تتمكن من التعليق أو الإعجاب أو الاشتراك أو إنشاء قناة قبل التوثيق.',
+        },
+        deleteAccount: {
+            heading: 'حذف الحساب',
+            intro: 'حذف الحساب نهائي ولا يمكن التراجع عنه.',
+            whatGoes: 'سيُحذف: حسابك وبياناتك الشخصية، وتعليقاتك، وإعجاباتك، واشتراكاتك، وقائمة المحفوظات، وسجل المشاهدة والقراءة، وبلاغاتك.',
+            channelsGo: 'ستُحذف أيضاً قنواتك ({count}) بكل ما فيها من فيديوهات وكتب ومقالات ومنشورات، وتُحذف ملفاتها من التخزين.',
+            button: 'حذف حسابي نهائياً',
+            confirmTitle: 'تأكيد حذف الحساب',
+            confirmBody: 'أدخل كلمة المرور لتأكيد حذف الحساب. هذا الإجراء نهائي.',
+            confirmButton: 'أؤكد الحذف',
+            deleting: 'جاري الحذف...',
+            done: 'تم حذف حسابك',
+            failed: 'تعذر حذف الحساب',
+        },
     },
 
     admin: {
@@ -1707,7 +1729,8 @@ export const ar = {
                     heading: 'حقوقك، وحذف الحساب',
                     paragraphs: [
                         'تستطيع من داخل المنصة: تعديلَ اسمك الكامل ونبذتك ورابط صورتك ودولتك، وتغييرَ بريدك الإلكتروني بتأكيد كلمة المرور الحالية، وتغييرَ كلمة المرور، ومسحَ سجل المشاهدة وسجل القراءة والمحفوظات، وإلغاءَ الإعجابات والاشتراكات، وحذفَ تعليقاتك، وإخفاءَ محتوى قناتك أو حذفه.',
-                        'ولا يوجد في المنصة اليوم زرٌّ لحذف الحساب. نذكر ذلك كما هو بدل أن نَعِد بما لا يقع: فإن أردت حذف حسابك وما يتعلق به فراسلنا على عنوان التواصل، ويُنفَّذ الطلب يدوياً.',
+                        'وتستطيع حذف حسابك بنفسك من صفحة «الملف الشخصي»، بتأكيد كلمة المرور. يُحذف حينها حسابك وبياناتك الشخصية، وتعليقاتك، وإعجاباتك، واشتراكاتك، ومحفوظاتك، وسجلّا المشاهدة والقراءة، وبلاغاتك؛ وتُحذف معه قنواتك بكل ما فيها من فيديوهات وكتب ومقالات ومنشورات، وتُحذف ملفاتها من التخزين. والحذف نهائي لا رجعة فيه.',
+                        'ويبقى بعد الحذف عدّاد المشاهدات على ما شاهدتَه، لأنه مجموع تراكمي لا يدلّ على أحد بعينه، وتبقى التعليقات القديمة التي كُتبت قبل ربط التعليقات بالحسابات، إذ لا شيء يربطها بحسابك.',
                         'ولك كذلك أن تطلب نسخةً مما هو محفوظ عنك، أو تصحيحَ خطأ فيه، على العنوان نفسه.',
                     ],
                 },
@@ -1833,7 +1856,8 @@ export const ar = {
                     id: 'terms-takedown',
                     heading: 'الشكاوى وبلاغات الحقوق',
                     paragraphs: [
-                        'إن رأيت على المنصة ما يعتدي على حقّك، أو ما يخالف ما تقدّم، فراسلنا على عنوان التواصل المبيَّن في صفحة «تواصل معنا». وهذا هو المسار الوحيد؛ ليس في المنصة زرُّ إبلاغ.',
+                        'في المنصة زرُّ إبلاغ على الفيديوهات والكتب والمقالات والمنشورات والتعليقات، يصل إلى إدارة المنصة مباشرة، ويحتاج إلى تسجيل الدخول.',
+                        'وإن كان الأمر اعتداءً على حقّك، أو ما لا يسعه زرُّ الإبلاغ، فراسلنا على عنوان التواصل المبيَّن في صفحة «تواصل معنا».',
                         'وأعِنْ على سرعة البتّ: ضع رابط الصفحة أو الفيديو، وبيّن وجه المخالفة، وإن كان بلاغَ حقوقٍ فبيّن صفتك ووجهَ ملكيتك.',
                         'وقد يترتّب على البلاغ إزالةُ المحتوى، أو إخفاؤه، أو تعليقُ القناة.',
                     ],
