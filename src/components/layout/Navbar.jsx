@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { isPlatformAdmin } from '@/lib/user';
 import { useMyChannels } from '../../hooks/useChannels';
+import { reshuffleFeed } from '../../hooks/useVideos';
 import logo from '../../assets/logo.svg';
 import SearchBar from './SearchBar';
 import { t } from '@/i18n';
@@ -27,8 +28,8 @@ function Navbar({ onMenuClick }) {
      * So the one gesture everybody uses to mean "give me the page again" did nothing at all.
      *
      * <p>Invalidating rather than reloading: a full reload would re-download the app to refresh a
-     * dozen cards. The feed's discover section is randomised server-side, so this genuinely
-     * returns different videos rather than the same ones re-fetched.
+     * dozen cards. A new shuffle first, so this counts as a refresh and the end of the discover row
+     * is redrawn, rather than the same videos re-fetched.
      */
     const handleLogoClick = (event) => {
         // Elsewhere in the app this is an ordinary link: navigating to `/` mounts Home, and the
@@ -36,6 +37,7 @@ function Navbar({ onMenuClick }) {
         if (location.pathname !== '/') return;
 
         event.preventDefault();
+        reshuffleFeed();
         queryClient.invalidateQueries({ queryKey: ['feed'] });
         // reset, not invalidate, for the paginated tail. Invalidating an infinite query refetches
         // every page the visitor has already loaded and leaves them all expanded — ten requests to

@@ -7,6 +7,7 @@ import { ToastProvider } from './contexts/ToastContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { isPlatformAdmin } from '@/lib/user';
 import { safeSessionStorage } from '@/lib/safeStorage';
+import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import { PRELOAD_RELOAD_FLAG, mayReloadAfterPreloadError } from '@/lib/preloadReload';
 import ErrorBoundary from './components/ErrorBoundary';
 import { Spinner } from './components/ui';
@@ -166,6 +167,7 @@ function AppRoutes() {
     const location = useLocation();
     const isFirstRender = useRef(true);
     usePreloadErrorReload();
+    useScrollRestoration();
 
     useEffect(() => {
         if (isFirstRender.current) {
@@ -175,7 +177,9 @@ function AppRoutes() {
         // Without this, focus stays wherever it was on the previous page (e.g. a nav link) —
         // keyboard/screen-reader users get no indication a new page loaded and have to
         // manually navigate back to the top of the DOM every time.
-        document.getElementById('main-content')?.focus();
+        // preventScroll: focusing can scroll the element into view, which would undo a restored
+        // scroll position on Back (useScrollRestoration) or move a page that was just sent to the top.
+        document.getElementById('main-content')?.focus({ preventScroll: true });
     }, [location.pathname]);
 
     return (

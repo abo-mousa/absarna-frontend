@@ -15,9 +15,9 @@
 /**
  * Never cached. Every mount is a fresh request.
  *
- * <p>For responses that are *supposed* to differ each time. The feed's discover section is
- * randomised server-side precisely so a return visit shows something else; caching it makes that
- * randomisation invisible and the home page static.
+ * <p>For responses that can change between visits and must show it on the next one. The feed is
+ * the case: a cached copy kept the home page frozen on what it was when first loaded — a
+ * subscription made since, or a video published since, did not appear.
  */
 export const NO_CACHE = {
     staleTime: 0,

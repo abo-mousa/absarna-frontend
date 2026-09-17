@@ -110,6 +110,20 @@ export const useSearchSuggestions = (rawQuery, limit = 8, enabled = true) => {
     };
 };
 
+/*
+ * The feed's shuffle: the number that decides the last few discover slots (FeedService#buildFeed).
+ *
+ * Once per page load, and again on a logo click (reshuffleFeed) — the two gestures that mean "give
+ * me the page again". Deliberately NOT once per request: the feed is refetched on every mount, so a
+ * per-request shuffle would redraw the row on Back from a video, and the one just watched or about
+ * to be would be gone from the page the reader came back to.
+ */
+const newFeedShuffle = () => Math.floor(Math.random() * 2 ** 31);
+let feedShuffle = newFeedShuffle();
+export const reshuffleFeed = () => {
+    feedShuffle = newFeedShuffle();
+};
+
 // Bounded home feed (subscribed / discover / featured) — a fixed snapshot, not paginated.
 // Scoped to the viewer: its "subscribed" section is theirs alone.
 export const useFeed = (enabled = true) => {
@@ -117,12 +131,12 @@ export const useFeed = (enabled = true) => {
     return useQuery({
         queryKey: queryKeys.feed(scope),
         queryFn: async () => {
-            const res = await api.get('/feed');
+            const res = await api.get('/feed', { params: { shuffle: feedShuffle } });
             return res.data;
         },
         enabled,
-        // Not cached at all. The discover section is randomised server-side precisely so a return
-        // visit shows something else; any caching makes that invisible and the home page static.
+        // Not cached: a subscription made elsewhere, or a video published since, shows on the next
+        // visit to the home page. What varies between refreshes is the shuffle above, not this.
         ...NO_CACHE,
     });
 };
