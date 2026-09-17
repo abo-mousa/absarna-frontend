@@ -36,6 +36,7 @@ export default function PostsTab({ slug, active }) {
                     heading={t('channelManage.forms.post.heading')}
                     onSubmit={handleSubmit}
                     submitLabel={t('channelManage.forms.post.submit')}
+                    submitting={content.isPublishing}
                 >
                     <Input
                         label={t('fields.content')}

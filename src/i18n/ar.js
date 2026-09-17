@@ -227,6 +227,12 @@ export const ar = {
             // A 503, and the one case where "try again later" is actively wrong: nothing will
             // change until someone configures the deployment.
             YOUTUBE_NOT_CONFIGURED: 'الاستيراد من يوتيوب غير مفعَّل على هذه المنصة حالياً. راسل الإدارة.',
+            // A REQUEST refused because the platform's shared daily YouTube budget is spent —
+            // pressing "check" on the verification token, say. Worded differently from
+            // `youtube.importReasons.YOUTUBE_QUOTA_EXHAUSTED`, which is the same cause on a run
+            // that has already started and saved its place: there the instruction is "continue
+            // tomorrow", here there is nothing in progress to continue.
+            YOUTUBE_QUOTA_EXHAUSTED: 'استُهلكت حصة المنصة اليومية من طلبات يوتيوب. حاول غداً.',
 
             // Changing the address on the account is a step in taking the account over — the
             // verification and reset links both go to whatever is stored — so the backend asks
@@ -235,6 +241,9 @@ export const ar = {
             // field the form failed to send, the second is a value the user got wrong.
             CURRENT_PASSWORD_REQUIRED: 'تغيير البريد الإلكتروني يتطلب تأكيد كلمة المرور الحالية. أدخلها ثم أعد المحاولة.',
             CURRENT_PASSWORD_INVALID: 'كلمة المرور الحالية غير صحيحة. تأكد منها ثم أعد المحاولة.',
+            // Email is optional at signup, so an account can ask to verify an address it never
+            // gave. Adding one on the profile page sends the link by itself.
+            EMAIL_ADDRESS_MISSING: 'لا يوجد بريد إلكتروني مسجّل في حسابك. أضف بريدك من صفحة الملف الشخصي وسيصلك رابط التوثيق.',
 
             // Re-queueing a failed transcode. Refused when the video is not FAILED (there may be
             // a job still running, and a second one would be a duplicate full transcode) or when
@@ -414,81 +423,99 @@ export const ar = {
             // realistically covers (the list is capped at three, so the remainder is small).
             moreSpansOne: 'وموضع آخر',
             moreSpans: 'و{count} مواضع أخرى',
-            music: {
-                held: {
+
+            /**
+             * WHETHER ANYONE CAN SEE THE VIDEO — the only place in this repo that says so.
+             *
+             * <p>The detector blocks below describe what was FOUND and nothing else. This block
+             * describes what it COST, and which of the three applies is the backend's `holds`
+             * (plus, for `refused`, the state — a human having decided is not something `holds`
+             * can express). That split is the whole point: the fail-open/fail-closed rule lives
+             * in `ReviewFindingType.failsClosed()` on the backend, and a second copy of it here,
+             * written into Arabic prose, is a copy nothing can test against the first.
+             *
+             * <p>It used to be written into the prose. `music.unchecked` said «الفيديو منشور» and
+             * `nudity.unchecked` said «لن يظهر للزوار», which are both correct today and are both
+             * assertions this repo has no business making: the day a fail-closed type is added,
+             * or music is made to fail closed, the sentence stays and becomes a lie in the one
+             * direction that matters — an owner told their video is published going to look for
+             * it, or told it is hidden when everyone can see it.
+             *
+             * <p>`body` is the standalone form, for a finding whose type or state this build does
+             * not recognise and therefore has no detail sentence for. `suffix` is the same thing
+             * joined onto one — Arabic connectives differ («و» after a statement, «ف» after a
+             * verdict), so the two forms are written out rather than assembled.
+             */
+            outcome: {
+                hidden: {
                     badge: 'قيد المراجعة',
                     title: 'هذا الفيديو قيد المراجعة',
-                    body: 'رصدنا موسيقى في الصوت، ولن يظهر الفيديو للزوار حتى يراجعه أحد المشرفين.',
-                    bodyWithSpans: 'رصدنا موسيقى في الصوت عند {spans}، ولن يظهر الفيديو للزوار حتى يراجعه أحد المشرفين.',
+                    body: 'لن يظهر الفيديو للزوار حتى يراجعه أحد المشرفين.',
+                    suffix: '، ولن يظهر الفيديو للزوار حتى يراجعه أحد المشرفين.',
                 },
-                rejected: {
+                // A human looked and said no. Hidden like the above, but a different thing to be
+                // told: nothing is pending, and the next move is the owner's.
+                refused: {
                     badge: 'مرفوض',
                     title: 'تم رفض هذا الفيديو',
-                    body: 'راجع أحد المشرفين الفيديو ووجد فيه موسيقى، فلن يظهر للزوار. يمكنك رفع نسخة أخرى بدون موسيقى.',
-                    bodyWithSpans: 'راجع أحد المشرفين الفيديو ووجد فيه موسيقى عند {spans}، فلن يظهر للزوار. يمكنك رفع نسخة أخرى بدون موسيقى.',
+                    body: 'لن يظهر الفيديو للزوار. يمكنك رفع نسخة أخرى.',
+                    suffix: '، فلن يظهر للزوار. يمكنك رفع نسخة أخرى.',
                 },
-                advisory: {
+                published: {
                     badge: 'ملاحظة',
                     // Deliberately opens by saying the video is published. It is, and the owner's
                     // first question on seeing any notice at all is whether it still is.
                     title: 'الفيديو منشور، مع ملاحظة',
-                    body: 'قد تكون هناك موسيقى خلفية في الصوت. الفيديو منشور ويعمل بشكل طبيعي، وسيلقي أحد المشرفين نظرة عليه.',
-                    bodyWithSpans: 'قد تكون هناك موسيقى خلفية في الصوت عند {spans}. الفيديو منشور ويعمل بشكل طبيعي، وسيلقي أحد المشرفين نظرة عليه.',
-                },
-                unchecked: {
-                    badge: 'لم يُفحص',
-                    title: 'الفيديو منشور، ولم يكتمل فحص الصوت',
-                    // Says what happened without blaming the video: nothing is wrong with it, the
-                    // check itself did not finish.
-                    body: 'تعذّر إكمال فحص الصوت تلقائيًا. الفيديو منشور ويعمل بشكل طبيعي، وسيراجعه أحد المشرفين.',
-                    bodyWithSpans: 'تعذّر إكمال فحص الصوت تلقائيًا. الفيديو منشور ويعمل بشكل طبيعي، وسيراجعه أحد المشرفين.',
+                    body: 'الفيديو منشور ويعمل بشكل طبيعي، وسيلقي أحد المشرفين نظرة عليه.',
+                    suffix: '، والفيديو منشور ويعمل بشكل طبيعي، وسيلقي أحد المشرفين نظرة عليه.',
                 },
             },
-            // EXPLICIT CONTENT FAILS CLOSED, which is the one place this block genuinely differs
-            // from music: `unchecked` here means the video is HIDDEN, not published with a note.
-            // Wording it like music's «الفيديو منشور» would be false in the direction that matters
-            // most -- the owner would go looking for a video nobody can see.
-            nudity: {
+
+            // WHAT WAS FOUND, per detector and per state, and nothing about who can see it.
+            //
+            // Keyed by TYPE first because the two detectors are not the same conversation --
+            // "we found music" and "this may contain explicit scenes" need different words, and
+            // one shared sentence would serve neither.
+            //
+            // Every string here is a clause, not a sentence: it ends with no punctuation and
+            // `outcome.<...>.suffix` finishes it. A full stop here is the shape the visibility
+            // claim crept back in through last time.
+            music: {
                 held: {
-                    badge: 'قيد المراجعة',
-                    title: 'هذا الفيديو قيد المراجعة',
-                    body: 'رُصد في الفيديو ما قد يكون مشاهد غير لائقة، ولن يظهر للزوار حتى يراجعه أحد المشرفين.',
-                    bodyWithSpans: 'رُصد في الفيديو ما قد يكون مشاهد غير لائقة عند {spans}، ولن يظهر للزوار حتى يراجعه أحد المشرفين.',
+                    body: 'رصدنا موسيقى في الصوت',
+                    bodyWithSpans: 'رصدنا موسيقى في الصوت عند {spans}',
                 },
                 rejected: {
-                    badge: 'مرفوض',
-                    title: 'تم رفض هذا الفيديو',
-                    body: 'راجع أحد المشرفين الفيديو ووجد فيه مشاهد غير لائقة، فلن يظهر للزوار. يمكنك رفع نسخة أخرى.',
-                    bodyWithSpans: 'راجع أحد المشرفين الفيديو ووجد فيه مشاهد غير لائقة عند {spans}، فلن يظهر للزوار. يمكنك رفع نسخة أخرى.',
+                    body: 'راجع أحد المشرفين الفيديو ووجد فيه موسيقى',
+                    bodyWithSpans: 'راجع أحد المشرفين الفيديو ووجد فيه موسيقى عند {spans}',
                 },
                 advisory: {
-                    badge: 'ملاحظة',
-                    title: 'الفيديو منشور، مع ملاحظة',
-                    body: 'قد يحتوي الفيديو على مشاهد غير لائقة. الفيديو منشور ويعمل بشكل طبيعي، وسيلقي أحد المشرفين نظرة عليه.',
-                    bodyWithSpans: 'قد يحتوي الفيديو على مشاهد غير لائقة عند {spans}. الفيديو منشور ويعمل بشكل طبيعي، وسيلقي أحد المشرفين نظرة عليه.',
+                    body: 'قد تكون هناك موسيقى خلفية في الصوت',
+                    bodyWithSpans: 'قد تكون هناك موسيقى خلفية في الصوت عند {spans}',
                 },
+                // Says what happened without blaming the video: nothing is wrong with it, the
+                // check itself did not finish. Whether that publishes or holds is NOT said here.
                 unchecked: {
-                    badge: 'قيد المراجعة',
-                    title: 'هذا الفيديو قيد المراجعة',
-                    // NOT "الفيديو منشور": an unfinished explicit-content scan hides the video.
-                    body: 'تعذّر إكمال فحص محتوى الفيديو تلقائيًا، ولن يظهر للزوار حتى يراجعه أحد المشرفين.',
-                    bodyWithSpans: 'تعذّر إكمال فحص محتوى الفيديو تلقائيًا، ولن يظهر للزوار حتى يراجعه أحد المشرفين.',
+                    body: 'تعذّر إكمال فحص الصوت تلقائيًا',
+                    bodyWithSpans: 'تعذّر إكمال فحص الصوت تلقائيًا',
                 },
             },
-            // A detector or a state this build has never heard of. The backend can grow either
-            // before this repo is deployed, and a finding with no words is a video that vanished
-            // with no message -- so the fallback says the one thing the backend's `holds` flag
-            // does tell us, which is whether anyone can see the video, and no more.
-            unknown: {
-                hidden: {
-                    badge: 'قيد المراجعة',
-                    title: 'هذا الفيديو قيد المراجعة',
-                    body: 'رُصد في الفيديو ما يستدعي مراجعة، ولن يظهر للزوار حتى يراجعه أحد المشرفين.',
+            nudity: {
+                held: {
+                    body: 'رُصد في الفيديو ما قد يكون مشاهد غير لائقة',
+                    bodyWithSpans: 'رُصد في الفيديو ما قد يكون مشاهد غير لائقة عند {spans}',
                 },
-                published: {
-                    badge: 'ملاحظة',
-                    title: 'الفيديو منشور، مع ملاحظة',
-                    body: 'سُجّلت ملاحظة على هذا الفيديو. الفيديو منشور ويعمل بشكل طبيعي، وسيلقي أحد المشرفين نظرة عليه.',
+                rejected: {
+                    body: 'راجع أحد المشرفين الفيديو ووجد فيه مشاهد غير لائقة',
+                    bodyWithSpans: 'راجع أحد المشرفين الفيديو ووجد فيه مشاهد غير لائقة عند {spans}',
+                },
+                advisory: {
+                    body: 'قد يحتوي الفيديو على مشاهد غير لائقة',
+                    bodyWithSpans: 'قد يحتوي الفيديو على مشاهد غير لائقة عند {spans}',
+                },
+                unchecked: {
+                    body: 'تعذّر إكمال فحص محتوى الفيديو تلقائيًا',
+                    bodyWithSpans: 'تعذّر إكمال فحص محتوى الفيديو تلقائيًا',
                 },
             },
         },
@@ -500,6 +527,16 @@ export const ar = {
         deleteAria: 'حذف الفيديو',
         goToChannelAria: 'الذهاب إلى قناة {name}',
         loadFailed: 'فشل في تحميل الفيديو',
+        // THE PLAYER GAVE UP, and until this existed it gave up in silence. Two different routes
+        // end here and the viewer cannot tell them apart, so neither can this sentence: the
+        // request for the playback URL failed outright (a 5xx, a dropped connection — the query
+        // does not retry, so nothing further happens on its own), or hls.js spent its refresh
+        // budget on segments it could not fetch. The second is what a missing CORS policy on the
+        // media bucket looks like in Chrome and Firefox.
+        //
+        // Deliberately not a diagnosis: from here it is indistinguishable from a bad minute of
+        // someone's connection, and «أعد المحاولة» is the only useful thing to say either way.
+        playbackFailed: 'تعذّر تشغيل الفيديو. تحقق من اتصالك ثم أعد المحاولة.',
         unsupported: 'متصفحك لا يدعم تشغيل الفيديو',
         invalidUrl: 'رابط الفيديو غير صالح',
         watchOnYouTube: 'شاهد على يوتيوب',
@@ -741,6 +778,9 @@ export const ar = {
         adminAttestHint: 'للإدارة فقط: يُستخدم عند إنشاء قناة نيابة عن صاحبها، حيث لا يمكن إضافة رمز التحقق إلى وصف قناته.',
         adminAttestWarning: 'الربط بواسطة الإدارة يسمح بالاستيراد فقط. رفع الملف الأصلي بدل رابط يوتيوب يتطلب تحقق صاحب القناة نفسه.',
         adminAttestFailed: 'تعذر الربط. تأكد من الرابط وحاول مرة أخرى.',
+        // The "check" button's own failure — the request never got an answer worth reading. Not
+        // the same as a check that ran and found no token, which is `tokenMissing` in place.
+        checkFailed: 'تعذر التحقق الآن. حاول مرة أخرى بعد قليل.',
 
         importHeading: 'الاستيراد',
         importIntro: 'سيتم استيراد الفيديوهات وقوائم التشغيل كسلاسل. يحدث هذا مرة واحدة.',

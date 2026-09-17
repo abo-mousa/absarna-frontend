@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { resendVerification } from '@/lib/api/auth';
+import { describeError } from '@/lib/describeError';
 import { t } from '@/i18n';
 
 // Shown wherever the backend rejects an action with 403 + emailVerificationRequired:true
@@ -7,13 +8,17 @@ import { t } from '@/i18n';
 // "Content visibility"/security notes and content/comment + content/channel controllers.
 function EmailVerificationNotice({ message }) {
     const [status, setStatus] = useState('idle'); // idle | sending | sent | error
+    const [errorMessage, setErrorMessage] = useState('');
 
     const handleResend = async () => {
         setStatus('sending');
         try {
             await resendVerification();
             setStatus('sent');
-        } catch {
+        } catch (err) {
+            // describeError, so a named refusal (EMAIL_ADDRESS_MISSING: the account has no address
+            // to send to) says what to do rather than "try again later", which would never work.
+            setErrorMessage(describeError(err, t('auth.verificationNotice.failed')));
             setStatus('error');
         }
     };
@@ -36,7 +41,7 @@ function EmailVerificationNotice({ message }) {
             )}
 
             {status === 'error' && (
-                <span className="text-red-600 dark:text-red-400 text-xs w-full">{t('auth.verificationNotice.failed')}</span>
+                <span className="text-red-600 dark:text-red-400 text-xs w-full">{errorMessage}</span>
             )}
         </div>
     );

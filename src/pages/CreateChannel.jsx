@@ -10,6 +10,7 @@ import { FieldLabel } from '@/components/channel';
 import { useResolveYouTubeChannel } from '@/hooks/useChannelYouTube';
 import { useAuth } from '../contexts/AuthContext';
 import { isPlatformAdmin } from '@/lib/user';
+import { describeError } from '@/lib/describeError';
 import { t } from '@/i18n';
 
 /**
@@ -138,7 +139,7 @@ function CreateChannel() {
             if (err.response?.data?.emailVerificationRequired) {
                 setNeedsVerification(true);
             } else {
-                setError(err.response?.data?.message || t('createChannel.failed'));
+                setError(describeError(err, t('createChannel.failed')));
             }
         } finally {
             setLoading(false);

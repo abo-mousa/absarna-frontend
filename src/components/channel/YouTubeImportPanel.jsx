@@ -129,9 +129,26 @@ function YouTubeImportPanel({ slug }) {
         }
     };
 
+    /**
+     * "Check" — ask the backend to re-read the channel description for the token.
+     *
+     * <p>The catch is the whole point. `mutateAsync` rejects on any failure, and with nothing here
+     * the rejection was unhandled: a 503 from a spent daily quota, or a dropped connection, left
+     * the owner pressing a button that did nothing at all and said nothing either — the one
+     * outcome indistinguishable from the app being broken. `describeError` words the backend's
+     * `reason` (`YOUTUBE_QUOTA_EXHAUSTED` is the likely one, and it is not a fault anybody should
+     * sit and wait out) and falls back to our own sentence.
+     *
+     * <p>`checkedAndMissing` is deliberately NOT set on a failure: it drives the "the token is not
+     * in your description yet" notice, and the check never got far enough to have an opinion.
+     */
     const handleCheck = async () => {
-        const result = await check.mutateAsync();
-        setCheckedAndMissing(!result.verified);
+        try {
+            const result = await check.mutateAsync();
+            setCheckedAndMissing(!result.verified);
+        } catch (error) {
+            showToast(describeError(error, t('youtube.checkFailed')), 'error');
+        }
     };
 
     /**

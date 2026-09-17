@@ -65,6 +65,7 @@ export default function BooksTab({ slug, active }) {
                     heading={t('channelManage.forms.book.heading')}
                     onSubmit={handleSubmit}
                     submitLabel={t('channelManage.forms.book.submit')}
+                    submitting={content.isPublishing}
                     file={{
                         label: t('channelManage.forms.book.fileLabel'),
                         hint: t('channelManage.forms.book.fileHint'),

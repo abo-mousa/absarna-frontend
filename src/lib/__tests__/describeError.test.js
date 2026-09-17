@@ -150,6 +150,25 @@ describe('describeError', () => {
 
     it('still reports a request that never got an answer', () => {
         expect(describeError({ code: 'ECONNABORTED' })).toBe(t('errors.timeout'));
-        expect(describeError({})).toBe(t('errors.offline'));
+        // Axios sets `request` and leaves `response` undefined for a transport failure; `fetch`
+        // rejects with a TypeError for the same. Those are the two shapes that mean the network.
+        expect(describeError({ request: {} })).toBe(t('errors.offline'));
+        // Axios's own name for a transport failure, and it does not always attach a `request`.
+        expect(describeError({ code: 'ERR_NETWORK' })).toBe(t('errors.offline'));
+        expect(describeError(new TypeError('Failed to fetch'))).toBe(t('errors.offline'));
+    });
+
+    it('does not blame the network for an error that never was a request', () => {
+        // `usePresignedUpload` throws these itself — «Part upload failed (403)» when object
+        // storage refuses a part, and one for a part the server would not reissue a URL for.
+        // Neither carries `response` or `request`, and both used to be shown verbatim in English
+        // by the upload toasts. «لا يوجد اتصال بالإنترنت» would be the wrong correction: it sends
+        // the user to check a connection that is working.
+        const storageRefusal = Object.assign(new Error('Part upload failed (403)'), { status: 403 });
+        expect(describeError(storageRefusal)).toBe(t('errors.generic'));
+        expect(describeError(new Error('The server did not reissue a URL for part 3')))
+            .toBe(t('errors.generic'));
+        // The caller's own wording still wins over the catalog generic, as everywhere else.
+        expect(describeError(storageRefusal, 'فشل في رفع الفيديو')).toBe('فشل في رفع الفيديو');
     });
 });

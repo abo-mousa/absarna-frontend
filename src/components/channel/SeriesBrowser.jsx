@@ -13,6 +13,7 @@ import {
 } from '@/hooks/useSeries';
 import { useEmptyPageStepBack } from '@/hooks/useEmptyPageStepBack';
 import { useKeepScrollPlace } from '@/hooks/useKeepScrollPlace';
+import { describeError } from '@/lib/describeError';
 import { stripEmpty } from '@/lib/forms';
 import { t } from '@/i18n';
 
@@ -194,9 +195,7 @@ export function NewSeriesModal({ slug, open, onClose }) {
             showToast(t('channelManage.seriesCreated'), 'success');
             onClose();
         } catch (err) {
-            showToast(t('channelManage.seriesCreateFailed', {
-                reason: err.response?.data?.message || err.message,
-            }), 'error');
+            showToast(t('channelManage.seriesCreateFailed', { reason: describeError(err) }), 'error');
         }
     };
 
@@ -207,6 +206,7 @@ export function NewSeriesModal({ slug, open, onClose }) {
                 onSubmit={handleCreate}
                 submitLabel={t('channelManage.createSeries')}
                 submitIcon={<Plus size={18} />}
+                submitting={createSeries.isPending}
             >
                 <Input
                     label={t('channelManage.seriesTitleLabel')}

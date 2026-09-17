@@ -38,14 +38,30 @@ const URL_REFRESH_BACKOFF_MS = 1000;
  *
  * @param pendingSeekRef the shared "where to resume" ref; a value in it means this instance is a
  *                       continuation of a playlist swap rather than a fresh load
- * @returns the parsed variant list, the selected level and its setter, and the two entry points
- *          the element's own events drive — `startLoadAt` and `seekBeforeLoad`
+ * @returns the parsed variant list, the selected level and its setter, the two entry points the
+ *          element's own events drive (`startLoadAt` and `seekBeforeLoad`), and the pair that
+ *          makes a dead player visible and restartable — `unrecoverable` and `retryPlayback`
  */
 export function useHlsPlayback({ enabled, playbackUrl, videoId, videoRef, pendingSeekRef,
                                  rememberPosition }) {
     const queryClient = useQueryClient();
     const hlsRef = useRef(null);
     const urlRefreshesRef = useRef(0);
+    /**
+     * The player gave up: the refresh budget is spent, or the error was not one hls.js can be
+     * asked to recover from.
+     *
+     * <p><b>Without this, giving up was silent.</b> `destroy()` leaves the <video> exactly as it
+     * was — poster showing, controls responsive, play doing nothing at all, because the
+     * MediaSource behind it is gone. The case it was written for is a missing CORS policy on the
+     * media bucket, which fails this way in Chrome and Firefox while passing on Safari and on
+     * MinIO locally, so the deployment most likely to hit it is the one nobody tested it on.
+     */
+    const [unrecoverable, setUnrecoverable] = useState(false);
+    // Bumped by `retryPlayback`, and in the effect's deps for exactly that: a retry has to rebuild
+    // the instance even when the re-minted URL comes back byte-identical, which is the ordinary
+    // case (a video's media URL is not time-limited).
+    const [rebuildNonce, setRebuildNonce] = useState(0);
     // Whether this instance has been told to start fetching. See startLoadAt for why it must
     // happen exactly once per instance rather than on every play.
     const loadStartedRef = useRef(false);
@@ -70,6 +86,7 @@ export function useHlsPlayback({ enabled, playbackUrl, videoId, videoRef, pendin
         let hls = null;
         let retryTimer = null;
         loadStartedRef.current = false;
+        setUnrecoverable(false);
         // The manifest describes this URL, so a list left over from the previous one would be
         // offered in the selector until the new manifest parses — and switching to the audio rung
         // means a playlist with no video variants at all, whose stale levels would be actively
@@ -198,7 +215,7 @@ export function useHlsPlayback({ enabled, playbackUrl, videoId, videoRef, pendin
                         }, URL_REFRESH_BACKOFF_MS * urlRefreshesRef.current);
                         return;
                     }
-                    hls.destroy();
+                    giveUp();
                     return;
                 }
                 if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
@@ -206,8 +223,23 @@ export function useHlsPlayback({ enabled, playbackUrl, videoId, videoRef, pendin
                     hls.recoverMediaError();
                     return;
                 }
-                hls.destroy();
+                giveUp();
             });
+
+            /**
+             * Tears the instance down and says so.
+             *
+             * <p>`hlsRef` is cleared here and not only in the cleanup, because the instance is
+             * destroyed while the effect is still live: every method the rest of this file reaches
+             * through that ref — `selectLevel`, `startLoadAt`, `seekBeforeLoad` — would otherwise
+             * be called on a destroyed object, and the quality menu is reachable in exactly this
+             * state.
+             */
+            function giveUp() {
+                hls.destroy();
+                if (hlsRef.current === hls) hlsRef.current = null;
+                setUnrecoverable(true);
+            }
 
             hls.loadSource(playbackUrl);
             hls.attachMedia(el);
@@ -226,7 +258,21 @@ export function useHlsPlayback({ enabled, playbackUrl, videoId, videoRef, pendin
         // not tear the player down and rebuild it, which is the whole reason level switching is
         // free. `selectLevel` applies it to the live instance instead.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [enabled, playbackUrl, videoId, queryClient]);
+    }, [enabled, playbackUrl, videoId, queryClient, rebuildNonce]);
+
+    /**
+     * Builds the player again after it gave up, on the viewer's say-so.
+     *
+     * <p>Re-mints the URL as well as rebuilding: the two failures that reach here are an expired
+     * or revoked grant and a transport problem, and only the first is fixed by a new URL. A budget
+     * reset to zero is the point — the viewer pressing a button is the signal the automatic
+     * refreshes deliberately do not have.
+     */
+    const retryPlayback = useCallback(() => {
+        urlRefreshesRef.current = 0;
+        queryClient.invalidateQueries({ queryKey: ['videoPlaybackUrl', videoId] });
+        setRebuildNonce((n) => n + 1);
+    }, [queryClient, videoId]);
 
     /**
      * Switching between the video variants of one master playlist.
@@ -273,5 +319,6 @@ export function useHlsPlayback({ enabled, playbackUrl, videoId, videoRef, pendin
         hls.startLoad(seconds);
     }, [enabled]);
 
-    return { levels, selectedLevel, selectLevel, startLoadAt, seekBeforeLoad };
+    return { levels, selectedLevel, selectLevel, startLoadAt, seekBeforeLoad, unrecoverable,
+        retryPlayback };
 }

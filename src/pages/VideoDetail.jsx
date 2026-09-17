@@ -134,7 +134,12 @@ function VideoDetail() {
                         className={`mb-6 rounded-lg border p-4 text-sm ${
                             notice.tone === 'warning'
                                 ? 'border-amber-300 bg-amber-50 text-amber-900'
-                                : 'border-border-light bg-surface-muted text-text-secondary'
+                                // `bg-surface-hover`, not `bg-surface-muted`: the latter is not a
+                                // token (tailwind.config.js defines surface.DEFAULT and
+                                // surface.hover only), so Tailwind emitted no class and the
+                                // informational notice rendered with no background at all — a
+                                // bordered box that looked unfinished rather than like a notice.
+                                : 'border-border-light bg-surface-hover text-text-secondary'
                         }`}
                     >
                         <p className="font-semibold mb-1">{notice.title}</p>
@@ -151,7 +156,18 @@ function VideoDetail() {
                             <Spinner />
                         </div>
                     ) : (
+                        /* KEYED BY THE VIDEO, so navigating to a related video remounts the
+                           player rather than re-rendering it in place. Without this the <video>
+                           element, hls.js and every piece of per-video state survived the
+                           navigation: `useVideoPlaybackUrl` keeps the previous data while the new
+                           URL is in flight (keepPreviousData, which is what makes a quality switch
+                           not unmount the element), so for that round trip video A's manifest was
+                           attached under video B's id — pressing play in that window played A and
+                           recorded the progress against B. Repeat and the chosen quality carried
+                           over too, both documented as "per-video" and neither reset by a prop
+                           change. */
                         <VideoPlayer
+                            key={video.id}
                             ref={playerRef}
                             videoId={video.id}
                             sourceType={video.sourceType}

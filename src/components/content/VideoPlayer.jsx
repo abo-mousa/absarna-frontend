@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { safeExternalUrl, extractYouTubeId } from '@/lib/media';
 import { useVideoPlaybackUrl } from '@/hooks/useMediaUrl';
-import { PROGRESS_REPORT_INTERVAL_MS, playbackMode, supportsNativeHls } from '@/lib/player/playback';
+import { PROGRESS_REPORT_INTERVAL_MS, playbackMode, supportsNativeHls, uploadPlayerSurface }
+    from '@/lib/player/playback';
 import { PLAYBACK_SPEEDS } from '@/lib/player/rate';
 import {
     AUTO_OPTION,
@@ -18,6 +19,7 @@ import { useFullscreen } from '@/hooks/player/useFullscreen';
 import { usePictureInPicture } from '@/hooks/player/usePictureInPicture';
 import { useAutoHideControls } from '@/hooks/player/useAutoHideControls';
 import { t } from '@/i18n';
+import { Button } from '@/components/ui';
 import { PictureInPicture2 } from 'lucide-react';
 import VideoControlBar, {
     SEEK_STEP_SECONDS,
@@ -53,8 +55,8 @@ const VideoPlayer = forwardRef(function VideoPlayer(
     // null means "whatever the backend picks". Kept as null rather than eagerly set to the served
     // quality, so a reload doesn't pin a choice the viewer never made.
     const [selectedQuality, setSelectedQuality] = useState(null);
-    const { data: playback, isLoading: playbackUrlLoading } =
-        useVideoPlaybackUrl(videoId, isOwnUpload, selectedQuality);
+    const { data: playback, isLoading: playbackUrlLoading, isError: playbackUrlFailed,
+        refetch: refetchPlaybackUrl } = useVideoPlaybackUrl(videoId, isOwnUpload, selectedQuality);
     const playbackUrl = playback?.url;
     const qualities = playback?.qualities ?? [];
     const servedQuality = playback?.quality ?? null;
@@ -110,8 +112,8 @@ const VideoPlayer = forwardRef(function VideoPlayer(
         resumePlaybackRef.current = !el.paused && !el.ended;
     }, []);
 
-    const { levels, selectedLevel, selectLevel, startLoadAt, seekBeforeLoad: hlsSeekBeforeLoad } =
-        useHlsPlayback({
+    const { levels, selectedLevel, selectLevel, startLoadAt, seekBeforeLoad: hlsSeekBeforeLoad,
+        unrecoverable: hlsGaveUp, retryPlayback } = useHlsPlayback({
             enabled: usesHlsJs, playbackUrl, videoId, videoRef, pendingSeekRef, rememberPosition,
         });
 
@@ -328,9 +330,33 @@ const VideoPlayer = forwardRef(function VideoPlayer(
     const externalUrl = safeExternalUrl(sourceUrl);
 
     if (isOwnUpload) {
+        const surface = uploadPlayerSurface({
+            urlFailed: playbackUrlFailed, hlsGaveUp, urlLoading: playbackUrlLoading, playbackUrl,
+        });
+
+        // Both routes to "this will not play and pressing things will not change that" get the one
+        // panel — and a button, since the viewer is now the only one who can decide to try again.
+        // Which route it was decides what the button does: a failed mint is re-asked, a destroyed
+        // hls.js instance has to be rebuilt as well (see retryPlayback).
+        if (surface === 'failed') {
+            return (
+                <div className="flex min-h-[300px] w-full flex-col items-center justify-center
+                    gap-3 rounded-lg bg-black/80 px-4 py-10 text-center">
+                    <p className="text-sm text-white/90">{t('video.playbackFailed')}</p>
+                    <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => (playbackUrlFailed ? refetchPlaybackUrl() : retryPlayback())}
+                    >
+                        {t('common.retry')}
+                    </Button>
+                </div>
+            );
+        }
+
         // Rendering before the signed URL arrives would fire one unsigned request that 403s and
         // leave the player stuck showing an error for what is really just a pending fetch.
-        if (playbackUrlLoading || !playbackUrl) {
+        if (surface === 'loading') {
             return <div className="w-full h-[300px] rounded-lg bg-black/80 animate-pulse" />;
         }
 

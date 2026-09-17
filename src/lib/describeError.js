@@ -65,6 +65,15 @@ export function serverMessage(error) {
 }
 
 /**
+ * The codes axios sets when the request never reached a server — its own `ERR_NETWORK` plus the
+ * Node-style names a transport failure surfaces under. Named rather than inferred, because the
+ * only other tell is `request`, and axios does not always attach one.
+ */
+const TRANSPORT_CODES = new Set([
+    'ERR_NETWORK', 'ETIMEDOUT', 'ECONNREFUSED', 'ECONNRESET', 'ENOTFOUND', 'EAI_AGAIN',
+]);
+
+/**
  * One user-facing sentence for a failed request.
  *
  * <p>Every failed GET used to render the same «حدث خطأ», and every mutation toasted a fixed string,
@@ -87,10 +96,20 @@ export function describeError(error, fallback) {
 
     // Axios leaves `response` undefined for anything that never got an answer: offline, DNS,
     // a timeout, a CORS refusal. `ECONNABORTED` is its timeout code.
+    //
+    // `errors.offline` is a claim about the user's network, so it is made only for the shapes
+    // that actually mean one — an axios transport code, the `request` it sets when a call left
+    // the browser, or the TypeError `fetch` rejects with. The upload path throws its own `Error`s
+    // («Part upload failed (403)» from `putPart`, a part the server would not reissue a URL for)
+    // and those carry none of the three. Telling someone to check a connection that is working is
+    // a worse answer than «حدث خطأ»: it sends them to fix the one thing that is not broken.
     if (error && !error.response) {
         if (error.code === 'ECONNABORTED') return t('errors.timeout');
         if (error.code === 'ERR_CANCELED') return generic;
-        return t('errors.offline');
+        if (TRANSPORT_CODES.has(error.code) || error.request || error instanceof TypeError) {
+            return t('errors.offline');
+        }
+        return generic;
     }
 
     // A named business reason wins over everything, at any status: it is the only layer that can

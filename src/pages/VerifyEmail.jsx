@@ -5,6 +5,7 @@ import { verifyEmail } from '@/lib/api/auth';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
 import { Button, Spinner } from '../components/ui';
+import { describeError } from '@/lib/describeError';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { t } from '@/i18n';
 
@@ -36,7 +37,7 @@ function VerifyEmail() {
             })
             .catch((err) => {
                 setStatus('error');
-                setErrorMessage(err.response?.data?.message || t('auth.verifyEmail.expiredLink'));
+                setErrorMessage(describeError(err, t('auth.verifyEmail.expiredLink')));
             });
     }, [token, authToken, refreshUser]);
 

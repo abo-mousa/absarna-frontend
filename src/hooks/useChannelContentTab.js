@@ -136,10 +136,12 @@ export function publishFailureMessage(err, type, action) {
     if (err.code === 'ECONNABORTED' && UPLOAD_BACKED.has(type)) {
         return t('channelManage.publishSlow', { action });
     }
-    return t('channelManage.publishFailed', {
-        action,
-        reason: err.response?.data?.message || err.message,
-    });
+    // The reason goes through `describeError` like every other error on this side. It used to be
+    // the backend's own `message`, which is English by design — «Channel slug already exists»,
+    // «File exceeds the maximum size of 500 MB», Bean Validation text — so the sentence framing it
+    // in Arabic ended in a clause the reader could not read, and a refusal carrying a `reason`
+    // code had its worded explanation thrown away in favour of that English.
+    return t('channelManage.publishFailed', { action, reason: describeError(err) });
 }
 
 export default useChannelContentTab;

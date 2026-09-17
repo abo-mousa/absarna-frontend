@@ -109,3 +109,27 @@ export const playbackMode = (playback, nativeSupport) => {
     if (!isHls) return 'progressive';
     return nativeSupport ? 'hls-native' : 'hls-js';
 };
+
+/**
+ * Which of the three things the player shows for one of our own uploads: the video, a placeholder
+ * while its URL is being fetched, or a dead end with a retry button.
+ *
+ * <p><b>The order is the whole function.</b> `playback-url` is queried with `retry: false`,
+ * because a 404 there means "not visible to you" and no number of retries changes that — so a
+ * failure settles at once: `isLoading` goes false and `data` stays undefined. Asking "is it still
+ * loading, or is there no URL yet?" first therefore answers `loading` for a request that already
+ * failed and will never be made again, and the player sat on a pulsing black rectangle for the
+ * rest of the page's life. A 5xx or a dropped connection was enough.
+ *
+ * <p>`hlsGaveUp` is the same dead end reached from the other side — hls.js destroyed after its
+ * refresh budget, which leaves a poster and a play button that do nothing — and is checked here
+ * rather than in the player so both routes are answered in one place, and by a function that can
+ * be pinned without a DOM.
+ *
+ * @returns 'failed' | 'loading' | 'ready'
+ */
+export const uploadPlayerSurface = ({ urlFailed, hlsGaveUp, urlLoading, playbackUrl }) => {
+    if (urlFailed || hlsGaveUp) return 'failed';
+    if (urlLoading || !playbackUrl) return 'loading';
+    return 'ready';
+};

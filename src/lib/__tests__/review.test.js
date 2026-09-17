@@ -164,7 +164,9 @@ describe('what an owner is told', () => {
 
         expect(notice.hidden).toBe(true);
         expect(notice.tone).toBe('warning');
-        expect(notice.title).toBe(ar.video.review.music.held.title);
+        // Title from the OUTCOME block, body from the detector's own clause — see copyFor.
+        expect(notice.title).toBe(ar.video.review.outcome.hidden.title);
+        expect(notice.body).toContain(ar.video.review.outcome.hidden.suffix);
         // The timestamps are the actionable half -- "held for review" alone gives the owner
         // nothing to go and check.
         expect(notice.body).toContain('0:12–0:31');
@@ -177,7 +179,8 @@ describe('what an owner is told', () => {
         const [notice] = ownerNotices(
             { review: [{ type: 'MUSIC', state: REVIEW_STATE.HELD, spans: [] }] }, true);
 
-        expect(notice.body).toBe(ar.video.review.music.held.body);
+        expect(notice.body).toBe(
+            ar.video.review.music.held.body + ar.video.review.outcome.hidden.suffix);
         expect(notice.body).not.toContain('{spans}');
     });
 
@@ -214,14 +217,41 @@ describe('what an owner is told', () => {
 
     it('tells the owner of an unscanned explicit-content video that it is HIDDEN', () => {
         // The fail-open/fail-closed asymmetry, in the one place an owner meets it. The same
-        // UNCHECKED state publishes for music and hides for nudity, so the music wording -- which
-        // opens by saying the video is published -- would be false here in the direction that
-        // matters most: the owner would go looking for a video nobody can see.
+        // UNCHECKED state publishes for music and hides for nudity, and the wording has to follow
+        // — saying "published" here would send the owner looking for a video nobody can see.
         const [notice] = ownerNotices(
-            { review: [{ type: 'NUDITY', state: REVIEW_STATE.UNCHECKED }] }, true);
+            { review: [{ type: 'NUDITY', state: REVIEW_STATE.UNCHECKED, holds: true }] }, true);
 
-        expect(notice.body).toBe(ar.video.review.nudity.unchecked.body);
+        expect(notice.body).toBe(
+            ar.video.review.nudity.unchecked.body + ar.video.review.outcome.hidden.suffix);
         expect(notice.body).not.toContain('منشور');
+    });
+
+    /**
+     * <b>And it follows `holds`, not the detector's name.</b>
+     *
+     * <p>The same (type, state) pair, worded both ways, from the backend's flag alone. This is
+     * the duplication the copy used to carry: `music.unchecked` said «الفيديو منشور» and
+     * `nudity.unchecked` said «لن يظهر للزوار», which is `ReviewFindingType.failsClosed()`
+     * restated in Arabic where nothing can compare it against the original. Both were right on
+     * the day they were written, and both would have stayed exactly as written the day a type is
+     * made to fail closed — wrong in the one direction that matters, and invisible from here.
+     */
+    it('words the same finding from the backend’s holds, whichever detector it is', () => {
+        const wording = (type, holds) =>
+            ownerNotices({ review: [{ type, state: REVIEW_STATE.UNCHECKED, holds }] }, true)[0];
+
+        for (const type of ['MUSIC', 'NUDITY']) {
+            expect(wording(type, true).body).toContain(ar.video.review.outcome.hidden.suffix);
+            expect(wording(type, true).title).toBe(ar.video.review.outcome.hidden.title);
+            expect(wording(type, false).body).toContain(ar.video.review.outcome.published.suffix);
+            expect(wording(type, false).title).toBe(ar.video.review.outcome.published.title);
+        }
+
+        // The detector's own clause is unchanged by either — it describes what was found, and
+        // what was found does not depend on what it cost.
+        expect(wording('MUSIC', true).body).toContain(ar.video.review.music.unchecked.body);
+        expect(wording('MUSIC', false).body).toContain(ar.video.review.music.unchecked.body);
     });
 
     it('colours and sorts a hidden unscanned video by the backend’s holds, not by its state', () => {
@@ -244,7 +274,7 @@ describe('what an owner is told', () => {
         expect(notices[1].tone).toBe('info');
         expect(ownerBadge(video, true)).toEqual({
             hidden: true,
-            label: ar.video.review.nudity.unchecked.badge,
+            label: ar.video.review.outcome.hidden.badge,
         });
     });
 
@@ -256,25 +286,25 @@ describe('what an owner is told', () => {
             { review: [{ type: 'MUSIC', state: 'QUARANTINED', holds: true }] }, true);
         expect(hiddenNote.hidden).toBe(true);
         expect(hiddenNote.tone).toBe('warning');
-        expect(hiddenNote.title).toBe(ar.video.review.unknown.hidden.title);
-        expect(hiddenNote.body).toBe(ar.video.review.unknown.hidden.body);
+        expect(hiddenNote.title).toBe(ar.video.review.outcome.hidden.title);
+        expect(hiddenNote.body).toBe(ar.video.review.outcome.hidden.body);
         expect(hiddenNote.title).not.toContain('video.review');
 
         const [publishedNote] = ownerNotices(
             { review: [{ type: 'MUSIC', state: 'NOTED', holds: false }] }, true);
         expect(publishedNote.hidden).toBe(false);
         expect(publishedNote.tone).toBe('info');
-        expect(publishedNote.body).toBe(ar.video.review.unknown.published.body);
+        expect(publishedNote.body).toBe(ar.video.review.outcome.published.body);
     });
 
     it('renders a detector it does not recognise the same way', () => {
         const [notice] = ownerNotices(
             { review: [{ type: 'SPEAKER', state: REVIEW_STATE.HELD, holds: true }] }, true);
         expect(notice.hidden).toBe(true);
-        expect(notice.title).toBe(ar.video.review.unknown.hidden.title);
+        expect(notice.title).toBe(ar.video.review.outcome.hidden.title);
         expect(ownerBadge(
             { review: [{ type: 'SPEAKER', state: REVIEW_STATE.HELD, holds: true }] }, true))
-            .toEqual({ hidden: true, label: ar.video.review.unknown.hidden.badge });
+            .toEqual({ hidden: true, label: ar.video.review.outcome.hidden.badge });
     });
 
     it('reports one notice per detector, worst first', () => {
@@ -314,7 +344,7 @@ describe('the badge on a card', () => {
         const badge = ownerBadge(
             { review: [{ type: 'MUSIC', state: REVIEW_STATE.HELD }] }, true);
 
-        expect(badge.label).toBe(ar.video.review.music.held.badge);
+        expect(badge.label).toBe(ar.video.review.outcome.hidden.badge);
         expect(badge.hidden).toBe(true);
     });
 
@@ -327,7 +357,9 @@ describe('the badge on a card', () => {
             ],
         }, true);
 
-        expect(badge.label).toBe(ar.video.review.nudity.rejected.badge);
+        // `refused`, not `hidden`: a human decided, and «قيد المراجعة» would send the owner to
+        // wait for something that has already happened.
+        expect(badge.label).toBe(ar.video.review.outcome.refused.badge);
         expect(badge.hidden).toBe(true);
     });
 

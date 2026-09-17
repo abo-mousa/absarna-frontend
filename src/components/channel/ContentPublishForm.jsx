@@ -1,5 +1,6 @@
 import { useId } from 'react';
 import { Button, FilePicker } from '@/components/ui';
+import { t } from '@/i18n';
 
 /**
  * The shell every publish form on the channel dashboard shares: the card, its heading, the
@@ -22,9 +23,11 @@ import { Button, FilePicker } from '@/components/ui';
  *                     picked, because picking one starts the upload — see below.
  * @param submitLabel  the button's text
  * @param submitIcon   optional icon element for the button
+ * @param submitting   the create call is in flight — see the button below
  * @param bare         drop the card and the heading — for a form inside a Modal, which has both
  */
-function ContentPublishForm({ heading, onSubmit, file, submitLabel, submitIcon, bare = false, children }) {
+function ContentPublishForm({ heading, onSubmit, file, submitLabel, submitIcon, submitting = false,
+                              bare = false, children }) {
     const hintId = useId();
 
     return (
@@ -72,7 +75,18 @@ function ContentPublishForm({ heading, onSubmit, file, submitLabel, submitIcon, 
 
             {children}
 
-            <Button type="submit" icon={submitIcon}>{submitLabel}</Button>
+            {/* DISABLED WHILE EITHER HALF IS BUSY, and the two halves fail differently.
+                A second press while the create call is in flight sends a second create. For a
+                video or a book that is harmless — confirm is idempotent on the upload session id
+                and the backend hands back the row the first call made — but an article and a post
+                carry no session and no idempotency, so the second press is a duplicate the owner
+                then has to find and delete.
+                A press while the FILE is still uploading is the other one: there is no session id
+                in form state yet, so the request goes out without it and comes back a 400 the
+                owner can do nothing useful with, having watched a progress bar to no purpose. */}
+            <Button type="submit" icon={submitIcon} disabled={submitting || Boolean(file?.uploading)}>
+                {submitting ? t('common.sending') : submitLabel}
+            </Button>
         </form>
     );
 }

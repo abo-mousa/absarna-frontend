@@ -45,7 +45,7 @@ function ChangePasswordCard() {
             showToast(t('profile.passwordChanged'), 'success');
             setForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
         } catch (err) {
-            showToast(err.response?.data?.message || t('profile.passwordChangeFailed'), 'error');
+            showToast(describeError(err, t('profile.passwordChangeFailed')), 'error');
         } finally {
             setSaving(false);
         }

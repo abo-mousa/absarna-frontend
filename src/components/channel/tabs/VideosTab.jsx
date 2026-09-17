@@ -12,6 +12,7 @@ import { useChannelUpload } from '@/hooks/useChannelUpload';
 import { useChannelSeriesManage } from '@/hooks/useSeries';
 import { usePresignedUpload, acceptAttribute } from '@/hooks/usePresignedUpload';
 import { useUploadOriginal } from '@/hooks/useChannelYouTube';
+import { describeError } from '@/lib/describeError';
 import { stripEmpty } from '@/lib/forms';
 import { t } from '@/i18n';
 
@@ -158,6 +159,7 @@ export default function VideosTab({ slug, channel, youtubeState, active }) {
                     onSubmit={handleSubmit}
                     submitLabel={t('channelManage.forms.video.submit')}
                     submitIcon={<Upload size={18} />}
+                    submitting={content.isPublishing}
                     file={{
                         label: t('channelManage.forms.video.fileLabel'),
                         hint: t('channelManage.forms.video.fileHint'),
@@ -307,9 +309,10 @@ function useUploadOriginalAction(slug, youtubeState) {
             showToast(t('youtube.uploadedOriginal'), 'success');
         } catch (err) {
             if (err.name !== 'AbortError') {
-                showToast(t('youtube.uploadOriginalFailed', {
-                    reason: err.response?.data?.message || err.message,
-                }), 'error');
+                // The refusal worth wording here is `YOUTUBE_NEEDS_OWNER_VERIFICATION` — an
+                // admin-attested channel may not license hosting its own file — and it arrives as
+                // a reason code that only `describeError` reads.
+                showToast(t('youtube.uploadOriginalFailed', { reason: describeError(err) }), 'error');
             }
         } finally {
             setClaimingVideoId(null);

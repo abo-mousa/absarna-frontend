@@ -3,6 +3,7 @@ import { useToast } from '@/contexts/ToastContext';
 import { usePresignedUpload, ResumeUnavailableError } from '@/hooks/usePresignedUpload';
 import { rememberSession, forgetSession, resumableSessionId, rememberedSession }
     from '@/lib/uploadResume';
+import { describeError } from '@/lib/describeError';
 import { t } from '@/i18n';
 
 /**
@@ -118,7 +119,10 @@ export function useChannelUpload(slug, kind) {
             if (err.name !== 'AbortError') {
                 // Nothing usable was picked: showing the name would read as "this one is attached".
                 setFileName(null);
-                showToast(failureMessage(err.response?.data?.message || err.message), 'error');
+                // `describeError`, not the raw body: `err` here is either a refusal from our
+                // own upload endpoints (which name a `reason`) or an `Error` thrown by
+                // `usePresignedUpload`, and both used to reach the toast in English.
+                showToast(failureMessage(describeError(err)), 'error');
             }
         } finally {
             setUploading(false);

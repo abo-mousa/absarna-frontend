@@ -4,6 +4,7 @@ import { MailCheck } from 'lucide-react';
 import { forgotPassword } from '@/lib/api/auth';
 import PageShell from '../components/layout/PageShell';
 import { Input, Button } from '../components/ui';
+import { describeError } from '@/lib/describeError';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { t } from '@/i18n';
 
@@ -25,7 +26,7 @@ function ForgotPassword() {
             // registered, so this branch is the only outcome on a network success.
             setSent(true);
         } catch (err) {
-            setError(err.response?.data?.message || t('auth.forgotPassword.genericError'));
+            setError(describeError(err, t('auth.forgotPassword.genericError')));
         } finally {
             setLoading(false);
         }

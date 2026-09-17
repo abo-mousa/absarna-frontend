@@ -5,6 +5,7 @@ import { resetPassword } from '@/lib/api/auth';
 import PageShell from '../components/layout/PageShell';
 import { Input, Button } from '../components/ui';
 import { getPasswordRules, getPasswordStrengthLabel, isPasswordValid } from '@/lib/validation';
+import { describeError } from '@/lib/describeError';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { t } from '@/i18n';
 
@@ -45,7 +46,7 @@ function ResetPassword() {
             setStatus('success');
         } catch (err) {
             setStatus('error');
-            setError(err.response?.data?.message || t('auth.resetPassword.expiredLink'));
+            setError(describeError(err, t('auth.resetPassword.expiredLink')));
         } finally {
             setLoading(false);
         }

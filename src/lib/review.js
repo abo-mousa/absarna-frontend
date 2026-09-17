@@ -194,26 +194,47 @@ const worstFirst = (a, b) =>
     (Number(b.hidden) - Number(a.hidden)) || (severityOf(a.state) - severityOf(b.state));
 
 /**
- * The owner-facing words for one finding. Per (type, state) when this build has them; otherwise
- * the generic note for "hidden" or "published", chosen by the backend's `holds` -- so a new
- * detector or a new state is still described truthfully in the dimension that matters, even
- * before this repo knows its name.
+ * Which of the three things a finding cost the video — the axis the copy is built on.
+ *
+ * <p>`hidden` is the backend's `holds`, so the fail-open/fail-closed rule is read, never
+ * reproduced. `refused` is the one distinction `holds` cannot make: REJECTED and HELD both hide,
+ * but one is a decision and the other is a wait, and telling an owner their video is "under
+ * review" after a human has refused it sends them to wait for something that already happened.
+ * Knowing that REJECTED is a human's verdict is not the fail-closed rule — it is the reviewer
+ * vocabulary this file already mirrors in {@link DECISIONS}.
+ */
+const outcomeOf = (state, hidden) => {
+    if (!hidden) return 'published';
+    return state === REVIEW_STATE.REJECTED ? 'refused' : 'hidden';
+};
+
+/**
+ * The owner-facing words for one finding: WHAT was found, from the per-(type, state) catalog, and
+ * WHAT IT COST, from the outcome block alone.
+ *
+ * <p><b>The split is the point, and it is the fix for a real duplication.</b> The per-(type,
+ * state) prose used to carry the visibility claim itself — `music.unchecked` said the video was
+ * published and `nudity.unchecked` said it was hidden — which is a second copy of
+ * `ReviewFindingType.failsClosed()`, written in Arabic, that no test on either side can compare
+ * against the first. Both were right, and both would have stayed as written on the day a type is
+ * made to fail closed: an owner told their video is published, going to look for something nobody
+ * can see. Now the detector blocks are clauses about the detector, and the sentence that says who
+ * can see the video comes from `holds` in every case.
+ *
+ * <p>A type or state this build has never heard of has no clause, so it gets the outcome sentence
+ * on its own — which is less than the backend knows and is still true, and is the whole reason a
+ * finding carries `holds` rather than this repo carrying the rule.
  */
 const copyFor = (type, state, hidden, spans) => {
+    const outcome = `video.review.outcome.${outcomeOf(state, hidden)}`;
     const key = `video.review.${String(type).toLowerCase()}.${String(state).toLowerCase()}`;
-    const title = tOptional(`${key}.title`);
-    if (title !== undefined) {
-        return {
-            title,
-            body: spans ? t(`${key}.bodyWithSpans`, { spans: spans.text }) : t(`${key}.body`),
-            badge: t(`${key}.badge`),
-        };
-    }
-    const fallback = `video.review.unknown.${hidden ? 'hidden' : 'published'}`;
+    const clause = spans
+        ? tOptional(`${key}.bodyWithSpans`) && t(`${key}.bodyWithSpans`, { spans: spans.text })
+        : tOptional(`${key}.body`);
     return {
-        title: t(`${fallback}.title`),
-        body: t(`${fallback}.body`),
-        badge: t(`${fallback}.badge`),
+        title: t(`${outcome}.title`),
+        badge: t(`${outcome}.badge`),
+        body: clause ? clause + t(`${outcome}.suffix`) : t(`${outcome}.body`),
     };
 };
 

@@ -37,6 +37,7 @@ export default function ArticlesTab({ slug, active }) {
                     heading={t('channelManage.forms.article.heading')}
                     onSubmit={handleSubmit}
                     submitLabel={t('channelManage.forms.article.submit')}
+                    submitting={content.isPublishing}
                 >
                     <Input label={t('fields.title')} value={form.title} onChange={field('title')} required />
                     <Input label={t('fields.content')} textarea rows={15} className="min-h-[300px]" value={form.content} onChange={field('content')} required />
