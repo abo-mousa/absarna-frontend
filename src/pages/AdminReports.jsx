@@ -17,7 +17,7 @@ import {
     targetTypeLabel,
 } from '@/lib/reports';
 import { describeError } from '@/lib/describeError';
-import dayjs from '@/lib/dayjsAr';
+import { parseTimestamp } from '@/lib/dayjsAr';
 import { formatCount } from '@/lib/numbers';
 import { t } from '@/i18n';
 
@@ -34,7 +34,10 @@ const STATUS_FILTERS = [REPORT_STATUS.OPEN, REPORT_STATUS.ACTIONED, REPORT_STATU
 
 const formatMoment = (value) => {
     if (!value) return '';
-    const moment = dayjs(value).locale('ar-latn');
+    // Zone-aware, for the same reason CommentsSection is: the backend's timestamps name no zone
+    // and the servers run UTC. On a moderation queue the shift is worse than cosmetic — it is the
+    // record of when a report came in.
+    const moment = parseTimestamp(value).locale('ar-latn');
     return moment.isValid() ? moment.format(t('adminReports.dateFormat')) : '';
 };
 

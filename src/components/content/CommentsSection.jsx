@@ -6,7 +6,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { EmailVerificationNotice } from '../auth';
 import { Modal } from '../ui';
 import ReportButton from './ReportButton';
-import dayjs from '@/lib/dayjsAr';
+import dayjs, { parseTimestamp } from '@/lib/dayjsAr';
 import {
     useComments,
     useCreateComment,
@@ -20,7 +20,10 @@ const MAX_COMMENT_LENGTH = 2000;
 
 function formatDate(dateStr) {
     if (!dateStr) return '';
-    const date = dayjs(dateStr).locale('ar-latn');
+    // `parseTimestamp`, not `dayjs`: `createdAt` is a LocalDateTime and arrives with no zone on
+    // it, which dayjs would read as the reader's own. See lib/dayjsAr.js — a comment posted a
+    // moment ago read «منذ ساعتين».
+    const date = parseTimestamp(dateStr).locale('ar-latn');
     if (!date.isValid()) return '';
     // Relative for anything recent (matches the app's non-addictive-but-still-friendly tone),
     // an absolute date+time once it's old enough that "منذ 12 يوماً" stops being useful.
