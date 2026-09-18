@@ -1,13 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
+import { useIsFetching, useIsMutating, useQueryClient } from '@tanstack/react-query';
 import { Upload, User, Shield, LogOut, Menu, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { isPlatformAdmin } from '@/lib/user';
 import { useMyChannels } from '../../hooks/useChannels';
 import { reshuffleFeed } from '../../hooks/useVideos';
-import logo from '../../assets/logo.svg';
+import { IrisMark } from '../ui';
 import SearchBar from './SearchBar';
 import { t } from '@/i18n';
 
@@ -76,12 +76,24 @@ function Navbar({ onMenuClick }) {
         queryClient.resetQueries({ queryKey: ['videos'] });
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
+    // Anything in flight anywhere in the app. `useIsFetching` counts queries, `useIsMutating`
+    // counts writes; both re-render this bar when the count crosses zero and at no other time.
+    const busy = useIsFetching() + useIsMutating() > 0;
+
     const { data: myChannels = [] } = useMyChannels(!!token);
     const uploadLink = myChannels.length > 0 ? `/channel/${myChannels[0].slug}/manage` : '/create-channel';
 
     return (
         <nav ref={navRef} className="sticky top-0 z-[1000] bg-bg/95 backdrop-blur-md border-b border-border-light">
-            <div className="max-w-[1400px] mx-auto flex items-center gap-3 sm:gap-5 px-3 sm:px-6 py-2.5">
+            {/* Full-bleed, NOT `max-w-[1400px] mx-auto`. Capping the row is right for a column of
+                prose, and wrong for a bar whose whole content is anchored controls: past 1400px
+                the cap stopped moving the logo and the account buttons outward, so on a wide
+                monitor both drifted toward the middle with a growing empty margin outside them —
+                the logo a third of the way in from the edge it is supposed to sit on. The row now
+                spans the viewport and the padding grows with it, so the two ends stay at the two
+                ends at every width. The SEARCH box is the one thing that still wants a cap, and it
+                carries its own (below) rather than the bar carrying one for it. */}
+            <div className="flex items-center gap-3 sm:gap-5 px-3 sm:px-6 lg:px-8 py-2.5">
                 <button
                     onClick={onMenuClick}
                     className="lg:hidden text-text-secondary p-1.5 -mr-1 rounded-md hover:bg-surface-hover flex-shrink-0"
@@ -95,11 +107,30 @@ function Navbar({ onMenuClick }) {
                     onClick={handleLogoClick}
                     className="flex items-center gap-1 text-2xl sm:text-3xl font-bold text-primary flex-shrink-0"
                 >
-                    <img src={logo} alt={t('nav.brandAlt')} className="w-9 h-9 sm:w-10 sm:h-10" />
+                    {/* The mark turns for as long as anything is in flight, and rests when
+                        nothing is. It is the one piece of chrome on every screen, so it can say
+                        "still working" for the whole app without a bar or an overlay of its own —
+                        and it says it for a background refetch too, which no per-section spinner
+                        covers because those only render where content is absent.
+
+                        `turn`, never `draw`: redrawing the logo the visitor has been looking at
+                        would read as the page falling apart and reassembling, dozens of times a
+                        session. Mutations count as well as queries — publishing and deleting are
+                        exactly when a visitor wants to see that something is happening. */}
+                    <IrisMark
+                        size="100%"
+                        state={busy ? 'turn' : 'still'}
+                        className="w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0"
+                    />
+                    <span className="sr-only">{t('nav.brandAlt')}</span>
                     <span className="font-serif">{t('nav.brand')}</span>
                 </Link>
 
-                <div className="flex-1 flex justify-center">
+                {/* Centred in whatever is left between the two anchored ends. `min-w-0` so this
+                    flex child may shrink below its content's width instead of pushing the account
+                    controls off the right edge on a narrow screen — SearchBar carries its own
+                    max-width, so nothing here needs to cap it. */}
+                <div className="flex-1 flex justify-center min-w-0">
                     <SearchBar />
                 </div>
 

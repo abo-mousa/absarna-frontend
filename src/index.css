@@ -203,6 +203,14 @@
   animation: iris-turn 2.4s linear 1.45s infinite;
 }
 
+/* The same turn with no delay, for a mark that was already whole when the loading started —
+   the navbar's, which must not redraw itself every time a query goes out. */
+.iris-turn-now {
+  transform-box: view-box;
+  transform-origin: 50px 50px;
+  animation: iris-turn 2.4s linear infinite;
+}
+
 /* Someone who has asked their OS for reduced motion should not get a rotating object —
    but a spinner that stops dead reads as a frozen page, the one thing a loading
    indicator must never say. So the draw and the turn both go, and a fade takes over the
@@ -221,7 +229,8 @@
     animation: none;
   }
 
-  .iris-spin {
+  .iris-spin,
+  .iris-turn-now {
     animation: none;
   }
 

@@ -20,31 +20,48 @@ import { useId } from 'react';
  * the iris stops resolving at all — use a plain icon there rather than shrinking this.
  *
  * <h2>The mark draws itself, then turns</h2>
- * With `animate`, the loading state is the act of drawing: the two rings trace along their
+ * In the `draw` state, the loading state is the act of drawing: the two rings trace along their
  * own outlines, the iris fades in behind them, the aperture lights last, and only once the
  * mark is whole do the blades start turning. So the draw happens once per loading episode
  * rather than flickering on a loop. The choreography lives in `src/index.css`; `--len` is
  * each ring's true perimeter, measured off the geometry — get it wrong and a ring either
  * starts part-drawn or never closes.
  *
- * `animate={false}` gives the finished mark, still, for decorative use.
+ * <h2>The three states, and why `turn` is not just `draw` started early</h2>
+ * `state` picks one:
+ *
+ * <ul>
+ *   <li><b>`draw`</b> (default) — the loading indicator. Draws itself once, then turns for as
+ *       long as it is mounted. Right when the mark <em>appears</em> because something is
+ *       loading, which is what `Spinner` does.
+ *   <li><b>`turn`</b> — already whole, turning. For a mark that was <em>already on screen</em>
+ *       before the loading started, the navbar's being the case that matters: redrawing a logo
+ *       the visitor has been looking at reads as the page breaking and reassembling, and it
+ *       would restart on every one of the dozens of fetches a session makes. Turning says
+ *       "still working" without claiming anything has been rebuilt.
+ *   <li><b>`still`</b> — finished and motionless, for decorative use.
+ * </ul>
  *
  * <h2>Reduced motion</h2>
  * `prefers-reduced-motion` drops the draw and the turn and leaves a finished mark that
  * fades. A loading indicator that goes completely still reads as a frozen page.
  */
-function IrisMark({ size = '40px', animate = true, label, className = '' }) {
+function IrisMark({ size = '40px', state = 'draw', label, className = '' }) {
     // Scoped, so two marks on one page cannot collide over gradient ids.
     const id = useId();
     const g = (name) => `${id}-${name}`;
-    const on = (cls) => (animate ? cls : '');
+    // `draw` is the only state that plays the entrance; `turn` starts from a finished mark, so
+    // it takes the rotation class alone and none of the opacity/dash choreography.
+    const drawing = state === 'draw';
+    const turning = state === 'draw' || state === 'turn';
+    const on = (cls) => (drawing ? cls : '');
 
     return (
         <svg
             width={size}
             height={size}
             viewBox="0 0 100 100"
-            className={`${animate ? 'iris-mark ' : ''}${className}`}
+            className={`${drawing ? 'iris-mark ' : ''}${className}`}
             {...(label
                 ? { role: 'status', 'aria-label': label }
                 : { role: 'presentation', 'aria-hidden': true })}
@@ -100,7 +117,9 @@ function IrisMark({ size = '40px', animate = true, label, className = '' }) {
                 origin is the viewBox centre, not the group's own bounding box — that box
                 shifts as the blades turn and the iris would wobble. */}
             <g className={on('iris-blades')}>
-                <g className={on('iris-spin')}>
+                {/* `iris-spin` carries the 1.45s delay that waits for the draw; `iris-turn-now`
+                    is the same rotation with no delay, for a mark that is already whole. */}
+                <g className={turning ? (drawing ? 'iris-spin' : 'iris-turn-now') : ''}>
                     <rect x="25.966" y="25.966" width="48.069" height="48.069" fill={`url(#${g('blade2')})`} />
                     {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
                         <polygon
@@ -120,7 +139,7 @@ function IrisMark({ size = '40px', animate = true, label, className = '' }) {
                 strokeWidth="6.5"
                 strokeLinejoin="miter"
                 className={on('iris-ring')}
-                style={animate ? { '--len': 215, animationDelay: '0.3s' } : undefined}
+                style={drawing ? { '--len': 215, animationDelay: '0.3s' } : undefined}
             />
             <polygon
                 points="90.000,50.000 78.284,61.716 78.284,78.284 61.716,78.284 50.000,90.000 38.284,78.284 21.716,78.284 21.716,61.716 10.000,50.000 21.716,38.284 21.716,21.716 38.284,21.716 50.000,10.000 61.716,21.716 78.284,21.716 78.284,38.284"
@@ -129,7 +148,7 @@ function IrisMark({ size = '40px', animate = true, label, className = '' }) {
                 strokeWidth="7.5"
                 strokeLinejoin="miter"
                 className={on('iris-ring')}
-                style={animate ? { '--len': 268 } : undefined}
+                style={drawing ? { '--len': 268 } : undefined}
             />
 
             {/* Lights last, and after the blades in document order so they turn behind the
