@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Check, X, Pause, Trash2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Check, X, Pause, Trash2, ExternalLink } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
 import { QueryState, Avatar, Badge, Button, Modal, Input, Pager } from '../components/ui';
 import { useToast } from '../contexts/ToastContext';
@@ -98,10 +99,38 @@ function AdminChannels() {
                                 <div key={channel.id} className="flex items-center gap-4 bg-surface p-4 rounded-lg border border-border-light flex-wrap">
                                     <Avatar name={channel.name} color={channel.primaryColor} />
                                     <div className="flex-1 min-w-[150px]">
-                                        <strong>{channel.name}</strong>
+                                        {/* The whole row's name is the link, not a small icon
+                                            beside it: opening the channel is the FIRST thing a
+                                            reviewer does, and this queue previously offered no
+                                            way to do it at all — an admin had to build the URL
+                                            from the slug by hand before deciding. */}
+                                        <Link
+                                            to={`/channel/${channel.slug}`}
+                                            className="font-bold hover:text-primary hover:underline inline-flex items-center gap-1.5"
+                                        >
+                                            {channel.name}
+                                            <ExternalLink size={14} aria-hidden="true" />
+                                        </Link>
                                         <p className="text-sm text-text-muted">@{channel.slug}</p>
+                                        {/* Says what is being approved. Since channel creation
+                                            stopped queueing anything, a row here is an imported
+                                            catalogue that nothing has examined — the upload
+                                            pipeline never sees an imported video. */}
+                                        <p className="text-xs text-text-muted mt-1">
+                                            {channel.importReview === 'PENDING'
+                                                ? t('admin.pendingReasonImport')
+                                                : t('admin.pendingReasonOther')}
+                                        </p>
                                     </div>
-                                    <div className="flex gap-2">
+                                    <div className="flex gap-2 flex-wrap">
+                                        <Link
+                                            to={`/channel/${channel.slug}`}
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-border
+                                                text-sm font-semibold text-text-secondary hover:bg-surface-hover transition-colors"
+                                        >
+                                            <ExternalLink size={14} aria-hidden="true" />
+                                            {t('admin.openChannel')}
+                                        </Link>
                                         <Button size="sm" onClick={() => handleApprove(channel.id)} icon={<Check size={14} />}>{t('admin.approve')}</Button>
                                         <Button variant="danger" size="sm" onClick={() => handleReject(channel.id)} icon={<X size={14} />}>{t('admin.reject')}</Button>
                                     </div>
@@ -117,7 +146,15 @@ function AdminChannels() {
                             <div key={channel.id} className="flex items-center gap-4 bg-surface p-4 rounded-lg border border-border-light flex-wrap">
                                 <Avatar name={channel.name} color={channel.primaryColor} />
                                 <div className="flex-1 min-w-[150px]">
-                                    <strong>{channel.name}</strong>
+                                    {/* Same link as the queue above: suspending or deleting a
+                                        channel is also a decision worth looking at it first. */}
+                                    <Link
+                                        to={`/channel/${channel.slug}`}
+                                        className="font-bold hover:text-primary hover:underline inline-flex items-center gap-1.5"
+                                    >
+                                        {channel.name}
+                                        <ExternalLink size={14} aria-hidden="true" />
+                                    </Link>
                                     <p className="text-sm text-text-muted">@{channel.slug}</p>
                                 </div>
                                 <Badge variant={STATUS_VARIANT[channel.status]}>{STATUS_LABEL[channel.status]}</Badge>

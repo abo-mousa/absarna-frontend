@@ -208,6 +208,9 @@ export default function VideosTab({ slug, channel, youtubeState, active }) {
                     {view === 'all' && (
                         <ManagedContentList
                             type="videos"
+                            slug={slug}
+                            searchable
+                            searchPlaceholder={t('channelManage.searchVideos')}
                             heading={t('channelManage.forms.video.listHeading', { count: content.totalItems })}
                             content={content}
                             getHref={videoPageHref}
@@ -268,6 +271,7 @@ function SeriesVideos({ slug, series, active, onBack, onSeriesChange, extraActio
 
             <ManagedContentList
                 type="videos"
+                slug={slug}
                 heading={t('channelManage.seriesView.seriesVideosHeading', { title, count: content.totalItems })}
                 content={content}
                 getHref={videoPageHref}

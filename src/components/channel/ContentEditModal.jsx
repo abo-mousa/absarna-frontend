@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Modal, Input, Button } from '@/components/ui';
+import VideoThumbnailPicker from './VideoThumbnailPicker';
 import { t } from '@/i18n';
 
 /**
@@ -31,7 +32,7 @@ const LABELS = {
     originalPublishDate: 'fields.originalPublishDateOptional',
 };
 
-function ContentEditModal({ open, type, item, onClose, onSave, saving }) {
+function ContentEditModal({ open, type, item, onClose, onSave, saving, slug }) {
     const fields = FIELDS[type] || [];
     const [form, setForm] = useState({});
 
@@ -90,6 +91,14 @@ function ContentEditModal({ open, type, item, onClose, onSave, saving }) {
                         required={field === 'title'}
                     />
                 ))}
+
+                {/* Outside the diffing form above on purpose: the poster is saved the moment it
+                    is chosen, through its own endpoints, because it is an object in storage
+                    rather than a field on this row. Folding it into `changes` would mean either
+                    holding the bytes until Save or sending a key the server has not seen land.
+                    `slug` is what says the caller can manage this channel, so without one there
+                    is nothing to call — the series browser passes it too. */}
+                {type === 'videos' && slug && <VideoThumbnailPicker slug={slug} video={item} />}
 
                 <div className="flex gap-2 justify-end">
                     <button type="button" onClick={onClose} className="px-4 py-2 text-text-secondary font-semibold">

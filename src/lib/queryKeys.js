@@ -64,8 +64,10 @@ export const queryKeys = {
 
     // ---- owner dashboard ----
     // `series` narrows the videos list: a series id, 'none', or null for every video.
-    channelManage: (slug, type, page, scope, series = null) =>
-        ['channel-manage', slug, type, series, page, scope],
+    // `search` last and defaulted, so the many call sites that invalidate by the
+    // ['channel-manage', slug] prefix keep matching every cached term.
+    channelManage: (slug, type, page, scope, series = null, search = '') =>
+        ['channel-manage', slug, type, series, page, scope, search],
     // The whole list (the video form's series picker) and one page of it (the series tab). Both
     // under the same prefix, so every series mutation invalidates both.
     channelSeriesManage: (slug, scope) => ['channel-series-manage', slug, scope],

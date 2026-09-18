@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
-import { Pager } from '@/components/ui';
+import { Pager, SearchField } from '@/components/ui';
+import { t } from '@/i18n';
 import { useKeepScrollPlace } from '@/hooks/useKeepScrollPlace';
 import ContentManageList from '../ContentManageList';
 import ContentEditModal from '../ContentEditModal';
@@ -20,7 +21,8 @@ import ContentEditModal from '../ContentEditModal';
  *                 open)
  */
 export default function ManagedContentList({
-    type, heading, content, getLabel, getHref, extraActions, renderStatus, editable = true, action,
+    type, heading, content, getLabel, getHref, extraActions, renderStatus, editable = true, action, slug,
+    searchable = false, searchPlaceholder,
 }) {
     const [editing, setEditing] = useState(null);
     const listRef = useRef(null);
@@ -43,9 +45,26 @@ export default function ManagedContentList({
                         <h3 className="text-lg font-bold">{heading}</h3>
                         {action}
                     </div>
+
+                    {/* Offered once the list is long enough that scanning it is the slow way, and
+                        kept mounted while a term matches nothing — otherwise the box that produced
+                        the empty state disappears with the results and there is no way back.
+                        `searchable` is off for a list already narrowed by series: see the videos
+                        endpoint on why text and series are not combined. */}
+                    {searchable && (content.items.length > 0 || content.search) && (
+                        <div className="mb-3 max-w-md">
+                            <SearchField
+                                value={content.search}
+                                onChange={content.setSearch}
+                                placeholder={searchPlaceholder || t('channelManage.searchContent')}
+                            />
+                        </div>
+                    )}
+
                     <ContentManageList
                         items={content.items}
                         loading={content.loading}
+                        emptyLabel={content.term ? t('channelManage.searchNoMatches') : undefined}
                         getLabel={getLabel}
                         getHref={getHref}
                         onEdit={editable ? setEditing : undefined}
@@ -74,6 +93,7 @@ export default function ManagedContentList({
                     onClose={() => setEditing(null)}
                     onSave={(id, changes) => content.save(id, changes)}
                     saving={content.isSaving}
+                    slug={slug}
                 />
             )}
         </>

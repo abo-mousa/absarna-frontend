@@ -85,6 +85,20 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   after first paint (`display=swap`) and re-lays the line box. The sidebar is also `z-[1100]` as a
   phone drawer and `lg:z-[900]` as a desktop column — one element, opposite stacking, and at the
   navbar's own 1000 the tie was broken by document order.
+- **The navbar is full-bleed on purpose — do not put a `max-w`/`mx-auto` back on it.** It had
+  `max-w-[1400px] mx-auto`, which is right for a column of prose and wrong for a bar whose content
+  is two anchored ends: past 1400px the cap stopped moving the logo and the account controls
+  outward, so on a wide monitor both drifted toward the middle with a growing empty margin outside
+  them. The row spans the viewport and its padding grows with it; the search box carries its own
+  `max-w-[500px]` rather than the bar carrying one for it, and its wrapper is `min-w-0` so it may
+  shrink instead of pushing the account controls off a phone screen.
+- **The navbar logo is `IrisMark`, and it turns for exactly as long as something is loading** —
+  `useIsFetching() + useIsMutating() > 0`. It is the one piece of chrome on every screen, so it can
+  report "still working" for the whole app including a background refetch, which no per-section
+  spinner covers because those only render where content is absent. **`state="turn"`, never
+  `"draw"`**: redrawing a logo the visitor has been looking at reads as the page falling apart and
+  reassembling, dozens of times a session. `IrisMark`'s three states are `draw` (appears because
+  something is loading — what `Spinner` uses), `turn` (already on screen, now busy) and `still`.
 - **A control that changes its words must not change its size** — `SwapLabel` renders every
   wording in one grid cell so the widest fixes the width. A button that resizes on the press moves
   under the finger that pressed it and shoves its neighbours sideways, twice. `SubscribeButton`
@@ -296,6 +310,22 @@ What this app relies on; the mirror lives in the backend's `CLAUDE.md`.
   `NULLS LAST`) and is the one rung with a catalog label.
 - **`VideoDTO.sourceUrl` is null for an upload-backed video; `thumbnailUrl` is null until the worker
   produces a poster.** Treat null as "not yet", never as an error. Object keys never appear on a DTO.
+- **`thumbnailUrl` may be a poster the OWNER chose, and `hasCustomThumbnail` is how you tell.** The
+  backend ranks custom → worker frame → external URL in one place, so this side never picks; the
+  flag exists only so the dashboard can offer "remove" when there is something to remove. Uploading
+  one is a presigned single PUT (`useVideoThumbnail`) — three calls, and the PUT must carry the
+  `contentType` the mint response gave and **no `Authorization` header**, which is why it uses
+  `fetch` rather than the axios client. Replacing a poster changes the URL, so invalidate the lists
+  that show it; nothing revalidates on its own.
+- **A channel is live as soon as it is created — there is no approval wait to tell an owner about.**
+  Starting a YouTube import *is* what sends a channel for review, and it hides the channel until an
+  admin approves, so the import panel says so **before** the button rather than after. `importReview`
+  (`NOT_REQUIRED` / `PENDING` / `APPROVED`) rides on both `ChannelDTO` and the YouTube status
+  response; `APPROVED` is the resume case, where pressing import again changes nothing.
+- **Owner list endpoints take `?search=` and are deliberately ungated** — a dashboard search finds
+  the hidden, the held and the still-transcoding, which are the rows an owner is most often hunting
+  for. The public `GET /api/channels/{slug}/videos?search=` is the gated counterpart for the channel
+  page. Neither has a typo fallback, so "no results" means exactly that.
 - **An uploaded video is not merely un-transcoded — it is invisible** until `status` is `READY`. There
   is **no notification channel by design**, so re-fetch when the user comes back and never imply a
   quick turnaround.

@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Video, BookOpen, FileText, MessageSquare, Settings, Tv, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
-import { QueryState, Avatar } from '../components/ui';
+import { QueryState, Avatar, SearchField } from '../components/ui';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { VideoCard, BookCard, ArticleCard, PostCard, SubscribeButton } from '../components/content';
 import { useWatchProgressMap, useReadingProgressMap } from '../hooks/useVideos';
 import { usePageMeta } from '../hooks/usePageMeta';
@@ -35,14 +36,28 @@ function ChannelPage() {
     const readingProgress = useReadingProgressMap(!!token);
 
     const { data: channel, isLoading: channelLoading, isError: channelError, error: channelErrorObject, refetch: refetchChannel } = useChannel(slug);
+
+    // Debounced so typing costs one request per pause, not one per keystroke — the same
+    // treatment the global search box gets. Not in the URL: a channel filter is a transient
+    // narrowing of one tab, and putting it in the query string would make Back walk keystrokes.
+    const [videoSearch, setVideoSearch] = useState('');
+    const videoSearchTerm = useDebouncedValue(videoSearch.trim(), 250);
     const {
         data: videoPages,
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
-    } = useChannelVideos(slug, 24, !!channel);
+    } = useChannelVideos(slug, 24, !!channel, videoSearchTerm);
     const videos = videoPages?.pages.flatMap((page) => page.content) || [];
-    const videoCount = videoPages?.pages[0]?.totalItems ?? videos.length;
+    // The tab badge must keep counting the WHOLE channel, so it is frozen while a filter is
+    // active: a search's totalItems is the number of matches, and letting it through would make
+    // the tab read "فيديوهات 2" — as if the channel had lost the rest.
+    const videoTotal = videoPages?.pages[0]?.totalItems ?? videos.length;
+    const [unfilteredVideoCount, setUnfilteredVideoCount] = useState(null);
+    useEffect(() => {
+        if (!videoSearchTerm && videoPages) setUnfilteredVideoCount(videoTotal);
+    }, [videoSearchTerm, videoPages, videoTotal]);
+    const videoCount = videoSearchTerm ? (unfilteredVideoCount ?? videoTotal) : videoTotal;
 
     const {
         data: bookPages,
@@ -180,7 +195,23 @@ function ChannelPage() {
             </div>
 
             {activeTab === 'videos' && (
-                <QueryState isEmpty={videos.length === 0} emptyTitle={t('channel.noVideos')}>
+                <>
+                    {/* Shown whenever the channel has videos to filter, and kept mounted while a
+                        search matches nothing — otherwise the box that produced the empty state
+                        would disappear along with the results, leaving no way back. */}
+                    {(videos.length > 0 || videoSearch) && (
+                        <div className="mb-4 max-w-md">
+                            <SearchField
+                                value={videoSearch}
+                                onChange={setVideoSearch}
+                                placeholder={t('channel.searchVideos')}
+                            />
+                        </div>
+                    )}
+                <QueryState
+                    isEmpty={videos.length === 0}
+                    emptyTitle={videoSearchTerm ? t('channel.noVideosMatch') : t('channel.noVideos')}
+                >
                     <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-4">
                         {videos.map((video) => (
                             <VideoCard
@@ -205,6 +236,7 @@ function ChannelPage() {
                         </div>
                     )}
                 </QueryState>
+                </>
             )}
 
             {activeTab === 'books' && (

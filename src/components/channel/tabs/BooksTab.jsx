@@ -88,6 +88,8 @@ export default function BooksTab({ slug, active }) {
             </Modal>
 
             <ManagedContentList
+                searchable
+                searchPlaceholder={t('channelManage.searchBooks')}
                 type="books"
                 heading={t('channelManage.forms.book.listHeading', { count: content.totalItems })}
                 content={content}

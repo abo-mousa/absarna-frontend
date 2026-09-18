@@ -114,6 +114,19 @@ function ChannelManage() {
 
                 <div className="flex-1 min-w-0 px-4 sm:px-6 py-6">
                     <div className="max-w-[1000px] mx-auto">
+                        {/* An owner whose channel has gone dark has to be told, on the screen they
+                            are already on. It is the one state where everything below works — they
+                            can publish, edit and upload — and nobody can see any of it, which
+                            without a sentence here looks exactly like the site being broken.
+                            Import is now the only route into it: see Channel.ImportReview. */}
+                        {channel.status === 'PENDING' && (
+                            <div className="mb-5 rounded-md border border-gold/30 bg-gold/10 p-4 text-sm text-gold-dark dark:text-gold">
+                                {channel.importReview === 'PENDING'
+                                    ? t('channelManage.underReviewImport')
+                                    : t('channelManage.underReview')}
+                            </div>
+                        )}
+
                         {/* Every tab stays MOUNTED and is hidden rather than unmounted, and that is
                             load-bearing rather than tidy. A half-finished upload lives in its tab — the
                             transfer itself, its progress, and the session id the publish form is holding —

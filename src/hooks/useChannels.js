@@ -28,15 +28,24 @@ export const useChannel = (slug, enabled = true) => {
 
 // "Load more" pagination, same accumulating-pages shape as useInfiniteVideos — a channel's
 // video tab used to hard-cap at one 50-item page with no way to see older videos past that.
-export const useChannelVideos = (slug, size = 24, enabled = true) => {
+//
+// `search` narrows the list to this channel's matching videos. It is part of the query key, so
+// each term caches separately and clearing the box returns the unfiltered list instantly; and
+// `keepPreviousData` holds the previous term's results on screen while the next request is in
+// flight, so typing does not empty the grid between keystrokes.
+export const useChannelVideos = (slug, size = 24, enabled = true, search = '') => {
+    const term = (search || '').trim();
     return useInfiniteQuery({
-        queryKey: ['channel-videos', slug, size],
+        queryKey: ['channel-videos', slug, size, term],
         queryFn: async ({ pageParam = 0 }) => {
-            const res = await api.get(`/channels/${slug}/videos?page=${pageParam}&size=${size}`);
+            const params = new URLSearchParams({ page: pageParam, size });
+            if (term) params.set('search', term);
+            const res = await api.get(`/channels/${slug}/videos?${params}`);
             return res.data;
         },
         initialPageParam: 0,
         getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.currentPage + 1 : undefined),
+        placeholderData: keepPreviousData,
         enabled: enabled && !!slug,
     });
 };
@@ -232,14 +241,19 @@ export const MANAGE_PAGE_SIZE = 20;
  * <p>Paged because an import put 1,928 videos on one dashboard, which fetched and rendered every
  * one of them per visit — and the other types use the same list, so they page the same way.
  */
-export const useChannelContentList = (slug, type, enabled = true, page = 0, series = null) => {
+export const useChannelContentList = (slug, type, enabled = true, page = 0, series = null, search = '') => {
     const scope = useUserScope();
+    const term = (search || '').trim();
     return useQuery({
-        queryKey: queryKeys.channelManage(slug, type, page, scope, series),
+        queryKey: queryKeys.channelManage(slug, type, page, scope, series, term),
         queryFn: async () => {
             const params = { page, size: MANAGE_PAGE_SIZE };
             // Videos only: a series id for that series in its own order, or 'none'.
             if (series !== null) params.series = series;
+            // The backend ignores `series` when a term is present — filtering by text and
+            // browsing by series are two ways of finding the same thing, and combining them
+            // makes "no results" ambiguous. The dashboard only offers the box on the flat list.
+            if (term) params.search = term;
             const res = await api.get(`/channels/${slug}/content/${type}`, { params });
             return res.data;
         },

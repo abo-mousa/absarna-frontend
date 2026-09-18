@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useToast } from '@/contexts/ToastContext';
 import { useEmptyPageStepBack } from './useEmptyPageStepBack';
+import { useDebouncedValue } from './useDebouncedValue';
 import { t } from '@/i18n';
 import { describeError } from '@/lib/describeError';
 import {
@@ -41,7 +42,16 @@ export function useChannelContentTab(slug, type, active, series = null) {
     const { showToast } = useToast();
 
     const [page, setPage] = useState(0);
-    const { data, isLoading: loading } = useChannelContentList(slug, type, active, page, series);
+    // The dashboard's own filter box. Two pieces of state, not one: `search` is what is in the
+    // input and re-renders on every keystroke, `term` is debounced and is what the query key and
+    // the request are built from — so typing costs one request per pause rather than one per
+    // letter. Changing the term resets to page 1, because page 4 of the unfiltered list is
+    // almost never a page of the filtered one and landing past the end shows an empty screen.
+    const [search, setSearch] = useState('');
+    const term = useDebouncedValue(search.trim(), 250);
+    useEffect(() => { setPage(0); }, [term]);
+
+    const { data, isLoading: loading } = useChannelContentList(slug, type, active, page, series, term);
     useEmptyPageStepBack(page, setPage, data, loading);
     const items = data?.content ?? [];
     const pageInfo = data ? {
@@ -111,6 +121,10 @@ export function useChannelContentTab(slug, type, active, series = null) {
     };
 
     return { items, loading, pageInfo, totalItems, setPage, publish, save, toggleVisibility, deleteItem,
+        // `search` is the input's value; `term` is what the list currently answers. The list needs
+        // both — the box binds to the first, and the empty state has to say "nothing matches
+        // <term>" about the query that was actually run rather than about what is being typed.
+        search, setSearch, term,
         isPublishing: create.isPending, isSaving: update.isPending };
 }
 

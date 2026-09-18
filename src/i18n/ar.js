@@ -40,6 +40,9 @@ export const ar = {
         close: 'إغلاق',
         sending: 'جاري الإرسال...',
         search: 'بحث',
+        // The × on an in-page filter box (ui/SearchField). Its own label rather than
+        // `common.close`: it empties a field, it does not dismiss anything.
+        clearSearch: 'مسح البحث',
         backHome: 'العودة للرئيسية',
         back: 'رجوع',
         errorTitle: 'حدث خطأ',
@@ -232,6 +235,15 @@ export const ar = {
             // channel run under a Brand Account is a separate entry there from the personal one.
             YOUTUBE_OAUTH_CHANNEL_MISMATCH: 'الحساب الذي سجلت الدخول به يدير قناة يوتيوب مختلفة عن القناة المربوطة هنا. أعد المحاولة واختر الحساب الذي يدير القناة المربوطة (إن كانت القناة تابعة لحساب علامة تجارية فاختره من القائمة).',
             YOUTUBE_OAUTH_NO_CHANNEL: 'لا توجد قناة يوتيوب على الحساب الذي اخترته. أعد المحاولة واختر الحساب الذي يدير قناتك.',
+
+            // Choosing a video's poster. Each says what to do next, because every one of them is
+            // recoverable by the owner in a single step.
+            THUMBNAIL_FORMAT_NOT_ALLOWED: 'صيغة الصورة غير مدعومة. اختر صورة بصيغة JPG أو PNG أو WEBP.',
+            THUMBNAIL_TOO_LARGE: 'حجم الصورة كبير. اختر صورة أصغر من 5 ميجابايت.',
+            // The browser's direct upload to التخزين did not finish — a dropped connection, or a
+            // tab closed mid-upload. Nothing was changed, so picking the file again is the fix.
+            THUMBNAIL_NOT_UPLOADED: 'لم يكتمل رفع الصورة. اختر الصورة مرة أخرى.',
+            THUMBNAIL_KEY_INVALID: 'تعذر حفظ الصورة. اختر الصورة مرة أخرى.',
 
             YOUTUBE_IMPORT_ALREADY_RUN: 'تم استيراد هذه القناة بالفعل، أو هناك استيراد جارٍ الآن.',
             // A 503, and the one case where "try again later" is actively wrong: nothing will
@@ -730,6 +742,11 @@ export const ar = {
         unsubscribeConfirmAria: 'اضغط مرة أخرى لإلغاء الاشتراك',
         noVideos: 'لا توجد فيديوهات بعد',
         noPosts: 'لا توجد منشورات بعد',
+        // The videos tab's own filter box, and the empty state when it matches nothing. The
+        // second is worded so it cannot be read as "this channel has no videos" — the tab says
+        // that already, and the two mean different things to someone who has typed a word.
+        searchVideos: 'ابحث في فيديوهات القناة',
+        noVideosMatch: 'لا توجد فيديوهات تطابق بحثك في هذه القناة',
     },
 
     /**
@@ -750,6 +767,19 @@ export const ar = {
     },
 
     youtube: {
+        /**
+         * Said before the import button is pressed, because the consequence is not reversible by
+         * the owner and is not something "استيراد" suggests: the channel leaves the site until a
+         * platform admin has looked at what arrived.
+         *
+         * <p>It is worded as a reason rather than a warning. An owner told only "your channel
+         * will be hidden" would read it as a punishment; told WHY — that an imported video never
+         * passes through the checks an uploaded one does — it is a rule with a shape they can
+         * agree with.
+         */
+        reviewOnImport: 'بعد بدء الاستيراد ستُخفى القناة عن الزوار حتى تراجعها الإدارة. الفيديوهات المستوردة لا تمر بفحص المحتوى الذي يمر به الرفع المباشر، فالمراجعة هنا هي البديل. المحتوى الذي نشرته بنفسك يعود للظهور فور الموافقة.',
+        reviewPending: 'القناة الآن بانتظار مراجعة الإدارة بسبب الاستيراد، وهي مخفية عن الزوار حتى تتم الموافقة.',
+
         heading: 'استيراد من يوتيوب',
         intro: 'استورد فيديوهاتك وقوائم التشغيل من قناتك على يوتيوب مرة واحدة.',
         sourceLabel: 'رابط قناتك على يوتيوب',
@@ -867,7 +897,12 @@ export const ar = {
     createChannel: {
         title: 'إنشاء قناة',
         heading: 'إنشاء قناة جديدة',
-        subheading: 'سيتم مراجعة قناتك من قبل الإدارة قبل النشر',
+        // A channel is live the moment it is created. What USED to be here — «سيتم مراجعة قناتك
+        // من قبل الإدارة قبل النشر» — was a promise of a wait that no longer happens, and the
+        // wait it promised answered nothing: every uploaded video is examined per video by the
+        // server. The one case that is still reviewed is importing a YouTube catalogue, and the
+        // import tab says so at the point of pressing it, not here.
+        subheading: 'قناتك تظهر مباشرة بعد الإنشاء، ويمكنك النشر فوراً.',
         nameLabel: 'اسم القناة *',
         namePlaceholder: 'مثال: محمد إلهامي',
         slugLabel: 'المعرف (Slug) *',
@@ -889,7 +924,7 @@ export const ar = {
         youtubeLinkedAfterCreate: 'تم ربط القناة — ابدأ الاستيراد من هنا',
         youtubeLinkFailedAfterCreate: 'تم إنشاء القناة، لكن تعذر ربطها بيوتيوب. يمكنك ربطها من هنا.',
         youtubeFetchFailed: 'تعذر العثور على القناة. تأكد من الرابط وحاول مرة أخرى.',
-        created: 'تم إنشاء القناة! ستظهر بعد موافقة الإدارة.',
+        created: 'تم إنشاء القناة، وهي ظاهرة الآن.',
         failed: 'فشل في إنشاء القناة',
     },
 
@@ -933,6 +968,17 @@ export const ar = {
         },
 
         emptyContent: 'لا يوجد محتوى بعد',
+
+        // The dashboard's filter box. One placeholder for all four tabs: each tab passes its own
+        // when the type is worth naming, and this is the fallback.
+        searchContent: 'ابحث في محتواك',
+        searchVideos: 'ابحث في فيديوهاتك',
+        searchBooks: 'ابحث في كتبك',
+        searchArticles: 'ابحث في مقالاتك',
+        searchPosts: 'ابحث في منشوراتك',
+        // Never «لا يوجد محتوى بعد» while a term is active: that is a claim about the channel, and
+        // an owner who believed it would re-upload something they already have.
+        searchNoMatches: 'لا يوجد ما يطابق بحثك',
         edit: 'تعديل',
 
         // The owner's dashboard row for a video, which is where an owner actually looks -- the
@@ -950,9 +996,46 @@ export const ar = {
             retryQueued: 'أُعيد الفيديو إلى قائمة المعالجة.',
             retryFailed: 'تعذّرت إعادة المعالجة.',
         },
+        /**
+         * The banner an owner sees while their channel is hidden pending review.
+         *
+         * <p>Two wordings because there are two ways in and they call for different next steps:
+         * an import is something the owner just did and will end on its own, while anything else
+         * (a suspension an admin has partly lifted, say) is not theirs to resolve. Both say the
+         * dashboard still works, because the thing that makes this state confusing is that
+         * everything below the banner behaves normally while nobody can see the result.
+         */
+        underReviewImport: 'قناتك مخفية عن الزوار حتى تراجع الإدارة المحتوى الذي استوردته من يوتيوب. يمكنك متابعة الرفع والتعديل من هنا الآن، وسيظهر كل شيء فور الموافقة.',
+        underReview: 'قناتك مخفية عن الزوار حتى تراجعها الإدارة. يمكنك متابعة الرفع والتعديل من هنا الآن.',
+
         editTitle: 'تعديل المحتوى',
         // Shown when editing a video that still plays from YouTube: the change applies here only.
         editYoutubeNote: 'هذا التعديل يظهر على أبصرنا فقط ولا يغيّر شيئاً على يوتيوب.',
+
+        /**
+         * The poster an owner picks for a video, inside the edit dialog.
+         *
+         * <p>«الصورة الافتراضية» rather than «لا توجد صورة»: there is always a picture — the
+         * frame the server cut, or the YouTube poster — and telling an owner there is none when
+         * a visitor can see one would be false. The distinction the copy has to carry is whose
+         * picture it is, not whether one exists.
+         */
+        thumbnail: {
+            label: 'صورة الفيديو',
+            usingCustom: 'هذه صورة اخترتها بنفسك.',
+            usingDefault: 'الصورة الافتراضية، يلتقطها الخادم من الفيديو.',
+            choose: 'اختيار صورة',
+            replace: 'استبدال الصورة',
+            remove: 'إزالة',
+            uploading: 'جاري الرفع...',
+            saved: 'تم حفظ صورة الفيديو.',
+            removed: 'أُعيدت الصورة الافتراضية.',
+            failed: 'تعذر حفظ الصورة: {reason}',
+            unsupported: 'صيغة الصورة غير مدعومة. اختر صورة بصيغة JPG أو PNG أو WEBP.',
+            tooLarge: 'حجم الصورة كبير. اختر صورة أصغر من 5 ميجابايت.',
+            hint: 'JPG أو PNG أو WEBP، وبحد أقصى 5 ميجابايت. يُفضّل عرض 1280×720.',
+        },
+
         channelName: 'اسم القناة',
 
         // Every content tab: one publish form, then the owner's own list of that type.
@@ -1292,6 +1375,23 @@ export const ar = {
         pendingHeading: 'قنوات بانتظار الموافقة',
         pendingEmpty: 'لا توجد قنوات بانتظار الموافقة',
         pendingCount: 'بانتظار الموافقة ({count})',
+
+        /**
+         * Why a channel is in this queue, and how to go and look at it.
+         *
+         * <p>Creating a channel no longer queues anything — every uploaded video is examined per
+         * video by the server — so a row here is almost always an import: a catalogue pulled in
+         * from YouTube that nothing has examined, because those videos never enter the upload
+         * pipeline at all. Saying so is the difference between «وافق» as a rubber stamp and a
+         * reviewer knowing what they are being asked to look at.
+         *
+         * <p>`openChannel` is the link this queue was missing. The channel is not public while it
+         * is here, but an admin can open it — the visibility check lets them — so reviewing is
+         * one click rather than typing a URL from a slug.
+         */
+        pendingReasonImport: 'استوردت محتوى من يوتيوب — راجع المحتوى قبل الموافقة.',
+        pendingReasonOther: 'بانتظار المراجعة.',
+        openChannel: 'فتح القناة للمراجعة',
         allChannelsCount: 'جميع القنوات ({count})',
         approve: 'موافقة',
         reject: 'رفض',

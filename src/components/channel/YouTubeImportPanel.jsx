@@ -464,6 +464,22 @@ function YouTubeImportPanel({ slug }) {
                             </p>
                         )}
 
+                    {/* Said BEFORE the click, not after, because the consequence is not obvious
+                        and is not reversible by the owner: starting the import takes the channel
+                        off the site until a platform admin has looked at what arrived. An
+                        imported video never reaches the transcode worker, so nothing has examined
+                        it — which is the whole reason this one step is reviewed while ordinary
+                        publishing is not. Shown only for a channel that has not already been
+                        through it; on a resume the channel is already approved and nothing
+                        happens. */}
+                    {importButtonLabel(state.importStatus) && state.importReview !== 'APPROVED' && (
+                        <p className="text-sm text-gold-dark dark:text-gold bg-gold/10 border border-gold/30 rounded-md p-3" dir="auto">
+                            {state.importReview === 'PENDING'
+                                ? t('youtube.reviewPending')
+                                : t('youtube.reviewOnImport')}
+                        </p>
+                    )}
+
                     {/* One button for start, retry and resume, because from the owner's side they
                         are one intent — and `importButtonLabel` returns null for RUNNING and
                         SUCCESS, which is what keeps a second walk from being one click away. */}

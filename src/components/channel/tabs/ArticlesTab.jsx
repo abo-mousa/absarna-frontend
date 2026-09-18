@@ -50,6 +50,8 @@ export default function ArticlesTab({ slug, active }) {
             </Modal>
 
             <ManagedContentList
+                searchable
+                searchPlaceholder={t('channelManage.searchArticles')}
                 type="articles"
                 heading={t('channelManage.forms.article.listHeading', { count: content.totalItems })}
                 content={content}

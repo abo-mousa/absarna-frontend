@@ -21,6 +21,11 @@ import { t } from '@/i18n';
  *                     is not a preference: leaving this page cancels an upload in progress (see
  *                     useChannelUpload), so a same-tab link clicked mid-way through a 2 GB lecture
  *                     would abort it. Omitted for posts, which have no page of their own.
+ * @param emptyLabel   what to say when the list is empty, when the caller knows something this
+ *                     component does not — most of all that a search term is narrowing it. "لا
+ *                     يوجد محتوى بعد" under an active filter is a false statement about the
+ *                     channel, and the one an owner would act on by re-uploading something they
+ *                     already have.
  * @param renderStatus optional render function for a block UNDER a row's title, for whatever that
  *                     content type has to say about its own state. A second slot rather than an
  *                     extension of `extraActions`, because the two sit in different places and
@@ -32,9 +37,12 @@ import { t } from '@/i18n';
  *                     dashboard showed them nothing.
  */
 function ContentManageList({ items, loading, onToggleVisibility, onDelete, onEdit,
-                             getLabel = (item) => item.title, getHref, extraActions, renderStatus }) {
+                             getLabel = (item) => item.title, getHref, extraActions, renderStatus,
+                             emptyLabel }) {
     if (loading) return <p className="text-sm text-text-muted py-2">{t('common.loading')}</p>;
-    if (items.length === 0) return <p className="text-sm text-text-muted py-4">{t('channelManage.emptyContent')}</p>;
+    if (items.length === 0) {
+        return <p className="text-sm text-text-muted py-4">{emptyLabel || t('channelManage.emptyContent')}</p>;
+    }
 
     return (
         <div className="grid gap-2">
