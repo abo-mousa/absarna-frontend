@@ -142,12 +142,18 @@ export function describeError(error, fallback) {
     return generic;
 }
 
-/** True when the failure is the kind a retry could change — offline, timeout, or a 5xx. */
-export function isRetryable(error) {
-    if (!error) return false;
-    if (!error.response) return error.code !== 'ERR_CANCELED';
-    const status = error.response.status;
-    return status >= 500 || status === 429;
-}
+/*
+ * `isRetryable` lived here, exported, and nothing ever imported it. It went because its body and
+ * its own doc comment disagreed about the one status that matters: the comment promised "offline,
+ * timeout, or a 5xx" while the body also returned true for 429 — and an automatic retry of a
+ * backend 429 spends the next token of the same per-IP bucket, which is the behaviour App.jsx's
+ * `shouldRetryQuery` documents as forbidden. A named, exported helper whose comment reads as the
+ * safe rule is exactly what someone wires into a retry path without re-reading the body.
+ *
+ * The two live answers stay where their reasons are. `shouldRetryQuery` (App.jsx) excludes every
+ * 4xx, so React Query never retries a 429. `usePresignedUpload`'s own `isRetryable` DOES retry
+ * 429, correctly — it talks to object storage, which is a different limiter from the backend's.
+ * Two call sites with opposite rules is why this could never have been one shared function.
+ */
 
 export default describeError;
