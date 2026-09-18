@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
     DOUBLE_TAP_WINDOW_MS,
     nextTapRun,
+    pointerMoved,
     tapSeekSeconds,
     tapZone,
 } from '@/lib/player/gestures';
@@ -121,5 +122,35 @@ describe('tapSeekSeconds', () => {
         // the only thing standing between a mistake upstream and a video that jumps when someone
         // taps twice to pause and resume.
         expect(tapSeekSeconds({ zone: 'centre', at: 0, count: 3 })).toBe(0);
+    });
+});
+
+/**
+ * Whether the pointer actually went anywhere — the question the fade on idle is really asking.
+ *
+ * <p>The bug this was written for: the control bar never faded, in fullscreen or out of it, on a
+ * page where nothing was moving. A browser dispatches a `pointermove` at UNCHANGED coordinates
+ * when the element under the cursor changes, and this player changes it twice on every fade — the
+ * control row and the centre disc both stop taking pointer events as they disappear. So hiding the
+ * controls produced a move, the move was read as the viewer reaching for something, and they came
+ * back within the frame.
+ */
+describe('pointerMoved', () => {
+    it('rejects an event reporting the point it reported last time', () => {
+        expect(pointerMoved({ x: 320, y: 180 }, 320, 180)).toBe(false);
+    });
+
+    it('accepts a move along either axis', () => {
+        // One pixel counts. This is not a threshold or a throttle — a viewer who nudged the mouse
+        // is reaching for a control, and the browser only lies about the case above.
+        expect(pointerMoved({ x: 320, y: 180 }, 321, 180)).toBe(true);
+        expect(pointerMoved({ x: 320, y: 180 }, 320, 181)).toBe(true);
+    });
+
+    it('accepts the first move after the pointer was forgotten', () => {
+        // `hideNow` clears the remembered point when the pointer leaves, so a pointer that comes
+        // back to the very same pixel is not dismissed as "it has not moved" and left with no
+        // controls.
+        expect(pointerMoved(null, 320, 180)).toBe(true);
     });
 });

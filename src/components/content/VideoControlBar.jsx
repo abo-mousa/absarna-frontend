@@ -755,7 +755,13 @@ export default function VideoControlBar({
                 // the bottom of the picture never swallows a click meant for the video.
                 className={`absolute inset-x-0 bottom-0 z-10 pointer-events-none transition-opacity
                     duration-200 ${shown ? 'opacity-100' : 'opacity-0'}`}
-                onPointerMove={onInteract}
+                // No `onPointerMove` here on purpose. React events bubble, so a move over this bar
+                // already reaches the player's own handler — and that one ignores a move that
+                // reports the same point as the last one, which is what stops this row's own
+                // appearing and disappearing from keeping itself up forever (see
+                // useAutoHideControls). A second, undeduplicated handler here would put the bug
+                // straight back.
+                //
                 // focus/blur rather than :focus-within, because the value is needed in JS. React
                 // maps these to focusin/focusout, which bubble; the relatedTarget check is what
                 // tells "left the bar" from "moved between two of its buttons".

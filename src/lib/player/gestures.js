@@ -98,3 +98,20 @@ export const tapSeekSeconds = (run, step = DOUBLE_TAP_SEEK_SECONDS) => {
     const magnitude = (run.count - 1) * step;
     return run.zone === 'back' ? -magnitude : magnitude;
 };
+
+/**
+ * Whether a pointer event represents the pointer actually going somewhere.
+ *
+ * <p><b>A stationary cursor produces `pointermove` events, and that is not a browser bug.</b> When
+ * an element's `pointer-events` change, the browser re-runs hit testing and dispatches a move at
+ * the SAME coordinates so the page can react to what is under the cursor now. The player toggles
+ * `pointer-events` on exactly the two things a resting cursor sits on — the control row along the
+ * bottom, and the play/pause disc in the middle — so hiding the controls produced a move, the move
+ * was read as "the viewer is reaching for a control", and the controls came straight back. They
+ * never faded, on a page where nothing was moving at all.
+ *
+ * <p>Comparing the coordinates is the whole fix, and it is the right one rather than a patch: a
+ * fade on idle is asking whether the POINTER has moved, and an event that reports the same point
+ * as the last one is the browser saying it has not.
+ */
+export const pointerMoved = (last, x, y) => !last || last.x !== x || last.y !== y;

@@ -93,7 +93,8 @@ const VideoPlayer = forwardRef(function VideoPlayer(
         durationRef,
     });
 
-    const { controlsVisible, nudge, pin, hideNow } = useAutoHideControls(videoRef);
+    const { controlsVisible, nudge, nudgeFromPointer, pin, hideNow } =
+        useAutoHideControls(videoRef);
     const [menuOpen, setMenuOpen] = useState(false);
     // Repeat. Off by default and per-video: the reason it exists is memorisation — a short
     // recitation or a passage being learned by heart — which a viewer turns on for one clip, not
@@ -465,7 +466,15 @@ const VideoPlayer = forwardRef(function VideoPlayer(
                 onKeyDown={handleShortcut}
                 // Pointer activity anywhere on the player brings the bar back, including the first
                 // touch — `pointerdown` covers a tap, which is how a phone asks for the controls.
-                onPointerMove={nudge}
+                //
+                // `nudgeFromPointer` rather than `nudge`, and that difference is what lets the bar
+                // fade at all: a browser dispatches a move at UNCHANGED coordinates whenever the
+                // element under the cursor changes, which this player does to itself twice on
+                // every fade. See the hook.
+                //
+                // One handler for the whole player, this one: React events bubble, so a move over
+                // the bar or the disc arrives here too.
+                onPointerMove={nudgeFromPointer}
                 onPointerDown={(e) => {
                     nudge();
                     if (e.currentTarget === e.target) e.currentTarget.focus();
