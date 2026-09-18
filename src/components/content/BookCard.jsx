@@ -47,6 +47,24 @@ function BookCard({ book, currentPage }) {
         }
     }, [pdfUrl, pdfUrlFailed]);
 
+    /**
+     * Closes a tab still waiting for its URL when this card goes away.
+     *
+     * <p>The effect above is the only thing that ever points the blank tab somewhere or closes it,
+     * and it fires on `pdfUrl`/`pdfUrlFailed`. Neither arrives if the card unmounts first — the
+     * viewer navigates away, or the route change cancels the query — so the `about:blank` tab the
+     * click gesture opened was left on screen with nothing in it and nothing coming.
+     *
+     * <p>Its own effect with an empty dependency list, deliberately: a cleanup on the effect above
+     * would run on every `pdfUrl` change and close the tab a moment before it was pointed at the
+     * file. This one's cleanup runs on unmount and nowhere else. Refs are not reactive, so the
+     * empty list is exhaustive.
+     */
+    useEffect(() => () => {
+        pendingTabRef.current?.close();
+        pendingTabRef.current = null;
+    }, []);
+
     const handleDownloadClick = (e) => {
         setDownloadIntent(true);
         if (pdfUrl) return; // the href is live; let the browser follow it
