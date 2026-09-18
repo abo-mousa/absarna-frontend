@@ -16,13 +16,17 @@ function Login() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    // Ticked by default. Everyone was effectively remembered before this box existed, and an
+    // unticked default would make "stay logged in" a thing people had to discover in order to
+    // keep what they already had.
+    const [stayLoggedIn, setStayLoggedIn] = useState(true);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setLoading(true);
 
-        const result = await login(username, password);
+        const result = await login(username, password, stayLoggedIn);
         if (result.success) {
             // Back to whatever bounced them here. ProtectedRoute and the session-expiry handler
             // both put it in router state; without this the visitor lands on the home page and
@@ -67,6 +71,25 @@ function Login() {
                                 {t('auth.login.forgotPassword')}
                             </Link>
                         </div>
+                    </div>
+
+                    {/*
+                      * The label wraps the input so the words are part of the tap target, the same
+                      * shape as the terms box on the register form.
+                      */}
+                    <div>
+                        <label className="flex items-start gap-2.5 cursor-pointer text-sm text-text-secondary">
+                            <input
+                                type="checkbox"
+                                checked={stayLoggedIn}
+                                onChange={(e) => setStayLoggedIn(e.target.checked)}
+                                className="mt-0.5 h-4 w-4 shrink-0 accent-primary cursor-pointer"
+                            />
+                            <span>{t('auth.login.stayLoggedIn')}</span>
+                        </label>
+                        <p className="text-xs text-text-muted mt-1.5 pe-6">
+                            {t('auth.login.stayLoggedInHint')}
+                        </p>
                     </div>
 
                     {error && (

@@ -1,7 +1,14 @@
 import api from './client';
 
-export const login = (username, password) =>
-    api.post('/auth/login', { username, password });
+/**
+ * `rememberMe` decides the refresh token's lifetime — months for a device the person calls
+ * theirs, days for a browser session — and the caller has to store the pair at the matching tier
+ * (`lib/authStorage`), because a months-long token in sessionStorage still dies with the tab.
+ * Omitted means the browser session: the safer of the two, and the only default that does not
+ * hand a long-lived credential to someone who never asked for one.
+ */
+export const login = (username, password, rememberMe = false) =>
+    api.post('/auth/login', { username, password, rememberMe });
 
 /**
  * The one definition of the signup body.
@@ -47,5 +54,12 @@ export const resetPassword = (token, newPassword) =>
 export const deleteAccount = (currentPassword) =>
     api.delete('/user/account', { data: { currentPassword } });
 
-export const changePassword = (currentPassword, newPassword) =>
-    api.post('/user/change-password', { currentPassword, newPassword });
+/**
+ * `rememberMe` is not about this request: the change bumps `tokenVersion`, killing the pair the
+ * caller holds, so the response carries a replacement — and the backend can only mint that at the
+ * tier it is told. Sending the session's own tier (`isRemembered()`) is what stops a password
+ * change quietly demoting a remembered device to a browser session, which would read to the
+ * person as being logged out a week later for no reason they could connect to.
+ */
+export const changePassword = (currentPassword, newPassword, rememberMe) =>
+    api.post('/user/change-password', { currentPassword, newPassword, rememberMe });

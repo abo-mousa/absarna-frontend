@@ -71,6 +71,13 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   scoped. `AuthContext` also clears the whole cache on logout.
 - **All `localStorage` goes through `lib/safeStorage.js`** — unguarded access *throws* when a browser
   blocks site data, and at module scope that renders a blank page.
+- **The session's tokens go through `lib/authStorage.js`, never either storage directly** — and
+  *which* store holds them is the whole of what "stay logged in" means: a ticked box puts the pair
+  in `localStorage`, an unticked one in `sessionStorage`, which the browser drops with the tab.
+  Reads check the session store first, which is also what keeps a pair stored before the split
+  existed working. Both halves are needed and neither substitutes for the other: a 90-day refresh
+  token in `sessionStorage` still dies with the tab, and a persisted one still expires. A refresh
+  rotates **in place** (`storeRotatedTokens`) — it is not a new session and must not re-tier one.
 - **`PageShell` + `QueryState`** are the shared shells: don't hand-roll `<Navbar/><SideBar/><main>` or
   another loading/error/empty ternary.
 - **Errors go through `lib/describeError.js`**, which prefers the backend's `reason` code (worded in
@@ -316,6 +323,14 @@ What this app relies on; the mirror lives in the backend's `CLAUDE.md`.
 - **`GET /api/search` and `/api/search/suggestions` answer the same question** — the dropdown is a
   preview of what Enter will show. If they diverge, it is a backend bug; don't paper over it here.
 - **`GET /api/feed` is stable for a viewer for a whole day**, so a refresh is not a way to reshuffle it.
+- **`/auth/refresh` rotates the refresh token — store the one it returns.** The response is
+  `{token, refreshToken}`, and the replacement carries a fresh expiry, which is what turns the
+  session into a window measured from the last visit. Keeping only the access token pins the
+  session to the first refresh token's expiry and signs the viewer out on that day however much
+  they used the app — that was the bug. `rememberMe` on `/auth/login` (and on
+  `/user/change-password`, whose `tokenVersion` bump forces a fresh pair) picks between a
+  7-day and a 90-day refresh token; the backend never infers it, so this app has to send it, and
+  has to store the pair at the matching tier.
 - **Likes' status endpoint is public** (`{liked:false, likeCount:N}` when anonymous); `POST`/`DELETE`
   need a login. `VideoDTO.likeCount` is on cards; books/articles use the status call.
 - **Rate limits are per IP and per rule**, with a readable Arabic 429 body (the limiter runs after the

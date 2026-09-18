@@ -2,8 +2,8 @@ import { createContext, useState, useContext, useEffect, useCallback, useRef } f
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api/client';
-import { safeStorage } from '@/lib/safeStorage';
-import { register as registerRequest } from '@/lib/api/auth';
+import { clearSession, isRemembered, readToken, storeSession } from '@/lib/authStorage';
+import { login as loginRequest, register as registerRequest } from '@/lib/api/auth';
 import { authFailureMessage } from '@/lib/authErrors';
 import { isProtectedPath } from '@/lib/navigation';
 import { useToast } from './ToastContext';
@@ -16,9 +16,10 @@ export const AuthProvider = ({ children }) => {
     const location = useLocation();
     const queryClient = useQueryClient();
     const { showToast } = useToast();
-    // safeStorage, not localStorage: the accessor itself throws when a browser blocks site data,
-    // and this runs during the first render of the provider that wraps the whole app.
-    const [token, setToken] = useState(() => safeStorage.getItem('token'));
+    // Through lib/authStorage, which reads the browser-session store before the persistent one
+    // and goes through safeStorage either way: the accessor itself throws when a browser blocks
+    // site data, and this runs during the first render of the provider that wraps the whole app.
+    const [token, setToken] = useState(() => readToken());
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -35,8 +36,8 @@ export const AuthProvider = ({ children }) => {
      * viewer's identity, which covers a login with no logout in between. Both are needed.
      */
     const logout = useCallback(() => {
-        safeStorage.removeItem('token');
-        safeStorage.removeItem('refreshToken');
+        // Both stores, whichever this session was using — see lib/authStorage.
+        clearSession();
         setToken(null);
         setUser(null);
         queryClient.clear();
@@ -102,9 +103,11 @@ export const AuthProvider = ({ children }) => {
     // tokenVersion bump invalidates the pair the caller is currently holding, so it has to
     // adopt the replacement or it logs itself out) — goes through here, so none of them can
     // forget one of the two keys.
-    const applySession = useCallback(({ token: newToken, refreshToken }) => {
-        safeStorage.setItem('token', newToken);
-        safeStorage.setItem('refreshToken', refreshToken);
+    const applySession = useCallback(({ token: newToken, refreshToken }, { remember } = {}) => {
+        // `remember` omitted means "whatever this session already is" — the password-change path
+        // is handed a replacement pair for a session that already exists, and re-tiering it there
+        // would either demote a remembered device or silently promote a browser session.
+        storeSession({ token: newToken, refreshToken, remember: remember ?? isRemembered() });
         setToken(newToken);
         // Not `clear()`: anonymous answers already in the cache are not wrong, they are answers
         // to a different question ("what does a signed-out visitor see"). Invalidating marks them
@@ -113,10 +116,21 @@ export const AuthProvider = ({ children }) => {
         queryClient.invalidateQueries();
     }, [queryClient]);
 
-    const login = async (username, password) => {
+    /**
+     * @param rememberMe the viewer ticked "stay logged in". It travels to the backend, which mints
+     *                   a refresh token measured in months instead of days, AND decides which
+     *                   store the pair goes in here — both halves are needed: a long-lived token
+     *                   in sessionStorage still dies with the tab, and a persisted short-lived one
+     *                   still expires. Defaults to false, the browser-session tier: a session that
+     *                   outlives the browser is something a person opts into.
+     */
+    const login = async (username, password, rememberMe = false) => {
         try {
-            const res = await api.post('/auth/login', { username, password });
-            applySession(res.data);
+            // Through `lib/api/auth` rather than posting the body here, for the reason the
+            // register path already does: two spellings of the same body drift, and the one that
+            // does not get the new field is the one that breaks.
+            const res = await loginRequest(username, password, rememberMe);
+            applySession(res.data, { remember: rememberMe });
             setUser(res.data.user);
             return { success: true };
         } catch (error) {
@@ -131,7 +145,12 @@ export const AuthProvider = ({ children }) => {
     const register = async (username, email, password, fullName, gender, acceptedTerms) => {
         try {
             const res = await registerRequest(username, email, password, fullName, gender, acceptedTerms);
-            applySession(res.data);
+            // Remembered, with no box to tick: someone who has just created an account is on a
+            // device they chose to create it on, and the alternative — a session that ends when
+            // the browser closes — is a worse first day than the signup form asked for. The
+            // backend mints the ordinary refresh lifetime for this path, which now slides with
+            // use, so an account that gets used never reaches its expiry.
+            applySession(res.data, { remember: true });
             setUser(res.data.user);
             return { success: true };
         } catch (error) {

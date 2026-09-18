@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import api from '@/lib/api/client';
 import { changePassword, deleteAccount } from '@/lib/api/auth';
+import { isRemembered } from '@/lib/authStorage';
 import PageShell from '../components/layout/PageShell';
 import { Input, Button, Modal } from '../components/ui';
 import { EmailVerificationNotice } from '../components/auth';
@@ -148,7 +149,9 @@ function ChangePasswordCard() {
             // replacement pair for exactly that reason; without adopting it here, the next
             // request 401s, the refresh 401s, and client.js bounces the user to the login
             // screen moments after a successful password change.
-            const res = await changePassword(form.currentPassword, form.newPassword);
+            // The tier goes with it: the replacement pair can only be minted at the session
+            // length the backend is told, and this session already knows which one it is.
+            const res = await changePassword(form.currentPassword, form.newPassword, isRemembered());
             applySession(res.data);
             showToast(t('profile.passwordChanged'), 'success');
             setForm({ currentPassword: '', newPassword: '', confirmPassword: '' });

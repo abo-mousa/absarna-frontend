@@ -1,5 +1,5 @@
 import { API_BASE_URL } from '../env';
-import { safeStorage } from '../safeStorage';
+import { readToken } from '../authStorage';
 
 // Last-chance, fire-and-forget POST for progress flushes on page unload (hard refresh, tab/
 // browser close, hard navigation) — cases where a component never gets a React unmount and a
@@ -9,7 +9,7 @@ import { safeStorage } from '../safeStorage';
 // the tab is killed outright) — the periodic in-app checkpoint this backs up is what bounds
 // worst-case data loss, not this.
 export function flushOnUnload(path, body) {
-    const token = safeStorage.getItem('token');
+    const token = readToken();
     if (!token) return;
     try {
         fetch(`${API_BASE_URL}/api${path}`, {

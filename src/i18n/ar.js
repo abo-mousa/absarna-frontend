@@ -275,6 +275,11 @@ export const ar = {
             submit: 'دخول',
             noAccount: 'ليس لديك حساب؟',
             registerLink: 'إنشاء حساب',
+            // The box is ticked by default, so the hint is what a person reads before unticking
+            // it — it has to say what the choice costs on a computer that is not theirs, not just
+            // name the feature.
+            stayLoggedIn: 'أبقني مسجّلاً للدخول',
+            stayLoggedInHint: 'أزل التحديد على جهاز مشترك؛ عندها ينتهي تسجيل دخولك بإغلاق المتصفح.',
             failed: 'تعذر تسجيل الدخول',
             invalidCredentials: 'اسم المستخدم أو كلمة المرور غير صحيحة',
         },

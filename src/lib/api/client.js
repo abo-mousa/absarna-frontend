@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { API_BASE_URL } from '../env';
-import { safeStorage } from '../safeStorage';
+import { clearSession, readRefreshToken, readToken, storeRotatedTokens } from '../authStorage';
 import { reportRequestFailure } from '@/lib/telemetry';
 
 const api = axios.create({
@@ -27,7 +27,7 @@ export const UPLOAD_CONFIRM_TIMEOUT_MS = 5 * 60 * 1000;
 // Request interceptor — attach token
 api.interceptors.request.use(
     (config) => {
-        const token = safeStorage.getItem('token');
+        const token = readToken();
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -47,12 +47,13 @@ const refreshAccessToken = (refreshToken) => {
         refreshPromise = axios
             .post(`${API_BASE_URL}/api/auth/refresh`, { refreshToken })
             .then((res) => {
-                safeStorage.setItem('token', res.data.token);
-                // The backend may rotate the refresh token on use — store it if returned,
-                // otherwise the old one (still valid) stays in place.
-                if (res.data.refreshToken) {
-                    safeStorage.setItem('refreshToken', res.data.refreshToken);
-                }
+                // The backend ROTATES the refresh token on every call, which is what turns its
+                // expiry from a wall a fixed number of days after the login into a window
+                // measured from the last visit. Storing only the access token here would pin the
+                // session to the first refresh token's expiry and sign the viewer out on that
+                // day however much they had used the app since. A response without one is still
+                // honoured — the stored one is valid until it is replaced.
+                storeRotatedTokens({ token: res.data.token, refreshToken: res.data.refreshToken });
                 return res.data.token;
             })
             .finally(() => {
@@ -95,8 +96,7 @@ export const refreshFailureEndsSession = (refreshError) => {
 };
 
 const endSession = () => {
-    safeStorage.removeItem('token');
-    safeStorage.removeItem('refreshToken');
+    clearSession();
     // A soft signal instead of a hard `window.location.href` redirect — the latter force-reloads
     // the whole SPA even when the 401'd request came from a public page being browsed
     // anonymously. AuthContext listens for this to clear its in-memory state and the cache, and
@@ -136,7 +136,7 @@ api.interceptors.response.use(
         if (error.response?.status === 401 && !originalRequest._retry) {
             originalRequest._retry = true;
 
-            const refreshToken = safeStorage.getItem('refreshToken');
+            const refreshToken = readRefreshToken();
             if (refreshToken) {
                 try {
                     const newToken = await refreshAccessToken(refreshToken);
@@ -147,7 +147,7 @@ api.interceptors.response.use(
                         endSession();
                     }
                 }
-            } else if (safeStorage.getItem('token')) {
+            } else if (readToken()) {
                 // A 401 with an access token present but no refresh token to try — e.g. the
                 // refresh token was cleared/expired independently — used to fall straight
                 // through to Promise.reject below with no signal at all, leaving the app's
