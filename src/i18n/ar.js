@@ -17,6 +17,11 @@ export const ar = {
 
     /** Words that genuinely mean the same thing everywhere they appear. */
     common: {
+        // The two days a date-only value can name without inventing a time of day. A backend
+        // `LocalDate` carries no hour, so «منذ 15 ساعة» on it was never the upload time — it was
+        // the time of day, counted backwards from midnight (see lib/dayjsAr.js).
+        today: 'اليوم',
+        yesterday: 'أمس',
         loading: 'جاري التحميل...',
         loadMore: 'تحميل المزيد',
         // The disclosure control on a collapsed block of prose (ExpandableText). Distinct from

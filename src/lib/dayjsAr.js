@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import { t } from '@/i18n';
 
 dayjs.extend(relativeTime);
 
@@ -35,19 +36,53 @@ dayjs.locale(
     true
 );
 
-// Shared "2 days ago" / "1 month ago" convention for date-only fields (publishDate, a `LocalDate`
-// with no time-of-day) across every card/detail page that shows one — relative under a week old,
-// an absolute date past that, same threshold CommentsSection already uses for comment timestamps
-// (that one keeps a time-of-day since comments have one; this doesn't, since publish dates don't).
+/** A backend `LocalDate` — a day with no time-of-day in it. */
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Shared "2 days ago" / "1 month ago" convention for the publish dates on every card and detail
+ * page — relative under a week old, an absolute date past that, the same threshold
+ * `CommentsSection` uses for comment timestamps (that one keeps a time-of-day, since a comment has
+ * one).
+ *
+ * <p><b>A date is not a timestamp, and this is where that stopped being a detail.</b>
+ * `publishDate` and `originalPublishDate` are `LocalDate` on the backend: `"2026-09-18"`, a day
+ * and nothing else. `dayjs` parses that as local MIDNIGHT, and `fromNow()` then answers with the
+ * hours since it — so a video uploaded this afternoon read «منذ 15 ساعات», and one uploaded five
+ * minutes ago at 23:55 would have read «منذ 23 ساعات». The number is not the upload time at all;
+ * it is the time of day, counted backwards.
+ *
+ * <p>So a date-only value never produces an hour count. It can honestly say «اليوم», «أمس» and
+ * «منذ 3 أيام», because those are answers a day supports — and nothing finer, because the
+ * information is not there. A value that DOES carry a time (nothing sends one today, but the
+ * function is shared and shaped to take one) keeps the old behaviour.
+ *
+ * <p>Both branches carry the locale. Only the relative one did once, so anything older than a week
+ * fell back to dayjs's default and printed its month in English — "17 June 2007" in the middle of
+ * an otherwise Arabic card.
+ */
 export function formatPublishDate(dateStr) {
     if (!dateStr) return '';
     const date = dayjs(dateStr);
     if (!date.isValid()) return '';
-    // Both branches carry the locale. Only the relative one did, so anything older than a week
-    // fell back to dayjs's default locale and printed its month in English — "17 June 2007" in the
-    // middle of an otherwise Arabic card. Invisible while the catalogue was days old; every
-    // imported video is older than a week.
     const localised = date.locale('ar-latn');
+
+    if (DATE_ONLY.test(String(dateStr).trim())) {
+        // Whole days between two midnights, rather than hours between two instants.
+        const today = dayjs().startOf('day');
+        const days = today.diff(date.startOf('day'), 'day');
+        // A publish date in the future is bad data — an import with a wrong timezone, a typed
+        // year. «بعد يومين» on a video that is already playing reads as a broken page, where the
+        // date itself reads as a mistake in the data, which is what it is.
+        if (days < 0) return localised.format('D MMMM YYYY');
+        if (days === 0) return t('common.today');
+        if (days === 1) return t('common.yesterday');
+        // From one midnight to the other, so the phrasing is dayjs's but the unit is a day: the
+        // raw value here would round by hours and drift back into the bug above.
+        if (days < 7) return localised.startOf('day').from(today);
+        return localised.format('D MMMM YYYY');
+    }
+
     if (dayjs().diff(date, 'day') < 7) return localised.fromNow();
     return localised.format('D MMMM YYYY');
 }

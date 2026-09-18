@@ -23,6 +23,29 @@ describe('formatPublishDate', () => {
         vi.useRealTimers();
     });
 
+    it('never turns a date with no time in it into an hour count', () => {
+        // The bug someone saw on their own upload: `publishDate` is a backend LocalDate —
+        // "2026-09-18", a day and nothing else — and dayjs parses that as local MIDNIGHT, so
+        // fromNow() answered with the hours since then. A video uploaded this afternoon read
+        // «منذ 15 ساعات», and one uploaded five minutes before midnight would have read «منذ 23
+        // ساعات». The number was never the upload time; it was the time of day, backwards.
+        expect(formatPublishDate('2026-09-08')).toBe('اليوم');
+        expect(formatPublishDate('2026-09-08')).not.toMatch(/ساع/);
+    });
+
+    it('says yesterday rather than counting hours across one midnight', () => {
+        // 30 hours and 20 hours are both "أمس" to a reader, and a date cannot tell them apart
+        // anyway.
+        expect(formatPublishDate('2026-09-07')).toBe('أمس');
+    });
+
+    it('falls back to the absolute date for a publish date in the future', () => {
+        // Bad data — a wrong timezone on an import, a mistyped year. «بعد يومين» on a video that
+        // is already playing reads as a broken page; the date reads as a mistake in the data,
+        // which is what it is.
+        expect(formatPublishDate('2026-09-20')).toBe('20 سبتمبر 2026');
+    });
+
     it('is relative for something published in the last week', () => {
         // The branch, not dayjs's own pluralisation: how many days it rounds to depends on the
         // running machine's timezone, which is not what this is pinning.
