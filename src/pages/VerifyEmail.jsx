@@ -67,6 +67,15 @@ function VerifyEmail() {
                         <XCircle className="mx-auto text-red-600 dark:text-red-400" size={48} />
                         <h2 className="text-xl font-bold mt-4">{t('auth.verifyEmail.failedHeading')}</h2>
                         <p className="text-text-muted mt-2">{errorMessage}</p>
+                        {/* What to do about it. A verification link is deliberately short lived, so
+                            this state is the ordinary ending of this page rather than a rare one —
+                            and the resend button is on a banner (PageShell) that only appears once
+                            the reader is logged in, which is not somewhere they would think to
+                            look. Naming the failure and then offering a bare "log in" button left
+                            them to guess that the two were connected. */}
+                        <p className="text-text-muted mt-2 text-sm">
+                            {t('auth.verifyEmail.expiredHelp')}
+                        </p>
                         <Link to="/login" className="block mt-6">
                             <Button variant="outline" fullWidth>{t('auth.verifyEmail.loginLink')}</Button>
                         </Link>

@@ -327,6 +327,12 @@ export const ar = {
             failedHeading: 'تعذر التوثيق',
             invalidLink: 'رابط التوثيق غير صالح',
             expiredLink: 'انتهت صلاحية رابط التوثيق أو أنه غير صالح',
+            // The way out, and it has to be said rather than implied. A verification link is short
+            // lived, so "expired" is the ordinary ending of this page and not a rare one — and the
+            // resend button lives behind a login, on a banner the reader has not seen yet. Without
+            // this sentence the page named a problem and offered a button that looks unrelated to
+            // it.
+            expiredHelp: 'سجّل الدخول ثم اطلب رابطاً جديداً من التنبيه الظاهر أعلى الصفحة.',
             loginLink: 'تسجيل الدخول',
         },
         verificationNotice: {
