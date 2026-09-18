@@ -104,8 +104,10 @@ function ImportDot({ indicator }) {
 export default function ChannelManageNav({ channel, activeTab, onSelect, youtubeState }) {
     const indicator = importIndicator(youtubeState);
 
+    // Sticks under the navbar, whose height Navbar measures into `--navbar-h` — the 60px this
+    // used to hardcode was a pixel short of the bar plus its border.
     return (
-        <aside className="bg-surface border-b border-border-light lg:border-b-0 lg:border-l lg:w-[240px] lg:flex-shrink-0 lg:sticky lg:top-[60px] lg:h-[calc(100vh-60px)] lg:overflow-y-auto">
+        <aside className="bg-surface border-b border-border-light lg:border-b-0 lg:border-l lg:w-[240px] lg:flex-shrink-0 lg:sticky lg:top-[var(--navbar-h)] lg:h-[calc(100vh-var(--navbar-h))] lg:overflow-y-auto">
             <div className="flex items-center gap-3 px-4 py-3 lg:p-4 border-b border-border-light">
                 <Avatar src={channel.logoUrl} name={channel.name} color={channel.primaryColor} size="md" />
                 <div className="min-w-0">

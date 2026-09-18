@@ -22,7 +22,7 @@ This repo's part is `lib/telemetry.js` (Grafana Faro RUM); don't restate the des
 src/
   components/
     ui/        Button, Card, Input, Modal, Badge, Grid, Spinner, EmptyState, QueryState, Avatar,
-               LinkifiedText, ExpandableText
+               LinkifiedText, ExpandableText, SwapLabel
     layout/    Navbar, SideBar, PageShell, SearchBar
     content/   VideoCard, BookCard, ArticleCard, PostCard, VideoPlayer, VideoControlBar,
                PlayerSettingsMenu, PdfReader, CommentsSection, BookmarkButton, LikeButton,
@@ -78,6 +78,21 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   existed working. Both halves are needed and neither substitutes for the other: a 90-day refresh
   token in `sessionStorage` still dies with the tab, and a persisted one still expires. A refresh
   rotates **in place** (`storeRotatedTokens`) — it is not a new session and must not re-tier one.
+- **Anything that sticks under the navbar positions against `--navbar-h`**, which `Navbar`
+  measures into on mount and on every resize. The `60px` two sidebars used to hardcode was a pixel
+  short of the bar plus its border, so their top edge painted over it on scroll — and it cannot be
+  a constant anyway: the logo and wordmark change size at `sm`, and the Arabic webfont arrives
+  after first paint (`display=swap`) and re-lays the line box. The sidebar is also `z-[1100]` as a
+  phone drawer and `lg:z-[900]` as a desktop column — one element, opposite stacking, and at the
+  navbar's own 1000 the tie was broken by document order.
+- **A control that changes its words must not change its size** — `SwapLabel` renders every
+  wording in one grid cell so the widest fixes the width. A button that resizes on the press moves
+  under the finger that pressed it and shoves its neighbours sideways, twice. `SubscribeButton`
+  does it by hand because CSS, not a prop, picks its face.
+- **A mutation behind a toggle writes the cache in `onMutate`**, rolls back in `onError` and
+  invalidates in `onSettled` (`useToggleSubscription`, `useToggleContentVisibility`). Waiting for
+  the server means the control ignores the press for a round trip and then jumps; cancel in-flight
+  queries first or a refetch lands afterwards and puts the old answer back.
 - **`PageShell` + `QueryState`** are the shared shells: don't hand-roll `<Navbar/><SideBar/><main>` or
   another loading/error/empty ternary.
 - **Errors go through `lib/describeError.js`**, which prefers the backend's `reason` code (worded in

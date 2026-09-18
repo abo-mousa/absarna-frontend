@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import { Button, FilePicker } from '@/components/ui';
+import { Button, FilePicker, SwapLabel } from '@/components/ui';
 import { t } from '@/i18n';
 
 /**
@@ -84,8 +84,13 @@ function ContentPublishForm({ heading, onSubmit, file, submitLabel, submitIcon, 
                 A press while the FILE is still uploading is the other one: there is no session id
                 in form state yet, so the request goes out without it and comes back a 400 the
                 owner can do nothing useful with, having watched a progress bar to no purpose. */}
+            {/* Both wordings are rendered, so the button does not change width at the moment it
+                is pressed — see SwapLabel. */}
             <Button type="submit" icon={submitIcon} disabled={submitting || Boolean(file?.uploading)}>
-                {submitting ? t('common.sending') : submitLabel}
+                <SwapLabel
+                    showing={submitting ? 'sending' : 'resting'}
+                    faces={{ resting: submitLabel, sending: t('common.sending') }}
+                />
             </Button>
         </form>
     );

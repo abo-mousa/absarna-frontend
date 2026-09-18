@@ -13,3 +13,4 @@ export { default as QueryState } from './QueryState';
 export { default as Pager } from './Pager';
 export { default as LinkifiedText } from './LinkifiedText';
 export { default as ExpandableText } from './ExpandableText';
+export { default as SwapLabel } from './SwapLabel';

@@ -25,7 +25,7 @@ import { t } from '@/i18n';
 //
 // So the outer div is now a column and the row takes `flex-1`: the row absorbs whatever height is
 // left and the footer sits on the bottom edge, while a long page simply pushes it below the fold.
-// Nothing about the sidebar moves — on desktop it is `lg:sticky lg:top-[60px]` inside that row and
+// Nothing about the sidebar moves — on desktop it is `lg:sticky lg:top-[var(--navbar-h)]` inside that row and
 // sticky positioning is unaffected by the parent being a flex item, and on mobile it is `fixed`,
 // which takes it out of the flow entirely.
 function PageShell({ children, sidebar = true, currentChannel, contentClassName = '' }) {

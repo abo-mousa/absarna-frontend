@@ -334,6 +334,32 @@ export const useUpdateChannelContent = (slug, type) => {
     });
 };
 
+/**
+ * Flips one item's `visible` in a cached page of the manage list.
+ *
+ * <p>Exported and tested on its own: it is the shape of the paged response that makes this
+ * fiddly, and there is no jsdom here to press the button in.
+ */
+export const withVisibilityFlipped = (page, itemId, visible) => (
+    Array.isArray(page?.content)
+        ? { ...page, content: page.content.map((row) => (row.id === itemId ? { ...row, visible } : row)) }
+        : page
+);
+
+/**
+ * Shows or hides one item from visitors.
+ *
+ * <p><b>Optimistic, like the subscribe toggle and for the same reason.</b> Waiting for the server
+ * meant the eye icon did not move until a PATCH *and* the list refetch it triggers had both come
+ * back: two round trips during which the owner's press had no visible effect at all, and then the
+ * row changed under them. On a control whose entire output is one icon, that reads as a button
+ * that ignored the press and then glitched.
+ *
+ * <p>Every cached page is written, matched by prefix — the list is paged and per-series, and the
+ * viewer's scope is the last segment of the key (lib/queryKeys.js), none of which this hook has.
+ * `onSettled`, not `onSuccess`: a refetch after a failure is what replaces the rolled-back guess
+ * with the server's answer.
+ */
 export const useToggleContentVisibility = (slug, type) => {
     const queryClient = useQueryClient();
 
@@ -343,7 +369,26 @@ export const useToggleContentVisibility = (slug, type) => {
                 visible: !item.visible,
             });
         },
-        onSuccess: () => invalidateChannelContent(queryClient, slug, type),
+        onMutate: async (item) => {
+            // A refetch already in flight would land after this write and put the old answer
+            // back, which is the same flicker arriving by a different route.
+            await queryClient.cancelQueries({ queryKey: ['channel-manage', slug, type] });
+            const previous = queryClient.getQueriesData({ queryKey: ['channel-manage', slug, type] });
+            queryClient.setQueriesData(
+                { queryKey: ['channel-manage', slug, type] },
+                (page) => withVisibilityFlipped(page, item.id, !item.visible),
+            );
+            return { previous };
+        },
+        onError: (_error, _item, context) => {
+            // Back to exactly what was there. A row left claiming a visibility the server refused
+            // is worse than one that never moved: the next press would send the opposite request
+            // to the one the owner means.
+            for (const [key, data] of context?.previous ?? []) {
+                queryClient.setQueryData(key, data);
+            }
+        },
+        onSettled: () => invalidateChannelContent(queryClient, slug, type),
     });
 };
 

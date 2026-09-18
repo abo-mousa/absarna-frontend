@@ -53,6 +53,21 @@ function ChannelRow({ slug, name, color, currentChannel, onClose, manageLink }) 
     );
 }
 
+/**
+ * The panel itself: a phone drawer and a desktop column, which want opposite stacking.
+ *
+ * <p>As a drawer it is over everything, the navbar included. As a column it sits <em>under</em> the
+ * navbar, which is the element it shares a top edge with — and at the same z-index as the navbar
+ * (both were 1000) that tie was broken by document order, so the column won and painted over the
+ * bar as soon as the page scrolled.
+ *
+ * <p>`--navbar-h` is measured and published by `Navbar`; see the note there for why the `60px`
+ * this used to hardcode was a pixel short of the bar, and why it cannot be a constant.
+ */
+const surfaceClass = `w-[240px] bg-surface border-l border-border-light py-3 overflow-y-auto flex-shrink-0
+    fixed right-0 top-0 bottom-0 z-[1100]
+    lg:sticky lg:top-[var(--navbar-h)] lg:h-[calc(100vh-var(--navbar-h))] lg:z-[900] outline-none`;
+
 function SideBar({ currentChannel, open = false, onClose }) {
     const { token } = useAuth();
     const location = useLocation();
@@ -92,8 +107,7 @@ function SideBar({ currentChannel, open = false, onClose }) {
                 aria-modal={open ? 'true' : undefined}
                 aria-label={open ? t('nav.sideMenu') : undefined}
                 tabIndex={-1}
-                className={`w-[240px] bg-surface border-l border-border-light py-3 overflow-y-auto flex-shrink-0
-                    fixed right-0 top-0 bottom-0 lg:sticky lg:top-[60px] lg:h-[calc(100vh-60px)] z-[1000] outline-none
+                className={`${surfaceClass}
                     transition-transform duration-200 ${open ? 'translate-x-0' : 'translate-x-full'} lg:translate-x-0`}
             >
                 <div className="px-2 mb-4">

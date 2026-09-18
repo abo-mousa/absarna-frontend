@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Upload, User, Shield, LogOut, Menu, Sun, Moon } from 'lucide-react';
@@ -19,6 +20,35 @@ function Navbar({ onMenuClick }) {
 
     const location = useLocation();
     const queryClient = useQueryClient();
+    const navRef = useRef(null);
+
+    /**
+     * Publishes this bar's height as `--navbar-h`, which is where the sidebar sticks to.
+     *
+     * <p>That offset used to be the literal `60px` written in SideBar, and the bar is 61 — the
+     * 60px of content plus its own bottom border. So the sidebar stuck one pixel too high and its
+     * top edge painted over the bar's border the moment the page scrolled: a thin seam that moved
+     * with the scroll, on every page with a sidebar.
+     *
+     * <p>Measured rather than corrected to 61, because the height is not a constant. The logo and
+     * the wordmark change size at `sm`, the Arabic webfont arrives after first paint
+     * (`display=swap`) and re-lays the line box it sits in, and an admin's extra control is a
+     * taller item than the rest. A number typed here is right until any of those moves.
+     */
+    useEffect(() => {
+        const bar = navRef.current;
+        if (!bar || typeof ResizeObserver === 'undefined') return undefined;
+        const publish = () => {
+            // getBoundingClientRect, not offsetHeight: it is fractional, and a bar that is 60.5
+            // tall rounded down is the same one-pixel seam by another route.
+            document.documentElement.style.setProperty(
+                '--navbar-h', `${bar.getBoundingClientRect().height}px`);
+        };
+        publish();
+        const observer = new ResizeObserver(publish);
+        observer.observe(bar);
+        return () => observer.disconnect();
+    }, []);
 
     /**
      * Clicking the wordmark while already on the home page refreshes it.
@@ -50,7 +80,7 @@ function Navbar({ onMenuClick }) {
     const uploadLink = myChannels.length > 0 ? `/channel/${myChannels[0].slug}/manage` : '/create-channel';
 
     return (
-        <nav className="sticky top-0 z-[1000] bg-bg/95 backdrop-blur-md border-b border-border-light">
+        <nav ref={navRef} className="sticky top-0 z-[1000] bg-bg/95 backdrop-blur-md border-b border-border-light">
             <div className="max-w-[1400px] mx-auto flex items-center gap-3 sm:gap-5 px-3 sm:px-6 py-2.5">
                 <button
                     onClick={onMenuClick}

@@ -25,6 +25,12 @@
     --color-text-primary: 31 36 33; /* #1F2421 */
     --color-text-secondary: 107 100 89; /* #6B6459 */
     --color-text-muted: 154 147 132; /* #9A9384 */
+
+    /* The sticky navbar's height, which the sidebar sticks directly under. Navbar measures itself
+       and overwrites this on mount; the value here is only what the very first paint uses, and is
+       the height of a bar with the webfont already cached. Not a theme token — it lives here
+       because it is read from a Tailwind arbitrary value in SideBar, which needs it on :root. */
+    --navbar-h: 61px;
   }
 
   .dark {

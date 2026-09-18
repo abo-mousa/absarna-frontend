@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Check, ExternalLink, Play, X } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
 import { VideoPlayer } from '../components/content';
-import { Badge, Button, Modal, Pager, QueryState } from '../components/ui';
+import { Badge, Button, Modal, Pager, QueryState, SwapLabel } from '../components/ui';
 import { useToast } from '../contexts/ToastContext';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { useReviewQueue, useDecideReview } from '../hooks/useReview';
@@ -349,9 +349,15 @@ function AdminReview() {
                                             disabled={decide.isPending}
                                             onClick={() => submit(selected.videoId, REVIEW_STATE.CLEARED)}
                                         >
-                                            {decide.isPending
-                                                ? t('admin.musicReview.clearing')
-                                                : t('admin.musicReview.clear')}
+                                            {/* Both wordings rendered, so the button keeps its
+                                                width through the press — see SwapLabel. */}
+                                            <SwapLabel
+                                                showing={decide.isPending ? 'deciding' : 'resting'}
+                                                faces={{
+                                                    resting: t('admin.musicReview.clear'),
+                                                    deciding: t('admin.musicReview.clearing'),
+                                                }}
+                                            />
                                         </Button>
                                         {/* Rejection is the one that takes something away from an
                                             uploader, so it is the one that asks first. Clearing is
@@ -410,9 +416,13 @@ function AdminReview() {
                             disabled={decide.isPending}
                             onClick={() => submit(confirmingReject.videoId, REVIEW_STATE.REJECTED)}
                         >
-                            {decide.isPending
-                                ? t('admin.musicReview.rejecting')
-                                : t('admin.musicReview.confirmRejectAction')}
+                            <SwapLabel
+                                showing={decide.isPending ? 'deciding' : 'resting'}
+                                faces={{
+                                    resting: t('admin.musicReview.confirmRejectAction'),
+                                    deciding: t('admin.musicReview.rejecting'),
+                                }}
+                            />
                         </Button>
                     </div>
                 </Modal>
