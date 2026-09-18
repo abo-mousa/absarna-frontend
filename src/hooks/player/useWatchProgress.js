@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api/client';
 import { flushOnUnload } from '@/lib/api/beacon';
-import { watchThreshold } from '@/lib/player/playback';
+import { isDuplicateReport, watchThreshold } from '@/lib/player/playback';
 
 /**
  * Records how far into a video the viewer got.
@@ -13,6 +13,11 @@ import { watchThreshold } from '@/lib/player/playback';
  * hard refresh/tab-close case. Shared by the native-element and YouTube-embed players, which is
  * why it takes a `positionOf` callback rather than an element — a YouTube iframe has no
  * `currentTime`, only `getCurrentTime()`.
+ *
+ * <p>They are not mutually exclusive, so the last playhead handed to the network is remembered and
+ * a repeat of it is dropped (`isDuplicateReport`) — two of these paths fire in the same moment on
+ * the way out of a page, and on a first watch both requests insert and one dies on the backend's
+ * unique constraint.
  *
  * @param videoId    the row to write against
  * @param positionOf returns the playhead in seconds, or null when there is nothing to read
@@ -32,23 +37,50 @@ export function useWatchProgress(videoId, positionOf) {
     // the caller's closure changes identity.
     const positionRef = useRef(positionOf);
     positionRef.current = positionOf;
+    // The last report handed to the network, and — separately — the one still on the wire, which
+    // only the axios path ever has. Both are read by the `pagehide` flush below.
+    const sentRef = useRef(null);
+    const inFlightRef = useRef(null);
 
     const report = useCallback((seconds, auth = authRef.current) => {
         const { token: authToken, videoId: authVideoId } = auth;
         if (!authToken || !authVideoId) return;
         const progressSeconds = Math.floor(seconds);
         if (progressSeconds < watchThreshold(durationRef.current)) return;
+
+        const pending = { videoId: authVideoId, progressSeconds, at: Date.now() };
+        if (isDuplicateReport(sentRef.current, pending)) return;
+        sentRef.current = pending;
+
+        // This write goes straight through axios, bypassing React Query, so nothing else marks the
+        // cached ['watch-history'] query stale — and the app-wide QueryClient has refetchOnMount
+        // disabled, so History/Home/Bookmarks would keep serving the pre-watch snapshot for up to
+        // its 60s staleTime. Invalidating is what makes a partial watch show up without a full
+        // page reload.
+        const invalidate = () => queryClient.invalidateQueries({ queryKey: ['watch-history'] });
+
+        // A hidden page is a page that may never get another turn: the tab is closing, or the
+        // phone's browser is on its way to the background where it can be killed without notice.
+        // A normal XHR issued there is cancelled mid-flight by an unload that follows, so this
+        // takes the same keepalive path `pagehide` does — which is also what lets that listener
+        // recognise this report as already sent instead of sending it a second time.
+        if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+            flushOnUnload(`/videos/${authVideoId}/watch`, { progressSeconds });
+            invalidate();
+            return;
+        }
+
+        inFlightRef.current = pending;
         api.post(`/videos/${authVideoId}/watch`, { progressSeconds })
-            .then(() => {
-                // This write goes straight through axios, bypassing React Query, so nothing else
-                // marks the cached ['watch-history'] query stale — and the app-wide QueryClient
-                // has refetchOnMount disabled, so History/Home/Bookmarks would keep serving the
-                // pre-watch snapshot for up to its 60s staleTime. Invalidating here is what makes
-                // a partial watch show up without a full page reload.
-                queryClient.invalidateQueries({ queryKey: ['watch-history'] });
-            })
+            .then(invalidate)
             .catch(() => {
-                // Best-effort: never let a failed watch-history write disrupt playback.
+                // Best-effort: never let a failed watch-history write disrupt playback. Forgetting
+                // it is what lets the same position be sent again rather than deduped against a
+                // write that never landed.
+                if (sentRef.current === pending) sentRef.current = null;
+            })
+            .finally(() => {
+                if (inFlightRef.current === pending) inFlightRef.current = null;
             });
     }, [queryClient]);
 
@@ -76,6 +108,14 @@ export function useWatchProgress(videoId, positionOf) {
             const seconds = positionRef.current?.() ?? 0;
             const progressSeconds = Math.floor(seconds);
             if (!id || progressSeconds < watchThreshold(durationRef.current)) return;
+
+            const pending = { videoId: id, progressSeconds, at: Date.now() };
+            // The usual case is that `visibilitychange` already beaconed this exact position a
+            // moment ago, and sending it again is what puts two inserts in flight at once. An
+            // axios request still on the wire is the exception and not a reason to stay quiet:
+            // unload is about to cancel it, so this is the only copy that will arrive.
+            if (!inFlightRef.current && isDuplicateReport(sentRef.current, pending)) return;
+            sentRef.current = pending;
             flushOnUnload(`/videos/${id}/watch`, { progressSeconds });
         };
         window.addEventListener('pagehide', handlePageHide);

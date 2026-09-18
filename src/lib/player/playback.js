@@ -38,6 +38,29 @@ export const watchThreshold = (durationSeconds) => {
 };
 
 /**
+ * Whether a progress report repeats one already handed to the network.
+ *
+ * <p>The four report paths are not mutually exclusive, and on the way out of a page two of them
+ * fire in the same moment: leaving the tab pauses the element (`useResumeAfterBackground`), whose
+ * `pause` event reports, and `pagehide` flushes the same playhead a beat later. Pausing and then
+ * navigating away pairs the same way with the unmount flush. On a video the viewer has never
+ * watched there is no history row yet, so both requests take the backend's insert branch and the
+ * loser dies on the `(user_id, video_id)` unique constraint — one write silently lost, and a WARN
+ * in the backend log for every first watch.
+ *
+ * <p>Only a repeat of the *same second of the same video* is dropped, and only inside the
+ * checkpoint interval: beyond that the position has stood still long enough that re-sending it is
+ * a deliberate refresh of when it was last watched, not an echo of a single exit.
+ *
+ * <p>This narrows the window; it does not close it. Two tabs, or a phone and a laptop, race the
+ * same way and no client-side guard reaches that — the backend's write has to be an upsert.
+ */
+export const isDuplicateReport = (last, { videoId, progressSeconds, at }) => Boolean(last)
+    && last.videoId === videoId
+    && last.progressSeconds === progressSeconds
+    && at - last.at < PROGRESS_REPORT_INTERVAL_MS;
+
+/**
  * The label for one rung of the ladder.
  *
  * Most rung names — "1080p", "720p" — are not words and are shown as the worker produced them;
