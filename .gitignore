@@ -19,3 +19,13 @@ pnpm-debug.log*
 
 # OS
 .DS_Store
+
+# Personal, machine-specific: grants read access to the two sibling repos so a
+# cross-repo review can read them. Absolute paths, so it must not be committed.
+.claude/settings.local.json
+
+# The filled-in build config for a real deployment. `.env.example` is the tracked one and
+# documents every key; this copy names live hosts, so it stays on the machine that builds.
+.env
+.env.production
+.env.local
