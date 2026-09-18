@@ -43,6 +43,29 @@ export const RESUME_STALL_CHECK_MS = 1000;
 const ADVANCE_EPSILON_SECONDS = 0.05;
 
 /**
+ * Whether leaving the page should stop this video.
+ *
+ * <p><b>Why the page has to decide this at all.</b> Leaving the browser does not reliably stop a
+ * video. Chrome on Android keeps the audio going and puts a media notification in the shade — a
+ * deliberate feature, and the right one for a music site — so a lecture opened and left behind
+ * carries on talking into somebody's pocket, spending their data on video frames nobody is
+ * watching. iOS stops it, most desktop browsers do not.
+ *
+ * <p><b>The two exceptions are the whole reason this is a function.</b> Picture-in-picture and
+ * casting are the cases where playing on with the page hidden IS the feature — the viewer asked
+ * for exactly that, one of them by pressing a button in this player — and pausing them would make
+ * the two controls look broken: a PiP window that freezes the moment it is any use is not
+ * picture-in-picture. Everything else stops.
+ *
+ * <p>Exported and tested because neither exception can be produced in this repo: there is no
+ * jsdom, no second window and no television.
+ */
+export const shouldPauseWhenHidden = ({ playing, pictureInPicture, castingToRemote }) => {
+    if (!playing) return false;
+    return !pictureInPicture && !castingToRemote;
+};
+
+/**
  * What a player that has just come back to the foreground needs, before anything has been tried:
  * `'none'`, `'play'` or `'reload'`.
  *

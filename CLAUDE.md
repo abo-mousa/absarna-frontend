@@ -42,6 +42,14 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
 
 ## Conventions
 
+- **Two Arabic faces, and the split is prose vs interface.** `font-sans` is Cairo — buttons, nav,
+  cards, counts, anything that is a label. `font-reading` is Noto Naskh Arabic, for prose someone
+  *wrote* (comments) and prose someone *reads at length* (video and book descriptions, article
+  bodies, the legal pages); the comment box uses it too, so what you type looks like what lands.
+  `font-serif` (Markazi Text) stays the wordmark and reading-page headings. **Cairo replaced IBM
+  Plex Sans Arabic because Plex has no ligature rule for «الله»** — the glyph is in the font and
+  nothing forms it — and a fallback font cannot fix that, since fallback is per missing CHARACTER
+  and lam/lam/heh all exist in Plex.
 - **Tailwind only.** Brand colours are theme tokens resolving through CSS custom properties
   (`rgb(var(--color-x) / <alpha-value>)`), with light values on `:root` and dark under `.dark` in
   `index.css` — which is why dark mode is a two-file change and every existing `bg-surface` call site
@@ -112,6 +120,12 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
 - **A centre pause disc shows while a video is playing and the controls are up**, fading with them
   rather than unmounting. The older rule still holds for the *paused* state: no 64px disc over a
   frame someone paused in order to read.
+- **Leaving the browser stops the video** (`shouldPauseWhenHidden`). Chrome on Android keeps the
+  audio going with a media notification — deliberate, and right for a music site — so a lecture
+  left behind carried on talking on someone's data. Picture-in-picture and casting are exempt:
+  those are the two cases where playing on with the page hidden is what the viewer *asked for*.
+  Nothing ever presses play on return, either — a video the app paused stays paused until the
+  viewer says otherwise.
 - **Coming back from the background is its own failure and its own repair** (`lib/player/resume.js`,
   `useResumeAfterBackground`). Backgrounding a phone browser aborts the fetches in flight, which on
   the hls.js path is a fatal NETWORK_ERROR: handled as an ordinary one it spent the whole refresh
@@ -122,7 +136,9 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   case: not paused, no error, not moving. The repair differs by path — hls.js gets `startLoad` at
   the playhead (plus `recoverMediaError` if the element is errored), the element-owned paths get a
   `load()` with the position and play state carried in the same two refs a quality switch uses.
-  Nothing resumes a video the viewer had paused before they left.
+  Nothing resumes a video the viewer had paused before they left — and since the app now pauses on
+  the way out, nothing resumes anything: `wasPlaying` survives only to tell the repair whether
+  there was something to repair.
 - **On the HLS path the element has no `duration` until the first play** — `autoStartLoad: false`
   defers the *level* playlist (the master is parsed, which is where the quality list comes from),
   and the length lives in the level playlist. So the bar shows `VideoDTO.duration` (a display

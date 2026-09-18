@@ -13,7 +13,7 @@ import ReportButton from './ReportButton';
 function PostCard({ post }) {
     return (
         <div className="bg-surface rounded-lg p-5 border border-border-light shadow-sm">
-            <p className="text-text-primary leading-relaxed whitespace-pre-wrap">{post.content}</p>
+            <p className="font-reading text-text-primary leading-relaxed whitespace-pre-wrap">{post.content}</p>
             <div className="flex items-center justify-between gap-3 mt-3">
                 {/* Always rendered, even with no date: it is what holds the report control at the
                     far edge, since `justify-between` on a lone child places it at the start. */}

@@ -68,7 +68,7 @@ function ArticleDetail() {
                         </span>
                     </div>
 
-                    <div className="whitespace-pre-wrap leading-[2.2] text-[1.05rem] text-text-primary">
+                    <div className="font-reading whitespace-pre-wrap leading-[2.2] text-[1.05rem] text-text-primary">
                         {article.content}
                     </div>
                 </div>

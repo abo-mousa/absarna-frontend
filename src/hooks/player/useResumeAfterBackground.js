@@ -1,5 +1,10 @@
 import { useEffect, useRef } from 'react';
-import { RESUME_STALL_CHECK_MS, resumeAction, stillStalled } from '@/lib/player/resume';
+import {
+    RESUME_STALL_CHECK_MS,
+    resumeAction,
+    shouldPauseWhenHidden,
+    stillStalled,
+} from '@/lib/player/resume';
 
 /**
  * Puts a video back together after the phone took it away.
@@ -17,9 +22,18 @@ import { RESUME_STALL_CHECK_MS, resumeAction, stillStalled } from '@/lib/player/
  * page was away and the playhead is not moving. A viewer has no reason to suspect the app rather
  * than the video, so the app has to notice on their behalf.
  *
- * <p>Nothing here resumes a video the viewer had paused on purpose before they left — `wasPlaying`
- * is recorded on the way out for exactly that reason. Coming back to a lecture playing itself is a
- * different bug, and a louder one, in a mosque or a quiet room.
+ * <p><b>It also stops the video on the way out, and that half is not a detail.</b> Leaving the
+ * browser does not reliably stop a video — Chrome on Android keeps the audio going with a media
+ * notification, which is deliberate and is the right default for a music site — so a lecture
+ * opened and left behind carried on talking into somebody's pocket, on their data. See
+ * `shouldPauseWhenHidden` for the two cases where playing on IS what the viewer asked for.
+ *
+ * <p><b>And nothing here ever presses play for anybody.</b> A video this hook paused stays paused
+ * until the viewer says otherwise: resuming on return would undo the stop they just watched
+ * happen, and starting a lecture by itself is a worse thing to get wrong than not starting it — in
+ * a mosque, a lecture hall or a quiet room it is the one failure everybody in earshot notices.
+ * `wasPlaying` is still recorded, because the REPAIR below needs to know whether there was
+ * anything to repair; it is not a licence to start playing.
  *
  * @param videoRef   the element to watch
  * @param enabled    off unless there is an element (the YouTube and link branches have none)
@@ -41,8 +55,21 @@ export function useResumeAfterBackground({ videoRef, enabled = true, onRecover }
         const remember = () => {
             const el = videoRef.current;
             if (!el) return;
-            wasPlayingRef.current = !el.paused && !el.ended;
+            const playing = !el.paused && !el.ended;
+            wasPlayingRef.current = playing;
             positionRef.current = el.currentTime;
+
+            if (shouldPauseWhenHidden({
+                playing,
+                pictureInPicture: typeof document !== 'undefined'
+                    && document.pictureInPictureElement === el,
+                // Safari's own property, and the only page-visible sign that the sound is coming
+                // out of a television rather than the phone. Absent everywhere else, which reads
+                // as false and is correct there.
+                castingToRemote: Boolean(el.webkitCurrentPlaybackTargetIsWireless),
+            })) {
+                el.pause();
+            }
         };
 
         const recover = () => {
@@ -54,7 +81,10 @@ export function useResumeAfterBackground({ videoRef, enabled = true, onRecover }
                 position: Number.isFinite(el?.currentTime) && el.currentTime > 0
                     ? el.currentTime
                     : positionRef.current,
-                resume: wasPlayingRef.current,
+                // Never true for a video this hook paused. A repair puts the source and the
+                // position back; whether to play is the viewer's, and they have just been shown a
+                // stopped video.
+                resume: wasPlayingRef.current && !el?.paused,
             });
         };
 
@@ -74,19 +104,20 @@ export function useResumeAfterBackground({ videoRef, enabled = true, onRecover }
                 recover();
                 return;
             }
-            if (action === 'play') {
-                // Rejected where the platform requires a fresh gesture to start audio, which is
-                // fine and is not this hook's business: the viewer presses play and it works,
-                // because the thing that was broken — nothing loading — is handled below.
-                el.play().catch(() => {});
-            }
+            // `'play'` is deliberately not acted on. It is the honest reading of the element's
+            // state — it was playing, it is paused, so continuing is what would put it back — but
+            // this hook is why it is paused, and pressing play here would hand the viewer back a
+            // lecture they watched stop when they left. They start it again, or they do not.
             if (!wasPlayingRef.current) return;
 
             // The quiet case, and the one that needs a second look rather than a single read:
             // an element that is not paused, holds no error, and is not moving because whatever
             // was feeding it stopped while the page was hidden. A `readyState` sampled in the same
             // task as the visibility change says almost nothing, so the answer is whether the
-            // playhead has gone anywhere a second later.
+            // playhead has gone anywhere a second later. It survives the pause above because
+            // picture-in-picture and casting are exempt from it — they are exactly the two
+            // sessions still running while nobody is looking, and the two with nobody watching to
+            // notice that they stalled.
             const before = el.currentTime;
             checkTimerRef.current = setTimeout(() => {
                 const current = videoRef.current;

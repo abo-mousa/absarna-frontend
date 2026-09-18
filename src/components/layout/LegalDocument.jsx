@@ -59,7 +59,11 @@ function LegalDocument({ doc }) {
     }, []);
 
     return (
-        <article>
+        // `font-reading` on the whole document rather than paragraph by paragraph: a privacy
+        // policy is the longest continuous prose in the app and the one page nobody reads twice,
+        // so it gets the reading face and keeps it through its lists and its table of contents.
+        // The headings inherit it too, which is right — they are sentences here, not labels.
+        <article className="font-reading">
             <h1 className="text-3xl font-serif font-bold mb-3">{doc?.title}</h1>
 
             {/* Stated at the top and in muted type: it is the first thing a careful reader looks

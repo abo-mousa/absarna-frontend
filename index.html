@@ -37,8 +37,13 @@
          with no shadda and no dagger alif. A fallback font cannot fix that — fallback is per
          MISSING CHARACTER, and lam, lam and heh all exist in Plex, so the browser never looks
          further. Verified against the font files rather than by eye: Plex has 0 such ligature
-         rules, Cairo, Tajawal, Noto Naskh Arabic and Markazi Text each have one or two. -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Cairo:wght@300;400;500;600;700&family=Rubik:wght@300;400;500;600;700&family=Markazi+Text:wght@500;600;700&display=swap"
+         rules, Cairo, Tajawal, Noto Naskh Arabic and Markazi Text each have one or two.
+
+         Noto Naskh Arabic is the reading face, for prose people wrote and prose people read at
+         length — comments, descriptions, article bodies (`font-reading`). Naskh is the shape
+         Arabic is read in at length, and a catalogue of lectures and books is mostly that; the
+         interface stays sans, because a button is a label rather than something to read. -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Cairo:wght@300;400;500;600;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Rubik:wght@300;400;500;600;700&family=Markazi+Text:wght@500;600;700&display=swap"
           rel="stylesheet">
     <script>
       // Applied synchronously, before React/CSS paint anything, so a dark-mode visitor never

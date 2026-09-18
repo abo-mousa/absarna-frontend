@@ -44,6 +44,11 @@ export default {
         sans: ['Cairo', 'Rubik', 'Inter', 'sans-serif'],
         // Wordmark and reading-page headings only — see CLAUDE.md's rebrand note.
         serif: ['Markazi Text', 'Amiri', 'serif'],
+        // Prose: what a reader WROTE (comments) and what a reader reads at length (descriptions,
+        // article bodies). Naskh is the shape Arabic is read in at length, and this catalogue is
+        // mostly that. The interface stays `sans` — a button is a label, not something to read —
+        // so the two faces never meet inside one sentence, only across a page.
+        reading: ['Noto Naskh Arabic', 'Amiri', 'serif'],
       },
       borderRadius: {
         sm: '6px',

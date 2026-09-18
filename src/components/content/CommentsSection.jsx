@@ -169,7 +169,7 @@ function CommentsSection({ type, id }) {
                 maxLength={MAX_COMMENT_LENGTH}
                 rows={2}
                 autoFocus
-                className="px-3 py-2 rounded-md border border-border outline-none focus:border-primary transition-colors"
+                className="font-reading px-3 py-2 rounded-md border border-border outline-none focus:border-primary transition-colors"
             />
             <div className="flex items-center justify-between">
                 <span className="text-xs text-text-muted">{editContent.length}/{MAX_COMMENT_LENGTH}</span>
@@ -211,7 +211,7 @@ function CommentsSection({ type, id }) {
                         onChange={(e) => setNewComment(e.target.value)}
                         maxLength={MAX_COMMENT_LENGTH}
                         rows={3}
-                        className="px-3.5 py-2.5 rounded-md border border-border resize-y outline-none focus:border-primary transition-colors"
+                        className="font-reading px-3.5 py-2.5 rounded-md border border-border resize-y outline-none focus:border-primary transition-colors"
                     />
                     <div className="flex items-center justify-between">
                         <span className="text-xs text-text-muted">{newComment.length}/{MAX_COMMENT_LENGTH}</span>
@@ -249,7 +249,7 @@ function CommentsSection({ type, id }) {
                             {editingId === comment.id ? (
                                 renderEditForm(comment)
                             ) : (
-                                <p className="text-text-secondary leading-relaxed">{comment.content}</p>
+                                <p className="font-reading text-text-secondary leading-relaxed">{comment.content}</p>
                             )}
 
                             {token && editingId !== comment.id && (
@@ -269,7 +269,7 @@ function CommentsSection({ type, id }) {
                                         onChange={(e) => setReplyContent(e.target.value)}
                                         maxLength={MAX_COMMENT_LENGTH}
                                         rows={2}
-                                        className="px-3 py-2 rounded-md border border-border outline-none focus:border-primary transition-colors"
+                                        className="font-reading px-3 py-2 rounded-md border border-border outline-none focus:border-primary transition-colors"
                                     />
                                     <div className="flex items-center justify-between">
                                         <span className="text-xs text-text-muted">{replyContent.length}/{MAX_COMMENT_LENGTH}</span>
@@ -298,7 +298,7 @@ function CommentsSection({ type, id }) {
                                             {editingId === reply.id ? (
                                                 renderEditForm(reply)
                                             ) : (
-                                                <p className="text-sm text-text-secondary mt-1">{reply.content}</p>
+                                                <p className="font-reading text-sm text-text-secondary mt-1 leading-relaxed">{reply.content}</p>
                                             )}
                                         </div>
                                     ))}

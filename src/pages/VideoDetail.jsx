@@ -236,7 +236,7 @@ function VideoDetail() {
                         only appears when there is something under it — see ExpandableText. */}
                     {video.description && (
                         <ExpandableText>
-                            <LinkifiedText text={video.description} className="text-text-secondary leading-loose" />
+                            <LinkifiedText text={video.description} className="font-reading text-text-secondary leading-loose" />
                         </ExpandableText>
                     )}
                 </div>

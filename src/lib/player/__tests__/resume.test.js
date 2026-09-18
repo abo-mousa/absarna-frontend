@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { HAVE_NOTHING, resumeAction, stillStalled } from '@/lib/player/resume';
+import {
+    HAVE_NOTHING,
+    resumeAction,
+    shouldPauseWhenHidden,
+    stillStalled,
+} from '@/lib/player/resume';
 
 /**
  * What a player needs after the phone put it to sleep.
@@ -89,5 +94,44 @@ describe('stillStalled', () => {
         // other than a starved buffer — a seek in progress, a zero-length source — and restarting
         // the loader there interrupts rather than helps.
         expect(stillStalled({ ...stalled, readyState: 4 })).toBe(false);
+    });
+});
+
+/**
+ * Stopping a video when the viewer walks away from it.
+ *
+ * <p>Leaving the browser does not reliably stop one: Chrome on Android keeps the audio going and
+ * puts a media notification in the shade, which is deliberate and is the right default for a music
+ * site. Here it meant a lecture opened and left behind carried on talking into somebody's pocket,
+ * on their data.
+ *
+ * <p>The two exemptions are the interesting part, and neither can be produced in this repo: there
+ * is no jsdom, no second window and no television.
+ */
+describe('shouldPauseWhenHidden', () => {
+    const playing = { playing: true, pictureInPicture: false, castingToRemote: false };
+
+    it('stops a video nobody is looking at any more', () => {
+        expect(shouldPauseWhenHidden(playing)).toBe(true);
+    });
+
+    it('has nothing to do to a video that was already stopped', () => {
+        // Calling pause() on a paused element is harmless, but answering honestly keeps the
+        // caller's `wasPlaying` and this question from drifting apart.
+        expect(shouldPauseWhenHidden({ ...playing, playing: false })).toBe(false);
+    });
+
+    it('leaves picture-in-picture running, which is the whole point of it', () => {
+        // The viewer pressed a button in this player that means "keep playing while I go and look
+        // at something else". A PiP window that freezes the moment it becomes useful is not
+        // picture-in-picture, it is a bug with a frame around it.
+        expect(shouldPauseWhenHidden({ ...playing, pictureInPicture: true })).toBe(false);
+    });
+
+    it('leaves a video that is playing on a television alone', () => {
+        // The sound is not coming out of the phone, so putting the phone away is not a reason to
+        // stop it — and a lecture sent to a screen is exactly the case someone then locks their
+        // phone for.
+        expect(shouldPauseWhenHidden({ ...playing, castingToRemote: true })).toBe(false);
     });
 });

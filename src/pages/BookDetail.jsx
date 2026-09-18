@@ -134,7 +134,7 @@ function BookDetail() {
                             control rather than between the prose and its own toggle. */}
                         {book.description && (
                             <ExpandableText className="mb-5">
-                                <p className="text-text-secondary leading-loose">{book.description}</p>
+                                <p className="font-reading text-text-secondary leading-loose">{book.description}</p>
                             </ExpandableText>
                         )}
 
