@@ -19,6 +19,9 @@ export const CONFIRM_WINDOW_MS = 3000;
  * @returns `'login'`, `'arm'` (show the consequence and wait for a second press) or `'toggle'`.
  */
 export const pressOutcome = ({ authenticated, subscribed, needsConfirm, armed }) => {
+    // The button is disabled for a visitor with no account, so this is a floor rather than the
+    // route anyone travels: it stays because the rule is "a press by nobody subscribes nobody",
+    // and that must hold even if the control is ever rendered enabled again.
     if (!authenticated) return 'login';
     if (subscribed && needsConfirm && !armed) return 'arm';
     return 'toggle';
@@ -51,6 +54,10 @@ export const pressOutcome = ({ authenticated, subscribed, needsConfirm, armed })
  * left armed is a trap set for whoever presses it next — failing back to "does nothing" is the
  * right way for it to fail.
  *
+ * <p><b>A visitor with no account gets the button disabled</b>, not hidden and not live: the
+ * channel header keeps its shape for every reader, and «اشتراك» that silently becomes a login page
+ * is a control promising something it does not do. `title`/`aria-label` say why.
+ *
  * `variant="banner"` is the white-on-primary treatment for the channel header; `inline` is the
  * ordinary pill used in a page body.
  */
@@ -62,6 +69,7 @@ function SubscribeButton({ channelId, variant = 'inline', className = '' }) {
     const [armed, setArmed] = useState(false);
 
     const subscribed = status?.subscribed || false;
+    const needsLogin = !token;
     const needsConfirm = !primaryPointerCanHover();
     // `subscribed` guards the render as well as the press: an arming that is somehow outlived by a
     // subscription changing underneath it (another tab, a second copy of this button on the page)
@@ -93,7 +101,12 @@ function SubscribeButton({ channelId, variant = 'inline', className = '' }) {
     // things. Written as whole alternatives rather than appended classes: `bg-white/20` and
     // `bg-white/30` in one string is a coin toss decided by stylesheet order, not by which came
     // last in the JSX.
-    const palette = variant === 'banner'
+    // Nothing to warn about and nothing to hover towards on a control that cannot be pressed, so
+    // the disabled face is one flat tone in both variants rather than the resting face with the
+    // hover rules left armed behind it — CSS `:hover` still matches a disabled element.
+    const palette = needsLogin
+        ? (variant === 'banner' ? 'bg-white/20 text-white' : 'bg-surface-hover text-text-muted border border-border')
+        : variant === 'banner'
         ? (subscribed
             ? (showArmed
                 ? 'bg-white/30 text-white'
@@ -112,7 +125,8 @@ function SubscribeButton({ channelId, variant = 'inline', className = '' }) {
             // An armed button that is tabbed or tapped away from disarms. The timeout above would
             // get there anyway; this gets there at the moment the viewer's attention does.
             onBlur={() => setArmed(false)}
-            disabled={toggleSubscription.isPending}
+            disabled={needsLogin || toggleSubscription.isPending}
+            title={needsLogin ? t('common.loginRequired') : undefined}
             // A CONSTANT accessible name plus `aria-pressed`, which is the whole toggle-button
             // contract. This used to change the name with the state *as well*, so a screen reader
             // announced "إلغاء الاشتراك, pressed" — two readings of one control that contradict
@@ -127,16 +141,23 @@ function SubscribeButton({ channelId, variant = 'inline', className = '' }) {
             // reader has no other way to learn. The visible swap is the sighted equivalent again —
             // and without this a VoiceOver user on a phone gets the confirm step and none of the
             // reason for it, which is worse than not having one.
-            aria-label={showArmed ? t('channel.unsubscribeConfirmAria') : t('channel.subscribeToggleAria')}
+            aria-label={needsLogin
+                ? t('common.loginRequired')
+                : (showArmed ? t('channel.unsubscribeConfirmAria') : t('channel.subscribeToggleAria'))}
             aria-pressed={subscribed}
             className={`group flex items-center gap-2 px-5 py-2.5 rounded-full font-semibold text-sm
-                transition-colors disabled:opacity-60
+                transition-colors disabled:opacity-60 disabled:cursor-not-allowed
                 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary
                 ${palette} ${className}`}
         >
-            {toggleSubscription.isPending ? (
-                '...'
-            ) : !subscribed ? (
+            {/* No "in flight" face. The state shown IS the state pressed for -- the mutation
+                writes the cache before the request leaves (see useToggleSubscription) -- so the
+                label can simply change and stay changed. Replacing it with an ellipsis used to
+                collapse the button to a third of its width and back, which on a control that sits
+                in a channel banner moved everything beside it twice per press. `disabled` plus
+                the dimming in the class list is the whole of what a press in flight needs to
+                say. */}
+            {!subscribed ? (
                 <><Bell size={18} /> {t('channel.subscribe')}</>
             ) : showArmed ? (
                 // Already the warning: no hover swap to do, and nothing to swap back to until the

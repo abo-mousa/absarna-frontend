@@ -94,6 +94,21 @@ export const useSubscriptionStatus = (channelId, enabled = true) => {
     });
 };
 
+/**
+ * Follow or unfollow a channel, and show it at the moment it is pressed.
+ *
+ * <p><b>The flicker this fixes.</b> Without the optimistic write the button went through three
+ * states on one press: the label vanished while the request was in flight, then came back reading
+ * what it read BEFORE the press — because the request had finished but the status refetch it
+ * triggers had not — and only then settled on the new one. Two round trips, and the middle of them
+ * showed the viewer their press had done nothing. On a slow connection that middle state is the
+ * one they see longest, and the natural response to it is to press again, which is a second
+ * request undoing the first.
+ *
+ * <p>So the cache is written before the request goes out and rolled back if it fails. The
+ * invalidation stays — it is what reconciles the count and the feed with the truth — but it is no
+ * longer the thing the button is waiting for.
+ */
 export const useToggleSubscription = (channelId) => {
     const queryClient = useQueryClient();
 
@@ -103,6 +118,30 @@ export const useToggleSubscription = (channelId) => {
                 await api.delete(`/channels/${channelId}/subscribe`);
             } else {
                 await api.post(`/channels/${channelId}/subscribe`);
+            }
+        },
+        onMutate: async (subscribed) => {
+            // A refetch already in flight would land after this write and put the old answer
+            // back, which is the same flicker arriving by a different route.
+            await queryClient.cancelQueries({ queryKey: ['subscription-status', channelId] });
+            // Prefix, not the exact key: the viewer's scope is the last segment (lib/queryKeys.js)
+            // and this hook does not have it. Snapshotted as pairs so the rollback can put each
+            // one back exactly where it came from.
+            const previous = queryClient.getQueriesData({
+                queryKey: ['subscription-status', channelId],
+            });
+            queryClient.setQueriesData(
+                { queryKey: ['subscription-status', channelId] },
+                (old) => (old ? { ...old, subscribed: !subscribed } : old),
+            );
+            return { previous };
+        },
+        onError: (_error, _subscribed, context) => {
+            // Back to exactly what was there. A button left claiming a subscription the server
+            // refused is worse than one that never moved: the next press would send the opposite
+            // request to the one the viewer means.
+            for (const [key, data] of context?.previous ?? []) {
+                queryClient.setQueryData(key, data);
             }
         },
         onSuccess: () => {
