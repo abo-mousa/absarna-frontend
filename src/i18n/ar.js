@@ -1215,7 +1215,8 @@ export const ar = {
                 },
                 nudity: {
                     // HELD here comes from the detector as well as from a human: the worker
-                    // reports BLOCKED when both models agree on a dwelling scene. And UNCHECKED
+                    // reports BLOCKED when the anatomy model (NudeNet) finds a dwelling scene; the
+                    // other model alone now reports ADVISORY, which publishes. And UNCHECKED
                     // HIDES for this type -- explicit content fails closed -- so it must not be
                     // worded like music's, which correctly says the clip is published. The row's
                     // hidden/published column reads the backend's `holds`; these sentences have

@@ -289,7 +289,7 @@ function AdminReview() {
                                                         >
                                                             {tabLabel(other.type)}
                                                             {' · '}
-                                                            {other.state}
+                                                            {stateLabel(other.state)}
                                                         </Badge>
                                                     </li>
                                                 ))}
