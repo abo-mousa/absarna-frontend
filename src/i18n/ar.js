@@ -572,6 +572,12 @@ export const ar = {
             // The timeline's spoken value: a screen reader reading "1263" for a position is
             // useless, so it hears the two clock readings a viewer would say out loud.
             timeOf: '{current} من {total}',
+            // The flash a double-tap on the side of the picture leaves behind. Two forms because
+            // the numbers it produces straddle Arabic's break: 3–10 take the plural of paucity
+            // («10 ثوانٍ»), 11 and up take the singular («20 ثانية»). The digits stay Latin like
+            // every other figure in the app (lib/numbers.js).
+            seekSecondsFew: '{seconds} ثوانٍ',
+            seekSeconds: '{seconds} ثانية',
             mute: 'كتم الصوت',
             unmute: 'إلغاء كتم الصوت',
             volume: 'مستوى الصوت',

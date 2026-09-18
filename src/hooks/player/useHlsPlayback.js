@@ -28,6 +28,14 @@ const MAX_URL_REFRESHES = 3;
 const URL_REFRESH_BACKOFF_MS = 1000;
 
 /**
+ * Whether the page is in the background right now.
+ *
+ * <p>Read at the moment an error arrives rather than tracked, because that is the only moment the
+ * answer matters and the browser keeps it for us.
+ */
+const pageIsHidden = () => typeof document !== 'undefined' && document.visibilityState === 'hidden';
+
+/**
  * Plays HLS through hls.js, where the browser cannot play it itself.
  *
  * <p><b>The library is imported dynamically, and that is not micro-optimisation.</b> It builds to
@@ -39,8 +47,9 @@ const URL_REFRESH_BACKOFF_MS = 1000;
  * @param pendingSeekRef the shared "where to resume" ref; a value in it means this instance is a
  *                       continuation of a playlist swap rather than a fresh load
  * @returns the parsed variant list, the selected level and its setter, the two entry points the
- *          element's own events drive (`startLoadAt` and `seekBeforeLoad`), and the pair that
- *          makes a dead player visible and restartable — `unrecoverable` and `retryPlayback`
+ *          element's own events drive (`startLoadAt` and `seekBeforeLoad`), `resumeLoading` for a
+ *          player that came back from the background stalled, and the pair that makes a dead
+ *          player visible and restartable — `unrecoverable` and `retryPlayback`
  */
 export function useHlsPlayback({ enabled, playbackUrl, videoId, videoRef, pendingSeekRef,
                                  rememberPosition }) {
@@ -65,6 +74,14 @@ export function useHlsPlayback({ enabled, playbackUrl, videoId, videoRef, pendin
     // Whether this instance has been told to start fetching. See startLoadAt for why it must
     // happen exactly once per instance rather than on every play.
     const loadStartedRef = useRef(false);
+    /**
+     * A fatal network error arrived while the page was in the background, and loading has to be
+     * started again when it comes back.
+     *
+     * <p>Set instead of spending the refresh budget — see the error handler — and cleared by the
+     * visibility listener that acts on it.
+     */
+    const resumeOnVisibleRef = useRef(false);
 
     // The variants hls.js found in master.m3u8, once it has parsed it. Null until then, and null
     // forever on every other path.
@@ -85,6 +102,7 @@ export function useHlsPlayback({ enabled, playbackUrl, videoId, videoRef, pendin
         let cancelled = false;
         let hls = null;
         let retryTimer = null;
+        let resumeIfDeferred = null;
         loadStartedRef.current = false;
         setUnrecoverable(false);
         // The manifest describes this URL, so a list left over from the previous one would be
@@ -179,6 +197,30 @@ export function useHlsPlayback({ enabled, playbackUrl, videoId, videoRef, pendin
             hls.on(Hls.Events.ERROR, (_event, data) => {
                 if (!data.fatal || cancelled) return;
 
+                /**
+                 * A page the phone has put to sleep is not a broken video, and this is the whole
+                 * of the "I came back and it would not play" bug on the hls.js path.
+                 *
+                 * <p>Backgrounding a browser aborts the fetches in flight, which arrives here as a
+                 * fatal NETWORK_ERROR — indistinguishable, from inside this handler, from a dead
+                 * connection. Handled as one, the three refreshes below were spent within seconds
+                 * against a network nobody was using, on a page nobody was looking at, and the
+                 * player was destroyed before the viewer came back: they returned to a frame that
+                 * had stopped, a play button that did nothing (hls.js was gone, so there was
+                 * nothing behind the element at all) and no error, because the destroy happened
+                 * quietly. Even when the budget held, loading stayed stopped — hls.js does not
+                 * resume on its own — so the element played out the seconds it had buffered and
+                 * stalled.
+                 *
+                 * <p>So a hidden page spends nothing and reports nothing: it records that loading
+                 * has to be restarted and waits to be looked at again. There is no viewer to tell
+                 * and no bandwidth worth spending until there is.
+                 */
+                if (data.type === Hls.ErrorTypes.NETWORK_ERROR && pageIsHidden()) {
+                    resumeOnVisibleRef.current = true;
+                    return;
+                }
+
                 // FATAL ONLY, and that guard above is what makes this affordable: hls.js emits
                 // non-fatal errors continuously during healthy playback — a segment it re-fetched,
                 // a gap it jumped — and reporting those would be a beacon per viewer per minute
@@ -241,6 +283,19 @@ export function useHlsPlayback({ enabled, playbackUrl, videoId, videoRef, pendin
                 setUnrecoverable(true);
             }
 
+            // The other half of the background guard above. Bound to the instance rather than
+            // held in the component, because what it does — start loading again — is only
+            // meaningful for the hls.js that recorded the error, and an instance rebuilt in the
+            // meantime has already started loading on its own.
+            resumeIfDeferred = () => {
+                if (cancelled || pageIsHidden() || !resumeOnVisibleRef.current) return;
+                resumeOnVisibleRef.current = false;
+                loadStartedRef.current = true;
+                hls.startLoad(videoRef.current?.currentTime || -1);
+            };
+            document.addEventListener('visibilitychange', resumeIfDeferred);
+            window.addEventListener('pageshow', resumeIfDeferred);
+
             hls.loadSource(playbackUrl);
             hls.attachMedia(el);
         });
@@ -248,6 +303,10 @@ export function useHlsPlayback({ enabled, playbackUrl, videoId, videoRef, pendin
         return () => {
             cancelled = true;
             clearTimeout(retryTimer);
+            if (resumeIfDeferred) {
+                document.removeEventListener('visibilitychange', resumeIfDeferred);
+                window.removeEventListener('pageshow', resumeIfDeferred);
+            }
             // Destroy, not detach: hls.js holds a MediaSource, a fetch loop and (for fMP4) a
             // demuxer worker. Leaving one running per quality switch would keep pulling segments
             // for a video nobody is watching.
@@ -273,6 +332,30 @@ export function useHlsPlayback({ enabled, playbackUrl, videoId, videoRef, pendin
         queryClient.invalidateQueries({ queryKey: ['videoPlaybackUrl', videoId] });
         setRebuildNonce((n) => n + 1);
     }, [queryClient, videoId]);
+
+    /**
+     * Starts the loader again for a player that has come back from the background stalled.
+     *
+     * <p>Distinct from `retryPlayback`, which is the viewer pressing a button on a player that has
+     * visibly given up: this one runs while nothing looks wrong, so it is deliberately the
+     * cheapest thing that can fix it — no re-mint, no rebuild, no budget touched, and the element
+     * keeps the seconds it still has buffered.
+     *
+     * <p>`recoverMediaError` first where the element is in an error state, because there the
+     * MediaSource behind it is gone and feeding the old one would do nothing — that call is
+     * hls.js's own way of attaching a fresh one and is the only route back from a decoder the
+     * platform reclaimed while the page was away.
+     */
+    const resumeLoading = useCallback((positionSeconds) => {
+        const hls = hlsRef.current;
+        if (!enabled || !hls) return false;
+        if (videoRef.current?.error) hls.recoverMediaError();
+        resumeOnVisibleRef.current = false;
+        loadStartedRef.current = true;
+        hls.startLoad(
+            Number.isFinite(positionSeconds) && positionSeconds > 0 ? positionSeconds : -1);
+        return true;
+    }, [enabled, videoRef]);
 
     /**
      * Switching between the video variants of one master playlist.
@@ -319,6 +402,6 @@ export function useHlsPlayback({ enabled, playbackUrl, videoId, videoRef, pendin
         hls.startLoad(seconds);
     }, [enabled]);
 
-    return { levels, selectedLevel, selectLevel, startLoadAt, seekBeforeLoad, unrecoverable,
-        retryPlayback };
+    return { levels, selectedLevel, selectLevel, startLoadAt, seekBeforeLoad, resumeLoading,
+        unrecoverable, retryPlayback };
 }

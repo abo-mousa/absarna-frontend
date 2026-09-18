@@ -17,11 +17,22 @@ import PlayerSettingsMenu from './PlayerSettingsMenu';
  * bar: it lives in a closed shadow root. So `controls` is off and this is the bar, which also
  * settles button order, RTL, and one look in every browser.
  *
- * <p><b>The timeline is left-to-right, in an app that is otherwise entirely RTL.</b> Time flows
- * left to right regardless of language — that is how every clock, every progress bar and YouTube
- * in Arabic read it — so only the *button order* mirrors: the bar declares `dir="ltr"` and the
- * settings panel re-asserts `rtl` for its prose. Arrow keys follow the timeline, not the document:
- * Right seeks forward.
+ * <p><b>The bar is mirrored, timeline included: the video starts at the RIGHT edge and plays
+ * leftwards.</b> The app is Arabic end to end, and a timeline is read like the sentence beside it
+ * — so `dir="rtl"` governs the whole bar, the played portion fills from the right, and the handle
+ * begins where the eye begins. Everything that maps a position to a time follows from that one
+ * decision and must keep following it: `ratioFromPointer` measures from the right edge, the
+ * played and buffered fills are anchored `right-0`, the arrow keys are flipped (ArrowLeft seeks
+ * FORWARD, because forward is leftwards here), the double-tap zones on the picture put "back" on
+ * the right (`lib/player/gestures.js`), and the play triangle points left, the way the video
+ * travels.
+ *
+ * <p>Two islands stay left-to-right inside it, and both are deliberate. The clock is one LTR run
+ * (`12:04 / 45:10`) because bidi would otherwise reorder the two readings around the slash and
+ * show the total first. The volume group is the other: its slider is a native `<input
+ * type="range">`, whose thumb the browser draws and mirrors on its own — and a browser that does
+ * not mirror it leaves a control whose fill and whose thumb disagree. A volume level is not a
+ * timeline and has no direction to respect, so it is not worth betting a control on that.
  *
  * <p><b>Element state is read here, not in `VideoPlayer`.</b> `timeupdate` fires several times a
  * second; holding the playhead in the player's own state would re-render the `<video>`, the hls.js
@@ -71,6 +82,37 @@ const MUTED_STORAGE_KEY = 'playerMuted';
  * as the player glitching rather than as loading.
  */
 const BUFFERING_INDICATOR_DELAY_MS = 250;
+
+/** `HTMLMediaElement.HAVE_FUTURE_DATA` — enough decoded ahead of the playhead to advance a frame. */
+const HAVE_FUTURE_DATA = 3;
+
+/**
+ * Whether a spinner is owed right now, read from the element rather than from the event that
+ * scheduled it.
+ *
+ * <p><b>The events alone are not evidence of a problem.</b> `stalled` in particular fires whenever
+ * the browser has gone a few seconds without receiving bytes — which on this player is the NORMAL
+ * state of a healthy video: `maxMaxBufferLength: 90` means hls.js fills its buffer and then
+ * deliberately stops fetching, so a lecture playing perfectly over a good connection announces a
+ * stall every time it tops up. `waiting` has the same shape on a smaller scale, and Safari fires
+ * both around a rung swap. Taking any of them at face value put a spinner over a picture that was
+ * moving underneath it — and a loading indicator that appears while nothing is loading is worse
+ * than none at all, because it teaches the viewer that the one that means something is noise.
+ *
+ * <p>So the event only starts a clock, and this is what the clock asks when it goes off: is the
+ * element trying to play and unable to. Paused or ended is not waiting for anything. A seek still
+ * in flight is. Otherwise the question is whether there is a next frame to show —
+ * `readyState` is the only honest answer to that, and it is the one thing no event lies about.
+ *
+ * <p>Exported and tested because every input is a real state of a real element and none of them is
+ * reachable from a browser on a desk: a full buffer that stopped fetching, a seek into an unloaded
+ * region, a starved decoder on a bad minute of someone's connection.
+ */
+export const bufferingIsOwed = ({ paused, ended, seeking, readyState }) => {
+    if (paused || ended) return false;
+    if (seeking) return true;
+    return readyState < HAVE_FUTURE_DATA;
+};
 
 /** How far one arrow-key press seeks, and how much it moves the volume. */
 export const SEEK_STEP_SECONDS = 5;
@@ -234,17 +276,25 @@ export const timelineScale = (elementDuration, durationHint) => {
 };
 
 /**
- * Where along the timeline a pointer is, as 0…1.
+ * How far into the video a pointer is, as 0…1.
  *
- * <p>Exported and tested because it is the arithmetic behind every scrub, and its failures are
- * silent: a click on the very edge of the track, a drag that continues outside the player (pointer
- * capture keeps sending moves from anywhere on screen, including negative coordinates), and a
- * zero-width track during the first layout pass — which would otherwise divide by zero and seek to
- * `NaN`, an assignment the element rejects, leaving a dead timeline with nothing logged.
+ * <p><b>Measured from the RIGHT edge of the track, because that is where the video starts.</b> The
+ * bar is mirrored for Arabic (see the note at the top of this file), so `0` is the right end and
+ * `1` is the left one. This is the single place that conversion happens — the fills and the handle
+ * are positioned from `right` with the same number — and getting it backwards neither throws nor
+ * logs: it produces a timeline where every scrub lands at the mirror image of where it was aimed,
+ * which is a thing to notice rather than a thing to see.
+ *
+ * <p>Exported and tested because it is the arithmetic behind every scrub, and its other failures
+ * are silent too: a click on the very edge of the track, a drag that continues outside the player
+ * (pointer capture keeps sending moves from anywhere on screen, including coordinates past both
+ * edges), and a zero-width track during the first layout pass — which would otherwise divide by
+ * zero and seek to `NaN`, an assignment the element rejects, leaving a dead timeline with nothing
+ * logged.
  */
 export const ratioFromPointer = (clientX, rect) => {
     if (!rect || !rect.width) return 0;
-    const ratio = (clientX - rect.left) / rect.width;
+    const ratio = (rect.right - clientX) / rect.width;
     return Math.min(1, Math.max(0, ratio));
 };
 
@@ -254,17 +304,22 @@ export const ratioFromPointer = (clientX, rect) => {
  * <p>Exported and tested because it is the part of the bar a mouse never exercises: the shortcuts
  * are the only controls with no visible affordance, so a missing case is invisible until someone
  * presses the key. Space is deliberately included alongside `k`, `f` and `m` — the keys every
- * video player has trained people to expect — and Right is *forward* because the timeline runs
- * left to right even here (see above).
+ * video player has trained people to expect.
+ *
+ * <p><b>Left is forward.</b> The arrows follow the TIMELINE rather than the other way round, and
+ * this bar's timeline runs right to left: the handle a viewer is watching moves leftwards as the
+ * lecture plays, so the key that chases it is ArrowLeft. It is also what a native `<input
+ * type="range">` does under `dir="rtl"`, which is the behaviour anyone reading this app in Arabic
+ * already has in their fingers from every other slider on the web.
  */
 export const keyboardAction = (key) => {
     switch (key) {
         case ' ':
         case 'k':
             return 'toggle-play';
-        case 'ArrowRight':
-            return 'seek-forward';
         case 'ArrowLeft':
+            return 'seek-forward';
+        case 'ArrowRight':
             return 'seek-back';
         case 'ArrowUp':
             return 'volume-up';
@@ -407,14 +462,29 @@ export default function VideoControlBar({
 
         // Delayed on the way in, immediate on the way out — a spinner that lingers after the
         // picture has moved is worse than one that arrives late.
+        //
+        // And the delay is a second look, not just a pause: the element is asked again when the
+        // clock goes off, because the events that schedule this are not evidence of a problem on
+        // their own (see bufferingIsOwed). A `stalled` from a buffer that is simply full resolves
+        // into "readyState 4, not seeking, not paused" a quarter of a second later, and nothing is
+        // drawn.
         const showBuffering = () => {
             clearTimeout(bufferingTimerRef.current);
-            bufferingTimerRef.current = setTimeout(
-                () => setBuffering(true), BUFFERING_INDICATOR_DELAY_MS);
+            bufferingTimerRef.current = setTimeout(() => setBuffering(bufferingIsOwed(el)),
+                BUFFERING_INDICATOR_DELAY_MS);
         };
         const hideBuffering = () => {
             clearTimeout(bufferingTimerRef.current);
             setBuffering(false);
+        };
+        // The playhead moving is the one piece of proof no event can argue with, and it is what
+        // clears a spinner nothing else will: `waiting` is not always followed by `playing`, and a
+        // video that recovered between the event and the clock would otherwise keep the spinner
+        // until the next state change. Gated on the same question rather than clearing outright,
+        // so a `timeupdate` emitted in the middle of a real seek does not cancel the spinner that
+        // seek is about to need.
+        const clearBufferingIfMoving = () => {
+            if (!bufferingIsOwed(el)) hideBuffering();
         };
 
         const events = [
@@ -446,6 +516,8 @@ export default function VideoControlBar({
             ['seeked', hideBuffering],
             ['pause', hideBuffering],
             ['error', hideBuffering],
+            ['timeupdate', clearBufferingIfMoving],
+            ['progress', clearBufferingIfMoving],
         ];
         for (const [event, handler] of events) el.addEventListener(event, handler);
         return () => {
@@ -609,30 +681,58 @@ export default function VideoControlBar({
     // playback too. Suppressed while buffering, where the spinner is the honest answer.
     const showCentrePlay = !playing && !buffering && (startedFor !== videoKey || ended);
 
+    // ...and the one where it is "stop". A playing video shows a centre PAUSE for exactly as long
+    // as the rest of the controls are up — under a mouse that means while the pointer is on the
+    // player, on a phone while the controls have been tapped up — and it goes with them.
+    //
+    // This is the counterpart of the rule above rather than a contradiction of it: the objection
+    // to a disc over a paused frame is that the viewer paused in order to LOOK at that frame, and
+    // a playing video is not being looked at in that way. It also gives the picture a target the
+    // size of a thumb, which the 32px button in the corner of the bar is not, and it is what the
+    // gesture layer leaves the middle of the picture free for (`lib/player/gestures.js`).
+    const showCentrePause = playing && !buffering;
+
     return (
         <>
-            {showCentrePlay && (
+            {(showCentrePlay || showCentrePause) && (
                 // The wrapper takes no pointer events, so the picture around the disc keeps its
                 // own click-to-play instead of being covered by a full-bleed hit target.
-                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                //
+                // The pause face fades with the bar instead of unmounting with it, so it goes the
+                // same way the controls go — a 64px disc that blinks out while the bar beside it
+                // dissolves reads as two different things happening.
+                <div
+                    className={`pointer-events-none absolute inset-0 flex items-center
+                        justify-center transition-opacity duration-200
+                        ${showCentrePlay || shown ? 'opacity-100' : 'opacity-0'}`}
+                >
                     <button
                         type="button"
                         onClick={() => {
                             togglePlay();
-                            // This button is about to unmount — see onRequestFocus.
+                            // This button is about to unmount, or to change face — see
+                            // onRequestFocus.
                             onRequestFocus?.();
                         }}
-                        aria-label={ended ? t('video.controls.replay') : t('video.controls.play')}
-                        className="pointer-events-auto flex h-16 w-16 items-center justify-center
-                            rounded-full bg-black/60 text-white transition hover:bg-black/80
-                            hover:scale-105 focus:outline-none focus-visible:ring-2
-                            focus-visible:ring-white"
+                        aria-label={showCentrePlay
+                            ? (ended ? t('video.controls.replay') : t('video.controls.play'))
+                            : t('video.controls.pause')}
+                        // Inert while faded, for the reason the control row is: a tap that only
+                        // asks for the controls must not also press whatever was under the finger.
+                        className={`flex h-16 w-16 items-center justify-center rounded-full
+                            text-white transition hover:bg-black/80 hover:scale-105
+                            focus:outline-none focus-visible:ring-2 focus-visible:ring-white
+                            ${showCentrePlay ? 'bg-black/60' : 'bg-black/45'}
+                            ${showCentrePlay || shown ? 'pointer-events-auto' : 'pointer-events-none'}`}
                     >
-                        {/* Filled, unlike the bar's outline icons: this one is read as a target to
-                            press rather than as a control in a row of controls. Nudged right
-                            because a triangle's optical centre sits left of its bounding box, so
-                            centring the box leaves it looking off-centre in the disc. */}
-                        <Play size={30} fill="currentColor" className="translate-x-[2px]" />
+                        {/* Filled, unlike the bar's outline icons: these are read as a target to
+                            press rather than as a control in a row of controls. The triangle is
+                            mirrored to point LEFT, the way this player's timeline runs, and nudged
+                            the same way — a triangle's optical centre sits behind its bounding
+                            box, so centring the box leaves it looking off-centre in the disc. */}
+                        {showCentrePlay
+                            ? <Play size={30} fill="currentColor" className="-translate-x-[2px] scale-x-[-1]" />
+                            : <Pause size={30} fill="currentColor" />}
                     </button>
                 </div>
             )}
@@ -648,8 +748,9 @@ export default function VideoControlBar({
             )}
 
             <div
-                // `dir="ltr"`: only the button ORDER mirrors, not the timeline — see the note above.
-                dir="ltr"
+                // `dir="rtl"`, timeline included — see the note at the top of this file. Two
+                // islands inside it opt back out, and both say why where they are.
+                dir="rtl"
                 // `pointer-events-none` on the wrapper with the row re-enabling them, so the scrim over
                 // the bottom of the picture never swallows a click meant for the video.
                 className={`absolute inset-x-0 bottom-0 z-10 pointer-events-none transition-opacity
@@ -705,19 +806,22 @@ export default function VideoControlBar({
                         <div className="relative h-1 w-full rounded-full bg-white/30 transition-[height]
                             group-hover:h-1.5 group-focus-visible:h-1.5">
                             {/* Buffered, then played on top of it, then the handle. */}
+                            {/* Anchored `right-0` and grown leftwards, because that is the
+                                direction this timeline runs: at 0:00 nothing is painted and the
+                                handle sits at the right edge, where the reading starts. */}
                             <div
-                                className="absolute inset-y-0 left-0 rounded-full bg-white/40"
+                                className="absolute inset-y-0 right-0 rounded-full bg-white/40"
                                 style={{ width: `${Math.min(100, bufferedRatio * 100)}%` }}
                             />
                             <div
-                                className="absolute inset-y-0 left-0 rounded-full bg-primary"
+                                className="absolute inset-y-0 right-0 rounded-full bg-primary"
                                 style={{ width: `${Math.min(100, playedRatio * 100)}%` }}
                             />
                             <div
-                                className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2
+                                className="absolute top-1/2 h-3 w-3 translate-x-1/2 -translate-y-1/2
                                     rounded-full bg-primary opacity-0 transition-opacity
                                     group-hover:opacity-100 group-focus-visible:opacity-100"
-                                style={{ left: `${Math.min(100, playedRatio * 100)}%` }}
+                                style={{ right: `${Math.min(100, playedRatio * 100)}%` }}
                             />
                         </div>
                     </div>
@@ -729,12 +833,16 @@ export default function VideoControlBar({
                             aria-label={playing ? t('video.controls.pause') : t('video.controls.play')}
                             className={iconButtonClass}
                         >
-                            {playing ? <Pause size={18} /> : <Play size={18} />}
+                            {/* Mirrored like the centre disc: this player runs right to left. */}
+                            {playing ? <Pause size={18} /> : <Play size={18} className="scale-x-[-1]" />}
                         </button>
 
                         {/* Tabular figures, or the whole row twitches sideways once a second as the
-                            digits change width. */}
-                        <span className="text-xs text-white/90 tabular-nums">
+                            digits change width. `dir="ltr"` because this is one reading and not
+                            two: under the bar's RTL the bidi algorithm reorders the segments
+                            around the slash and shows the total first, so a lecture four minutes
+                            in reads «45:10 / 4:02». */}
+                        <span dir="ltr" className="text-xs text-white/90 tabular-nums">
                             {formatTime(shownTime)} / {formatTime(shownDuration)}
                         </span>
 
@@ -742,7 +850,17 @@ export default function VideoControlBar({
 
                         {/* The volume group. Under a mouse the slider is revealed by hover or
                             focus, the way every player does it, so the bar is not mostly slider.
-                            A finger has neither: see the two notes on the slider itself. */}
+                            A finger has neither: see the two notes on the slider itself.
+
+                            The GROUP mirrors with the rest of the bar — mute button, then the
+                            slider opening away from it — and only the `<input>` itself opts out,
+                            down on the element. That split is the point: the slider is a native
+                            range input, so the browser draws and positions the thumb while the
+                            fill under it is painted by hand, and a browser that does not mirror
+                            the thumb under `dir="rtl"` leaves a control whose fill and whose
+                            handle point opposite ways. The timeline is worth that risk because it
+                            is read as time; a volume level is not, and it has no direction to
+                            respect either way. */}
                         <div className="group/volume flex items-center">
                             <button
                                 type="button"
@@ -759,6 +877,10 @@ export default function VideoControlBar({
                             {volumeIsControllable && (
                                 <input
                                     type="range"
+                                    // The one thing in the bar the browser draws for us, so the
+                                    // one thing whose direction is not ours to assert — see the
+                                    // note on the group above.
+                                    dir="ltr"
                                     min={0}
                                     max={1}
                                     step={0.05}

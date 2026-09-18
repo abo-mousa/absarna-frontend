@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+    bufferingIsOwed,
     formatTime,
     keyboardAction,
     parseDuration,
@@ -55,27 +56,33 @@ describe('formatTime', () => {
 });
 
 describe('ratioFromPointer', () => {
-    const track = { left: 100, width: 400 };
+    // A DOMRect as the browser hands it over: 400px of track starting 100px from the left edge of
+    // the viewport, so its right edge — where this timeline BEGINS — is at 500.
+    const track = { left: 100, right: 500, width: 400 };
 
-    it('maps a pointer along the track to a fraction of it', () => {
-        expect(ratioFromPointer(100, track)).toBe(0);
+    it('measures from the right edge, because that is where the video starts', () => {
+        // The bar is mirrored for Arabic (see VideoControlBar): 0:00 is the right end of the
+        // track and the video plays leftwards. Reading this from the left edge instead is the one
+        // mistake here that produces no error and no log — every scrub simply lands at the mirror
+        // image of where it was aimed, which is a thing to notice rather than a thing to see.
+        expect(ratioFromPointer(500, track)).toBe(0);
         expect(ratioFromPointer(300, track)).toBe(0.5);
-        expect(ratioFromPointer(500, track)).toBe(1);
+        expect(ratioFromPointer(100, track)).toBe(1);
     });
 
     it('clamps a drag that has left the track', () => {
         // Pointer capture keeps delivering moves from anywhere on screen, so a scrub dragged off
         // the player — or off the window, giving a negative coordinate — must pin to the ends
         // rather than seek past them.
-        expect(ratioFromPointer(-40, track)).toBe(0);
-        expect(ratioFromPointer(9999, track)).toBe(1);
+        expect(ratioFromPointer(-40, track)).toBe(1);
+        expect(ratioFromPointer(9999, track)).toBe(0);
     });
 
     it('refuses to divide by a track that has no width yet', () => {
         // A click during the first layout pass, or on a player that is display:none in a hidden
         // tab. Without the guard this is `NaN`, which the element rejects as a `currentTime`
         // silently — a dead timeline with nothing logged anywhere.
-        expect(ratioFromPointer(120, { left: 100, width: 0 })).toBe(0);
+        expect(ratioFromPointer(120, { left: 100, right: 100, width: 0 })).toBe(0);
         expect(ratioFromPointer(120, null)).toBe(0);
     });
 });
@@ -90,13 +97,14 @@ describe('keyboardAction', () => {
         expect(keyboardAction('ArrowDown')).toBe('volume-down');
     });
 
-    it('follows the timeline, not the document, for left and right', () => {
-        // The app is RTL throughout, but the timeline is not: time flows left to right in every
-        // language, which is how the bar draws it (see VideoControlBar). Mirroring these two keys
-        // to match the document would have Right seek backwards through a bar that fills
-        // rightwards.
-        expect(keyboardAction('ArrowRight')).toBe('seek-forward');
-        expect(keyboardAction('ArrowLeft')).toBe('seek-back');
+    it('follows the timeline, which runs right to left', () => {
+        // The bar is mirrored for Arabic: the handle starts at the right edge and travels left as
+        // the lecture plays (see VideoControlBar). The arrow that chases it is therefore Left, and
+        // that is also what a native `<input type="range">` does under `dir="rtl"`. These two are
+        // the pair to check on any change to the bar's direction — they are the only controls with
+        // no visible affordance, so a stale mapping here seeks the wrong way in silence.
+        expect(keyboardAction('ArrowLeft')).toBe('seek-forward');
+        expect(keyboardAction('ArrowRight')).toBe('seek-back');
     });
 
     it('claims nothing it does not handle', () => {
@@ -253,5 +261,46 @@ describe('volumeIsSettable', () => {
         // No element yet is not evidence of iOS, and a slider that vanishes on a timing accident
         // is worse than one shown to a platform that ignores it.
         expect(volumeIsSettable(null)).toBe(true);
+    });
+});
+
+/**
+ * When the spinner is owed, which is a narrower question than "did an event fire".
+ *
+ * <p>The events that schedule it — `waiting`, `stalled`, `seeking` — all fire during perfectly
+ * healthy playback on this player, so the element is asked again a quarter of a second later and
+ * this is the question. Both ways of getting it wrong are bad in the same direction: a spinner
+ * over a moving picture teaches a viewer that the spinner means nothing, so the one that appears
+ * on a genuinely bad connection is the one they have learned to ignore.
+ */
+describe('bufferingIsOwed', () => {
+    const playing = { paused: false, ended: false, seeking: false, readyState: 4 };
+
+    it('draws nothing over a video that is playing', () => {
+        // The reported bug. `stalled` fires whenever the browser has gone a few seconds without
+        // receiving bytes, which is the NORMAL state here: hls.js is capped at 90s of buffer
+        // (see useHlsPlayback), so it fills up and stops fetching, and a lecture playing over a
+        // good connection announces a stall every time it tops up.
+        expect(bufferingIsOwed(playing)).toBe(false);
+    });
+
+    it('draws nothing over a paused or finished video', () => {
+        // Nothing is waiting for data, so nothing is loading, whatever the last event claimed.
+        expect(bufferingIsOwed({ ...playing, paused: true, readyState: 1 })).toBe(false);
+        expect(bufferingIsOwed({ ...playing, ended: true, readyState: 1 })).toBe(false);
+    });
+
+    it('draws over a seek still in flight', () => {
+        // A jump into a region nothing has loaded. A quarter of a second in, this is the one wait
+        // long enough to wonder about — a seek inside the buffer has already finished by now.
+        expect(bufferingIsOwed({ ...playing, seeking: true })).toBe(true);
+    });
+
+    it('draws when there is no next frame to show', () => {
+        // The honest case, and the only one worth a spinner: the element is trying to play and
+        // has nothing decoded ahead of the playhead. `readyState` is the one thing here no event
+        // can misreport.
+        expect(bufferingIsOwed({ ...playing, readyState: 2 })).toBe(true);
+        expect(bufferingIsOwed({ ...playing, readyState: 0 })).toBe(true);
     });
 });

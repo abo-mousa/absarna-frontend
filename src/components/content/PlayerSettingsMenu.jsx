@@ -30,8 +30,10 @@ import { t } from '@/i18n';
  * <p><b>Not theme tokens.</b> Like the rest of the bar this sits on top of video rather than on a
  * page: in fullscreen there is no page behind it, and `bg-surface` in light mode would put a
  * near-white panel over a dark picture. So it is translucent black with white text in both themes,
- * like every player a viewer has already used. It also re-asserts `dir="rtl"`, because the bar
- * around it is deliberately laid out left-to-right (see VideoControlBar) while this is prose.
+ * like every player a viewer has already used. It states `dir="rtl"` of its own accord rather than
+ * inheriting it: the bar around it is mirrored today (see VideoControlBar), and this panel is
+ * prose in every case — it must not follow the bar if the bar's direction is ever argued about
+ * again.
  *
  * @param groups   drill-down settings — `[{ id, title, options: [{ id, label }], activeId, onSelect }]`
  * @param toggles  on/off rows — `[{ id, label, active, onToggle }]`
@@ -160,10 +162,13 @@ export default function PlayerSettingsMenu({ groups = [], toggles = [], onOpenCh
                     role="menu"
                     dir="rtl"
                     onKeyDown={handlePanelKeyDown}
-                    // Opens upward from the gear, and anchored to its right edge so a wide panel
-                    // grows into the player rather than off it. Capped shorter on a phone, where
-                    // the whole player may be barely taller than this panel wants to be.
-                    className="absolute bottom-full right-0 mb-2 min-w-[210px] max-h-36 sm:max-h-60
+                    // Opens upward from the gear, and anchored to its LEFT edge so a wide panel
+                    // grows into the player rather than off it: the bar is mirrored (see
+                    // VideoControlBar), which puts the gear a couple of buttons in from the left
+                    // edge of the picture, so a panel growing leftwards would hang off it. Capped
+                    // shorter on a phone, where the whole player may be barely taller than this
+                    // panel wants to be.
+                    className="absolute bottom-full left-0 mb-2 min-w-[210px] max-h-36 sm:max-h-60
                         overflow-y-auto rounded-lg bg-black/90 p-1.5 text-sm text-white shadow-lg
                         backdrop-blur-sm"
                 >

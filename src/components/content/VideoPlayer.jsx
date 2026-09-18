@@ -18,9 +18,11 @@ import { usePlaybackRate } from '@/hooks/player/usePlaybackRate';
 import { useFullscreen } from '@/hooks/player/useFullscreen';
 import { usePictureInPicture } from '@/hooks/player/usePictureInPicture';
 import { useAutoHideControls } from '@/hooks/player/useAutoHideControls';
+import { useDoubleTapSeek } from '@/hooks/player/useDoubleTapSeek';
+import { useResumeAfterBackground } from '@/hooks/player/useResumeAfterBackground';
 import { t } from '@/i18n';
 import { Button } from '@/components/ui';
-import { PictureInPicture2 } from 'lucide-react';
+import { PictureInPicture2, RotateCcw, RotateCw } from 'lucide-react';
 import VideoControlBar, {
     SEEK_STEP_SECONDS,
     VOLUME_STEP,
@@ -113,9 +115,46 @@ const VideoPlayer = forwardRef(function VideoPlayer(
     }, []);
 
     const { levels, selectedLevel, selectLevel, startLoadAt, seekBeforeLoad: hlsSeekBeforeLoad,
-        unrecoverable: hlsGaveUp, retryPlayback } = useHlsPlayback({
+        resumeLoading: resumeHlsLoading, unrecoverable: hlsGaveUp, retryPlayback } =
+        useHlsPlayback({
             enabled: usesHlsJs, playbackUrl, videoId, videoRef, pendingSeekRef, rememberPosition,
         });
+
+    /**
+     * Putting playback back together after the page came back from the background — see
+     * `lib/player/resume.js` for what actually breaks, and `useResumeAfterBackground` for how it
+     * is noticed.
+     *
+     * <p>This is the half that knows which path owns the source, and the two are genuinely
+     * different repairs. Under hls.js the element is a shell around a MediaSource the library
+     * fills, so the fix is to tell the library to start filling it again from here — the element
+     * keeps its buffer and its position and nothing visible reloads. On the progressive and Safari
+     * paths the element owns its own source, and the only way back from a decoder the platform
+     * took away is to load it again, which restarts it at zero — so the position and the
+     * play/pause state go into the same two refs a quality switch uses, and
+     * `handleLoadedMetadata` puts the viewer back.
+     */
+    const recoverPlayback = useCallback(({ position, resume }) => {
+        const el = videoRef.current;
+        if (!el) return;
+        if (usesHlsJs) {
+            resumeHlsLoading(position);
+            if (resume) el.play().catch(() => {});
+            return;
+        }
+        pendingSeekRef.current = position;
+        resumePlaybackRef.current = resume;
+        el.load();
+    }, [usesHlsJs, resumeHlsLoading]);
+
+    useResumeAfterBackground({
+        videoRef, enabled: isOwnUpload && Boolean(playbackUrl), onRecover: recoverPlayback,
+    });
+
+    // Double-tap the sides of the picture to jump. Touch only, and it deliberately takes the side
+    // zones away from tap-to-pause — see the hook.
+    const { handlePointerUp: handleTapSeek, isTouchGesture, feedback: tapFeedback } =
+        useDoubleTapSeek({ videoRef, enabled: isOwnUpload });
 
     /**
      * Seeking a video that has not been loaded yet.
@@ -431,7 +470,14 @@ const VideoPlayer = forwardRef(function VideoPlayer(
                     nudge();
                     if (e.currentTarget === e.target) e.currentTarget.focus();
                 }}
-                onPointerLeave={hideNow}
+                // Only a pointer that STAYS somewhere can meaningfully leave. A finger leaves the
+                // moment it lifts — the browser fires pointerleave right after pointerup for a
+                // touch — so treating that as "the viewer is not reaching for a control" hid the
+                // bar again at the end of the very tap that asked for it, and the centre pause
+                // disc with it.
+                onPointerLeave={(e) => {
+                    if (e.pointerType !== 'touch') hideNow();
+                }}
                 className={`relative outline-none ${isFullscreen
                     ? 'flex h-full w-full items-center justify-center bg-black'
                     : ''}`}
@@ -461,23 +507,77 @@ const VideoPlayer = forwardRef(function VideoPlayer(
                     // the progressive path a viewer may well use it. Without mirroring it back, the
                     // settings menu would keep claiming 1× while the video played at 2×.
                     onRateChange={(e) => mirrorBrowserRate(e.currentTarget.playbackRate)}
+                    // Double-tap the left or right third to jump. Touch only, and it claims the
+                    // two synthesised events below for the window after a tap — see
+                    // useDoubleTapSeek.
+                    onPointerUp={handleTapSeek}
                     // Click to play and double-click for fullscreen, the two gestures the native bar
                     // brought with it. On the element rather than the wrapper, so a click on the
                     // bar's own buttons cannot also toggle playback.
                     onClick={() => {
+                        // A tap that was part of a seek gesture must not also pause: the first tap
+                        // of a double-tap has to be harmless, or every jump would stop the video
+                        // and start it again on the way past.
+                        if (isTouchGesture()) return;
                         const el = videoRef.current;
                         if (!el) return;
                         containerRef.current?.focus();
                         if (el.paused || el.ended) el.play().catch(() => {});
                         else el.pause();
                     }}
-                    onDoubleClick={toggleFullscreen}
-                    className={`bg-black ${isFullscreen
+                    // The browser synthesises a dblclick from two quick taps as well as from two
+                    // clicks, so without this guard a double-tap to seek would also throw the
+                    // player into fullscreen.
+                    onDoubleClick={() => {
+                        if (isTouchGesture()) return;
+                        toggleFullscreen();
+                    }}
+                    // `translateZ(0)` pins the element to its own composited layer for good, under
+                    // a mouse only. Without it Chrome moves a video between a hardware overlay and
+                    // ordinary compositing as the things drawn over it come and go — and the two
+                    // paths do not tone-map identically, so the whole picture visibly lightens the
+                    // moment the control bar fades and darkens again when it returns. Restricted
+                    // to hover-capable pointers because the overlay path is the cheaper one for a
+                    // battery, and this is a desktop compositing artefact.
+                    className={`bg-black [@media(hover:hover)]:[transform:translateZ(0)]
+                        ${isFullscreen
                         ? 'h-full w-full max-h-none rounded-none object-contain'
                         : 'w-full max-h-[500px] rounded-lg'}`}
                 >
                     {t('video.unsupported')}
                 </video>
+
+                {/* What a double-tap did, because the gesture has no control to look at: the
+                    viewer pressed nothing, so the only way they can tell it worked — and by how
+                    much, on the third tap — is if the picture says so. Over the zone that was
+                    tapped rather than in the middle, which is also how it teaches the gesture to
+                    the next viewer who finds it by accident.
+
+                    "Back" is on the RIGHT, because that is the direction this player's timeline
+                    runs (see VideoControlBar). `role="status"` so the jump is announced rather
+                    than only drawn, and `pointer-events-none` so the flash never eats the tap that
+                    follows it — a run of three taps is one gesture, and the second one must not
+                    land on a box that appeared under the finger after the first. */}
+                {tapFeedback && (
+                    <div
+                        role="status"
+                        className={`pointer-events-none absolute inset-y-0 flex w-[30%] flex-col
+                            items-center justify-center gap-1 bg-black/30 text-white
+                            ${tapFeedback.zone === 'back' ? 'right-0' : 'left-0'}`}
+                    >
+                        {tapFeedback.zone === 'back'
+                            ? <RotateCcw size={26} />
+                            : <RotateCw size={26} />}
+                        {/* Latin digits like every other figure in the app, and the two Arabic
+                            forms because the numbers this produces straddle the break: ten seconds
+                            is «10 ثوانٍ» and twenty is «20 ثانية». */}
+                        <span className="text-xs font-semibold tabular-nums">
+                            {tapFeedback.seconds <= 10
+                                ? t('video.controls.seekSecondsFew', { seconds: tapFeedback.seconds })
+                                : t('video.controls.seekSeconds', { seconds: tapFeedback.seconds })}
+                        </span>
+                    </div>
+                )}
 
                 {/* Picture-in-picture also gets a button of its own, in the corner, because it is
                     the one setting a viewer reaches for *while leaving* — the thought is "keep this
@@ -485,16 +585,22 @@ const VideoPlayer = forwardRef(function VideoPlayer(
                     so is a step in the wrong direction. It stays in the menu too, where it is
                     discoverable next to the other settings; both press the same toggle.
 
-                    Top-right rather than in the bar: the bar is a row of controls for the video
-                    playing here, and this one is about the video leaving. It fades with the bar, and
-                    comes back on focus so a keyboard viewer can still reach it while faded. */}
+                    A corner rather than the bar: the bar is a row of controls for the video playing
+                    here, and this one is about the video leaving. It fades with the bar, and comes
+                    back on focus so a keyboard viewer can still reach it while faded.
+
+                    Top-LEFT, with the rest of the player: the bar is mirrored (see
+                    VideoControlBar), which put the gear and the fullscreen button on the left, and
+                    a lone corner control on the opposite side reads as belonging to something
+                    else. It is also the corner nearest the settings menu's own
+                    picture-in-picture row, which is the same toggle. */}
                 {pipSupported && (
                     <button
                         type="button"
                         onClick={togglePip}
                         aria-pressed={pipActive}
                         aria-label={t('video.settings.pictureInPicture')}
-                        className={`absolute right-2 top-2 z-10 flex h-9 w-9 items-center
+                        className={`absolute left-2 top-2 z-10 flex h-9 w-9 items-center
                             justify-center rounded-full bg-black/60 text-white transition-opacity
                             duration-200 hover:bg-black/80 focus:opacity-100 focus:outline-none
                             focus-visible:ring-2 focus-visible:ring-white

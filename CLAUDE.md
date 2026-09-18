@@ -92,10 +92,37 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   AirPlay where Safari reports a receiver, and the keyboard (space/k, ←→, ↑↓, f, m — the wrapper is
   a focus stop for them). iOS still has element fullscreen only for the `<video>`, so there the
   system player takes over and the menu cannot follow.
-- **The timeline runs left-to-right in an otherwise fully RTL app.** Time flows left→right in every
-  language (so does YouTube in Arabic), so the bar declares `dir="ltr"` and only the *button order*
-  mirrors; the settings panel re-asserts `dir="rtl"` for its prose, and ArrowRight seeks forward
-  because it follows the timeline, not the document.
+- **The whole bar is mirrored, timeline included: the video starts at the RIGHT edge and plays
+  leftwards.** `dir="rtl"` governs the bar, `ratioFromPointer` measures from the track's *right*
+  edge, the played/buffered fills are anchored `right-0` and the handle is positioned with `right`,
+  ArrowLeft seeks **forward** (the keys follow the timeline, not the document), the double-tap
+  zones put "back" on the right, the play triangle is mirrored to point left, and the settings
+  panel opens `left-0` so it grows into the picture rather than off it. Two islands stay LTR on
+  purpose and say so where they are: the clock (`12:04 / 45:10` — bidi otherwise shows the total
+  first) and the volume `<input type="range">` **itself, not its group** — the group mirrors like
+  everything else, and only the element opts out, because the browser draws and mirrors that thumb
+  while the fill under it is painted by hand, and a browser that does not mirror it leaves fill and
+  thumb pointing opposite ways. A volume level has no direction to respect either way.
+- **Double-tap the sides of the picture to jump ±10s, touch only** (`lib/player/gestures.js`,
+  `useDoubleTapSeek`). The sides deliberately do **not** toggle playback — that is what lets the
+  first tap of a run be harmless without delaying every single tap by the double-tap window. The
+  centre 40% keeps play/pause, which is where the centre disc is drawn. Taps accumulate (10, 20,
+  30) while they stay on the same side; the synthesised `click` **and** `dblclick` are both
+  suppressed for 400ms after one, or a double-tap would also pause and then enter fullscreen.
+- **A centre pause disc shows while a video is playing and the controls are up**, fading with them
+  rather than unmounting. The older rule still holds for the *paused* state: no 64px disc over a
+  frame someone paused in order to read.
+- **Coming back from the background is its own failure and its own repair** (`lib/player/resume.js`,
+  `useResumeAfterBackground`). Backgrounding a phone browser aborts the fetches in flight, which on
+  the hls.js path is a fatal NETWORK_ERROR: handled as an ordinary one it spent the whole refresh
+  budget in seconds against a network nobody was using and destroyed the player before the viewer
+  returned. A hidden page now spends nothing and reports nothing — it records that loading must
+  restart and waits to be looked at again. On return the element is read (`resumeAction`), given a
+  `play()` where that is all it needs, and re-checked a second later (`stillStalled`) for the quiet
+  case: not paused, no error, not moving. The repair differs by path — hls.js gets `startLoad` at
+  the playhead (plus `recoverMediaError` if the element is errored), the element-owned paths get a
+  `load()` with the position and play state carried in the same two refs a quality switch uses.
+  Nothing resumes a video the viewer had paused before they left.
 - **On the HLS path the element has no `duration` until the first play** — `autoStartLoad: false`
   defers the *level* playlist (the master is parsed, which is where the quality list comes from),
   and the length lives in the level playlist. So the bar shows `VideoDTO.duration` (a display
