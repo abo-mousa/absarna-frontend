@@ -26,7 +26,7 @@ import { t } from '@/i18n';
  * <p>Three things move that height after the first paint, and one observer covers all of them:
  * the column resizes (rotation, a desktop window drag), the text changes (navigating to the next
  * video re-uses this component), and — the one that is easy to miss — the Arabic webfont arrives.
- * `index.html` asks for IBM Plex Sans Arabic with `display=swap`, so the first measurement runs
+ * `index.html` asks for Cairo with `display=swap`, so the first measurement runs
  * against a fallback face and the text reflows underneath it a moment later, which is enough to
  * carry a description across the four-line line either way. The inner element is what is observed
  * because it is the one with no height constraint: the outer box is pinned by `max-height` and

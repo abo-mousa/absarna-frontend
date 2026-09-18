@@ -37,7 +37,11 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['IBM Plex Sans Arabic', 'Rubik', 'Inter', 'sans-serif'],
+        // Cairo rather than IBM Plex Sans Arabic: Plex draws no ligature for «الله», so the word
+        // arrived without its shadda everywhere anyone wrote it — and no fallback font can supply
+        // it, since fallback only reaches a font for characters the first one is MISSING. See the
+        // note in index.html.
+        sans: ['Cairo', 'Rubik', 'Inter', 'sans-serif'],
         // Wordmark and reading-page headings only — see CLAUDE.md's rebrand note.
         serif: ['Markazi Text', 'Amiri', 'serif'],
       },
