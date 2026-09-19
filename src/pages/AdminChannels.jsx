@@ -91,7 +91,7 @@ function AdminChannels() {
 
     return (
         <PageShell sidebar={false}>
-            <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-6">
+            <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-6">
                 <AdminNav current="channels" />
 
                 <h1 className="text-xl font-bold mb-6">{t('admin.manageChannels')}</h1>
