@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import { useSearchSuggestions } from '@/hooks/useVideos';
 import { useOutsideClick } from '@/hooks/useOutsideClick';
@@ -23,12 +23,39 @@ export function shouldShowNoMatches({ open, input, settled, isFetching, isError,
     return Boolean(open && typed && settled === typed && !isFetching && !isError && count === 0);
 }
 
+/**
+ * The text the box shows for a given location, when the visitor is not typing.
+ *
+ * The results page's `?q=` is the only record of what was searched for — the heading repeats it,
+ * but the box is where the visitor looks to change it, and emptying it on submit meant the one
+ * control that could refine a search forgot the search. So the box mirrors the URL: it carries
+ * the query for as long as the results are on screen, and empties by itself on the way to any
+ * other page, including a suggestion's video. Reading it from the location rather than holding
+ * it in state is also what makes it survive a reload and come back with the Back button.
+ */
+export function searchTextForLocation(pathname, search) {
+    if (pathname !== '/search') return '';
+    return new URLSearchParams(search).get('q') || '';
+}
+
 function SearchBar() {
     const navigate = useNavigate();
+    const { pathname, search } = useLocation();
     const containerRef = useRef(null);
-    const [query, setQuery] = useState('');
+    const urlQuery = searchTextForLocation(pathname, search);
+    const [query, setQuery] = useState(urlQuery);
     const [open, setOpen] = useState(false);
     const [highlightIndex, setHighlightIndex] = useState(-1);
+
+    // Adjusting state during render rather than in an effect: an effect would paint the stale
+    // text first, and here that is the previous search flashing under the new results.
+    const [lastUrlQuery, setLastUrlQuery] = useState(urlQuery);
+    if (urlQuery !== lastUrlQuery) {
+        setLastUrlQuery(urlQuery);
+        setQuery(urlQuery);
+        setOpen(false);
+        setHighlightIndex(-1);
+    }
 
     const { data: suggestions = [], isFetching, isError, settledQuery } = useSearchSuggestions(query, 8, open);
     const showNoMatches = shouldShowNoMatches({
@@ -40,17 +67,17 @@ function SearchBar() {
         count: suggestions.length,
     });
 
+    // Neither of these empties the box: the location it navigates to is what the box now says,
+    // and the sync above applies it — a search keeps its own words, anything else clears them.
     const goToSearch = (value) => {
         if (!value.trim()) return;
         navigate(`/search?q=${encodeURIComponent(value.trim())}`);
-        setQuery('');
         setOpen(false);
         setHighlightIndex(-1);
     };
 
     const goToSuggestion = (item) => {
         navigate(`/video/${item.id}`);
-        setQuery('');
         setOpen(false);
         setHighlightIndex(-1);
     };
