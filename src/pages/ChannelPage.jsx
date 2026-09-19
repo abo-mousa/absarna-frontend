@@ -9,7 +9,7 @@ import { VideoCard, BookCard, ArticleCard, PostCard, SubscribeButton } from '../
 import { useWatchProgressMap, useReadingProgressMap } from '../hooks/useVideos';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { resolveMediaUrl } from '@/lib/media';
-import { isChannelOwner } from '@/lib/user';
+import { canManageChannel } from '@/lib/user';
 import { channelTabPath, resolveChannelTab } from '@/lib/navigation';
 import {
     useChannel,
@@ -105,7 +105,11 @@ function ChannelPage() {
         image: resolveMediaUrl(channel?.bannerUrl || channel?.logoUrl),
     });
 
-    const isOwner = isChannelOwner(user, channel);
+    // canManageChannel, not isChannelOwner — the same rule the backend's own
+    // canManageChannel(userId, id, isAdmin) has always applied, and the same one ChannelManage
+    // gates itself on. A platform admin could already open that page; nothing offered them the
+    // link, so managing a channel they do not own meant building the URL from the slug by hand.
+    const canManage = canManageChannel(user, channel);
 
     const tabs = [
         { id: 'videos', label: t('common.videos'), icon: Video, count: videoCount },
@@ -161,7 +165,7 @@ function ChannelPage() {
                         )}
                     </div>
 
-                    {isOwner && (
+                    {canManage && (
                         <Link
                             to={`/channel/${slug}/manage`}
                             className="flex items-center gap-1.5 px-4 py-2.5 bg-white/20 text-white rounded-full font-semibold text-sm"

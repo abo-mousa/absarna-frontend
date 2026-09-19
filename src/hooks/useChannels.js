@@ -568,11 +568,37 @@ export const useDeleteChannel = () => {
  * either — re-running a ladder in order to skip a scan would spend exactly the CPU the exemption
  * exists to save.
  */
+/**
+ * A channel's detector exemptions, for the two admin surfaces that show them.
+ *
+ * <p><b>Its own request, deliberately not a field on the channel payload.</b> The backend attaches
+ * `reviewExemptions` only at its admin call sites, so the public channel endpoint — which the
+ * channel page and its settings both already load — does not carry it and must not start to.
+ * Fetching it separately keeps that server-side disclosure decision intact and keeps the answer
+ * out of any response a non-admin can obtain.
+ */
+export const useChannelReviewExemptions = (channelId, enabled = true) =>
+    useQuery({
+        queryKey: queryKeys.channelReviewExemptions(channelId),
+        queryFn: async () => {
+            const res = await api.get(`/channels/admin/${channelId}/review-exemptions`);
+            return res.data;
+        },
+        enabled: enabled && !!channelId,
+        staleTime: 30 * 1000,
+    });
+
 export const useSetChannelReviewExemptions = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: ({ id, types, reason }) =>
             api.put(`/channels/admin/${id}/review-exemptions`, { types, reason }),
-        onSuccess: () => invalidateAdminChannels(queryClient),
+        // Both readers: the admin list, which carries exemptions on every row, and the
+        // per-channel query the channel's own settings tab uses. Invalidating only the first left
+        // the settings panel showing what it had before the save.
+        onSuccess: (_data, { id }) => {
+            invalidateAdminChannels(queryClient);
+            queryClient.invalidateQueries({ queryKey: queryKeys.channelReviewExemptions(id) });
+        },
     });
 };

@@ -74,6 +74,19 @@ describe('canManageChannel', () => {
         expect(canManageChannel({ id: 1, role: 'PLATFORM_ADMIN' }, { ownerUserId: 999 })).toBe(true);
     });
 
+    it('is what the CHANNEL PAGE gates its manage link on, not isChannelOwner', () => {
+        // The backend's canManageChannel(userId, id, isAdmin) has always let an admin manage any
+        // channel, and ChannelManage has always gated itself on this function -- but ChannelPage
+        // used isChannelOwner, so nothing ever offered an admin the link, and managing a channel
+        // they did not own meant building the URL from the slug by hand. The two predicates differ
+        // for exactly one caller, and this is it.
+        const admin = { id: 1, role: 'PLATFORM_ADMIN' };
+        const someoneElsesChannel = { ownerUserId: 999 };
+
+        expect(isChannelOwner(admin, someoneElsesChannel)).toBe(false);
+        expect(canManageChannel(admin, someoneElsesChannel)).toBe(true);
+    });
+
     it('refuses an unrelated user', () => {
         expect(canManageChannel({ id: 7, role: 'USER' }, { ownerUserId: 8 })).toBe(false);
     });
