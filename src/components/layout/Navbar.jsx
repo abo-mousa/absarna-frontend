@@ -14,7 +14,7 @@ import { t } from '@/i18n';
 const iconButtonClass = 'flex flex-col items-center justify-center gap-0.5 min-w-[50px] px-2.5 py-1.5 rounded-md text-text-secondary hover:bg-surface-hover transition-colors';
 const iconLabelClass = 'hidden sm:block text-[0.65rem] font-medium text-text-muted';
 
-function Navbar({ onMenuClick }) {
+function Navbar({ onMenuClick, menuOpen = false }) {
     const { token, user, logout } = useAuth();
     const { theme, toggleTheme } = useTheme();
 
@@ -94,10 +94,20 @@ function Navbar({ onMenuClick }) {
                 ends at every width. The SEARCH box is the one thing that still wants a cap, and it
                 carries its own (below) rather than the bar carrying one for it. */}
             <div className="flex items-center gap-3 sm:gap-5 px-3 sm:px-6 lg:px-8 py-2.5">
+                {/* 44px, and NOT pulled out to the screen edge with a negative margin.
+                    `p-1.5` around a 22px icon is a 34px target, and `-mr-1` put its outer edge
+                    8px from the right of the phone — which is inside the zone both Android's
+                    gesture navigation and iOS Safari reserve for the system back swipe. Those
+                    reserve the touch, not the pixels, so roughly the outer third of the button
+                    silently did nothing and the rest worked: a button that opens the menu most
+                    of the time. The row's own `px-3` is now the only inset, which keeps the
+                    whole target outside that zone. */}
                 <button
                     onClick={onMenuClick}
-                    className="lg:hidden text-text-secondary p-1.5 -mr-1 rounded-md hover:bg-surface-hover flex-shrink-0"
+                    className="lg:hidden flex items-center justify-center w-11 h-11 rounded-md text-text-secondary hover:bg-surface-hover flex-shrink-0"
                     aria-label={t('nav.menu')}
+                    aria-expanded={menuOpen}
+                    aria-controls="app-sidebar"
                 >
                     <Menu size={22} />
                 </button>

@@ -68,20 +68,33 @@ const surfaceClass = `w-[240px] bg-surface border-l border-border-light py-3 ove
     fixed right-0 top-0 bottom-0 z-[1100]
     lg:sticky lg:top-[var(--navbar-h)] lg:h-[calc(100vh-var(--navbar-h))] lg:z-[900] outline-none`;
 
-function SideBar({ currentChannel, open = false, onClose }) {
+/**
+ * @param drawerOnly the page wants no desktop column — this panel is the phone drawer and
+ *        nothing else. `PageShell` passes it for every page that used to say `sidebar={false}`;
+ *        see the note there for why that must not mean "no menu on a phone".
+ */
+function SideBar({ currentChannel, open = false, onClose, drawerOnly = false }) {
     const { token } = useAuth();
     const location = useLocation();
     const asideRef = useRef(null);
+    // A drawer-only panel is mounted on every reading page, auth form and dashboard in the app,
+    // and on all of those it is off screen until somebody presses the hamburger. Fetching the
+    // channel list, the subscriptions and the owner's channels for a panel nobody has asked for
+    // would put three requests on the critical path of each of those pages. Opening the drawer
+    // enables them; closing it leaves the answers in the cache, so a second open is instant.
+    // Where this panel IS the desktop column it is visible from the start and fetches as before.
+    const wanted = open || !drawerOnly;
     const {
         data: channelPages, isLoading: loading, hasNextPage, fetchNextPage, isFetchingNextPage,
-    } = useAllChannels();
+    } = useAllChannels(wanted);
     const channels = channelPages?.pages.flatMap((page) => page.content) ?? [];
-    const { data: subscriptions = [] } = useSubscriptions(!!token);
-    const { data: myChannels = [] } = useMyChannels(!!token);
+    const { data: subscriptions = [] } = useSubscriptions(!!token && wanted);
+    const { data: myChannels = [] } = useMyChannels(!!token && wanted);
 
-    // `open` is only ever true for the mobile drawer (the hamburger that sets it is
-    // `lg:hidden`) — on desktop this same <aside> is a persistent, non-modal nav rail, so the
-    // trap/dialog semantics below only ever engage in the drawer case.
+    // `open` is only ever true for the mobile drawer (the hamburger that sets it is `lg:hidden`,
+    // and `PageShell` clears it if the viewport ever crosses into `lg` while it is up) — on
+    // desktop this same <aside> is a persistent, non-modal nav rail, so the trap/dialog semantics
+    // below only ever engage in the drawer case.
     useFocusTrap(open, asideRef, onClose);
 
     const isActive = (path) => location.pathname === path;
@@ -94,20 +107,34 @@ function SideBar({ currentChannel, open = false, onClose }) {
 
     return (
         <>
+            {/* Above the navbar, not below it. At `z-[999]` this sat under the bar's `z-[1000]`,
+                so the one strip of the page that stayed lit and fully pressable while the drawer
+                claimed `aria-modal` was the strip the hamburger is in: the visitor pressed it
+                again to put the menu away and nothing happened, because the press reached the
+                button rather than the backdrop. Under the panel's own `z-[1100]`, and well under
+                `Modal`'s `z-[2000]`, so a dialog opened from a drawer row still covers both. */}
             {open && (
                 <div
-                    className="fixed inset-0 bg-black/40 z-[999] lg:hidden"
+                    className="fixed inset-0 bg-black/40 z-[1050] lg:hidden"
                     onClick={onClose}
                 />
             )}
 
             <aside
                 ref={asideRef}
+                id="app-sidebar"
                 role={open ? 'dialog' : undefined}
                 aria-modal={open ? 'true' : undefined}
                 aria-label={open ? t('nav.sideMenu') : undefined}
                 tabIndex={-1}
-                className={`${surfaceClass}
+                // A closed drawer is parked off the right edge, not removed, so the transition has
+                // something to animate — which leaves its links in the tab ring and in a screen
+                // reader's reading order. That was survivable while it rendered on six pages and
+                // doubled as the desktop column; now that it is on every page, a drawer-only panel
+                // is inert while closed. Not applied in column mode: there `!open` is the ordinary
+                // desktop state and the links have to stay reachable.
+                inert={drawerOnly && !open ? '' : undefined}
+                className={`${surfaceClass} ${drawerOnly ? 'lg:hidden' : ''}
                     transition-transform duration-200 ${open ? 'translate-x-0' : 'translate-x-full'} lg:translate-x-0`}
             >
                 <div className="px-2 mb-4">

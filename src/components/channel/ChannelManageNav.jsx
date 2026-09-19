@@ -89,8 +89,9 @@ function ImportDot({ indicator }) {
  * <p><b>Attached to the screen's edge, not placed in the page's column.</b> The first version sat
  * inside a centred 1200px container, so on a wide monitor it floated with an empty margin on its
  * right and read as a card that had drifted, not as the page's menu. It now runs the full height
- * under the navbar against the right edge — the same frame as the app's own `SideBar`, which this
- * page hides — and only the content beside it is centred.
+ * under the navbar against the right edge — the same frame as the app's own `SideBar`, whose
+ * desktop column this page suppresses (`sidebar={false}`, and see `PageShell` for why that leaves
+ * its phone drawer in place) — and only the content beside it is centred.
  *
  * <p><b>A sidebar from `lg` up, a scrolling strip below it.</b> The breakpoint is the app shell's
  * own (`SideBar` becomes a drawer below `lg`), and it is also where it has to be: below it, a
