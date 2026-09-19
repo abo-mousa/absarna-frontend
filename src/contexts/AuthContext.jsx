@@ -11,6 +11,11 @@ import { t } from '@/i18n';
 
 const AuthContext = createContext();
 
+// One retry, then accept the answer — see fetchUserProfile for why a second attempt is worth
+// making and a third is not.
+const PROFILE_RETRY_ATTEMPTS = 1;
+const PROFILE_RETRY_DELAY_MS = 1500;
+
 export const AuthProvider = ({ children }) => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -43,24 +48,61 @@ export const AuthProvider = ({ children }) => {
         queryClient.clear();
     }, [queryClient]);
 
+    /**
+     * Load the signed-in viewer, with one retry for a failure that left the session intact.
+     *
+     * <p><b>This never ends the session, whatever the status.</b> `client.js` is the one judge of
+     * that and has already run by the time this catch does: a 401 arriving here means it tried a
+     * refresh and the refresh did not succeed. When the backend <em>rejected</em> the refresh
+     * token it has already cleared the pair and fired `auth:session-expired`, which the effect
+     * below turns into a logout. When the refresh failed for any other reason — offline, a
+     * timeout, a 5xx, the endpoint's own 10/min limit — it deliberately left the tokens alone and
+     * what surfaces here is still the original 401. Logging out on that threw away a perfectly
+     * good refresh token over a blip, undoing the whole of the care client.js takes, and it was
+     * the single most common way a remembered session ended.
+     *
+     * <p>A 403 is not this component's business either. With an entry point answering "no usable
+     * credential" with 401, a 403 means an authenticated caller who may not have the thing —
+     * nothing a logout improves.
+     *
+     * <p><b>The retry is not politeness.</b> A null `user` is not a neutral "not loaded yet"
+     * state: `ProtectedRoute` reads `isPlatformAdmin(user)`, so an admin whose one profile request
+     * lost a race is redirected off every `/admin` route to the home page — from the outside,
+     * indistinguishable from being signed out. One more attempt a moment later covers the two
+     * failures that actually produce that, both of which answer fast: a 401 whose refresh lost a
+     * race, and a 429 from the refresh endpoint's 10/min limit. It deliberately does not cover a
+     * timeout — see below.
+     */
     const fetchUserProfile = useCallback(async () => {
         try {
-            const res = await api.get('/user/profile');
-            setUser(res.data);
-        } catch (err) {
-            // Status only, never the axios error object: its `config.headers.Authorization`
-            // carries the live session JWT, so logging it whole puts a working credential in
-            // the console for any extension, screenshot, or error-reporting hook to pick up.
-            console.error('Failed to fetch profile:', err.response?.status ?? err.code ?? 'network error');
-            // Only a 401/403 means the session is actually invalid — a 500, timeout, or
-            // offline blip on mount shouldn't destroy an otherwise-valid session.
-            if (err.response?.status === 401 || err.response?.status === 403) {
-                logout();
+            for (let attempt = 0; ; attempt++) {
+                try {
+                    const res = await api.get('/user/profile');
+                    setUser(res.data);
+                    return;
+                } catch (err) {
+                    // Status only, never the axios error object: its `config.headers.Authorization`
+                    // carries the live session JWT, so logging it whole puts a working credential
+                    // in the console for any extension, screenshot, or error-reporting hook.
+                    console.error('Failed to fetch profile:',
+                        err.response?.status ?? err.code ?? 'network error');
+                    // Three reasons not to ask again, and the last is about the spinner:
+                    //  - the budget is spent;
+                    //  - no token left, so client.js has already declared the session over and
+                    //    dispatched the event — asking again is a second 401 for nothing;
+                    //  - no response at all (offline, or the client's 30s timeout). That attempt
+                    //    has ALREADY cost thirty seconds and a second one would cost thirty more,
+                    //    with `loading` true and the whole app behind a spinner throughout. The
+                    //    failures worth a second try — a 401 whose refresh lost, a 429 from the
+                    //    refresh endpoint's own limit — all arrive as a response, and quickly.
+                    if (attempt >= PROFILE_RETRY_ATTEMPTS || !err.response || !readToken()) return;
+                }
+                await new Promise((resolve) => setTimeout(resolve, PROFILE_RETRY_DELAY_MS));
             }
         } finally {
             setLoading(false);
         }
-    }, [logout]);
+    }, []);
 
     useEffect(() => {
         if (token) {
