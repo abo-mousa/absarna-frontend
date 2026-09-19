@@ -77,11 +77,15 @@ export function useChannelContentTab(slug, type, active, series = null) {
      */
     const publish = async (payload, { action, successMessage, onSuccess }) => {
         try {
-            await create.mutateAsync(payload);
+            // The created item, passed on rather than discarded: a poster can only be attached to
+            // a video that EXISTS, since every thumbnail endpoint and ObjectKeys.posterKey are
+            // keyed by its id. Handing the row back is what lets the caller offer that step at
+            // first upload instead of making an owner find the video again to set its picture.
+            const created = await create.mutateAsync(payload);
             // Newest first, so the new item is at the top of page 1 — an owner on page 5 would
             // otherwise publish and see nothing change.
             setPage(0);
-            onSuccess?.();
+            onSuccess?.(created);
             showToast(successMessage, 'success');
         } catch (err) {
             showToast(publishFailureMessage(err, type, action), 'error');

@@ -1034,6 +1034,18 @@ export const ar = {
             unsupported: 'صيغة الصورة غير مدعومة. اختر صورة بصيغة JPG أو PNG أو WEBP.',
             tooLarge: 'حجم الصورة كبير. اختر صورة أصغر من 5 ميجابايت.',
             hint: 'JPG أو PNG أو WEBP، وبحد أقصى 5 ميجابايت. يُفضّل عرض 1280×720.',
+            /*
+             * The poster step offered right after a first upload.
+             *
+             * `afterPublishBody` has one job beyond describing the control: to say that the video
+             * is already published and this is optional. The dialog opens on its own the moment an
+             * upload succeeds, which is exactly the shape of a required step, and an owner who
+             * reads it that way will sit looking for a picture rather than closing it. It also
+             * says where to find this later, so dismissing it is not a door closing.
+             */
+            afterPublishTitle: 'تم نشر الفيديو',
+            afterPublishBody: 'الفيديو منشور بالفعل. يمكنك اختيار صورة له الآن، أو تركه وسيلتقط الخادم صورة من الفيديو — ويمكنك تغييرها لاحقاً من تعديل الفيديو.',
+            afterPublishDone: 'تم',
         },
 
         channelName: 'اسم القناة',

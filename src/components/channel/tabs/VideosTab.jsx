@@ -5,6 +5,7 @@ import { Button, Input, Modal } from '@/components/ui';
 import ContentPublishForm, { FieldLabel } from '../ContentPublishForm';
 import ManagedContentList from './ManagedContentList';
 import VideoManageStatus from '../VideoManageStatus';
+import VideoThumbnailPicker from '../VideoThumbnailPicker';
 import SeriesBrowser, { NewSeriesModal, SeriesActions } from '../SeriesBrowser';
 import { useChannelContentTab } from '@/hooks/useChannelContentTab';
 import { useKeepScrollPlace } from '@/hooks/useKeepScrollPlace';
@@ -79,6 +80,8 @@ export default function VideosTab({ slug, channel, youtubeState, active }) {
     const content = useChannelContentTab(slug, 'videos', active && view === 'all');
     const upload = useChannelUpload(slug, 'videos');
     const [form, setForm] = useState(EMPTY_FORM);
+    // The just-published video whose poster is being offered, or null.
+    const [posterFor, setPosterFor] = useState(null);
     const uploadOriginalAction = useUploadOriginalAction(slug, youtubeState);
 
     const field = (key) => (e) => setForm({ ...form, [key]: e.target.value });
@@ -98,14 +101,29 @@ export default function VideosTab({ slug, channel, youtubeState, active }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        const wasUpload = !!form.uploadSessionId;
         content.publish({ ...stripEmpty(form), speaker: channel.name }, {
             action: t('channelManage.forms.video.action'),
             successMessage: t('channelManage.forms.video.published'),
-            onSuccess: () => {
+            onSuccess: (created) => {
                 // The session is spent: confirm assembled the object and created the row.
                 upload.forget();
                 setForm(EMPTY_FORM);
                 setUploadOpen(false);
+                // THE POSTER STEP, offered here rather than only from the edit dialog.
+                //
+                // It cannot be a field in the form above: every thumbnail endpoint and
+                // ObjectKeys.posterKey are keyed by the video id, and there is no id until this
+                // request returns. So it is a step after publishing rather than a control during
+                // it — which is also when an owner has just watched their own file go up and is
+                // most likely to care what it will look like.
+                //
+                // Uploads only. A video created from a YouTube URL already has that platform's
+                // poster and the picker's "the server will capture a frame" line would be untrue
+                // of it; its owner can still set one from the edit dialog, exactly as before.
+                if (wasUpload && created?.id) {
+                    setPosterFor(created);
+                }
             },
         });
     };
@@ -146,6 +164,29 @@ export default function VideosTab({ slug, channel, youtubeState, active }) {
             </div>
 
             <NewSeriesModal slug={slug} open={creatingSeries} onClose={() => setCreatingSeries(false)} />
+
+            {/* Dismissible, and saying so matters: the video is ALREADY published by the time this
+                opens. Closing it costs nothing — the worker's own frame is used and the owner can
+                replace it later from the edit dialog — so nothing here may read as a required
+                step standing between them and a finished upload. */}
+            <Modal
+                open={!!posterFor}
+                onClose={() => setPosterFor(null)}
+                title={t('channelManage.thumbnail.afterPublishTitle')}
+                maxWidth="560px"
+            >
+                <p className="text-text-secondary mb-4">
+                    {t('channelManage.thumbnail.afterPublishBody')}
+                </p>
+
+                {posterFor && <VideoThumbnailPicker slug={slug} video={posterFor} />}
+
+                <div className="flex justify-end mt-5">
+                    <Button onClick={() => setPosterFor(null)}>
+                        {t('channelManage.thumbnail.afterPublishDone')}
+                    </Button>
+                </div>
+            </Modal>
 
             <Modal
                 open={uploadOpen}
