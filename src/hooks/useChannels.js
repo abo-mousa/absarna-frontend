@@ -552,3 +552,27 @@ export const useDeleteChannel = () => {
         onSuccess: () => invalidateAdminChannels(queryClient),
     });
 };
+
+/**
+ * Replaces a channel's content-detection exemptions.
+ *
+ * <p><b>PUT of the whole set, not a grant and a revoke.</b> The screen is a checkbox per detector
+ * and the decision is "this channel, these detectors, for this reason" — a per-type endpoint would
+ * let two exemptions on one channel carry different grantors and different reasons, so "who
+ * decided this" would depend on which detector you asked about. Sending `types: []` revokes
+ * everything.
+ *
+ * <p><b>It is forward-looking, and the dialog says so.</b> It changes which scans are asked for on
+ * uploads from now on; it does not touch a finding that already exists, so a video a detector has
+ * already flagged stays in the review queue until a human decides on it. Nothing is re-queued
+ * either — re-running a ladder in order to skip a scan would spend exactly the CPU the exemption
+ * exists to save.
+ */
+export const useSetChannelReviewExemptions = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, types, reason }) =>
+            api.put(`/channels/admin/${id}/review-exemptions`, { types, reason }),
+        onSuccess: () => invalidateAdminChannels(queryClient),
+    });
+};

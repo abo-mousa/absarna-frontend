@@ -25,6 +25,10 @@ export const REVIEW_STATE = {
     // (a model outage must not stop publishing), explicit content hides. That rule lives on the
     // backend, which is why a finding carries `holds` rather than this repo knowing the types.
     UNCHECKED: 'UNCHECKED',
+    // Nothing looked, because a platform admin excused this channel from this detector. Publishes,
+    // never queued. Written by the backend when it queues the job, not by the worker — the worker
+    // is simply told to skip the scan and reports nothing, which is what makes the skip cheap.
+    EXEMPT: 'EXEMPT',
     // A human looked and said it is fine.
     CLEARED: 'CLEARED',
     // A human looked and said it is not. Hidden, permanently.
@@ -175,7 +179,12 @@ export const groupByType = (rows) => {
 // Everything ELSE is shown -- including a state this build does not recognise, because the
 // alternative is a video that has vanished with no message, which is the one outcome this field
 // exists to prevent. A new state must degrade to an "unknown note", never to silence.
-const QUIET = new Set([REVIEW_STATE.CLEAN, REVIEW_STATE.CLEARED]);
+//
+// EXEMPT is quiet for a second reason on top of "nothing happened to your video". Telling an owner
+// which detectors their channel is not scanned by tells them what would and would not be caught,
+// which is a thing to know and not a thing to publish. It is an operational fact about the
+// platform's moderation and it belongs on the admin screen that set it.
+const QUIET = new Set([REVIEW_STATE.CLEAN, REVIEW_STATE.CLEARED, REVIEW_STATE.EXEMPT]);
 
 // Worst first. Hidden outranks published whatever the state -- "your video is hidden" is the
 // notice that gets read -- then within each the order below; a state not listed sorts after the

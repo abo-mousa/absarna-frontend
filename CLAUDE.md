@@ -357,6 +357,12 @@ What this app relies on; the mirror lives in the backend's `CLAUDE.md`.
     renders nothing, their upload simply vanished.
   - **A reviewer decides per type**, so clearing the music says nothing about the explicit-content
     finding beside it. Never collapse the list to one verdict.
+  - **`EXEMPT` is a state, and it is silent to the owner** — the only one besides `CLEAN` and
+    `CLEARED` that is. It means a platform admin excused this channel from that detector, so
+    nothing scanned the video; it publishes and never queues. Quiet for two reasons rather than
+    one: nothing happened to the video, *and* telling an owner which detectors skip their channel
+    tells them what would and would not be caught. It is an operational fact about the platform's
+    moderation and it belongs on `AdminChannels`, which is where it is set.
   - `spans` is a jump-list, **not an edit decision list**, truncated to three: measured on a file
     that is music end to end they cover only 63% of it, so a recording comes back as many separate
     stretches. `peak` is the detector's highest score, for ranking a queue.
@@ -376,6 +382,17 @@ What this app relies on; the mirror lives in the backend's `CLAUDE.md`.
   `/user/change-password`, whose `tokenVersion` bump forces a fresh pair) picks between a
   7-day and a 90-day refresh token; the backend never infers it, so this app has to send it, and
   has to store the pair at the matching tier.
+- **The backend answers 401 for "authenticate again" and 403 for "not you" — `client.js` is the
+  only thing allowed to act on the difference.** It refreshes on 401, and on 401 alone; a 403 is a
+  caller the backend authenticated and refused, so refreshing it would be a round trip that
+  changes nothing. It also ends the session on exactly one condition: the refresh itself was
+  *rejected* (400/401/403). A refresh that failed for any other reason — offline, a timeout, a
+  5xx, the endpoint's own 10/min limit — leaves the tokens alone and rejects the original error,
+  which is still a 401. **Nothing else may read that 401 as a logout.** `AuthContext` did, on the
+  mount-time `/user/profile` probe, and threw away good refresh tokens over a blip; the session
+  now ends only via the `auth:session-expired` event `client.js` dispatches. A null `user` is not
+  neutral either — `ProtectedRoute` reads `isPlatformAdmin(user)`, so a failed profile probe
+  bounces an admin off `/admin` exactly as a logout would, which is why that probe retries once.
 - **Likes' status endpoint is public** (`{liked:false, likeCount:N}` when anonymous); `POST`/`DELETE`
   need a login. `VideoDTO.likeCount` is on cards; books/articles use the status call.
 - **Rate limits are per IP and per rule**, with a readable Arabic 429 body (the limiter runs after the

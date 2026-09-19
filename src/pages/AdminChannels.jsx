@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, X, Pause, Trash2, ExternalLink } from 'lucide-react';
+import { Check, X, Pause, Trash2, ExternalLink, ShieldOff } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
 import { QueryState, Avatar, Badge, Button, Modal, Input, Pager } from '../components/ui';
 import { useToast } from '../contexts/ToastContext';
@@ -13,6 +13,7 @@ import {
     useRejectChannel,
     useSuspendChannel,
     useDeleteChannel,
+    useSetChannelReviewExemptions,
 } from '../hooks/useChannels';
 import { t } from '@/i18n';
 
@@ -22,6 +23,15 @@ const STATUS_VARIANT = {
     REJECTED: 'danger',
     SUSPENDED: 'muted',
 };
+
+/**
+ * The detectors a channel can be excused from, in the order the backend declares them.
+ *
+ * <p>Listed here rather than derived from what a channel already carries, because the control is
+ * a checkbox per detector and an unchecked box has to exist before anyone ticks it. The names are
+ * the backend's wire values and must stay so — they are what goes on the transcode job.
+ */
+const DETECTORS = ['MUSIC', 'NUDITY'];
 
 const STATUS_LABEL = {
     PENDING: t('admin.channelStatus.PENDING'),
@@ -48,6 +58,40 @@ function AdminChannels() {
     // The channel awaiting a typed confirmation, and what has been typed so far.
     const [deleting, setDeleting] = useState(null);
     const [typedSlug, setTypedSlug] = useState('');
+
+    // The channel whose detection settings are open, and the unsaved edit. Seeded from the row
+    // the listing already carries, so the dialog opens filled in rather than empty-then-populated.
+    const setExemptions = useSetChannelReviewExemptions();
+    const [exempting, setExempting] = useState(null);
+    const [exemptTypes, setExemptTypes] = useState([]);
+    const [exemptReason, setExemptReason] = useState('');
+
+    const openExemptions = (channel) => {
+        setExempting(channel);
+        setExemptTypes((channel.reviewExemptions ?? []).map((e) => e.type));
+        // Deliberately NOT pre-filled with the existing reason. Every save restamps who decided
+        // and why, so carrying the old sentence forward would attribute one admin's reasoning to
+        // another admin's decision.
+        setExemptReason('');
+    };
+
+    const toggleExempt = (type) => {
+        setExemptTypes((current) =>
+            current.includes(type) ? current.filter((t2) => t2 !== type) : [...current, type]);
+    };
+
+    const saveExemptions = () => {
+        setExemptions.mutate(
+            { id: exempting.id, types: exemptTypes, reason: exemptReason.trim() },
+            {
+                onSuccess: () => {
+                    showToast(t('admin.exemptions.saved'), 'success');
+                    setExempting(null);
+                },
+                onError: () => showToast(t('admin.exemptions.saveFailed'), 'error'),
+            },
+        );
+    };
 
     const loading = pendingLoading || allLoading;
 
@@ -158,6 +202,27 @@ function AdminChannels() {
                                     <p className="text-sm text-text-muted">@{channel.slug}</p>
                                 </div>
                                 <Badge variant={STATUS_VARIANT[channel.status]}>{STATUS_LABEL[channel.status]}</Badge>
+                                {/* Shown on the row and not only inside the dialog. A channel
+                                    nothing scans is indistinguishable from one whose uploads all
+                                    came back clean, which is exactly why it has to be visible
+                                    without anyone going looking for it. */}
+                                {channel.reviewExemptions?.length > 0 && (
+                                    <Badge variant="danger">
+                                        {t('admin.exemptions.badge', {
+                                            types: channel.reviewExemptions
+                                                .map((e) => t(`admin.exemptions.detector.${e.type}`))
+                                                .join('، '),
+                                        })}
+                                    </Badge>
+                                )}
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => openExemptions(channel)}
+                                    icon={<ShieldOff size={14} />}
+                                >
+                                    {t('admin.exemptions.action')}
+                                </Button>
                                 {channel.status === 'ACTIVE' && (
                                     <Button size="sm" onClick={() => handleSuspend(channel.id)} icon={<Pause size={14} />} className="!bg-gold hover:!bg-gold">
                                         {t('admin.suspend')}
@@ -184,6 +249,70 @@ function AdminChannels() {
                         />
                     )}
                 </QueryState>
+
+                <Modal
+                    open={!!exempting}
+                    onClose={() => setExempting(null)}
+                    title={t('admin.exemptions.title', { name: exempting?.name })}
+                    maxWidth="520px"
+                >
+                    <p className="text-text-secondary mb-2">{t('admin.exemptions.intro')}</p>
+                    {/* Both halves of what this does NOT do. Neither is obvious from the control,
+                        and an admin who assumes either one is wrong in a direction that matters:
+                        that ticking a box publishes what is already held, or that it re-examines
+                        what has already been uploaded. */}
+                    <p className="text-text-muted text-sm mb-4">{t('admin.exemptions.scope')}</p>
+
+                    <div className="grid gap-2 mb-4">
+                        {DETECTORS.map((type) => (
+                            <label
+                                key={type}
+                                className="flex items-start gap-3 p-3 rounded-lg border border-border-light
+                                    cursor-pointer hover:bg-surface-hover transition-colors"
+                            >
+                                <input
+                                    type="checkbox"
+                                    className="mt-1 accent-primary"
+                                    checked={exemptTypes.includes(type)}
+                                    onChange={() => toggleExempt(type)}
+                                />
+                                <span>
+                                    <span className="font-semibold block">
+                                        {t(`admin.exemptions.detector.${type}`)}
+                                    </span>
+                                    <span className="text-text-muted text-sm">
+                                        {t(`admin.exemptions.detectorHint.${type}`)}
+                                    </span>
+                                </span>
+                            </label>
+                        ))}
+                    </div>
+
+                    <Input
+                        label={t('admin.exemptions.reasonLabel')}
+                        value={exemptReason}
+                        onChange={(e) => setExemptReason(e.target.value)}
+                        textarea
+                        rows={2}
+                        required
+                    />
+                    <p className="text-text-muted text-xs mt-1">{t('admin.exemptions.reasonHint')}</p>
+
+                    <div className="flex gap-2 justify-end mt-5">
+                        <button
+                            onClick={() => setExempting(null)}
+                            className="px-4 py-2 text-text-secondary font-semibold"
+                        >
+                            {t('common.cancel')}
+                        </button>
+                        <Button
+                            onClick={saveExemptions}
+                            disabled={!exemptReason.trim() || setExemptions.isPending}
+                        >
+                            {t('common.save')}
+                        </Button>
+                    </div>
+                </Modal>
 
                 <Modal
                     open={!!deleting}

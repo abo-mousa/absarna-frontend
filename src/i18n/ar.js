@@ -1408,6 +1408,46 @@ export const ar = {
         approveFailed: 'فشل في الموافقة',
         rejectFailed: 'فشل في الرفض',
         suspendFailed: 'فشل في التعليق',
+
+        /**
+         * Excusing a channel from the content detectors.
+         *
+         * <p>THE COPY HAS TWO JOBS AND THE SECOND IS THE HARDER ONE. The first is obvious: say
+         * what is being switched off. The second is to say what this does NOT do, because an
+         * admin will assume one of two wrong things otherwise — that ticking a box publishes the
+         * videos this channel already has held (it does not; those stay in the review queue until
+         * a human decides on them), or that it re-examines what has already been uploaded (it
+         * does not; nothing is re-queued, since re-running a ladder to skip a scan would spend
+         * exactly the CPU this saves). `scope` is that sentence and it is not decoration.
+         *
+         * <p>`badge` sits on the channel row, not only inside this dialog. A channel nothing
+         * scans looks exactly like a channel whose uploads all came back clean, which is the
+         * whole reason the exemption has to be visible without anyone going to look for it.
+         *
+         * <p>The reason box is required, and the field opens EMPTY every time rather than
+         * pre-filled with what was written before: every save restamps who decided and why, so
+         * carrying the previous sentence forward would attribute one admin's reasoning to another
+         * admin's decision.
+         */
+        exemptions: {
+            action: 'الفحص التلقائي',
+            title: 'الفحص التلقائي لقناة {name}',
+            badge: 'بدون فحص: {types}',
+            intro: 'اختر الفحوصات التي لن تُجرى على الفيديوهات المرفوعة من هذه القناة. هذا يختصر وقت المعالجة بشكل كبير.',
+            scope: 'لا يؤثر هذا على الفيديوهات السابقة: ما هو محجوز للمراجعة يبقى كذلك حتى يبتّ فيه مشرف، ولا يُعاد فحص ما رُفع من قبل.',
+            detector: {
+                MUSIC: 'الموسيقى',
+                NUDITY: 'المحتوى غير اللائق',
+            },
+            detectorHint: {
+                MUSIC: 'كشف الموسيقى والألحان في الصوت.',
+                NUDITY: 'كشف المحتوى غير اللائق في الصورة.',
+            },
+            reasonLabel: 'سبب الاستثناء',
+            reasonHint: 'يُحفظ مع اسمك وتاريخ القرار. مطلوب أيضاً عند إعادة تفعيل الفحص.',
+            saved: 'تم حفظ إعدادات الفحص',
+            saveFailed: 'فشل في حفظ إعدادات الفحص',
+        },
         stats: {
             videos: 'فيديوهات',
             books: 'كتب',

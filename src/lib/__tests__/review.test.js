@@ -203,6 +203,37 @@ describe('what an owner is told', () => {
             { review: [{ type: 'MUSIC', state: REVIEW_STATE.CLEARED }] }, true)).toEqual([]);
     });
 
+    it('says nothing about a video its channel is exempt from scanning', () => {
+        // EXEMPT is quiet for TWO reasons, and the second is the one that makes it a rule rather
+        // than a tidy-up. The first is the ordinary one: nothing happened to this video, so there
+        // is no notice to give. The second is that telling an owner which detectors their channel
+        // is not scanned by tells them what would and would not be caught — an operational fact
+        // about the platform's moderation, which belongs on the admin screen that set it and
+        // nowhere near the person uploading.
+        expect(ownerNotices(
+            { review: [{ type: 'MUSIC', state: REVIEW_STATE.EXEMPT, holds: false }] }, true))
+            .toEqual([]);
+        expect(ownerNotices(
+            { review: [{ type: 'NUDITY', state: REVIEW_STATE.EXEMPT, holds: false }] }, true))
+            .toEqual([]);
+    });
+
+    it('still shows a real finding sitting beside an exempt one', () => {
+        // Per (channel, detector) on the backend, so a channel excused from music is not thereby
+        // excused from explicit content. Swallowing the whole notice list because one entry is
+        // EXEMPT would turn the cheap exemption into a silent grant of the consequential one.
+        const notices = ownerNotices({
+            review: [
+                { type: 'MUSIC', state: REVIEW_STATE.EXEMPT, holds: false },
+                { type: 'NUDITY', state: REVIEW_STATE.HELD, holds: true },
+            ],
+        }, true);
+
+        expect(notices).toHaveLength(1);
+        expect(notices[0].type).toBe('NUDITY');
+        expect(notices[0].hidden).toBe(true);
+    });
+
     it('does not dress a published video as a blocked one', () => {
         // The asymmetry that matters most. A MUSIC advisory or unfinished scan is a note on a
         // video that is playing normally; rendering it in the same alarming tone as HELD would
