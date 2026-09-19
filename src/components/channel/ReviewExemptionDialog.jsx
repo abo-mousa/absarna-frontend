@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Modal, Input, Button } from '@/components/ui';
 import { useToast } from '@/contexts/ToastContext';
 import { useSetChannelReviewExemptions } from '@/hooks/useChannels';
@@ -21,16 +21,24 @@ export default function ReviewExemptionDialog({ channel, exemptions, open, onClo
     const [types, setTypes] = useState([]);
     const [reason, setReason] = useState('');
 
-    // Seeded when the dialog opens, not on every render, so a keystroke does not fight the props.
-    // The reason deliberately does NOT carry over: every save restamps who decided and why, so
-    // pre-filling the previous sentence would attribute one admin's reasoning to another's
-    // decision.
+    // Read through a ref so that re-seeding depends on OPENING, and on nothing else. Depending on
+    // `exemptions` directly says "re-seed whenever this data changes identity", which is not the
+    // intent and is not harmless: a refetch while the dialog is open — a reconnect is enough —
+    // would tick the checkboxes back to the server's state and wipe the reason mid-sentence,
+    // under someone who is part way through a decision.
+    //
+    // The reason deliberately does NOT carry over between openings: every save restamps who
+    // decided and why, so pre-filling the previous sentence would attribute one admin's reasoning
+    // to another's decision.
+    const latest = useRef(exemptions);
+    latest.current = exemptions;
     useEffect(() => {
-        if (open) {
-            setTypes((exemptions ?? []).map((e) => e.type));
-            setReason('');
+        if (!open) {
+            return;
         }
-    }, [open, exemptions]);
+        setTypes((latest.current ?? []).map((e) => e.type));
+        setReason('');
+    }, [open]);
 
     const toggle = (type) =>
         setTypes((current) =>
