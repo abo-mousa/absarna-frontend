@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, ExternalLink, Play, X } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
+import AdminNav from '../components/admin/AdminNav';
 import { VideoPlayer } from '../components/content';
 import { Badge, Button, Modal, Pager, QueryState, SwapLabel } from '../components/ui';
 import { useToast } from '../contexts/ToastContext';
@@ -159,6 +160,8 @@ function AdminReview() {
     return (
         <PageShell>
             <div className="px-4 sm:px-6 py-6 sm:py-8">
+                <AdminNav current="review" />
+
                 <h1 className="text-2xl font-bold mb-4">{t('admin.review.title')}</h1>
 
                 {/* One tab per detector. Each carries its own backlog count, because "how big is

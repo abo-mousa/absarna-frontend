@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, X, Pause, Trash2, ExternalLink, ShieldOff } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
+import AdminNav from '../components/admin/AdminNav';
 import { QueryState, Avatar, Badge, Button, Modal, Input, Pager } from '../components/ui';
 import { useToast } from '../contexts/ToastContext';
 import { useEmptyPageStepBack } from '../hooks/useEmptyPageStepBack';
@@ -130,6 +131,8 @@ function AdminChannels() {
     return (
         <PageShell sidebar={false}>
             <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-6">
+                <AdminNav current="channels" />
+
                 <h1 className="text-xl font-bold mb-6">{t('admin.manageChannels')}</h1>
 
                 <QueryState isLoading={loading}>

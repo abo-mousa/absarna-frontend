@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, Check, ExternalLink, Users, X } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
+import AdminNav from '../components/admin/AdminNav';
 import { Badge, Button, Pager, QueryState } from '../components/ui';
 import { useToast } from '../contexts/ToastContext';
 import { usePageMeta } from '../hooks/usePageMeta';
@@ -198,6 +199,8 @@ function AdminReports() {
     return (
         <PageShell sidebar={false}>
             <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
+                <AdminNav current="reports" />
+
                 <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
                     <h1 className="text-xl sm:text-2xl font-bold">{t('adminReports.title')}</h1>
                     {/* The size of the whole backlog, which one page cannot answer — the same

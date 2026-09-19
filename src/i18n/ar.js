@@ -1267,6 +1267,11 @@ export const ar = {
     admin: {
         title: 'لوحة التحكم',
         manageChannels: 'إدارة القنوات',
+        // The admin section's own menu, on all four of its screens. Labelled rather than left as
+        // a bare <nav>, because a page can hold several and a screen reader lists them by name.
+        nav: {
+            label: 'أقسام لوحة التحكم',
+        },
         // The music review queue. Platform-admin only, and the only way a held video ever
         // becomes visible again -- if nobody reads this screen, uploads sit in it forever, which
         // is why the backlog count is on the heading rather than buried.

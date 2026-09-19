@@ -1,6 +1,6 @@
-import { Link } from 'react-router-dom';
 import { Video, BookOpen, FileText, Tv, Bell, Shield, Check, X } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
+import AdminNav from '../components/admin/AdminNav';
 import { Button, QueryState } from '../components/ui';
 import { useToast } from '../contexts/ToastContext';
 import { usePageMeta } from '../hooks/usePageMeta';
@@ -35,28 +35,13 @@ function Admin() {
     return (
         <PageShell sidebar={false}>
             <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-6">
-                <div className="flex justify-between items-center flex-wrap gap-3 mb-6">
-                    <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-                        <Shield size={24} /> {t('admin.title')}
-                    </h1>
-                    <div className="flex items-center gap-3 flex-wrap">
-                        {/* A held video is an upload nobody can see until someone opens this
-                            screen, so the way in sits beside the channel queue rather than
-                            behind a URL an admin has to remember. */}
-                        <Link to="/admin/review" className="px-5 py-2.5 bg-surface-hover border border-border rounded-md font-semibold">
-                            {t('admin.review.title')}
-                        </Link>
-                        {/* Beside the review queue, for the same reason it is: a report is a
-                            reader waiting on a human, and a queue reachable only by remembering a
-                            URL is a queue nobody reads. */}
-                        <Link to="/admin/reports" className="px-5 py-2.5 bg-surface-hover border border-border rounded-md font-semibold">
-                            {t('adminReports.title')}
-                        </Link>
-                        <Link to="/admin/channels" className="px-5 py-2.5 bg-primary text-white rounded-md font-semibold">
-                            {t('admin.manageChannels')}
-                        </Link>
-                    </div>
-                </div>
+                {/* The same row on all four admin screens -- it used to live only here, so the
+                    three pages it leads to had no navigation at all. See AdminNav. */}
+                <AdminNav current="overview" />
+
+                <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2 mb-6">
+                    <Shield size={24} /> {t('admin.title')}
+                </h1>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
                     {statCards.map((card, i) => (
