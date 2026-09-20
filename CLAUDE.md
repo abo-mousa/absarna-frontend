@@ -390,7 +390,16 @@ What this app relies on; the mirror lives in the backend's `CLAUDE.md`.
   channel). Call it when the user declines a resume offer.
 - **`GET /api/search` and `/api/search/suggestions` answer the same question** — the dropdown is a
   preview of what Enter will show. If they diverge, it is a backend bug; don't paper over it here.
-- **`GET /api/feed` is stable for a viewer for a whole day**, so a refresh is not a way to reshuffle it.
+- **`GET /api/feed` is stable for a viewer for a whole day**, so a refresh is not a way to reshuffle
+  it. The backend guarantees the response for a given (viewer, day, `shuffle`) is identical every
+  time it is asked for, which is what makes `refetchOnMount: 'always'` safe here: Back from a video
+  re-requests the feed and gets the same row back. **That includes after watching the video** — the
+  backend drops watched videos out of the feed's recommendations, but its window closes at midnight
+  precisely so today's page does not move under the reader. So do **not** invalidate `['feed']` from
+  a watch, a like, a subscribe or a view: it buys nothing the next mount would not fetch anyway, and
+  it is the shape that would make the row change while someone is reading it. `reshuffleFeed()` on a
+  logo click is the one gesture that may, and it mints a new `shuffle` first so the change is asked
+  for rather than incidental.
 - **`/auth/refresh` rotates the refresh token — store the one it returns.** The response is
   `{token, refreshToken}`, and the replacement carries a fresh expiry, which is what turns the
   session into a window measured from the last visit. Keeping only the access token pins the
