@@ -1551,6 +1551,18 @@ export const ar = {
          * carrying the previous sentence forward would attribute one admin's reasoning to another
          * admin's decision.
          */
+        /**
+         * The invitation link an admin copies into the email.
+         *
+         * Worded as «رابط الدعوة» rather than anything with «رمز» in it, because a token is what
+         * the scholar puts in their YouTube description to PROVE ownership, and these two strings
+         * would otherwise sit on the same screen meaning different things.
+         */
+        claimLink: {
+            action: 'رابط الدعوة',
+            copied: 'نُسخ رابط الدعوة',
+            failed: 'تعذر إنشاء رابط الدعوة',
+        },
         exemptions: {
             action: 'الفحص التلقائي',
             title: 'الفحص التلقائي لقناة {name}',

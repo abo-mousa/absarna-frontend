@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, X, Pause, Trash2, ExternalLink, ShieldOff } from 'lucide-react';
+import { Check, X, Pause, Trash2, ExternalLink, ShieldOff, Link2 } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
 import AdminNav from '../components/admin/AdminNav';
 import { QueryState, Avatar, Badge, Button, Modal, Input, Pager } from '../components/ui';
@@ -15,7 +15,9 @@ import {
     useRejectChannel,
     useSuspendChannel,
     useDeleteChannel,
+    useChannelClaimLink,
 } from '../hooks/useChannels';
+import { describeError } from '@/lib/describeError';
 import { t } from '@/i18n';
 
 const STATUS_VARIANT = {
@@ -45,6 +47,7 @@ function AdminChannels() {
     const approveChannel = useApproveChannel();
     const rejectChannel = useRejectChannel();
     const suspendChannel = useSuspendChannel();
+    const claimLink = useChannelClaimLink();
     const deleteChannel = useDeleteChannel();
 
     // The channel awaiting a typed confirmation, and what has been typed so far.
@@ -83,6 +86,27 @@ function AdminChannels() {
             },
             onError: () => showToast(t('admin.deleteFailed'), 'error'),
         });
+    };
+
+    /**
+     * Puts the channel's invitation link on the clipboard, for the email we send the scholar.
+     *
+     * <p>The link is the plain channel URL plus the token that makes the claim offer visible —
+     * the page is public either way, and without the token it shows only the notice. Built from
+     * `window.location.origin` rather than a configured base so the copied link points at
+     * whatever host the admin is actually looking at.
+     */
+    const handleClaimLink = async (channel) => {
+        try {
+            const { slug, token } = await claimLink.mutateAsync(channel.id);
+            const url = `${window.location.origin}/channel/${encodeURIComponent(slug)}`
+                + `?claim=${encodeURIComponent(token)}`;
+            await navigator.clipboard.writeText(url);
+            showToast(t('admin.claimLink.copied'), 'success');
+        } catch (error) {
+            // Includes a refused clipboard, which is why the toast does not claim it was copied.
+            showToast(describeError(error, t('admin.claimLink.failed')), 'error');
+        }
     };
 
     const handleSuspend = (id) => {
@@ -174,6 +198,19 @@ function AdminChannels() {
                                     <Badge variant="danger">
                                         <ReviewExemptionSummary exemptions={channel.reviewExemptions} />
                                     </Badge>
+                                )}
+                                {/* Only where there is somebody to invite. A claimed or
+                                    ordinary channel has no offer to scope, and the backend
+                                    refuses to mint a token for one. */}
+                                {channel.claimState === 'UNCLAIMED' && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleClaimLink(channel)}
+                                        icon={<Link2 size={14} />}
+                                    >
+                                        {t('admin.claimLink.action')}
+                                    </Button>
                                 )}
                                 <Button
                                     variant="outline"

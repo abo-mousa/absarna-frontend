@@ -18,6 +18,17 @@ import { useUserScope } from './useUserScope';
 const key = queryKeys.channelClaim;
 
 /**
+ * The invitation token goes on the query string of every claim call.
+ *
+ * <p>It is not a credential — it authorizes nothing, and taking a channel still needs control of
+ * its YouTube channel — so the usual objection to putting a secret in a URL does not apply. What
+ * it decides is who is SHOWN the offer and whose attempts are answered, which is what stops the
+ * invitation being addressed to every visitor of a public page.
+ */
+const withToken = (path, claimToken) =>
+    claimToken ? `${path}?token=${encodeURIComponent(claimToken)}` : path;
+
+/**
  * Whether this channel is waiting for its owner, and which proofs are open.
  *
  * <p><b>Enabled without a login.</b> The scholar arriving from an email is signed out, and the
@@ -25,11 +36,13 @@ const key = queryKeys.channelClaim;
  * the question for every viewer and the caller decides what to render. A signed-out viewer still
  * gets `claimable`, which is all the banner needs to offer them a way in.
  */
-export const useChannelClaim = (slug, enabled = true) => {
+export const useChannelClaim = (slug, claimToken = null, enabled = true) => {
     const scope = useUserScope();
     return useQuery({
-        queryKey: key(slug, scope),
-        queryFn: async () => (await api.get(`/channels/${slug}/claim`)).data,
+        // The token is part of the key: the same channel answers differently with and without
+        // it, and a cached tokenless answer must not suppress the offer for the invited reader.
+        queryKey: [...key(slug, scope), claimToken],
+        queryFn: async () => (await api.get(withToken(`/channels/${slug}/claim`, claimToken))).data,
         enabled: Boolean(slug) && enabled,
         retry: false,
     });
@@ -43,15 +56,11 @@ export const useChannelClaim = (slug, enabled = true) => {
  * would let anyone point a seeded channel at a YouTube channel they do control and verify against
  * that — the whole transfer, proving nothing.
  */
-export const useStartClaimToken = (slug) => {
-    const queryClient = useQueryClient();
-    const scope = useUserScope();
-    return useMutation({
-        mutationFn: async () => (await api.post(`/channels/${slug}/claim/token`)).data,
-        onSuccess: (data) =>
-            queryClient.setQueryData(key(slug, scope), (current) => ({ ...current, ...data })),
+export const useStartClaimToken = (slug, claimToken) =>
+    useMutation({
+        mutationFn: async () =>
+            (await api.post(withToken(`/channels/${slug}/claim/token`, claimToken))).data,
     });
-};
 
 /**
  * Re-reads the description and, if the token is there, takes the channel.
@@ -64,10 +73,11 @@ export const useStartClaimToken = (slug) => {
  * query: the channel itself now names them, the manage link appears, and their channel list has
  * grown by one. Everything keyed on the slug goes, plus `my-channels`.
  */
-export const useCheckClaimToken = (slug) => {
+export const useCheckClaimToken = (slug, claimToken) => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async () => (await api.post(`/channels/${slug}/claim/token/check`)).data,
+        mutationFn: async () =>
+            (await api.post(withToken(`/channels/${slug}/claim/token/check`, claimToken))).data,
         onSuccess: (data) => {
             if (!data?.claimed) return;
             queryClient.invalidateQueries({ queryKey: ['channel-claim', slug] });
@@ -88,7 +98,8 @@ export const useCheckClaimToken = (slug) => {
  * <p>Offered only when the status carries `oauthAvailable`; the description token is the fallback
  * that keeps working when Google sign-in is switched off.
  */
-export const useStartClaimOAuth = (slug) =>
+export const useStartClaimOAuth = (slug, claimToken) =>
     useMutation({
-        mutationFn: async () => (await api.post(`/channels/${slug}/claim/oauth`)).data,
+        mutationFn: async () =>
+            (await api.post(withToken(`/channels/${slug}/claim/oauth`, claimToken))).data,
     });

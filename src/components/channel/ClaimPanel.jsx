@@ -20,12 +20,12 @@ import { t } from '@/i18n';
  * bound to a YouTube channel an admin vouched for, and that is what must be proved — which is why
  * this panel shows the linked channel and offers no field to change it.
  */
-function ClaimPanel({ slug, status, onClaimed }) {
+function ClaimPanel({ slug, status, claimToken, onClaimed }) {
     const { showToast } = useToast();
     const [copied, setCopied] = useState(false);
-    const startToken = useStartClaimToken(slug);
-    const checkToken = useCheckClaimToken(slug);
-    const startOAuth = useStartClaimOAuth(slug);
+    const startToken = useStartClaimToken(slug, claimToken);
+    const checkToken = useCheckClaimToken(slug, claimToken);
+    const startOAuth = useStartClaimOAuth(slug, claimToken);
 
     const token = startToken.data?.token || status?.token;
 

@@ -545,6 +545,22 @@ export const useSuspendChannel = () => {
  * <p>That is why the caller makes the operator type the slug rather than click through a
  * confirm — and why suspending, which is reversible, sits next to it as the usual answer.
  */
+/**
+ * The invitation link for a seeded channel, fetched on demand so an admin can put it in an email.
+ *
+ * <p>A mutation rather than a query because it is an ACTION: the backend mints the token on first
+ * read, and issuing an invitation is not something a screen should do merely by rendering a row.
+ *
+ * <p>What comes back scopes who is SHOWN the claim offer, not who may take the channel — that
+ * still needs control of its YouTube channel. Which is why this can be copied into an ordinary
+ * email without ceremony.
+ */
+export const useChannelClaimLink = () =>
+    useMutation({
+        mutationFn: async (channelId) =>
+            (await api.get(`/channels/admin/${channelId}/claim-link`)).data,
+    });
+
 export const useDeleteChannel = () => {
     const queryClient = useQueryClient();
     return useMutation({
