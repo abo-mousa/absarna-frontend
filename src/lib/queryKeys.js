@@ -74,6 +74,10 @@ export const queryKeys = {
     channelSeriesManagePage: (slug, page, scope) => ['channel-series-manage', slug, 'page', page, scope],
     channelComments: (slug, size, scope) => ['channel-comments', slug, size, scope],
     channelYouTube: (slug, scope) => ['channel-youtube', slug, scope],
+    // Scoped, though most of what it carries is public: the answer includes whether THIS viewer
+    // may claim, and a claim token is minted per claimant. An unscoped key would hand the next
+    // account on a shared machine the previous one's claim in progress.
+    channelClaim: (slug, scope) => ['channel-claim', slug, scope],
     // Platform-admin only, and user-scoped like everything else here: the queue is a list of
     // videos nobody else may even see, so a cache surviving a logout would be the worst possible
     // leak of exactly the rows the whole feature exists to hide.

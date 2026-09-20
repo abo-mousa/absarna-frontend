@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { usePageMeta } from '../hooks/usePageMeta';
@@ -9,6 +9,7 @@ import {
     getPasswordRules, getPasswordStrengthLabel, isPasswordValid, validateUsername,
     USERNAME_MAX_LENGTH, EMAIL_MAX_LENGTH, FULL_NAME_MAX_LENGTH,
 } from '@/lib/validation';
+import { safeInternalPath } from '@/lib/navigation';
 import { t } from '@/i18n';
 
 /**
@@ -26,6 +27,7 @@ const GENDERS = ['MALE', 'FEMALE'];
 function Register() {
     usePageMeta({ title: t('auth.register.heading') });
     const navigate = useNavigate();
+    const location = useLocation();
     const { register } = useAuth();
     const { showToast } = useToast();
     const [form, setForm] = useState({
@@ -81,7 +83,11 @@ function Register() {
         const result = await register(form.username, form.email, form.password, form.fullName, form.gender, form.acceptedTerms);
         if (result.success) {
             showToast(t('auth.register.created'), 'success');
-            navigate('/');
+            // Back where they came from, the same way Login does it. Someone who followed a claim
+            // offer on a channel page arrives here with two steps behind them and no reason to
+            // remember the slug — dropping them on the home page loses the one thing that made
+            // signing up worth finishing.
+            navigate(safeInternalPath(location.state?.from) || '/');
         } else {
             setError(result.message);
         }

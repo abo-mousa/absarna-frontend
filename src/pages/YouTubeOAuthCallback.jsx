@@ -81,7 +81,12 @@ function YouTubeOAuthCallback() {
                         <h2 className="text-xl font-bold mt-4">{t('youtubeOAuth.failedHeading')}</h2>
                         <p className="text-text-muted mt-2" dir="auto">{failure}</p>
                         <p className="text-sm text-text-muted mt-2">{t('youtubeOAuth.tokenStillWorks')}</p>
-                        <Link to={returnSlug ? manageYouTubePath(returnSlug) : '/'} className="block mt-6">
+                        {/* The CHANNEL page, not the manage page. This branch is also where a
+                            failed claim lands — someone proving a seeded channel is theirs who
+                            signed in with the wrong Google account — and they do not own the
+                            channel, so the dashboard would bounce them. The channel page is
+                            reachable for both, and carries the owner's way on to manage. */}
+                        <Link to={returnSlug ? `/channel/${encodeURIComponent(returnSlug)}` : '/'} className="block mt-6">
                             <Button fullWidth>
                                 {returnSlug ? t('youtubeOAuth.backToChannel') : t('common.backHome')}
                             </Button>

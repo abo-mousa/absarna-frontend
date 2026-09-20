@@ -104,7 +104,7 @@ function Login() {
                 <div className="text-center mt-5">
                     <p className="text-sm text-text-secondary">
                         {t('auth.login.noAccount')}{' '}
-                        <Link to="/register" className="text-primary font-semibold">{t('auth.login.registerLink')}</Link>
+                        <Link to="/register" state={location.state} className="text-primary font-semibold">{t('auth.login.registerLink')}</Link>
                     </p>
                 </div>
             </div>

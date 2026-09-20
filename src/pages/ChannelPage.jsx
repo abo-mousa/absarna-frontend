@@ -20,6 +20,9 @@ import {
     useSubscriptionStatus,
 } from '../hooks/useChannels';
 import { useChannelSeries } from '../hooks/useSeries';
+import { useChannelClaim } from '../hooks/useChannelClaim';
+import { ClaimPanel } from '@/components/channel';
+import { shouldOfferClaim } from '@/lib/claim';
 import { t } from '@/i18n';
 
 function ChannelPage() {
@@ -111,6 +114,18 @@ function ChannelPage() {
     // link, so managing a channel they do not own meant building the URL from the slug by hand.
     const canManage = canManageChannel(user, channel);
 
+    /**
+     * Whether this channel is still waiting for the scholar it was built for.
+     *
+     * <p><b>Asked for every viewer, signed in or not.</b> The person this banner is written for
+     * arrives from an email we sent and has no account yet — gating the question on a login would
+     * hide the offer from exactly the one reader it exists for, and they would leave seeing a page
+     * about themselves with nothing on it that spoke to them.
+     */
+    const { data: claim } = useChannelClaim(slug);
+    const [claimOpen, setClaimOpen] = useState(false);
+    const showClaim = shouldOfferClaim(claim, user, channel);
+
     const tabs = [
         { id: 'videos', label: t('common.videos'), icon: Video, count: videoCount },
         { id: 'books', label: t('common.books'), icon: BookOpen, count: bookCount },
@@ -177,6 +192,60 @@ function ChannelPage() {
                     <SubscribeButton channelId={channel.id} variant="banner" />
                 </div>
             </div>
+
+            {/* TWO AUDIENCES, ONE BANNER, AND THEY GET DIFFERENT WEIGHTS.
+                The channel URL is the invitation we email, so this renders to every visitor, not
+                only the scholar it concerns. The NOTICE is therefore third-person and is the
+                thing worth telling all of them — this page was assembled by us and its subject
+                has not endorsed it. The INVITATION underneath asks rather than assumes, and is
+                deliberately quieter than Subscribe: a stranger should be able to read it, answer
+                "no" and carry on, without a full-weight call to action addressed to somebody
+                they are not. */}
+            {showClaim && (
+                <div className="mb-5 rounded-lg border border-border bg-surface-hover/50 p-4 sm:p-5">
+                    <h2 className="font-serif text-base m-0 mb-1.5">{t('channel.claim.banner')}</h2>
+                    <p className="font-reading text-sm text-text-secondary leading-relaxed m-0">
+                        {t('channel.claim.bannerBody')}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3">
+                        {token ? (
+                            <button
+                                type="button"
+                                onClick={() => setClaimOpen((open) => !open)}
+                                className="text-sm font-semibold text-primary underline underline-offset-4"
+                            >
+                                {t('channel.claim.cta')}
+                            </button>
+                        ) : (
+                            /* A control that said "claim" and opened a login form would have lied
+                               about what the press does, so the signed-out face says so itself.
+                               `state.from` is what Login reads, and it brings them back to this
+                               channel rather than to the home page — the one thing that makes a
+                               sign-up worth finishing for someone who came here for one page. */
+                            <Link
+                                to="/login"
+                                state={{ from: channelTabPath(slug, activeTab) }}
+                                className="text-sm font-semibold text-primary underline underline-offset-4"
+                            >
+                                {t('channel.claim.ctaSignedOut')}
+                            </Link>
+                        )}
+                        <Link to="/contact" className="text-sm text-text-muted underline underline-offset-4">
+                            {t('channel.claim.removeInstead')}
+                        </Link>
+                    </div>
+
+                    {claimOpen && token && (
+                        <div className="mt-5">
+                            <ClaimPanel
+                                slug={slug}
+                                status={claim}
+                                onClaimed={() => setClaimOpen(false)}
+                            />
+                        </div>
+                    )}
+                </div>
+            )}
 
             <div className="flex gap-2 mb-5 flex-wrap">
                 {tabs.map((tab) => (

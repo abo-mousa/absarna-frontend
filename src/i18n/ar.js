@@ -747,6 +747,61 @@ export const ar = {
         // that already, and the two mean different things to someone who has typed a word.
         searchVideos: 'ابحث في فيديوهات القناة',
         noVideosMatch: 'لا توجد فيديوهات تطابق بحثك في هذه القناة',
+
+        /**
+         * Taking over a channel the platform built for someone who was not on it.
+         *
+         * The reader of every one of these strings is a scholar who has just been told that a
+         * page about them exists, which they did not ask for. So the copy leads with what was
+         * made and why, says plainly that the videos still play from YouTube — the first thing
+         * anyone in their position wonders — and offers to remove it as readily as to hand it
+         * over. Nothing here congratulates them on being featured.
+         */
+        claim: {
+            /**
+             * WRITTEN IN THE THIRD PERSON, and that is the whole point of these two strings.
+             *
+             * This banner sits on a PUBLIC page — the channel URL is the invitation we send, so
+             * every visitor sees it, not only the scholar it concerns. The first draft said «هذه
+             * القناة جُمعت لك» («this channel was gathered for YOU»), which reads correctly to
+             * exactly one reader and addresses everybody else as somebody they are not.
+             *
+             * So the notice states a fact about the page, which is true for every reader and
+             * worth telling all of them: this was assembled by us and its subject has not
+             * endorsed it. The invitation is a separate, quieter line below.
+             */
+            banner: 'صفحة أعدّها فريق أَبْصَرْنا',
+            bannerBody: 'جمعنا محتوى هذه الصفحة من قناة صاحبها على يوتيوب، ولم يستلمها بعد. الفيديوهات تُعرض من يوتيوب كما هي، والمشاهدات والأرباح تبقى لصاحب القناة.',
+            // The invitation, and it asks rather than assumes — a stranger reading it should be
+            // able to answer «no» and move on without having been addressed as someone else.
+            cta: 'هل هذه قناتك؟ استلمها',
+            // Kept separate from the signed-in call to action because it promises a different
+            // next step, and a control that says "claim" and opens a login form is one that lied.
+            ctaSignedOut: 'هل هذه قناتك؟ سجّل الدخول لاستلامها',
+            removeInstead: 'اطلب إزالة الصفحة',
+            title: 'استلام القناة',
+            intro: 'لاستلام القناة أثبت أنك تملك قناة يوتيوب المرتبطة بها. لا يمكن تغيير القناة المرتبطة — الإثبات يخصّ هذه القناة وحدها.',
+            linkedChannel: 'قناة يوتيوب المرتبطة',
+            withGoogle: 'أثبت عبر تسجيل الدخول بجوجل',
+            withGoogleHint: 'الأسرع والأدق: يكفي أن تسجّل الدخول بالحساب الذي يملك القناة.',
+            // Two wordings for one step, picked by whether Google sign-in is offered above it.
+            // With OAuth switched off there is no first option for «أو» to follow, and a heading
+            // that opens with a dangling "or" reads as a page with something missing from it —
+            // which, on the deployment where this is the ONLY way to claim, is the worst possible
+            // impression to give of the only route available.
+            withToken: 'أو أثبت عبر وصف القناة',
+            withTokenOnly: 'أثبت عبر وصف القناة',
+            tokenStep1: 'انسخ هذا الرمز:',
+            tokenStep2: 'ضعه في وصف قناتك على يوتيوب واحفظ.',
+            tokenStep3: 'ثم اضغط «تحقّق». يمكنك حذف الرمز بعد نجاح التحقق.',
+            getToken: 'احصل على الرمز',
+            check: 'تحقّق',
+            // A check that did not find the token. Deliberately not an error: the usual cause is
+            // that YouTube's API has not caught up with a description saved a minute ago.
+            notYet: 'لم نجد الرمز في وصف القناة بعد. قد يستغرق يوتيوب دقيقة — احفظ الوصف ثم حاول مرة أخرى.',
+            success: 'تم استلام القناة. أصبحت الآن قناتك.',
+            failed: 'تعذر استلام القناة',
+        },
     },
 
     /**
