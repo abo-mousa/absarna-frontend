@@ -242,12 +242,13 @@ function AdminChannels() {
                                         </Button>
                                     </>
                                 )}
-                                {/* Attesting a YouTube link opens an offer on its own, so this
-                                    is for what that misses: a channel seeded before that rule,
-                                    and one whose content never came from YouTube. */}
+                                {/* Every seeded channel starts here. Linking one no longer opens
+                                    an offer by itself, because opening publishes a notice on the
+                                    public page — so inviting is a press, made when the email is
+                                    actually about to go out. */}
                                 {channel.claimState === 'NOT_CLAIMABLE' && (
                                     <Button
-                                        variant="ghost"
+                                        variant="outline"
                                         size="sm"
                                         onClick={() => handleSetClaimable(channel, true)}
                                         icon={<Link2 size={14} />}

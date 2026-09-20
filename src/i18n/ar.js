@@ -1562,14 +1562,20 @@ export const ar = {
             action: 'رابط الدعوة',
             copied: 'نُسخ رابط الدعوة',
             failed: 'تعذر إنشاء رابط الدعوة',
-            // Opening an offer on a channel that was seeded before the rule existed, or whose
-            // content never came from YouTube — attesting a link opens one on its own.
+            /**
+             * Opening an invitation is the act of inviting, and it is deliberate: linking a
+             * channel no longer opens one by itself.
+             *
+             * The confirmation says what became PUBLIC rather than just "done", because that is
+             * the part an admin cannot see from this screen — the channel page now tells every
+             * visitor that the platform assembled it and its owner has not taken it over.
+             */
             open: 'افتح الدعوة',
-            opened: 'فُتحت الدعوة — يمكنك نسخ الرابط الآن',
+            opened: 'فُتحت الدعوة. صار ظاهراً لكل زائر أن الصفحة من إعدادنا ولم يستلمها صاحبها، ويمكنك الآن نسخ الرابط وإرساله.',
             // Worded as withdrawing rather than hiding, because that is what it does: the link
             // already sent stops working.
             withdraw: 'اسحب الدعوة',
-            withdrawn: 'سُحبت الدعوة وبطل الرابط',
+            withdrawn: 'سُحبت الدعوة، وبطل الرابط الذي أُرسل، ولم يعد التنويه ظاهراً للزوار.',
             toggleFailed: 'تعذر تغيير حالة الدعوة',
         },
         exemptions: {
