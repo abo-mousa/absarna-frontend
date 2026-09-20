@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { importButtonLabel, importProgress, importReasonText } from '@/components/channel/YouTubeImportPanel';
+import {
+    autoUpdateIntro,
+    importButtonLabel,
+    importProgress,
+    importReasonText,
+    lastCheckedWhen,
+    refreshFailureText,
+    refreshSummary,
+} from '@/components/channel/YouTubeImportPanel';
 import { t } from '@/i18n';
+import dayjs from '@/lib/dayjsAr';
 
 /**
  * What the import panel offers, and what it says it has done.
@@ -90,5 +99,143 @@ describe('importReasonText', () => {
         expect(importReasonText({ importReason: null })).toBeNull();
         expect(importReasonText({})).toBeNull();
         expect(importReasonText(undefined)).toBeNull();
+    });
+});
+
+
+/**
+ * The daily catch-up's only surface.
+ *
+ * <p>It has no button, no progress bar and nothing to poll, so if these lines are wrong there is no
+ * second place an owner could look. The case worth pinning hardest is a check that found NOTHING:
+ * that is the answer on almost every day, and rendering nothing for it would leave an owner unable
+ * to tell a daily check that is working from one that stopped weeks ago.
+ */
+describe('autoUpdateIntro', () => {
+    it('says the rotation is live once a check has actually happened', () => {
+        // A check having run is the only proof the channel is in the rotation — everything else is
+        // this side guessing at the backend's eligibility rule.
+        expect(autoUpdateIntro({ refreshRanAt: '2026-09-20T10:45:00' }))
+            .toBe(t('youtube.autoUpdate.active'));
+    });
+
+    it('points at the admin while the import review is pending', () => {
+        // The one case where the owner is waiting on somebody else rather than on us, so it beats
+        // the "within a day" sentence even though the import itself succeeded.
+        expect(autoUpdateIntro({ importStatus: 'SUCCESS', importReview: 'PENDING' }))
+            .toBe(t('youtube.autoUpdate.afterApproval'));
+    });
+
+    it('promises a first check within a day once the import is approved and done', () => {
+        expect(autoUpdateIntro({ importStatus: 'SUCCESS', importReview: 'APPROVED' }))
+            .toBe(t('youtube.autoUpdate.soon'));
+    });
+
+    it('waits for the import to finish before promising anything', () => {
+        // A refresh reads the NEWEST page, so running one against a catalogue still being walked
+        // would be starting from the wrong end. PARTIAL is the ordinary multi-day case.
+        expect(autoUpdateIntro({ importStatus: 'PARTIAL' }))
+            .toBe(t('youtube.autoUpdate.afterImport'));
+        expect(autoUpdateIntro({ importStatus: 'RUNNING' }))
+            .toBe(t('youtube.autoUpdate.afterImport'));
+        expect(autoUpdateIntro({ importStatus: 'FAILED' }))
+            .toBe(t('youtube.autoUpdate.afterImport'));
+    });
+});
+
+describe('refreshSummary', () => {
+    it('reports a check that found nothing, rather than saying nothing', () => {
+        // THE case. Zero is the ordinary answer, and silence here is indistinguishable from a
+        // feature that has stopped running.
+        expect(refreshSummary({ refreshRanAt: '2026-09-20T10:45:00', refreshNewVideos: 0 }, 'منذ ساعة'))
+            .toBe(t('youtube.autoUpdate.lastCheckedNothing', { when: 'منذ ساعة' }));
+    });
+
+    it('words one video as one, since one is what a daily check usually finds', () => {
+        expect(refreshSummary({ refreshRanAt: '2026-09-20T10:45:00', refreshNewVideos: 1 }, 'منذ ساعة'))
+            .toBe(t('youtube.autoUpdate.lastCheckedAddedOne', { when: 'منذ ساعة' }));
+    });
+
+    it('counts anything more, with grouped digits', () => {
+        expect(refreshSummary({ refreshRanAt: '2026-09-20T10:45:00', refreshNewVideos: 4 }, 'أمس'))
+            .toBe(t('youtube.autoUpdate.lastCheckedAdded', { when: 'أمس', count: '4' }));
+        expect(refreshSummary({ refreshRanAt: '2026-09-20T10:45:00', refreshNewVideos: 1200 }, 'أمس'))
+            .toContain('1,200');
+    });
+
+    it('says nothing before the first check', () => {
+        // refreshRanAt is null until a sweep has reached this channel, which for an approved import
+        // is within a day of it finishing. autoUpdateIntro covers that gap instead.
+        expect(refreshSummary({ refreshNewVideos: 0 }, 'منذ ساعة')).toBeNull();
+        expect(refreshSummary({}, 'منذ ساعة')).toBeNull();
+        expect(refreshSummary(undefined, 'منذ ساعة')).toBeNull();
+    });
+
+    it('treats a missing or unreadable count as nothing new', () => {
+        // The count is 0 on the overwhelmingly common day, so anything that is not a positive
+        // number has to read as "nothing new" rather than as a broken sentence.
+        expect(refreshSummary({ refreshRanAt: 'x', refreshNewVideos: null }, 'منذ ساعة'))
+            .toBe(t('youtube.autoUpdate.lastCheckedNothing', { when: 'منذ ساعة' }));
+        expect(refreshSummary({ refreshRanAt: 'x' }, 'منذ ساعة'))
+            .toBe(t('youtube.autoUpdate.lastCheckedNothing', { when: 'منذ ساعة' }));
+    });
+});
+
+describe('refreshFailureText', () => {
+    it('words the codes the backend sends about a failed check', () => {
+        expect(refreshFailureText({ refreshStatus: 'FAILED', refreshReason: 'YOUTUBE_UNREACHABLE' }))
+            .toBe(t('youtube.autoUpdate.failedReason', {
+                reason: t('youtube.autoUpdate.reasons.YOUTUBE_UNREACHABLE'),
+            }));
+    });
+
+    it('falls back to the reasonless sentence for a code this build does not know', () => {
+        // Without this, t() would print "youtube.autoUpdate.reasons.SOMETHING_NEW" on screen — and
+        // the backend is deployed separately, so it will add a code first at some point.
+        expect(refreshFailureText({ refreshStatus: 'FAILED', refreshReason: 'SOMETHING_NEW' }))
+            .toBe(t('youtube.autoUpdate.failed'));
+        expect(refreshFailureText({ refreshStatus: 'FAILED' }))
+            .toBe(t('youtube.autoUpdate.failed'));
+    });
+
+    it('says nothing when the last check was fine', () => {
+        expect(refreshFailureText({ refreshStatus: 'SUCCESS' })).toBeNull();
+        expect(refreshFailureText({})).toBeNull();
+        expect(refreshFailureText(undefined)).toBeNull();
+    });
+});
+
+
+describe('lastCheckedWhen', () => {
+    // The backend sends a zoneless LocalDateTime, read as UTC because the servers run UTC.
+    const at = '2026-09-20T10:00:00';
+
+    it('reads a past check as a relative time', () => {
+        expect(lastCheckedWhen(at, dayjs('2026-09-20T13:00:00Z'))).toBe('منذ 3 ساعات');
+        // «منذ 2 أيام», not the Arabic dual «منذ يومين»: lib/dayjsAr's ar-latn locale keeps Latin
+        // digits with the count inline, which is the app-wide convention and not this line's to
+        // change. Asserted as it actually renders so this test documents the convention.
+        expect(lastCheckedWhen(at, dayjs('2026-09-22T10:00:00Z'))).toBe('منذ 2 أيام');
+    });
+
+    it('never renders a check as happening in the FUTURE', () => {
+        // Caught by rendering the panel against the real local database: the dev backend does not
+        // run UTC, so its timestamp parsed two hours ahead and the line read «آخر تحقق بعد 39
+        // دقائق» — last checked IN 39 minutes. In production the same thing happens to any clock
+        // drift between the server's write and the reader's browser. A sentence that cannot be true
+        // is worse on this line than anywhere else: its whole job is to reassure an owner that the
+        // daily check is running.
+        expect(lastCheckedWhen(at, dayjs('2026-09-20T09:21:00Z')))
+            .toBe(t('youtube.autoUpdate.justNow'));
+        // Exactly now counts as now, not as «بعد ثوانٍ».
+        expect(lastCheckedWhen(at, dayjs('2026-09-20T10:00:00Z')))
+            .toBe(t('youtube.autoUpdate.justNow'));
+    });
+
+    it('says nothing when there is no timestamp or it cannot be read', () => {
+        expect(lastCheckedWhen(null)).toBeNull();
+        expect(lastCheckedWhen(undefined)).toBeNull();
+        expect(lastCheckedWhen('')).toBeNull();
+        expect(lastCheckedWhen('not a date')).toBeNull();
     });
 });

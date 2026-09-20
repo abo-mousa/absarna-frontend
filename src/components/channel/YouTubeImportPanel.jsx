@@ -16,6 +16,7 @@ import { isGoogleConsentUrl, rememberOAuthReturn } from '@/lib/youtubeOAuth';
 import { t, tOptional } from '@/i18n';
 import { describeError } from '@/lib/describeError';
 import { formatCount } from '@/lib/numbers';
+import dayjs, { parseTimestamp } from '@/lib/dayjsAr';
 
 /**
  * The label for the one button that starts, retries and resumes an import — or `null` where there
@@ -66,6 +67,92 @@ export function importReasonText(state) {
     const reason = state?.importReason;
     if (typeof reason !== 'string' || !reason) return null;
     return tOptional(`youtube.importReasons.${reason}`) ?? null;
+}
+
+/**
+ * Which sentence describes where this channel stands with the daily catch-up.
+ *
+ * <p>Four cases, and the order is the rule: <b>a check having happened is the only proof that the
+ * channel is in the rotation</b>, so it is tested first and everything below it is a statement about
+ * the future. `PENDING` comes next because it is the one case where the owner is waiting on somebody
+ * else — an admin — rather than on us. A `SUCCESS` import with no check yet is "within a day". Any
+ * other import state means the walk is not finished, and a refresh reads the NEWEST page, so running
+ * one against a half-walked catalogue would be starting from the wrong end.
+ *
+ * <p>Deliberately derived from what the backend reports rather than re-implementing its eligibility
+ * rule: this only ever decides a sentence, so if the two drift the cost is wording, never whether a
+ * channel is refreshed.
+ */
+export function autoUpdateIntro(state) {
+    if (state?.refreshRanAt) return t('youtube.autoUpdate.active');
+    if (state?.importReview === 'PENDING') return t('youtube.autoUpdate.afterApproval');
+    if (state?.importStatus === 'SUCCESS') return t('youtube.autoUpdate.soon');
+    return t('youtube.autoUpdate.afterImport');
+}
+
+/**
+ * «آخر تحقق منذ 3 ساعات — لا جديد» — or `null` before the first check has happened.
+ *
+ * <p><b>A check that found nothing still says so</b>, and that is the whole reason this line exists.
+ * Finding nothing is the ordinary answer on almost every day, so rendering nothing for it would
+ * leave an owner unable to tell a working feature from a stopped one — which is the only question a
+ * background job with no button can raise.
+ *
+ * <p>`refreshNewVideos` is the LAST check's count, not a running total, so it is 0 most days and
+ * never accumulates. One gets its own wording because one is the common case for a daily check.
+ *
+ * <p>`when` is passed in rather than computed here so this stays a pure function of the state: the
+ * relative phrasing depends on the current clock, and a test asserting «منذ ساعة» would otherwise
+ * pass or fail according to when it ran.
+ */
+export function refreshSummary(state, when) {
+    if (!state?.refreshRanAt) return null;
+    const count = Number(state.refreshNewVideos);
+    if (!Number.isFinite(count) || count <= 0) {
+        return t('youtube.autoUpdate.lastCheckedNothing', { when });
+    }
+    if (count === 1) return t('youtube.autoUpdate.lastCheckedAddedOne', { when });
+    return t('youtube.autoUpdate.lastCheckedAdded', { when, count: formatCount(count) });
+}
+
+/**
+ * «منذ 3 ساعات» for the last check — or «قبل قليل» when its timestamp is not in the past.
+ *
+ * <p><b>The future guard is the whole reason this is a function.</b> `refreshRanAt` is a
+ * `LocalDateTime` that names no zone, read as UTC because the servers run UTC — so any drift
+ * between the server's clock and the reader's puts it slightly ahead, and dayjs renders that as
+ * «آخر تحقق بعد 39 دقيقة»: last checked *in* 39 minutes. On a line whose entire job is to reassure
+ * an owner that the daily check is running, a sentence that cannot be true reads as a broken page.
+ * `formatPublishDate` makes the same call about a publish date in the future, for the same reason.
+ *
+ * <p>Always relative, never an absolute date: a daily check is by definition recent, and the one
+ * case where it is not — «منذ شهر» — is exactly the reading worth having.
+ *
+ * <p>`now` is injectable so a test can assert the guard without racing the clock.
+ */
+export function lastCheckedWhen(value, now = dayjs()) {
+    if (!value) return null;
+    const at = parseTimestamp(value);
+    if (!at.isValid()) return null;
+    if (!at.isBefore(now)) return t('youtube.autoUpdate.justNow');
+    return at.locale('ar-latn').from(now);
+}
+
+/**
+ * What to say about a check that did not finish — or `null` when the last one was fine.
+ *
+ * <p>Never asks for an action, unlike a failed import: there is no button here, and the next day's
+ * check is the retry. A `refreshReason` this build does not know falls back to the reasonless
+ * sentence rather than printing its own key, so the backend can add one first.
+ */
+export function refreshFailureText(state) {
+    if (state?.refreshStatus !== 'FAILED') return null;
+    const reason = typeof state.refreshReason === 'string' && state.refreshReason
+        ? tOptional(`youtube.autoUpdate.reasons.${state.refreshReason}`)
+        : null;
+    return reason
+        ? t('youtube.autoUpdate.failedReason', { reason })
+        : t('youtube.autoUpdate.failed');
 }
 
 /**
@@ -505,6 +592,38 @@ function YouTubeImportPanel({ slug }) {
                                 reason: describeError(startImport.error),
                             })}
                         </p>
+                    )}
+                </div>
+            )}
+
+            {/* The daily catch-up. Rendered only once an import exists, because that is what puts a
+                channel in the rotation at all — before then «التحديث التلقائي» would be a promise
+                about something the owner has not started.
+
+                There is no button and nothing to poll here on purpose: the sweep is a background
+                job, and the panel's own poll runs only while an import is RUNNING. So these two or
+                three lines are the entire surface of the feature, and the one they exist for is the
+                "nothing new" case — an owner who sees nothing cannot tell a working daily check from
+                one that stopped, and that is the only question this can answer for them. */}
+            {state?.verified && state?.importStatus && (
+                <div className="grid gap-2 pt-2 border-t border-border-light">
+                    <strong className="text-sm flex items-center gap-1.5">
+                        <RefreshCw size={14} /> {t('youtube.autoUpdate.heading')}
+                    </strong>
+
+                    <p className="text-sm text-text-muted" dir="auto">{autoUpdateIntro(state)}</p>
+
+                    {refreshSummary(state, lastCheckedWhen(state?.refreshRanAt)) && (
+                        <p className="text-sm text-text-secondary" dir="auto">
+                            {refreshSummary(state, lastCheckedWhen(state?.refreshRanAt))}
+                        </p>
+                    )}
+
+                    {/* Gold rather than red: nothing is broken from the owner's side and there is
+                        nothing for them to do — the next day's sweep is the retry. Colouring it as
+                        an error would ask for an action that does not exist. */}
+                    {refreshFailureText(state) && (
+                        <p className="text-sm text-gold" dir="auto">{refreshFailureText(state)}</p>
                     )}
                 </div>
             )}

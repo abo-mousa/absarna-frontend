@@ -322,6 +322,23 @@ What this app relies on; the mirror lives in the backend's `CLAUDE.md`.
   admin approves, so the import panel says so **before** the button rather than after. `importReview`
   (`NOT_REQUIRED` / `PENDING` / `APPROVED`) rides on both `ChannelDTO` and the YouTube status
   response; `APPROVED` is the resume case, where pressing import again changes nothing.
+- **After the import, the backend keeps the channel caught up on its own, and this side is its only
+  surface.** A daily sweep re-reads the new end of an approved, fully-imported channel's catalogue,
+  so a video its owner publishes on YouTube appears here without anybody pressing anything. The
+  status response carries `refreshStatus` / `refreshRanAt` / `refreshNewVideos` / `refreshReason`,
+  and `YouTubeImportPanel`'s «التحديث التلقائي» block is the whole of it: **no button, no progress,
+  nothing to poll** — the panel's poll still runs only while an import is `RUNNING`.
+  - **A check that found nothing must still say so.** Zero is the answer on almost every day, so
+    rendering nothing for it leaves an owner unable to tell a working daily check from one that
+    stopped weeks ago — which is the only question a job with no button can raise. That is what
+    `refreshSummary` exists for, and `refreshNewVideos` is the **last** check's count, never a
+    running total.
+  - `refreshRanAt` is the only honest proof the channel is in the rotation, so `autoUpdateIntro`
+    tests it first and never re-implements the backend's eligibility rule — it decides a sentence,
+    not whether a channel is refreshed.
+  - A failed check is **gold, not red**, and asks for nothing: the next day's sweep is the retry.
+    `refreshReason` codes live under `youtube.autoUpdate.reasons` and are deliberately *not* shared
+    with `youtube.importReasons`, which tell the owner to press «متابعة الاستيراد».
 - **Owner list endpoints take `?search=` and are deliberately ungated** — a dashboard search finds
   the hidden, the held and the still-transcoding, which are the rows an owner is most often hunting
   for. The public `GET /api/channels/{slug}/videos?search=` is the gated counterpart for the channel

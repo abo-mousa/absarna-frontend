@@ -883,6 +883,56 @@ export const ar = {
         // has started, which is `failed` above and comes back through importStatus.
         startFailed: 'تعذر بدء الاستيراد: {reason}',
 
+        /**
+         * The daily catch-up — `YOUTUBE_REFRESH` on the backend, which re-reads the new end of an
+         * approved channel's catalogue once a day so a video its owner publishes on YouTube appears
+         * here without them asking.
+         *
+         * <p><b>These lines are the only place it is visible.</b> It has no button, no progress and
+         * nothing to poll, so an owner with no copy here would have no way to tell "the platform
+         * checks every day and there was nothing new" from "the platform stopped looking". The
+         * second is the one worth being able to rule out, which is why a check that found nothing
+         * still says so rather than rendering nothing.
+         */
+        autoUpdate: {
+            heading: 'التحديث التلقائي',
+            // Once the channel is actually in the rotation, evidenced by a check having happened.
+            active: 'نتحقق من قناتك على يوتيوب مرة كل يوم، وننشر ما نشرته حديثاً تلقائياً.',
+            // Imported and approved, but the rotation has not reached it yet — at most a day.
+            soon: 'سيبدأ التحديث التلقائي خلال يوم، ثم نتحقق من قناتك مرة كل يوم.',
+            // The import is still going or paused, so the channel is not in the rotation: a
+            // refresh reads the NEWEST page, and pressing it against a half-walked catalogue would
+            // be starting from the wrong end.
+            afterImport: 'يبدأ التحديث التلقائي بعد اكتمال الاستيراد.',
+            // Awaiting the admin's decision. Stated because it is the one case where the owner is
+            // waiting on somebody else rather than on us.
+            afterApproval: 'يبدأ التحديث التلقائي بعد موافقة الإدارة على الاستيراد.',
+            // «آخر تحقق منذ 3 ساعات — لا جديد». The "nothing new" half is the point: it is the
+            // ordinary answer on almost every day, and silence would read as a broken feature.
+            // A check whose timestamp lands in the future — clock skew between the server writing
+            // it and this browser reading it, or a dev backend not running UTC — must not render
+            // «آخر تحقق بعد 39 دقيقة», which reads as a broken page. Same call formatPublishDate
+            // makes about a publish date in the future.
+            justNow: 'قبل قليل',
+            lastCheckedNothing: 'آخر تحقق {when} — لا جديد',
+            // One is the common case for a daily check, so it gets its own form rather than
+            // «أضفنا 1 فيديو».
+            lastCheckedAddedOne: 'آخر تحقق {when} — أضفنا فيديو واحداً',
+            lastCheckedAdded: 'آخر تحقق {when} — أضفنا {count} فيديو',
+            // A refresh has no button, so this never asks for an action: the next day's check is
+            // the retry. Worded so it does not read as something the owner has to fix.
+            failed: 'تعذر التحقق في آخر محاولة، وسنعيد المحاولة تلقائياً.',
+            failedReason: 'تعذر التحقق في آخر محاولة: {reason} وسنعيد المحاولة تلقائياً.',
+            // The backend's `refreshReason`, worded. Kept apart from `importReasons` because those
+            // tell the owner to press «متابعة الاستيراد», and there is no button here to press.
+            // A code with no entry falls back to `failed` above, so the two repos still deploy
+            // separately.
+            reasons: {
+                YOUTUBE_UNREACHABLE: 'لم يستجب يوتيوب.',
+                YOUTUBE_QUOTA_EXHAUSTED: 'استُهلكت حصة المنصة اليومية من طلبات يوتيوب.',
+            },
+        },
+
         // Shown next to an imported video that still plays from YouTube.
         badge: 'يوتيوب',
         uploadOriginal: 'رفع الملف الأصلي',
