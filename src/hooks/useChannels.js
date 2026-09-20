@@ -555,6 +555,29 @@ export const useSuspendChannel = () => {
  * still needs control of its YouTube channel. Which is why this can be copied into an ordinary
  * email without ceremony.
  */
+/**
+ * Opens or withdraws a channel's claim offer.
+ *
+ * <p>Attesting a YouTube link opens one already, so this covers what that misses — a channel
+ * seeded before that rule, or one whose content never came from YouTube — and taking an offer
+ * back, which matters because the notice an unclaimed channel shows is public.
+ *
+ * <p>Invalidates the admin lists rather than writing the row: the reply is the updated channel,
+ * but `claimState` changes which controls that row offers, and getting that from the server is
+ * cheaper to reason about than patching two cached pages by hand.
+ */
+export const useSetChannelClaimable = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ channelId, claimable }) =>
+            (await api.post(`/channels/admin/${channelId}/claimable`, { claimable })).data,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-all-channels'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-pending-channels'] });
+        },
+    });
+};
+
 export const useChannelClaimLink = () =>
     useMutation({
         mutationFn: async (channelId) =>

@@ -1562,6 +1562,15 @@ export const ar = {
             action: 'رابط الدعوة',
             copied: 'نُسخ رابط الدعوة',
             failed: 'تعذر إنشاء رابط الدعوة',
+            // Opening an offer on a channel that was seeded before the rule existed, or whose
+            // content never came from YouTube — attesting a link opens one on its own.
+            open: 'افتح الدعوة',
+            opened: 'فُتحت الدعوة — يمكنك نسخ الرابط الآن',
+            // Worded as withdrawing rather than hiding, because that is what it does: the link
+            // already sent stops working.
+            withdraw: 'اسحب الدعوة',
+            withdrawn: 'سُحبت الدعوة وبطل الرابط',
+            toggleFailed: 'تعذر تغيير حالة الدعوة',
         },
         exemptions: {
             action: 'الفحص التلقائي',

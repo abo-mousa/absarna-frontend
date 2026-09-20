@@ -16,6 +16,7 @@ import {
     useSuspendChannel,
     useDeleteChannel,
     useChannelClaimLink,
+    useSetChannelClaimable,
 } from '../hooks/useChannels';
 import { describeError } from '@/lib/describeError';
 import { t } from '@/i18n';
@@ -48,6 +49,7 @@ function AdminChannels() {
     const rejectChannel = useRejectChannel();
     const suspendChannel = useSuspendChannel();
     const claimLink = useChannelClaimLink();
+    const setClaimable = useSetChannelClaimable();
     const deleteChannel = useDeleteChannel();
 
     // The channel awaiting a typed confirmation, and what has been typed so far.
@@ -107,6 +109,23 @@ function AdminChannels() {
             // Includes a refused clipboard, which is why the toast does not claim it was copied.
             showToast(describeError(error, t('admin.claimLink.failed')), 'error');
         }
+    };
+
+    /**
+     * Opens or withdraws the claim offer.
+     *
+     * <p>Withdrawing is worded and behaves as withdrawing rather than hiding — the backend drops
+     * the token, so a link already sitting in somebody's inbox stops working. That matters
+     * because the notice an unclaimed channel carries is public: it tells every visitor the page
+     * is ours and its subject has not taken it over, which is a claim about a real person.
+     */
+    const handleSetClaimable = (channel, claimable) => {
+        setClaimable.mutate({ channelId: channel.id, claimable }, {
+            onSuccess: () => showToast(
+                t(claimable ? 'admin.claimLink.opened' : 'admin.claimLink.withdrawn'), 'success'),
+            onError: (error) =>
+                showToast(describeError(error, t('admin.claimLink.toggleFailed')), 'error'),
+        });
     };
 
     const handleSuspend = (id) => {
@@ -202,14 +221,38 @@ function AdminChannels() {
                                 {/* Only where there is somebody to invite. A claimed or
                                     ordinary channel has no offer to scope, and the backend
                                     refuses to mint a token for one. */}
+                                {/* A claimed channel offers neither: its owner is here, and
+                                    moving it again is the transfer action, not this one. */}
                                 {channel.claimState === 'UNCLAIMED' && (
+                                    <>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handleClaimLink(channel)}
+                                            icon={<Link2 size={14} />}
+                                        >
+                                            {t('admin.claimLink.action')}
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => handleSetClaimable(channel, false)}
+                                        >
+                                            {t('admin.claimLink.withdraw')}
+                                        </Button>
+                                    </>
+                                )}
+                                {/* Attesting a YouTube link opens an offer on its own, so this
+                                    is for what that misses: a channel seeded before that rule,
+                                    and one whose content never came from YouTube. */}
+                                {channel.claimState === 'NOT_CLAIMABLE' && (
                                     <Button
-                                        variant="outline"
+                                        variant="ghost"
                                         size="sm"
-                                        onClick={() => handleClaimLink(channel)}
+                                        onClick={() => handleSetClaimable(channel, true)}
                                         icon={<Link2 size={14} />}
                                     >
-                                        {t('admin.claimLink.action')}
+                                        {t('admin.claimLink.open')}
                                     </Button>
                                 )}
                                 <Button
