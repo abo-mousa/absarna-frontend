@@ -116,16 +116,23 @@ export const en = {
     },
 
     meta: {
-        // The Latin half of the wordmark on its own — «أَبْصَرْنا» in an English `<title>` is the
-        // brand written in a script the reader of this build chose not to read.
-        defaultTitle: 'Absarna',
-        defaultDescription: 'Absarna — an Islamic platform for lectures, books and articles',
-        titleSuffix: '{title} | Absarna',
+        // Byte-identical to `ar.js` — the brand is not a translatable string. See the note on
+        // `nav.brand` below, and `i18n.test.js`, which pins these against the Arabic entries. The
+        // default title already carried both scripts before there was an English build.
+        defaultTitle: 'أَبْصَرْنا | Absarna',
+        defaultDescription: 'أَبْصَرْنا — an Islamic platform for lectures, books and articles',
+        titleSuffix: '{title} | أَبْصَرْنا',
     },
 
     nav: {
-        brand: 'Absarna',
-        brandAlt: 'Absarna',
+        // THE BRAND IS NEVER TRANSLATED, AND NEVER TRANSLITERATED. «أَبْصَرْنا» is the name of the
+        // thing rather than a word describing it, so it reads the same to every reader — the same
+        // rule the language switcher's own labels follow, and for a stronger reason: a wordmark
+        // that changes script between builds is two identities, and the top of the page is the one
+        // place a reader checks they are still where they think they are. `brandAlt` is the
+        // unvocalised form the screen reader gets, exactly as in `ar.js`.
+        brand: 'أَبْصَرْنا',
+        brandAlt: 'أبصرنا',
         menu: 'Menu',
         sideMenu: 'Side menu',
         skipToContent: 'Skip to content',
@@ -245,7 +252,7 @@ export const en = {
         },
         register: {
             heading: 'Create account',
-            joinUs: 'Join Absarna',
+            joinUs: 'Join أَبْصَرْنا',
             submitting: 'Creating your account...',
             submit: 'Create account',
             haveAccount: 'Already have an account?',
@@ -471,7 +478,7 @@ export const en = {
 
     books: {
         title: 'Library',
-        metaDescription: 'The Islamic book library on Absarna',
+        metaDescription: 'The Islamic book library on أَبْصَرْنا',
         searchPlaceholder: 'Search for a book...',
         empty: 'No books',
         emptyDescription: 'Books are on their way',
@@ -508,7 +515,7 @@ export const en = {
 
     articles: {
         title: 'Articles',
-        metaDescription: 'Islamic articles on Absarna',
+        metaDescription: 'Islamic articles on أَبْصَرْنا',
         searchPlaceholder: 'Search for an article...',
         empty: 'No articles',
         loadFailed: 'Could not load the article',
@@ -550,7 +557,7 @@ export const en = {
          * most of its readers are not the person it concerns.
          */
         claim: {
-            banner: 'A page prepared by the Absarna team',
+            banner: 'A page prepared by the أَبْصَرْنا team',
             bannerBody: 'We gathered this page from its owner’s YouTube channel, and they have not taken it over yet. The videos play from YouTube as they are, and the views and revenue stay with the channel’s owner.',
             cta: 'Is this your channel? Take it over',
             ctaSignedOut: 'Is this your channel? Sign in to take it over',

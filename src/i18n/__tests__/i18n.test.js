@@ -125,6 +125,25 @@ describe('en.js against ar.js', () => {
         expect(TRANSLATED.filter((ns) => !(ns in ar))).toEqual([]);
     });
 
+    /**
+     * <b>The brand is not a translatable string.</b> «أَبْصَرْنا» is the name of the thing rather
+     * than a word describing it, so it reads the same to every reader — the same rule the language
+     * switcher's own labels follow. A wordmark that changes script between builds is two
+     * identities, and the top of the page is the one place a reader checks they are still where
+     * they think they are.
+     *
+     * <p>Pinned rather than trusted, because "Absarna" is exactly what a translator reaches for and
+     * nothing about it looks wrong on the screen it appears on.
+     */
+    it('carries the brand unchanged, never transliterated', () => {
+        for (const key of ['nav.brand', 'nav.brandAlt', 'meta.defaultTitle', 'meta.titleSuffix']) {
+            setActiveLocale('en');
+            const english = t(key);
+            setActiveLocale('ar');
+            expect(english).toBe(t(key));
+        }
+    });
+
     it('names what is still outstanding', () => {
         // Not an assertion about the gap's size — that would turn every translation pass red on
         // its way to green. It prints the list, so `vitest --reporter=verbose` answers "what is

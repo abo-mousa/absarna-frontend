@@ -138,10 +138,18 @@ function SideBar({ currentChannel, open = false, onClose, drawerOnly = false }) 
                 // the work: CSS `translate` is not direction-aware and Tailwind has no logical
                 // form of it, so the closed drawer has to be sent off the physical edge it is
                 // pinned to. Both are core variants, keyed on the `dir` now set on `<html>`.
+                //
+                // `max-lg:` ON THE CLOSED STATE, and it is load-bearing rather than tidy. Tailwind
+                // compiles a dir variant to `:where([dir=rtl], …)`, which adds ZERO specificity —
+                // so `rtl:translate-x-full` and `lg:translate-x-0` are both single-class selectors
+                // and the winner is whichever the generated stylesheet emits last. It emits the
+                // dir variants after the responsive ones, so the desktop column was translated a
+                // full width off the page and simply was not there. Scoping the transform to the
+                // widths where a drawer EXISTS removes the race instead of betting on its outcome
+                // — the same gotcha Input.jsx documents for two `pl-*` on one element.
                 className={`${surfaceClass} ${drawerOnly ? 'lg:hidden' : ''}
                     transition-transform duration-200
-                    ${open ? 'translate-x-0' : 'rtl:translate-x-full ltr:-translate-x-full'}
-                    lg:translate-x-0`}
+                    ${open ? 'translate-x-0' : 'max-lg:rtl:translate-x-full max-lg:ltr:-translate-x-full'}`}
             >
                 <div className="px-2 mb-4">
                     <Link to="/" onClick={onClose} className={navLinkClass(isActive('/'))}>
