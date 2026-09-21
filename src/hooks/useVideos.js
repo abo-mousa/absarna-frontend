@@ -7,19 +7,29 @@ import { useUserScope } from './useUserScope';
 import { useDebouncedValue } from './useDebouncedValue';
 
 export const fetchVideos = async ({ pageParam = 0, queryKey }) => {
-    const [, { search, category, size }] = queryKey;
+    const [, { search, category, size, diversify }] = queryKey;
 
     let url = `/videos?page=${pageParam}&size=${size || 12}`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
     if (category) url += `&category=${encodeURIComponent(category)}`;
+    // Caps how many videos one channel contributes before the listing moves on to the others,
+    // while keeping the order newest-first within each round. The backend ignores it unless the
+    // request is the unnarrowed one, so it is only ever meaningful for the home page's tail.
+    if (diversify) url += '&diversify=true';
 
     const res = await api.get(url);
     return res.data;
 };
 
-export const useInfiniteVideos = (search = '', category = '', size = 12, enabled = true) => {
+/**
+ * @param diversify ask the backend to round-robin the listing across channels. The home tail
+ *   sends it; the browse view does not, so "كل الفيديوهات" stays a straight chronological view.
+ *   It is part of the query key because the two produce different pages from the same URL path,
+ *   and sharing a cache entry would serve one view the other's rows.
+ */
+export const useInfiniteVideos = (search = '', category = '', size = 12, enabled = true, diversify = false) => {
     return useInfiniteQuery({
-        queryKey: ['videos', { search, category, size }],
+        queryKey: ['videos', { search, category, size, diversify }],
         queryFn: fetchVideos,
         initialPageParam: 0,
         getNextPageParam: (lastPage) => {

@@ -67,7 +67,19 @@ function Home() {
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
-    } = useInfiniteVideos('', selectedCategory, 12);
+        // Diversified in the feed view and not in browse, from one hook because the two views
+        // share this query. The feed chip clears selectedCategory, so in that view this is always
+        // the unnarrowed platform-wide listing — which is the only shape the backend diversifies.
+        //
+        // The tail is "everything the curated sections did not show", and newest-first alone made
+        // that mostly one channel: a channel holding most of the catalogue publishes most of what
+        // is new, so it earned most of every page honestly. The backend now caps how many videos
+        // one channel contributes per round while keeping the order newest-first within a round.
+        //
+        // Browse keeps strict recency on purpose. "كل الفيديوهات" is the one place left to see
+        // what was genuinely published most recently, and a reader who picked a category has
+        // already said what they want.
+    } = useInfiniteVideos('', selectedCategory, 12, true, isDefaultView);
 
     const feedSections = [
         { key: 'subscribed', title: t('home.subscribed') },
