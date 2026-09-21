@@ -2165,6 +2165,20 @@ export const ar = {
                         'وأما ما نقرأه نحن من يوتيوب فهو المعلن للعموم وحده: عناوينُ الفيديوهات وأوصافُها وأسماءُ ملقيها وتواريخُ نشرها ومددُها وصورُها وقوائمُ التشغيل. ولا نقرأ إحصاءاتٍ ولا تعليقاتٍ ولا شيئاً عن أيّ مستخدم في يوتيوب.',
                         'ويستطيع صاحب القناة — وهو وحده — أن يستوردها مرةً واحدة، بعد أن يثبت ملكيتها. والإثبات طريقان: أن يضع رمزاً نتيحه له في وصف قناته العلنيّ على يوتيوب فنقرأه من هناك، وهذا لا يمرّ بحسابه في جوجل ألبتة؛ أو أن يسجّل الدخول بحساب جوجل الذي يدير القناة. والثاني اختياريّ، وقد لا يكون متاحاً في هذا النشر أصلاً، ولا نطلبه إلا ممّن اختاره بنفسه.',
                         ['وإن اخترتَ تسجيل الدخول بجوجل فإننا نطلب إذناً بالاطّلاع على اسم قناتك في يوتيوب لا غير، ولمرّةٍ واحدة: نسأل جوجل «أيُّ قناة يديرها هذا الحساب؟» ثم نُبطل الإذن فوراً في اللحظة نفسها. فلا نحفظ رمزاً ولا نُبقي وصولاً متجدّداً إلى حسابك، ولا نقرأ بريدك ولا فيديوهاتك الخاصة ولا شيئاً سوى ذلك. ويمكنك مراجعة ما منحته من أذونات وسحبُه في أيّ وقت من ', { text: 'صفحة أذونات حسابك في جوجل', href: 'https://myaccount.google.com/permissions' }, '.'],
+                        // THE LIMITED USE DISCLOSURE. Not a flourish: Google's API Services User
+                        // Data Policy requires an app requesting a SENSITIVE scope — which
+                        // `youtube.readonly` is — to state in its privacy policy that its use and
+                        // transfer of data received from Google APIs follows that policy,
+                        // INCLUDING the Limited Use requirements. Missing it is one of the
+                        // commonest OAuth verification rejections, and it is checked by reading
+                        // this page.
+                        //
+                        // The sentence is only true because of the paragraph above it: one call,
+                        // nothing stored, the grant revoked in the same moment. If that ever
+                        // changes — a kept refresh token, a second scope — this claim becomes the
+                        // next «ولا يُرسَل إلى يوتيوب... شيء», so it is worded as the promise it is
+                        // rather than as boilerplate.
+                        ['وما نتلقّاه من واجهات جوجل البرمجيّة فاستعمالُنا له ونقلُه محكومان بـ', { text: 'سياسة بيانات مستخدمي خدمات واجهات جوجل', href: 'https://developers.google.com/terms/api-services-user-data-policy' }, '، بما فيها شرط «الاستعمال المحدود». فلا نستعمل هذه البيانات إلا فيما يظهر لك من وظائف المنصّة، ولا نبيعها ألبتة، ولا نستعملها في إعلانٍ ولا في تقييم جدارةٍ ائتمانيّة، ولا ننقلها إلى أحدٍ إلا بإذنك، أو حيث يوجبه نظام، أو لِما تقتضيه سلامةُ المنصّة من كشف احتيالٍ أو إساءة.'],
                     ],
                 },
                 {

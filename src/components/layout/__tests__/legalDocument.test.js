@@ -54,6 +54,15 @@ describe('the disclosures YouTube requires', () => {
         expect(hrefs).toContain('https://myaccount.google.com/permissions');
     });
 
+    it('carries the Limited Use disclosure', () => {
+        // Required of any app requesting a SENSITIVE scope, which `youtube.readonly` is. Unlike
+        // the two above it is not YouTube's rule but Google's API Services User Data Policy, and
+        // it is verified by a human reading this page — so it disappears the same way the others
+        // would, and is pinned the same way.
+        expect(hrefsIn(ar.legal.privacy.sections))
+            .toContain('https://developers.google.com/terms/api-services-user-data-policy');
+    });
+
     it('no longer claims nothing about readers reaches Google', () => {
         // The sentence that was there said exactly this, and it was false on every page carrying
         // an imported video's thumbnail. Pinned as a string so a well-meaning restoration of the

@@ -39,11 +39,17 @@ export default function CommentsTab({ slug, active }) {
                             <div className="flex items-start justify-between gap-3 mb-1.5">
                                 <div className="min-w-0">
                                     <strong className="text-primary text-sm">{comment.userName}</strong>
+                                    {/* `ms-*`, not `me-*`: these badges follow the username in
+                                        reading order, so the gap that separates them from it is on
+                                        their LEADING side. Under RTL that is the physical right,
+                                        which is what the `mr-2` this replaces was — `me-2` would
+                                        read as the obvious translation of "margin-right" and put
+                                        the gap on the wrong side of the badge in both builds. */}
                                     {comment.hidden && (
-                                        <span className="me-2 text-xs text-text-muted">{t('channelManage.commentHidden')}</span>
+                                        <span className="ms-2 text-xs text-text-muted">{t('channelManage.commentHidden')}</span>
                                     )}
                                     {comment.pinned && (
-                                        <span className="me-2 text-xs text-gold">{t('channelManage.commentPinned')}</span>
+                                        <span className="ms-2 text-xs text-gold">{t('channelManage.commentPinned')}</span>
                                     )}
                                 </div>
                                 <div className="flex gap-1 flex-shrink-0">

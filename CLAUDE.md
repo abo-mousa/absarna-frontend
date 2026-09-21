@@ -73,6 +73,14 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   `keyboardAction` take the direction as a **parameter** defaulting to `isRtl()`, so the tests
   exercise both: the suite runs in one locale, and mirrored arithmetic that is wrong neither throws
   nor logs.
+- **Two known limits of the English build, both deliberate for now.** `<html lang>` becomes `en`
+  while the *content* stays Arabic, so a screen reader pronounces Arabic titles with an English
+  voice — the fix is `lang="ar"` on content-bearing elements (the layout half is already handled,
+  since `dir="auto"` is on 29 of them), which is a sweep worth doing on its own rather than inside
+  a locale change. And `en.js` ships to everyone: ~9 KB gzipped of a ~47 KB main bundle that an
+  Arabic reader never reads. Lazy-loading it would cost `t()` its synchronous, dependency-free
+  contract and add a round trip on exactly the mobile connections the channel-card work was about,
+  so the trigger for revisiting is the catalog being finished, not now.
 - **Switching language persists and RELOADS** (`lib/locale.js`). `t()` is a plain function called
   from 99 files, several outside React, and nothing subscribes to it — making it reactive is a
   rewrite of the app for a control a person touches about once. A reload is also the only way to
