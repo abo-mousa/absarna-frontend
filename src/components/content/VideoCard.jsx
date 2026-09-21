@@ -4,7 +4,6 @@ import { Play, Eye, EyeOff, Trash2, Tv, Calendar, Loader2, AlertTriangle } from 
 import { resolveMediaUrl, youtubeThumbnail, durationToSeconds } from '@/lib/media';
 import { useConsent } from '@/contexts/ConsentContext';
 import { formatPublishDate, displayDate } from '@/lib/dayjsAr';
-import { useChannel } from '@/hooks/useChannels';
 import Avatar from '../ui/Avatar';
 import SourceBadge from './SourceBadge';
 import { t } from '@/i18n';
@@ -65,7 +64,12 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
     // on that door rather than the only one. One badge -- the most serious -- because two on a
     // thumbnail is a layout problem and a reading problem; the page behind it lists every finding.
     const music = ownerBadge(video, isOwner);
-    const { data: channel } = useChannel(video.channelId, showChannel && !!video.channelId);
+    // The channel's name, slug and logo ride on the VideoDTO itself, batch-filled server-side by
+    // ChannelCardAttacher. This used to be `useChannel(video.channelId)` — one query per distinct
+    // channel, deduplicated across cards but still a request the card had to make and wait for,
+    // after the list it belongs to had already arrived. A home page drawing on eleven channels
+    // issued eleven of them.
+    const showChannelRow = showChannel && !!video.channelSlug;
 
     // Nested icon buttons (visibility/delete/channel) already stopPropagation on click; for
     // keyboard, only treat Enter/Space as "activate the card" when the card itself is
@@ -223,14 +227,14 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                     {/* Always rendered even when empty: it is what holds the meta column at the
                         far edge, since `justify-between` on a lone child places it at the start. */}
                     <div className="min-w-0 space-y-1">
-                        {channel && (
+                        {showChannelRow && (
                             <button
-                                onClick={(e) => { e.stopPropagation(); navigate(`/channel/${channel.slug}`); }}
-                                aria-label={t('video.goToChannelAria', { name: channel.name })}
+                                onClick={(e) => { e.stopPropagation(); navigate(`/channel/${video.channelSlug}`); }}
+                                aria-label={t('video.goToChannelAria', { name: video.channelName })}
                                 className={`${META_ROW} text-text-secondary hover:text-primary transition-colors`}
                             >
-                                <Avatar src={resolveMediaUrl(channel.logoUrl)} name={channel.name} size="sm" className="!w-5 !h-5 !text-[0.65rem] flex-shrink-0" />
-                                <span className="truncate">{channel.name}</span>
+                                <Avatar src={resolveMediaUrl(video.channelLogoUrl)} name={video.channelName} size="sm" className="!w-5 !h-5 !text-[0.65rem] flex-shrink-0" />
+                                <span className="truncate">{video.channelName}</span>
                             </button>
                         )}
                         {/* Which series this belongs to. A link, because the series page is where

@@ -274,18 +274,23 @@ export const useUpdateChannel = (slug, channelId) => {
         },
         onSuccess: (data) => {
             queryClient.setQueryData(['channel', slug], data);
-            // TODO(backend): `VideoDTO` carries no `channelName`/`channelSlug`/`channelLogoUrl`,
-            // so every VideoCard resolves its channel with its own `useChannel(...)` query —
-            // one cached query per distinct channel, shared across the cards, but still a
-            // separate request the card cannot avoid. Until those three fields are attached to
-            // `VideoDTO` the way `seriesTitle` and `commentCount` already are (one batched query
-            // per response on the backend, see its CLAUDE.md), a rename has to reach those
-            // per-card queries some other way — which is this line.
+            // `VideoDTO` now carries `channelName`/`channelSlug`/`channelLogoUrl`, batch-filled by
+            // the backend's ChannelCardAttacher, so a VideoCard no longer runs a `useChannel(...)`
+            // of its own and a rename does not have to chase one. What it has to chase instead is
+            // every cached LIST, because the channel's name is now a field inside those responses
+            // — which is the trade the batching makes: one fewer request per card, and staleness
+            // that lives in the list rather than beside it.
             //
-            // Whole `['channel']` prefix, not just this slug: a card holds `['channel', slug]`
-            // keyed by the slug it read off the DTO, and a rename may have changed the slug
-            // itself, so the stale entry is not necessarily the one just written.
+            // Whole `['channel']` prefix, not just this slug: the detail pages still hold
+            // `['channel', slug]` keyed by the slug they read off a DTO, and a rename may have
+            // changed the slug itself, so the stale entry is not necessarily the one just written.
             queryClient.invalidateQueries({ queryKey: ['channel'] });
+            // The lists that now embed the channel's name and logo. Broad on purpose: a rename is
+            // rare and a missed key shows an owner the old name on their own cards.
+            ['videos', 'video', 'feed', 'channel-videos', 'channel-manage', 'search',
+                'search-infinite', 'search-suggestions', 'bookmarks', 'watch-history',
+                'related-video', 'series'].forEach((key) =>
+                queryClient.invalidateQueries({ queryKey: [key] }));
         },
     });
 };
