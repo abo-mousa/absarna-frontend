@@ -836,15 +836,30 @@ export const ar = {
     // request, which is why nothing loads until this is answered.
     //
     // WORDING RULES THAT ARE NOT STYLE. Google is NAMED — consent is only informed if the
-    // recipient is identified, so «شركاؤنا» would fail. What is sent is listed concretely rather
-    // than as «بيانات». And neither button's label is weighted: «أوافق» against «رفض» rather than
-    // «أوافق» against «إدارة التفضيلات», because a refusal that takes more reading than an
-    // acceptance is not a free one.
+    // recipient is identified, so «شركاؤنا» would fail. And neither button's label is weighted:
+    // «أوافق» against «رفض» rather than «أوافق» against «إدارة التفضيلات», because a refusal that
+    // takes more reading than an acceptance is not a free one.
+    //
+    // THE COMPARISON IS THE EXPLANATION, and it replaced an inventory. This used to recite «عنوان
+    // بروتوكول الإنترنت الخاص بك ونوع متصفّحك والصفحة التي تتصفّحها» and that the player «قد يحفظ شيئاً
+    // في جهازك» — every word true, and read by an ordinary person as a warning about a danger,
+    // because a list of what is disclosed is the shape a breach notice has. «ومشاهدتُها عندنا
+    // كمشاهدتها هناك» is the same fact measured against a baseline the reader already has, and it
+    // is MORE informative rather than less: nobody needs to be told what an IP address discloses
+    // to know what watching a video on YouTube means. The inventory is not gone — it is in the
+    // privacy policy one link away, where a reader who wants it is looking, and `more` is now the
+    // question it answers rather than a heading over it.
+    //
+    // THE PROMISE IS SCOPED TO YOUTUBE CONTENT on purpose: «ولا نعرض منه شيئاً قبل إذنك», not the
+    // «ولن نحمّل منها شيئاً حتّى تأذن» it replaced. The wider sentence was not true while index.html
+    // loads its webfonts from fonts.googleapis.com on every page — a request to Google that a
+    // refusing reader cannot avoid — and of everything on this banner, the guarantee is the one
+    // sentence that must not overstate itself.
     consent: {
         label: 'خيارك بشأن محتوى يوتيوب',
-        title: 'قبل أن نعرض محتوى يوتيوب',
-        body: 'بعض المحتوى هنا مستورد من يوتيوب: صورُه المصغّرة ومشغّلُه يأتيان من خوادم جوجل مباشرةً، فيصل إليها عنوانُ بروتوكول الإنترنت الخاص بك ونوعُ متصفّحك والصفحةُ التي تتصفّحها، وقد يحفظ المشغّل شيئاً في جهازك. ولن نحمّل منها شيئاً حتى تأذن. ويبقى ما رفعناه نحن يعمل في الحالين.',
-        more: 'تفصيل ما يصل إلى جوجل',
+        title: 'فيديوهات يوتيوب داخل الموقع',
+        body: 'بعض الفيديوهات هنا معروضة من يوتيوب مباشرةً، ومشاهدتُها عندنا كمشاهدتها هناك: يرى موقعُ جوجل أنّك تشاهدها، كما لو فتحتَ يوتيوب بنفسك. ولا نعرض منه شيئاً قبل إذنك؛ فإن لم تأذن بقي الموقع يعمل كالمعتاد، وما رفعناه بأنفسنا يُشاهَد من عندنا على كلّ حال.',
+        more: 'ما الذي يصل إلى جوجل؟',
         grant: 'أوافق',
         deny: 'رفض',
         // The withdrawal route, on every page. Named as reopening a choice rather than as
@@ -853,7 +868,7 @@ export const ar = {
         // The in-context grant, on the player of a video the reader actually came to watch. Says
         // plainly that the permission is general, because a reader who thinks they are allowing
         // one video and finds they allowed all of them was not informed.
-        playerBody: 'هذا الفيديو يُعرض من يوتيوب. وتشغيلُه يعني أن متصفّحك سيتّصل بخوادم جوجل، فيصل إليها عنوانك ونوعُ متصفّحك، وقد تحفظ شيئاً في جهازك. وموافقتك هنا تسري على محتوى يوتيوب في الموقع كلّه، ولك سحبها متى شئت من أسفل الصفحة.',
+        playerBody: 'هذا الفيديو معروض من يوتيوب، ومشاهدتُه هنا كمشاهدته هناك: يرى موقعُ جوجل أنّك تشاهده، كما لو فتحتَه بنفسك. وإذنُك يشمل فيديوهات يوتيوب في الموقع كلّه، ولك سحبه متى شئت من أسفل الصفحة.',
         playerAllow: 'أوافق وشغّل',
     },
 
