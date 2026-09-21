@@ -1,4 +1,4 @@
-import { AlertTriangle, Loader2, RotateCw } from 'lucide-react';
+import { AlertTriangle, Loader2, RotateCw, VideoOff } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import { Button } from '@/components/ui';
 import { useRetryTranscode } from '@/hooks/useChannels';
@@ -26,6 +26,9 @@ import { t } from '@/i18n';
  *   <li><b>FAILED</b> — stopped, and it will not resume by itself. This is the one with a button,
  *       because it is the one with a recourse: the original file is still on the servers, so a
  *       retry is a click rather than a re-upload of several gigabytes.</li>
+ *   <li><b>Gone from YouTube</b> — the 30-day sweep found the video is no longer there, so the
+ *       row is hidden. No button: the three things an owner can do about it (re-upload the
+ *       original, retitle it, delete it) are all controls this row already has.</li>
  *   <li><b>A moderation verdict</b> — `ownerNotices`, worst first, and only two of its four
  *       states hide anything. Colouring an ADVISORY or an UNCHECKED note like a problem trains
  *       owners to ignore the tone by the time the one that matters arrives, which is why the
@@ -51,7 +54,9 @@ function VideoManageStatus({ video, slug }) {
         });
     };
 
-    if (video.status !== 'UPLOADED' && video.status !== 'FAILED' && notices.length === 0) {
+    const gone = Boolean(video.youtubeUnavailableAt);
+
+    if (!gone && video.status !== 'UPLOADED' && video.status !== 'FAILED' && notices.length === 0) {
         return null;
     }
 
@@ -89,6 +94,33 @@ function VideoManageStatus({ video, slug }) {
                             ? t('channelManage.videoStatus.retrying')
                             : t('channelManage.videoStatus.retry')}
                     </Button>
+                </div>
+            )}
+
+            {/* THE VIDEO IS GONE FROM YOUTUBE, and this row is hidden until its owner decides.
+                The 30-day sweep found the id missing from videos.list — deleted by its uploader,
+                or made private — and there is nothing the platform can do about that except stop
+                showing a card that plays nothing.
+
+                It does NOT delete the row, and that is why this notice has to exist: deleting
+                would take the comments, likes, bookmarks and watch history with it, so the row
+                survives and somebody has to be told. There is no email and no notification
+                channel in this design, so the dashboard is the whole mechanism — the same
+                argument the moderation notices below rest on.
+
+                Three recourses and no button for any of them, deliberately: re-uploading the
+                original, retitling and deleting are all things the owner already does elsewhere
+                on this row, and a fourth control here would be a second path to the same three.
+                Amber rather than red: nothing is broken and nothing was done wrong. */}
+            {gone && (
+                <div className="rounded-md border border-amber-300 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40 p-2.5">
+                    <p className="flex items-center gap-1.5 text-xs font-semibold text-amber-900 dark:text-amber-300 mb-1">
+                        <VideoOff size={13} className="flex-shrink-0" />
+                        {t('channelManage.videoStatus.youtubeGone')}
+                    </p>
+                    <p className="text-xs text-text-secondary leading-relaxed">
+                        {t('channelManage.videoStatus.youtubeGoneHint')}
+                    </p>
                 </div>
             )}
 

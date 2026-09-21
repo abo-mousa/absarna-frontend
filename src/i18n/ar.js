@@ -1140,6 +1140,15 @@ export const ar = {
             failedHint: 'تعثّرت معالجة هذا الملف. الملف الأصلي ما زال محفوظاً، فلا داعي لرفعه من جديد — اضغط «إعادة المعالجة» للمحاولة مرة أخرى. إن تكرّر الفشل فالغالب أن الملف نفسه لا يمكن قراءته.',
             retry: 'إعادة المعالجة',
             retrying: 'جاري الإرسال...',
+            // The 30-day sweep found this imported video is no longer on YouTube. Said as a
+            // fact about YouTube and not as an error of ours or theirs: the uploader deleted it or
+            // made it private, and neither the owner nor the platform did anything wrong.
+            //
+            // The hint names all three recourses because the row already has controls for each —
+            // a button here would be a second path to the same three — and because "hidden" with
+            // no way out reads as a punishment rather than a pause.
+            youtubeGone: 'لم يعد هذا الفيديو موجوداً على يوتيوب',
+            youtubeGoneHint: 'حُذف من يوتيوب أو جُعل خاصاً، فلم يعد يُشغَّل هنا، وأخفيناه عن الزوار حتى تقرّر. ولم نحذفه: تعليقاته وإعجاباته وسجلّ مشاهدته باقية. يمكنك رفع الملف الأصلي ليعود العرض من خوادمنا، أو تعديل بياناته وإبقاءه، أو حذفه.',
             retryQueued: 'أُعيد الفيديو إلى قائمة المعالجة.',
             retryFailed: 'تعذّرت إعادة المعالجة.',
         },
