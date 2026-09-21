@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link2, Check, Copy, RefreshCw } from 'lucide-react';
+import { Link2, Check, Copy, RefreshCw, ShieldCheck } from 'lucide-react';
 import { Input, Button, Spinner } from '@/components/ui';
 import { useToast } from '@/contexts/ToastContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { isPlatformAdmin } from '@/lib/user';
+import { useAdoptionProgress } from '@/hooks/useChannelAdoption';
+import { adoptionRemainingLine, adoptionState } from './MetadataAdoptionView';
 import {
     useChannelYouTube,
     useLinkYouTubeChannel,
@@ -156,6 +158,55 @@ export function refreshFailureText(state) {
 }
 
 /**
+ * The one line the panel gives to metadata confirmation, and the way in.
+ *
+ * <p>Its own component and its own query, rather than more fields on the panel's status call:
+ * these numbers move when the OWNER acts, and the panel's status polls on a five-second timer
+ * while an import runs. Folding them together would either poll a count that cannot change or
+ * stop polling an import that can.
+ *
+ * <p><b>Renders a sentence in every state, including the finished one.</b> «تم تأكيد ٢٠٠٠ مقطعاً»
+ * is worth saying: this is a task an owner works through over several sittings, and a section that
+ * empties itself on completion would leave them unsure whether they finished or whether it broke.
+ * The one state with nothing to say is a channel whose import produced no rows at all.
+ */
+export function AdoptionPanelLine({ slug, onOpen }) {
+    const { data: progress } = useAdoptionProgress(slug);
+    const state = adoptionState(progress);
+
+    if (state === 'loading' || state === 'none') return null;
+
+    return (
+        <>
+            {state === 'blocked' ? (
+                <p className="text-sm text-gold leading-loose" dir="auto">
+                    {t('youtube.adoption.needsOwnerVerification')}
+                </p>
+            ) : (
+                <p className="text-sm text-text-muted leading-loose" dir="auto">
+                    {t('youtube.adoption.intro')}
+                </p>
+            )}
+
+            {adoptionRemainingLine(progress) && (
+                <p className="text-sm text-text-secondary font-semibold" dir="auto">
+                    {adoptionRemainingLine(progress)}
+                </p>
+            )}
+
+            {/* No button on a blocked channel: the remedy is the verification section above, and a
+                control that can only be refused is worse than no control. None on a finished one
+                either — there is nothing behind it. */}
+            {state === 'working' && (
+                <Button variant="outline" onClick={onOpen} className="w-fit">
+                    {t('youtube.adoption.open')}
+                </Button>
+            )}
+        </>
+    );
+}
+
+/**
  * Link a YouTube channel, prove you own it, import it once.
  *
  * <p>Three states in sequence — not linked, linked but unverified, verified — and the import sits
@@ -168,7 +219,7 @@ export function refreshFailureText(state) {
  * ones, which is the entire reason to import into this platform rather than link out: they can
  * join a series, be searched, be bookmarked and be resumed.
  */
-function YouTubeImportPanel({ slug }) {
+function YouTubeImportPanel({ slug, onOpenAdoption }) {
     const { showToast } = useToast();
     const { user } = useAuth();
     // Hidden rather than shown-and-rejected: the backend 403s anyone else, and offering an action
@@ -593,6 +644,24 @@ function YouTubeImportPanel({ slug }) {
                             })}
                         </p>
                     )}
+                </div>
+            )}
+
+            {/* Confirming the imported metadata. Sits between the import and the daily catch-up
+                because that is its place in the sequence: it becomes possible the moment an import
+                has produced rows, and it is the one thing on this panel the OWNER has to do rather
+                than watch.
+
+                A line and a button, never the screen itself. The confirmation needs the
+                affirmation sentence next to it, needs a page the owner actually reads, and needs
+                an end — none of which survives being a third block on a panel that is already
+                verification plus a multi-day import. See MetadataAdoptionView. */}
+            {state?.verified && state?.importStatus && (
+                <div className="grid gap-2 pt-2 border-t border-border-light">
+                    <strong className="text-sm flex items-center gap-1.5">
+                        <ShieldCheck size={14} /> {t('youtube.adoption.heading')}
+                    </strong>
+                    <AdoptionPanelLine slug={slug} onOpen={onOpenAdoption} />
                 </div>
             )}
 

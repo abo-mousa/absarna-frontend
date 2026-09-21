@@ -1,11 +1,18 @@
 import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { useToast } from '@/contexts/ToastContext';
 import YouTubeImportPanel, { importReasonText } from '../YouTubeImportPanel';
+import MetadataAdoptionView from '../MetadataAdoptionView';
 import { t } from '@/i18n';
 
 /**
  * Link a YouTube channel, prove you own it, import it.
+ *
+ * <p><b>Two screens, one tab.</b> The panel is the steady state; confirming the imported metadata
+ * takes the tab over (`?confirm=1`) rather than sitting inside it, because that step needs the
+ * affirmation sentence next to its button, a page the owner actually reads, and an end — none of
+ * which survives being a third block under a multi-day import. See `MetadataAdoptionView`.
  *
  * <p>A tab of its own rather than a panel under the channel settings form. It used to live there,
  * on the argument that a YouTube link is a property of the channel like its name, but on screen it
@@ -16,9 +23,31 @@ import { t } from '@/i18n';
 export default function YouTubeTab({ slug, youtubeState, active }) {
     useImportCompletionToast(slug, youtubeState);
 
+    // WHICH OF THE TWO SCREENS IS SHOWING LIVES IN THE URL, for the reason the open tab does
+    // (see ChannelManage): in component state a refresh drops the owner back on the panel, and
+    // there is no way to link anyone to the confirmation step. It matters more here than for a
+    // tab, because confirming a catalogue of thousands is work done over several sittings and
+    // «تابع من حيث وقفت» has to survive closing the laptop.
+    //
+    // `replace` so that the back button leaves the dashboard rather than stepping through every
+    // time the owner opened and closed this — the same call `setActiveTab` makes.
+    const [searchParams, setSearchParams] = useSearchParams();
+    const confirming = searchParams.get('confirm') === '1';
+
+    const setConfirming = (next) => {
+        const params = new URLSearchParams(searchParams);
+        if (next) params.set('confirm', '1');
+        else params.delete('confirm');
+        setSearchParams(params, { replace: true });
+    };
+
     // Mounted only while showing: the panel runs its own status query, and the page already keeps
     // one live on the tabs that need it.
-    return active ? <YouTubeImportPanel slug={slug} /> : null;
+    if (!active) return null;
+
+    return confirming
+        ? <MetadataAdoptionView slug={slug} onClose={() => setConfirming(false)} />
+        : <YouTubeImportPanel slug={slug} onOpenAdoption={() => setConfirming(true)} />;
 }
 
 /**

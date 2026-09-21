@@ -74,6 +74,12 @@ export const queryKeys = {
     channelSeriesManagePage: (slug, page, scope) => ['channel-series-manage', slug, 'page', page, scope],
     channelComments: (slug, size, scope) => ['channel-comments', slug, size, scope],
     channelYouTube: (slug, scope) => ['channel-youtube', slug, scope],
+    // The adoption progress and one page of what is awaiting it, under one prefix so confirming a
+    // page invalidates both — the counts and the queue always move together, and a panel showing
+    // "1,847 remaining" beside a list that has already lost them is the one state to avoid.
+    // Owner-scoped like everything else here: it is a list of one channel's unpublished titles.
+    channelAdoption: (slug, scope) => ['channel-adoption', slug, scope],
+    channelAdoptionPending: (slug, page, scope) => ['channel-adoption', slug, 'pending', page, scope],
     // Scoped, though most of what it carries is public: the answer includes whether THIS viewer
     // may claim, and a claim token is minted per claimant. An unscoped key would hand the next
     // account on a shared machine the previous one's claim in progress.

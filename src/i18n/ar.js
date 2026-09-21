@@ -897,6 +897,48 @@ export const ar = {
         // the same as a check that ran and found no token, which is `tokenMissing` in place.
         checkFailed: 'تعذر التحقق الآن. حاول مرة أخرى بعد قليل.',
 
+        // Confirming that an imported catalogue's metadata is the owner's own work.
+        //
+        // WHY THE PLATFORM ASKS. Titles read through YouTube's API may only be kept for thirty
+        // days. This platform keeps them indefinitely on purpose — the importer never overwrites a
+        // title, because an owner may have corrected it here — and the way out of that is not to
+        // delete them but to hold them on a different basis: the owner wrote them, so once they
+        // have read them and said so, what we hold is their submission rather than our copy of
+        // someone else's data. The backend records each confirmation with a snapshot of the text.
+        //
+        // NOTE THE ONE STRING THAT IS NOT HERE. The affirmation itself — the sentence the owner
+        // agrees to — is served by the backend and rendered from the response, because the wording
+        // shown has to be the wording the record names. Adding it to this file would put a second
+        // copy next to the first and there would be no way to tell which one anybody read. See
+        // AffirmationText in absarna-backend.
+        adoption: {
+            heading: 'تأكيد بيانات المحتوى المستورد',
+            // States the reason, not the rule. An owner told only "confirm your titles" would read
+            // it as a formality; told why — that these were read from يوتيوب and that confirming
+            // them is what makes them ours to keep — it is a step with a shape they can agree to.
+            intro: 'العناوين والأوصاف وأسماء الملقين في المحتوى المستورد قرأناها من يوتيوب. وتأكيدك أنها من عملك هو ما يجعلها بياناتك عندنا، فنحتفظ بها ونعرضها بوصفها محتواك أنت لا نسخةً من بيانات غيرنا.',
+            // Says what REMAINS, unlike the import line above it: that is work the platform does
+            // for the owner, and this is work the owner does themselves.
+            remaining: 'بقي {count} من {total} بانتظار التأكيد',
+            allConfirmed: 'تم تأكيد {count} مقطعاً',
+            // The entry point on the panel. Worded as the task, not as a destination.
+            open: 'راجع وأكّد',
+            done: 'تم تأكيد كل المحتوى المستورد في هذه القناة. لا شيء متبقٍ.',
+            nothingImported: 'لا يوجد في هذه القناة محتوى مستورد من يوتيوب.',
+            // canAdopt === false: an admin linked this channel, so the owner's own proof is
+            // missing. Said as the step that is left, not as a refusal — the remedy is the
+            // verification panel directly above this one.
+            needsOwnerVerification: 'لا يمكن التأكيد قبل أن تثبت ملكيتك لقناة يوتيوب بنفسك. الربط الذي تم بواسطة الإدارة يكفي للاستيراد، أما التأكيد فهو إقرار منك أنت عن محتواك، فلا ينوب عنك فيه أحد. أثبت ملكيتك من الأعلى ثم عد إلى هنا.',
+            confirmPage: 'أؤكّد هذه الصفحة ({count})',
+            confirming: 'جاري التأكيد...',
+            confirmed: 'تم تأكيد {count} مقطعاً',
+            confirmFailed: 'تعذر حفظ التأكيد. حاول مرة أخرى.',
+            editTitle: 'تصحيح العنوان والوصف',
+            // Said above the list, because correcting a title before confirming it is the better
+            // outcome and an owner who assumes the text is fixed will not try.
+            editHint: 'إن كان في عنوان أو وصف خطأ فصحّحه قبل التأكيد — التصحيح إقرار بالملكية أوضح من الموافقة.',
+        },
+
         importHeading: 'الاستيراد',
         importIntro: 'سيتم استيراد الفيديوهات وقوائم التشغيل كسلاسل. يحدث هذا مرة واحدة.',
         startImport: 'ابدأ الاستيراد',
