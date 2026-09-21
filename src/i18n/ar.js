@@ -2022,6 +2022,13 @@ export const ar = {
                         'لا تضع المنصة كوكيز، لا للتتبّع ولا لغيره؛ وليس في الخادم ما يُنشئ كوكي أصلاً.',
                         'وإنما تستعمل التخزين المحلي في متصفّحك، لأمور تخصّ متصفّحك وحده ولا تصل إلينا: رمزِ دخولك بعد تسجيل الدخول، واختيارِك الوضع الفاتح أو الداكن، وسرعةِ التشغيل ومستوى الصوت اللذين ضبطتهما في المشغّل، وحالةِ رفعٍ لم يكتمل حتى تستأنفه.',
                         'ورمز الدخول صالح ساعة، ويُجدَّد برمز تجديد صالح سبعة أيام. وتسجيل الخروج يمحو كليهما من متصفّحك.',
+                        // «لا تضع المنصة كوكيز» is true of OUR server and was the whole section:
+                        // accurate about the thing it names, and misleading on any page that
+                        // loads Google's player, which sets storage of its own. A policy that is
+                        // narrowly true and broadly wrong is the shape a reader has no way to
+                        // catch, so the qualifier belongs here rather than only in the section
+                        // that explains it.
+                        'على أن مشغّل يوتيوب — في صفحات الفيديوهات المستوردة وحدها — قد يحفظ في متصفّحك ما يخصّه هو، ولا سلطان لنا عليه. انظر قسم «يوتيوب».',
                     ],
                 },
                 {
@@ -2043,12 +2050,36 @@ export const ar = {
                     ],
                 },
                 {
+                    // THE TWO SENTENCES THIS SECTION USED TO CARRY WERE BOTH FALSE, and they are
+                    // worth recording because each was false in a way that reads as careful.
+                    //
+                    // «ولا يُرسَل إلى يوتيوب ولا إلى جوجل شيء عن قرّاء المنصة ولا عن نشاطهم» was
+                    // wrong on essentially every page of the site. Every card for an imported
+                    // video builds an img.youtube.com thumbnail URL (lib/media.js), so the
+                    // reader's browser fetches an image from Google — on the home feed, in search,
+                    // on channel pages — before anyone clicks anything, carrying their IP address,
+                    // user agent and referring URL. The embed then loads Google's player.
+                    // `youtube-nocookie` limits COOKIES, not requests, which is most likely how
+                    // the sentence came to be believed.
+                    //
+                    // «فلا نطلب منك تسجيل الدخول إلى جوجل، ولا نأخذ إذناً بقراءة حسابك» was
+                    // unconditional while the Google sign-in flow exists and ships. It is optional
+                    // and off by default, and the honest version says so rather than denying it.
+                    //
+                    // III.A of YouTube's API Services Terms separately requires a privacy policy
+                    // to say that the service uses YouTube API Services and to LINK to Google's
+                    // privacy policy; offering OAuth adds the revocation link. All three are here,
+                    // as links, which is why LegalDocument learned to render them.
                     id: 'youtube',
-                    heading: 'استيراد قناة يوتيوب',
+                    heading: 'يوتيوب: ما نقرأ منه، وما يصل إليه عنك',
                     paragraphs: [
-                        'يستطيع صاحب القناة — وهو وحده — أن يستورد قناته على يوتيوب مرةً واحدة. ويتمّ ذلك عبر واجهة بيانات يوتيوب بمفتاح يخصّ المنصة، لا عبر حسابك في جوجل: فلا نطلب منك تسجيل الدخول إلى جوجل، ولا نأخذ إذناً بقراءة حسابك.',
-                        'وإثبات الملكية يكون بوضع رمزٍ نتيحه لك في وصف قناتك العلنيّ على يوتيوب ثم قراءته من هناك. ولا نقرأ من يوتيوب إلا ما هو معلن للعموم: عناوينَ الفيديوهات وأوصافَها وتواريخَ نشرها ومددَها وصورَها وقوائمَ التشغيل.',
-                        'ولا يُرسَل إلى يوتيوب ولا إلى جوجل شيء عن قرّاء المنصة ولا عن نشاطهم.',
+                        'تستعمل هذه المنصة خدمات واجهة بيانات يوتيوب (YouTube API Services) لاستيراد محتوى القنوات، وتعرض الفيديوهات المستوردة عبر مشغّل يوتيوب نفسه. وبذلك فإن جوجل جهةٌ تصلها بيانات عنك، ويحكم تعاملَها بها ',
+                        ['ما تنصّ عليه ', { text: 'سياسة خصوصية جوجل', href: 'https://policies.google.com/privacy' }, ' — ونحن لا نملك من ذلك شيئاً ولا نتحكّم فيه.'],
+                        'أما ما يصل إلى جوجل عنك أنت بوصفك قارئاً، فهذا بيانه: كلُّ بطاقة فيديو مستورد تعرض صورتَه المصغّرة من خوادم يوتيوب، فيطلبها متصفّحك منها مباشرةً — في الصفحة الرئيسة، وفي نتائج البحث، وفي صفحات القنوات — قبل أن تضغط على شيء. ويصل إلى جوجل مع هذا الطلب عنوانُ بروتوكول الإنترنت الخاص بك، ونوعُ متصفّحك، والصفحةُ التي جئتَ منها. فإذا فتحتَ صفحة فيديو مستورد حُمِّل مشغّل يوتيوب كذلك. ونستعمل نطاق «youtube-nocookie.com» وهو يقلّل ما يُحفَظ في متصفّحك من كوكيز، لكنه لا يمنع الطلبات نفسها.',
+                        'والفيديوهات التي رُفعت إلى المنصة مباشرةً لا يصل إلى جوجل عنها شيء: ملفُّها عندنا وتُعرض من خوادمنا، ولا يُطلب من يوتيوب فيها صورةٌ ولا مشغّل.',
+                        'وأما ما نقرأه نحن من يوتيوب فهو المعلن للعموم وحده: عناوينُ الفيديوهات وأوصافُها وأسماءُ ملقيها وتواريخُ نشرها ومددُها وصورُها وقوائمُ التشغيل. ولا نقرأ إحصاءاتٍ ولا تعليقاتٍ ولا شيئاً عن أيّ مستخدم في يوتيوب.',
+                        'ويستطيع صاحب القناة — وهو وحده — أن يستوردها مرةً واحدة، بعد أن يثبت ملكيتها. والإثبات طريقان: أن يضع رمزاً نتيحه له في وصف قناته العلنيّ على يوتيوب فنقرأه من هناك، وهذا لا يمرّ بحسابه في جوجل ألبتة؛ أو أن يسجّل الدخول بحساب جوجل الذي يدير القناة. والثاني اختياريّ، وقد لا يكون متاحاً في هذا النشر أصلاً، ولا نطلبه إلا ممّن اختاره بنفسه.',
+                        ['وإن اخترتَ تسجيل الدخول بجوجل فإننا نطلب إذناً بالاطّلاع على اسم قناتك في يوتيوب لا غير، ولمرّةٍ واحدة: نسأل جوجل «أيُّ قناة يديرها هذا الحساب؟» ثم نُبطل الإذن فوراً في اللحظة نفسها. فلا نحفظ رمزاً ولا نُبقي وصولاً متجدّداً إلى حسابك، ولا نقرأ بريدك ولا فيديوهاتك الخاصة ولا شيئاً سوى ذلك. ويمكنك مراجعة ما منحته من أذونات وسحبُه في أيّ وقت من ', { text: 'صفحة أذونات حسابك في جوجل', href: 'https://myaccount.google.com/permissions' }, '.'],
                     ],
                 },
                 {
@@ -2062,7 +2093,12 @@ export const ar = {
                         'مزوّد استضافة — الخوادم التي يعمل عليها الموقع، وقاعدة بياناته.',
                         'مزوّد تخزين سحابيّ وشبكة توزيع محتوى — حفظ ملفات الفيديو والكتب وتقديمها للقرّاء، وإدارة نطاق الموقع.',
                         'مزوّد إرسال بريد — تسليم رسالتَي التفعيل وإعادة تعيين كلمة المرور.',
-                        'واجهة بيانات يوتيوب من جوجل — عند استيراد قناة، وبطلب من صاحبها وحده.',
+                        // Was «عند استيراد قناة، وبطلب من صاحبها وحده», which described the API
+                        // call and omitted the far larger flow: Google receives a request from
+                        // every reader's browser on every page that shows an imported video. A
+                        // list of "who receives data" that names the once-per-channel case and
+                        // leaves out the once-per-page one is the most misleading shape available.
+                        'جوجل (يوتيوب) — من جهتين: قراءةُ بيانات القنوات المستوردة عند الاستيراد وبطلب من صاحب القناة، وهذه لا تخصّ القرّاء؛ وعرضُ الصور المصغّرة والمشغّل للفيديوهات المستوردة، وهذه يطلبها متصفّح كلّ قارئ مباشرةً من خوادم جوجل. انظر قسم «يوتيوب» أعلاه.',
                     ],
                 },
                 {
@@ -2239,6 +2275,23 @@ export const ar = {
                         'ولسنا مسؤولين عن دقّة ما ينشره أصحاب القنوات، ولا عن خطأ في نسبة نصّ، ولا عن ضرر ترتّب على الاعتماد على محتوى منشور.',
                         'واحتفظ بنسخةٍ مما يهمّك من ملفاتك: فالمنصة ليست مستودعَ حفظ، ولصاحب القناة أن يحذف محتواه متى شاء.',
                         'وفي حدود ما يسمح به النظام، تقتصر مسؤوليتنا على ما نصّت عليه هذه الشروط.',
+                    ],
+                },
+                {
+                    // REQUIRED BY III.A OF YOUTUBE'S API SERVICES TERMS, which says a client's
+                    // terms of use must display a link to youtube.com/t/terms and state that
+                    // users of the client agree to be bound by it. `Terms.jsx` did not mention
+                    // YouTube at all, which is pure omission — there was no design question
+                    // behind it, only a renderer that could not display a link.
+                    //
+                    // Placed before «تعديل الشروط», which is the closing clause: a document's
+                    // last section should be about the document.
+                    id: 'terms-youtube',
+                    heading: 'الفيديوهات المعروضة من يوتيوب',
+                    paragraphs: [
+                        'بعض المحتوى المعروض هنا مستوردٌ من يوتيوب، ويُشغَّل من مشغّل يوتيوب نفسه لا من خوادمنا. وتجد على بطاقة كلّ فيديو من هذه علامةً تدلّ على مصدره.',
+                        ['وباستعمالك هذه المنصة فإنك توافق على أن تلتزم بـ', { text: 'شروط خدمة يوتيوب', href: 'https://www.youtube.com/t/terms' }, ' فيما يخصّ هذا المحتوى، فهو معروض بمقتضاها.'],
+                        'ونحن لا نملك هذا المحتوى ولا نتحكّم في بقائه: فمتى حذفه صاحبه من يوتيوب أو جعله خاصاً توقّف عرضه هنا، وليس ذلك بأيدينا.',
                     ],
                 },
                 {

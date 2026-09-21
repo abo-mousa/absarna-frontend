@@ -20,6 +20,13 @@ import { t } from '@/i18n';
  * is the exact failure the catalog exists to prevent. As arrays, `ar.legal.privacy` is the whole
  * document and editing it is editing a list.
  *
+ * <h4>Links</h4>
+ *
+ * <p>A paragraph (or a bullet) may be an ARRAY of parts rather than a string, where a part is
+ * either text or `{ text, href }` — see `paragraphParts`. This exists because YouTube's API terms
+ * require these pages to <em>display links</em> to documents of theirs, which a page that renders
+ * every paragraph as a bare string cannot do at all.
+ *
  * <p>The cost is real and worth stating: the i18n test walks the source for literal `t('…')` calls,
  * so these strings are NOT covered by it. A section whose `heading` is missing renders an empty
  * `<h2>` rather than a visible `legal.privacy.…` on screen. That is the trade — and it is bounded,
@@ -38,6 +45,57 @@ import { t } from '@/i18n';
  * tall, so a browser scrolling an element to y=0 parks it underneath — the reader follows a link to
  * a clause and lands on the paragraph after it, with no indication anything is hidden.
  */
+/**
+ * One paragraph's pieces, as a list — plain text, and the occasional link.
+ *
+ * <h4>Why a legal document needs links at all, and why this shape</h4>
+ *
+ * <p>YouTube's API Services Terms III.A require that our terms of use <b>display a link</b> to
+ * their terms, and that our privacy policy link to Google's. "Display a link" is not satisfied by
+ * naming a URL in prose, and until this existed there was no way to put one in these pages: every
+ * paragraph was rendered as a bare string. The same is true of the revocation link Google requires
+ * once OAuth sign-in is offered.
+ *
+ * <p><b>Parts rather than a per-section list of links.</b> A trailing «انظر: …» block would have
+ * been less work and reads as boilerplate nobody follows; what these clauses actually need is the
+ * link inside the sentence that makes the commitment, because the sentence is the commitment.
+ *
+ * <p><b>A plain string is still a paragraph</b>, which is the whole reason this is a normalising
+ * function instead of a new field. Every existing paragraph in `ar.legal` — the overwhelming
+ * majority, and all of them written before this — is untouched and must stay that way: a policy
+ * whose format changes underneath the person editing it is a policy that stops being edited.
+ */
+export function paragraphParts(paragraph) {
+    if (typeof paragraph === 'string') return [paragraph];
+    return Array.isArray(paragraph) ? paragraph : [];
+}
+
+/**
+ * One piece of a paragraph. A string renders as text; `{ text, href }` renders as a link.
+ *
+ * <p>Every link here points off this site by nature — these exist to satisfy a requirement to link
+ * to somebody else's terms — so `rel="noopener noreferrer"` and a new tab are the default rather
+ * than a per-call-site decision. A reader sent away mid-policy and unable to get back is how a
+ * page nobody finishes becomes a page nobody starts.
+ */
+function ParagraphPart({ part }) {
+    if (typeof part === 'string') return part;
+    if (!part?.href) return part?.text ?? null;
+    return (
+        <a
+            href={part.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:underline"
+            // The URL itself, for a reader who wants to see where a link goes before following it
+            // — and for anyone reading this page on paper, where the link is invisible otherwise.
+            dir="ltr"
+        >
+            {part.text}
+        </a>
+    );
+}
+
 function LegalDocument({ doc }) {
     const sections = doc?.sections ?? [];
 
@@ -97,7 +155,11 @@ function LegalDocument({ doc }) {
                     <h2 id={section.id} className="scroll-mt-24 text-xl font-bold mb-3">{section.heading}</h2>
 
                     {section.paragraphs?.map((paragraph, index) => (
-                        <p key={index} className="leading-loose text-[1.05rem] text-text-secondary mb-3">{paragraph}</p>
+                        <p key={index} className="leading-loose text-[1.05rem] text-text-secondary mb-3">
+                            {paragraphParts(paragraph).map((part, partIndex) => (
+                                <ParagraphPart key={partIndex} part={part} />
+                            ))}
+                        </p>
                     ))}
 
                     {/* `ps-5` and `marker:` rather than `pl-5`: the list marker sits on the reading
@@ -106,7 +168,11 @@ function LegalDocument({ doc }) {
                     {section.bullets?.length > 0 && (
                         <ul className="list-disc ps-5 space-y-2 leading-loose text-[1.05rem] text-text-secondary marker:text-text-muted">
                             {section.bullets.map((bullet, index) => (
-                                <li key={index}>{bullet}</li>
+                                <li key={index}>
+                                    {paragraphParts(bullet).map((part, partIndex) => (
+                                        <ParagraphPart key={partIndex} part={part} />
+                                    ))}
+                                </li>
                             ))}
                         </ul>
                     )}
