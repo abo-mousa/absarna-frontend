@@ -1,6 +1,7 @@
 # أَبْصَرْنا (Absarna) Platform — Frontend
 
-**React 18 + Vite SPA**, plain JavaScript (`.jsx`, no TypeScript), **RTL Arabic throughout**. The
+**React 18 + Vite SPA**, plain JavaScript (`.jsx`, no TypeScript), **Arabic and RTL by default,
+with an opt-in English LTR build** (see the i18n section). The
 reader-facing app for an Islamic educational media platform: videos, books, articles, posts, grouped
 into channels.
 
@@ -33,9 +34,9 @@ src/
   hooks/       one per domain (useVideos, useChannels, useBooks, useLikes, useBookmarks,
                useSeries, useMediaUrl, usePresignedUpload, useComments, …)
   contexts/    AuthContext, ThemeContext, ToastContext
-  i18n/        index.js (t / tOptional) + ar.js — EVERY user-facing string
+  i18n/        index.js (t / tOptional) + locales.js + ar.js / en.js — EVERY user-facing string
   lib/         api/ (axios client + interceptors), queryKeys, queryCache, describeError,
-               safeStorage, media, numbers, dayjsAr, user, uploadResume, env, telemetry
+               safeStorage, media, numbers, datetime, locale, user, uploadResume, env, telemetry
 ```
 
 Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the individual file.
@@ -46,17 +47,54 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   cards, counts, anything that is a label. `font-reading` is Noto Naskh Arabic, for prose someone
   *wrote* (comments) and prose someone *reads at length* (video and book descriptions, article
   bodies, the legal pages); the comment box uses it too, so what you type looks like what lands.
-  `font-serif` (Markazi Text) stays the wordmark and reading-page headings. **Cairo replaced IBM
+  `font-serif` (Markazi Text) stays the wordmark and reading-page headings. **`font-sans` is the
+  only one of the three that follows the interface LANGUAGE**: it resolves through `--font-sans`,
+  which `index.css` redefines under `:root:lang(en)` to lead with Inter and keep Cairo behind it,
+  so an Arabic string on an English screen still lands on Cairo (fallback is per missing character,
+  and Inter has no Arabic). `font-reading` deliberately does not: it is the face for CONTENT, and
+  the content is Arabic in both builds. **Cairo replaced IBM
   Plex Sans Arabic because Plex has no ligature rule for «الله»** — the glyph is in the font and
   nothing forms it — and a fallback font cannot fix that, since fallback is per missing CHARACTER
   and lam/lam/heh all exist in Plex.
+- **Direction is a property of the interface, not a constant, and almost nothing branches on it.**
+  `<html dir>` is set pre-paint by an inline script in `index.html` (the same trick the `dark` class
+  already used — applying it after React mounts would show an English reader one frame of an RTL
+  page), and `i18n/index.js` reads it back rather than re-deriving it, so the attribute the browser
+  lays out with and the catalog `t()` serves from cannot disagree. Layout is **logical utilities**
+  (`ms-`/`me-`/`ps-`/`pe-`/`start-`/`end-`/`text-start`), which flip on their own — a physical
+  `ml-`/`right-`/`text-right` in new code is almost always a bug. Four things genuinely cannot be
+  logical and each says so where it is: the sidebar drawer's closed transform (CSS `translate` is
+  not direction-aware, so `rtl:`/`ltr:` variants), the scrubber handle's half-width nudge, `Input`'s
+  own padding (a logical property there resolves against the FIELD's `dir`, which describes its
+  *value*, not the interface), and **arrows** — a left-pointing arrow is a different drawing, so
+  `ui/DirectionalIcon` exports `ChevronBack`/`ChevronForward`/`ArrowBack`/`ArrowForward` and holds
+  that decision once instead of at fourteen call sites where a wrong chevron renders perfectly
+  happily. `lib/player/gestures.js`'s `tapZone` and `VideoControlBar`'s `ratioFromPointer` /
+  `keyboardAction` take the direction as a **parameter** defaulting to `isRtl()`, so the tests
+  exercise both: the suite runs in one locale, and mirrored arithmetic that is wrong neither throws
+  nor logs.
+- **Switching language persists and RELOADS** (`lib/locale.js`). `t()` is a plain function called
+  from 99 files, several outside React, and nothing subscribes to it — making it reactive is a
+  rewrite of the app for a control a person touches about once. A reload is also the only way to
+  guarantee everything measured under the old direction is re-measured (the scrubber's cached track
+  rect, hls.js, the PDF reader, the navbar's `--navbar-h`). **Arabic is the default for everyone and
+  `navigator.language` is deliberately never read**: the catalogue is Arabic, so an English
+  interface is a thing to choose rather than to be given. The choice lives in `localStorage`, like
+  the theme, and is never in the URL. `AuthContext` pushes it to `users.locale` on boot when the two
+  disagree — that column is read by **the account emails only**, and the boot is the trigger rather
+  than the click because the click reloads the page out from under its own request.
 - **Tailwind only.** Brand colours are theme tokens resolving through CSS custom properties
   (`rgb(var(--color-x) / <alpha-value>)`), with light values on `:root` and dark under `.dark` in
   `index.css` — which is why dark mode is a two-file change and every existing `bg-surface` call site
   repaints for free. Inline `style={{}}` only for genuinely runtime-variable values Tailwind's JIT
   can't see (`Grid`'s `minWidth`, `Spinner`'s `size`).
-- **Every user-facing string lives in `src/i18n/ar.js` and reaches the screen through `t()`.** ~420
-  entries, ~590 call sites. A missing key returns the key and warns in dev. `tOptional` is for keys
+- **Every user-facing string lives in a catalog (`src/i18n/ar.js`, `en.js`) and reaches the screen
+  through `t()`.** ~950 entries, ~590 call sites. A missing key returns the key and warns in dev;
+  a key the ACTIVE catalog lacks falls back to `ar` silently, because English is being filled in
+  namespace by namespace and an Arabic sentence on an English screen is legible where a dotted key
+  is not. `en.js`'s `TRANSLATED` array names the namespaces that are finished, and the test asserts
+  those complete key-for-key while allowing the rest to be partial — so a stale English key fails
+  the build and a planned gap does not. `tOptional` is for keys
   that come from *data* (a quality rung name), where a miss is normal. Namespace by the screen that
   shows it; promote to `common` only when a second screen needs the same words for the same reason.
   A test walks the source and asserts every literal `t('...')` key resolves.
@@ -111,8 +149,11 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   another loading/error/empty ternary.
 - **Errors go through `lib/describeError.js`**, which prefers the backend's `reason` code (worded in
   `errors.reasons`), then the backend's own Arabic sentence, then a status-based fallback. It only
-  trusts a server body **that contains an Arabic letter** — the backend writes Arabic for people and
-  English for logs, and both arrive under `error` or `message` depending on the handler.
+  trusts a server body **that contains an Arabic letter, and only on the Arabic build** — the
+  backend writes Arabic for people and English for logs, so on an English screen an Arabic body is
+  the wrong language and an English one is a log line. After the rate limiter stopped writing its
+  own sentence there is nothing left for it to find; it stays as the guard for anything older, and
+  **must never start trusting English**.
 - **Latin digits everywhere** (`lib/numbers.js` `formatCount`) — counts and dates must agree.
   `displayDate(item)` = `originalPublishDate || publishDate`, or an imported back catalogue all reads
   «منذ ١٩ ساعة».
@@ -421,8 +462,12 @@ What this app relies on; the mirror lives in the backend's `CLAUDE.md`.
   bounces an admin off `/admin` exactly as a logout would, which is why that probe retries once.
 - **Likes' status endpoint is public** (`{liked:false, likeCount:N}` when anonymous); `POST`/`DELETE`
   need a login. `VideoDTO.likeCount` is on cards; books/articles use the status call.
-- **Rate limits are per IP and per rule**, with a readable Arabic 429 body (the limiter runs after the
-  backend's CORS filter). 429 is deliberately **not** auto-retried — retrying spends the same bucket.
+- **Rate limits are per IP and per rule**, and the 429 body carries `reason: RATE_LIMITED` rather
+  than a sentence (the limiter runs after the backend's CORS filter, so the body is readable — but
+  a servlet filter runs before any handler and cannot know which language the caller reads).
+  `errors.rateLimited` is the one wording, chosen by status; the code is deliberately **not** in
+  `errors.reasons`, because two entries would be the same sentence written twice. 429 is
+  deliberately **not** auto-retried — retrying spends the same bucket.
 - Uploads are always multipart, extensions allowlisted (`mp4`/`mov`/`pdf`), and `contentType` is
   derived server-side — `file.type` is accepted and ignored.
 
