@@ -26,6 +26,10 @@ import { t } from '@/i18n';
  *   <li><b>FAILED</b> — stopped, and it will not resume by itself. This is the one with a button,
  *       because it is the one with a recourse: the original file is still on the servers, so a
  *       retry is a click rather than a re-upload of several gigabytes.</li>
+ *   <li><b>Imported, unconfirmed</b> — the quietest thing here on purpose. It is true of every
+ *       row of a freshly imported catalogue, and a warning repeated two thousand times teaches an
+ *       owner to stop reading the badges below it. The loud version belongs once, at the top of
+ *       the dashboard.</li>
  *   <li><b>Gone from YouTube</b> — the 30-day sweep found the video is no longer there, so the
  *       row is hidden. No button: the three things an owner can do about it (re-upload the
  *       original, retitle it, delete it) are all controls this row already has.</li>
@@ -55,8 +59,13 @@ function VideoManageStatus({ video, slug }) {
     };
 
     const gone = Boolean(video.youtubeUnavailableAt);
+    // Explicitly false, not falsy: the backend leaves this NULL on a video that was never
+    // imported, which means "the question does not apply here" rather than "not yet done".
+    // `!video.metadataConfirmed` would badge every ordinary upload on the channel.
+    const needsConfirming = video.metadataConfirmed === false;
 
-    if (!gone && video.status !== 'UPLOADED' && video.status !== 'FAILED' && notices.length === 0) {
+    if (!gone && !needsConfirming && video.status !== 'UPLOADED' && video.status !== 'FAILED'
+        && notices.length === 0) {
         return null;
     }
 
@@ -122,6 +131,31 @@ function VideoManageStatus({ video, slug }) {
                         {t('channelManage.videoStatus.youtubeGoneHint')}
                     </p>
                 </div>
+            )}
+
+            {/* THIS ROW'S TEXT IS NOT YET THE OWNER'S, and until it is, the 30-day sweep
+                re-reads it from YouTube and overwrites whatever is here.
+
+                That consequence is the whole reason this badge exists and the reason it is worded
+                as one. "Confirm your metadata" is a compliance chore an owner has no reason to
+                care about; "your title will be replaced from YouTube until you confirm it" is a
+                fact about their own page. Both are true and only the second gets acted on.
+
+                DELIBERATELY THE QUIETEST THING ON THIS ROW — no colour, no icon, no border. It is
+                true of every row of a freshly imported catalogue, which can be thousands, and a
+                warning repeated two thousand times is how an owner learns to stop reading the
+                badges underneath it. The one that must still land after all this is the
+                moderation hold, which is the only thing here that means nobody can see the video.
+                The loud version of this message belongs once at the top of the dashboard, not
+                once per row. */}
+            {needsConfirming && !gone && (
+                <p
+                    title={t('channelManage.videoStatus.needsConfirmingHint')}
+                    className="inline-flex w-fit items-center gap-1.5 text-xs px-2 py-0.5 rounded
+                               bg-surface-hover text-text-muted"
+                >
+                    {t('channelManage.videoStatus.needsConfirming')}
+                </p>
             )}
 
             {/* One per FINDING, not one per video: a video can be held for music and noted for

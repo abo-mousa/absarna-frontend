@@ -8,6 +8,8 @@ import { canManageChannel } from '@/lib/user';
 import { useChannel } from '@/hooks/useChannels';
 import { useChannelYouTube } from '@/hooks/useChannelYouTube';
 import ChannelManageNav, { resolveTab } from '@/components/channel/ChannelManageNav';
+import AdoptionNotice from '@/components/channel/AdoptionNotice';
+import { useAdoptionProgress } from '@/hooks/useChannelAdoption';
 import ChannelSettingsTab from '@/components/channel/tabs/ChannelSettingsTab';
 import VideosTab from '@/components/channel/tabs/VideosTab';
 import BooksTab from '@/components/channel/tabs/BooksTab';
@@ -52,6 +54,9 @@ function ChannelManage() {
     const navigate = useNavigate();
     const { user, loading: authLoading } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
+    // The same query key AdoptionNotice uses, so react-query serves both from one request. Read
+    // here only for the menu's dot, which has to be visible from whichever tab the owner is on.
+    const { data: adoptionProgress } = useAdoptionProgress(slug);
     const activeTab = resolveTab(searchParams.get('tab'));
     const setActiveTab = (tab) => setSearchParams({ tab }, { replace: true });
 
@@ -110,6 +115,7 @@ function ChannelManage() {
                     activeTab={activeTab}
                     onSelect={setActiveTab}
                     youtubeState={youtubeState}
+                    awaitingConfirmation={adoptionProgress?.awaiting ?? 0}
                 />
 
                 <div className="flex-1 min-w-0 px-4 sm:px-6 py-6">
@@ -126,6 +132,18 @@ function ChannelManage() {
                                     : t('channelManage.underReview')}
                             </div>
                         )}
+
+                        {/* Above every tab, not inside the YouTube one. An owner who has finished
+                            importing stops opening that tab, which is exactly when this work
+                            starts — so a notice living there is a notice nobody sees. It removes
+                            itself when the count reaches zero and has no dismiss button, because a
+                            dismissable version of this is one that was shown once, months ago.
+                            Clicking through switches to the YouTube tab's confirmation screen. */}
+                        <AdoptionNotice
+                            slug={slug}
+                            onOpen={() => setSearchParams({ tab: 'youtube', confirm: '1' },
+                                { replace: true })}
+                        />
 
                         {/* Every tab stays MOUNTED and is hidden rather than unmounted, and that is
                             load-bearing rather than tidy. A half-finished upload lives in its tab — the

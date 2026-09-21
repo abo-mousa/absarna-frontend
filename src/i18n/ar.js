@@ -102,6 +102,11 @@ export const ar = {
         content: 'المحتوى',
         primaryColor: 'اللون الرئيسي',
         originalPublishDateOptional: 'تاريخ النشر الأصلي (اختياري)',
+        // Bare labels, for the confirmation screen's list of what is being affirmed. `fields.*`
+        // elsewhere are form labels; these are the same words used as facts rather than inputs.
+        speaker: 'الملقي',
+        duration: 'المدة',
+        originalPublishDate: 'تاريخ النشر الأصلي',
         username: 'اسم المستخدم',
         usernameRequired: 'اسم المستخدم *',
         fullName: 'الاسم الكامل',
@@ -960,6 +965,11 @@ export const ar = {
             // missing. Said as the step that is left, not as a refusal — the remedy is the
             // verification panel directly above this one.
             needsOwnerVerification: 'لا يمكن التأكيد قبل أن تثبت ملكيتك لقناة يوتيوب بنفسك. الربط الذي تم بواسطة الإدارة يكفي للاستيراد، أما التأكيد فهو إقرار منك أنت عن محتواك، فلا ينوب عنك فيه أحد. أثبت ملكيتك من الأعلى ثم عد إلى هنا.',
+            // The dashboard-wide notice. Says the CONSEQUENCE, not the task: «أكّد بياناتك» is a
+            // chore with nothing in it for the owner, while «سنعيد قراءتها من يوتيوب شهرياً وتُستبدل»
+            // is a fact about their own page. Both are true; only the second gets acted on.
+            noticeTitle: 'بقي {count} مقطعاً بانتظار تأكيدك',
+            noticeBody: 'العناوين والأوصاف وأسماء الملقين في هذه المقاطع قرأناها من يوتيوب ولم تُقرّها بعد. وما لم تُقرّها فإننا نعيد قراءتها من يوتيوب كل شهر، فيُستبدل ما هو مكتوب هنا بما هو هناك — وما تعدّله أنت أو تؤكّده يبقى كما تركته.',
             confirmPage: 'أؤكّد هذه الصفحة ({count})',
             confirming: 'جاري التأكيد...',
             confirmed: 'تم تأكيد {count} مقطعاً',
@@ -1143,6 +1153,9 @@ export const ar = {
         importIndicator: {
             running: 'استيراد يوتيوب جارٍ',
             paused: 'استيراد يوتيوب متوقف مؤقتاً',
+            // The dot's third state. Named as the work rather than as "YouTube", because that is
+            // what the owner will be looking for once the import itself is long finished.
+            confirm: 'محتوى مستورد بانتظار تأكيدك',
         },
 
         emptyContent: 'لا يوجد محتوى بعد',
@@ -1180,6 +1193,11 @@ export const ar = {
             // no way out reads as a punishment rather than a pause.
             youtubeGone: 'لم يعد هذا الفيديو موجوداً على يوتيوب',
             youtubeGoneHint: 'حُذف من يوتيوب أو جُعل خاصاً، فلم يعد يُشغَّل هنا، وأخفيناه عن الزوار حتى تقرّر. ولم نحذفه: تعليقاته وإعجاباته وسجلّ مشاهدته باقية. يمكنك رفع الملف الأصلي ليعود العرض من خوادمنا، أو تعديل بياناته وإبقاءه، أو حذفه.',
+            // The per-row badge. The quietest thing on the row by design — it is true of every
+            // row of a freshly imported catalogue, and a warning repeated two thousand times is
+            // how an owner learns to stop reading the moderation notices underneath it.
+            needsConfirming: 'بانتظار تأكيدك',
+            needsConfirmingHint: 'هذه البيانات قرأناها من يوتيوب. ما لم تؤكّدها أو تعدّلها، نعيد قراءتها من يوتيوب كل شهر ويُستبدل ما هو مكتوب هنا.',
             retryQueued: 'أُعيد الفيديو إلى قائمة المعالجة.',
             retryFailed: 'تعذّرت إعادة المعالجة.',
         },

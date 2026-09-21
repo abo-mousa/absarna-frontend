@@ -126,8 +126,26 @@ function AdoptionEditDialog({ open, row, onClose, onSave, saving }) {
     );
 }
 
-/** One row: what is being affirmed, and nothing else. */
+/**
+ * One row: every field the affirmation snapshots, and nothing else.
+ *
+ * <p><b>All five, not the two obvious ones.</b> The record freezes the title, description,
+ * speaker, duration and original publish date; it showed the first two for a while, which meant
+ * an owner affirmed three fields they had never seen — weakest on the speaker, which is a person's
+ * name and the field the policy lists beside titles. If `PendingAdoptionDTO` ever gains a field,
+ * it gets rendered here.
+ */
 function AdoptionRow({ row, onEdit }) {
+    // Rendered as a row of small labelled facts rather than paragraphs: they are short, they are
+    // what is being agreed to, and burying them in prose under the description is how they stop
+    // being read — which is the failure this whole screen exists to avoid.
+    const facts = [
+        [t('fields.speaker'), row.speaker],
+        [t('fields.duration'), row.duration],
+        [t('fields.originalPublishDate'), row.originalPublishDate],
+        ['YouTube', row.youtubeVideoId],
+    ].filter(([, value]) => value);
+
     return (
         <li className="py-4 border-b border-border-light last:border-b-0">
             <div className="flex items-start justify-between gap-3">
@@ -142,14 +160,19 @@ function AdoptionRow({ row, onEdit }) {
                 </Button>
             </div>
 
-            {/* Shown because it is part of what is affirmed — the id is API Data too, and it is
-                what keeps the embed playing after the platform leaves the API. `dir="ltr"` because
-                a YouTube id is Latin and would otherwise have its punctuation reordered on an RTL
-                line. */}
-            {row.youtubeVideoId && (
-                <p className="text-xs text-text-muted mt-1 font-mono" dir="ltr">
-                    {row.youtubeVideoId}
-                </p>
+            {/* Each is part of what is affirmed. The YouTube id is here because it is API Data
+                too and is what keeps the embed playing after the platform leaves the API; the
+                speaker because it is a person's name. Values are `dir="auto"` so an Arabic
+                speaker's name and a Latin video id each lay out correctly on the same line. */}
+            {facts.length > 0 && (
+                <dl className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 text-xs text-text-muted">
+                    {facts.map(([label, value]) => (
+                        <div key={label} className="flex items-center gap-1">
+                            <dt className="opacity-70">{label}:</dt>
+                            <dd dir="auto">{value}</dd>
+                        </div>
+                    ))}
+                </dl>
             )}
 
             {/* Collapsed by default. An imported description is a paragraph, a table of contents,

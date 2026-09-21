@@ -54,18 +54,25 @@ export function resolveTab(param) {
 }
 
 /**
- * `'running'`, `'paused'` or `null` — whether the YouTube item carries a dot.
+ * `'running'`, `'paused'`, `'confirm'` or `null` — whether the YouTube item carries a dot.
  *
  * <p>An import runs for hours and the owner spends that time in the other sections, so the menu is
- * where it has to stay visible. Only the two states that ask something of the owner: RUNNING
- * (it is still going — don't start anything that assumes it has finished) and PARTIAL (it is
- * waiting for them to press continue). A finished or failed import says so inside its own tab.
+ * where it has to stay visible. Only states that ask something of the owner: RUNNING (it is still
+ * going — don't start anything that assumes it has finished), PARTIAL (waiting for them to press
+ * continue), and metadata still waiting to be confirmed. A finished or failed import says so
+ * inside its own tab.
+ *
+ * <p><b>The import states win over the confirmation one</b>, and the order is the rule rather than
+ * an accident of the ifs. A catalogue that is still arriving will have thousands of unconfirmed
+ * rows by definition, so testing confirmation first would replace "your import is running" with
+ * "confirm your titles" for the entire multi-day walk — advice that is both useless then and
+ * hiding the thing the owner is actually waiting on.
  */
-export function importIndicator(youtubeState) {
+export function importIndicator(youtubeState, awaitingConfirmation = 0) {
     const status = youtubeState?.importStatus;
     if (status === 'RUNNING') return 'running';
     if (status === 'PARTIAL') return 'paused';
-    return null;
+    return awaitingConfirmation > 0 ? 'confirm' : null;
 }
 
 function ImportDot({ indicator }) {
@@ -102,8 +109,8 @@ function ImportDot({ indicator }) {
  * <p>Buttons, not links: the sections are panels of one page that stay mounted (see
  * `ChannelManage`), and the URL is kept in step by the page rather than by navigation.
  */
-export default function ChannelManageNav({ channel, activeTab, onSelect, youtubeState }) {
-    const indicator = importIndicator(youtubeState);
+export default function ChannelManageNav({ channel, activeTab, onSelect, youtubeState, awaitingConfirmation = 0 }) {
+    const indicator = importIndicator(youtubeState, awaitingConfirmation);
 
     // Sticks under the navbar, whose height Navbar measures into `--navbar-h` — the 60px this
     // used to hardcode was a pixel short of the bar plus its border.

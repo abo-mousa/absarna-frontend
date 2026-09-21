@@ -54,3 +54,25 @@ describe('importIndicator', () => {
         expect(importIndicator(undefined)).toBeNull();
     });
 });
+
+describe('importIndicator and outstanding confirmations', () => {
+    it('shows the confirm dot once nothing else is happening', () => {
+        expect(importIndicator({ importStatus: 'SUCCESS' }, 1847)).toBe('confirm');
+        expect(importIndicator(null, 3)).toBe('confirm');
+    });
+
+    it('says nothing when there is nothing left to confirm', () => {
+        expect(importIndicator({ importStatus: 'SUCCESS' }, 0)).toBeNull();
+        // The default matters: every existing caller passed one argument.
+        expect(importIndicator({ importStatus: 'SUCCESS' })).toBeNull();
+    });
+
+    it('lets a running or paused import win over the confirmation dot', () => {
+        // THE ORDERING IS THE RULE. A catalogue still arriving has thousands of unconfirmed rows
+        // by definition, so testing confirmation first would replace "your import is running"
+        // with "confirm your titles" for the whole multi-day walk — advice that is useless then
+        // and hides the thing the owner is actually waiting on.
+        expect(importIndicator({ importStatus: 'RUNNING' }, 25000)).toBe('running');
+        expect(importIndicator({ importStatus: 'PARTIAL' }, 25000)).toBe('paused');
+    });
+});
