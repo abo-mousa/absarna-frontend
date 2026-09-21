@@ -12,6 +12,7 @@ import { canManageChannel } from '@/lib/user';
 import { ownerNotices } from '@/lib/review';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { resolveMediaUrl, youtubeThumbnail } from '@/lib/media';
+import { useConsent } from '@/contexts/ConsentContext';
 import { formatPublishDate, displayDate } from '@/lib/dayjsAr';
 import { t } from '@/i18n';
 import { formatCount } from '@/lib/numbers';
@@ -39,9 +40,17 @@ function VideoDetail() {
     // point before, so a video always restarted from 0 regardless of watch history.
     const startTime = sharedTime || Math.floor(watchProgress[video?.id] || 0);
 
+    const { youtubeAllowed } = useConsent();
+
+    // Same consent gate as VideoCard, and for the same reason: this value reaches `poster` on the
+    // player below, which makes it a request from the reader's browser to img.youtube.com. It also
+    // feeds usePageMeta's og:image, which is only a meta tag and sends nothing anywhere — but the
+    // two share one variable, and losing the tag for a non-consenting reader costs nothing, since
+    // social crawlers cannot run this SPA at all and are served by the backend's `share/` cards.
     const thumbnail = video?.thumbnailUrl
         ? resolveMediaUrl(video.thumbnailUrl)
-        : video?.sourceType === 'YOUTUBE' ? youtubeThumbnail(video.sourceUrl) : null;
+        : video?.sourceType === 'YOUTUBE' && youtubeAllowed
+            ? youtubeThumbnail(video.sourceUrl) : null;
     usePageMeta({
         title: video?.title,
         description: video?.description?.slice(0, 200),

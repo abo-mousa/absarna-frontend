@@ -4,6 +4,7 @@ import { EmailVerificationNotice } from '../auth';
 import Navbar from './Navbar';
 import SideBar from './SideBar';
 import Footer from './Footer';
+import ConsentBanner from './ConsentBanner';
 import { t } from '@/i18n';
 
 // The shared app shell (Navbar + collapsible Sidebar + Footer) every browsing page uses.
@@ -112,6 +113,10 @@ function PageShell({ children, sidebar = true, currentChannel, contentClassName 
                 <main id="main-content" tabIndex={-1} className={`flex-1 min-w-0 outline-none ${contentClassName}`}>{children}</main>
             </div>
             <Footer />
+            {/* Rendered from the shell rather than from App, so it sits inside the same document
+                flow as the footer and cannot end up above a route that renders its own chrome.
+                It returns null once the reader has answered. */}
+            <ConsentBanner />
         </div>
     );
 }

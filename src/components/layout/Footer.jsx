@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { t } from '@/i18n';
+import { useConsent } from '@/contexts/ConsentContext';
 
 // Muted on purpose, and it overrides index.css's base `a { @apply text-primary }`.
 //
@@ -37,6 +38,7 @@ const footerLinkClass = 'text-text-muted hover:text-text-secondary hover:underli
  * it is a claim about when a human last read the text, which no clock knows.
  */
 function Footer() {
+    const { reset: resetConsent } = useConsent();
     const year = new Date().getFullYear();
 
     return (
@@ -56,6 +58,15 @@ function Footer() {
                     <Link to="/privacy" className={footerLinkClass}>{t('legal.footer.privacy')}</Link>
                     <Link to="/terms" className={footerLinkClass}>{t('legal.footer.terms')}</Link>
                     <Link to="/contact" className={footerLinkClass}>{t('legal.footer.contact')}</Link>
+                    {/* WITHDRAWAL, and it is here because it has to be as easy as consenting was.
+                        A decision that can only be undone by clearing site data is not a decision
+                        that was freely given. A button rather than a Link: it changes state on
+                        this page — the banner comes back and anything loaded from Google stops
+                        being loaded — and navigating somewhere to find a toggle is the friction
+                        the rule is about. */}
+                    <button type="button" onClick={resetConsent} className={footerLinkClass}>
+                        {t('consent.footerLink')}
+                    </button>
                 </nav>
 
                 <p className="text-center">{t('legal.footer.rights', { year })}</p>

@@ -22,6 +22,7 @@ import { useDoubleTapSeek } from '@/hooks/player/useDoubleTapSeek';
 import { useResumeAfterBackground } from '@/hooks/player/useResumeAfterBackground';
 import { t } from '@/i18n';
 import { Button } from '@/components/ui';
+import { useConsent } from '@/contexts/ConsentContext';
 import { PictureInPicture2, RotateCcw, RotateCw } from 'lucide-react';
 import VideoControlBar, {
     SEEK_STEP_SECONDS,
@@ -51,6 +52,7 @@ const VideoPlayer = forwardRef(function VideoPlayer(
     // check. Anything hosted elsewhere never touches this. The check runs on every playback, not
     // only for a hidden video: the object is private regardless.
     const isOwnUpload = sourceType === 'UPLOAD' || sourceType === 'LOCAL' || sourceType === 'STREAM';
+    const { youtubeAllowed, grant: grantYouTube } = useConsent();
     const isYouTube = sourceType === 'YOUTUBE';
     const youtubeVideoId = isYouTube ? extractYouTubeId(sourceUrl) : '';
 
@@ -88,8 +90,12 @@ const VideoPlayer = forwardRef(function VideoPlayer(
     }, [isYouTube]);
 
     const { report, durationRef } = useWatchProgress(videoId, playhead);
+    // NOTHING FROM GOOGLE UNTIL THE READER HAS AGREED. `enabled` false means the iframe API
+    // script is never injected and no player is constructed, so a refusing reader's browser makes
+    // no request at all — which is the requirement, since consent has to precede the loading
+    // rather than follow it.
     const youtubeContainerId = useYouTubeEmbed({
-        enabled: isYouTube, youtubeVideoId, startTime, playerRef: youtubePlayerRef, report,
+        enabled: isYouTube && youtubeAllowed, youtubeVideoId, startTime, playerRef: youtubePlayerRef, report,
         durationRef,
     });
 
@@ -681,6 +687,46 @@ const VideoPlayer = forwardRef(function VideoPlayer(
                 <a href={externalUrl} target="_blank" rel="noopener noreferrer" className="text-primary font-semibold">
                     {t('video.watchOnYouTube')}
                 </a>
+            );
+        }
+
+        // THE PLACEHOLDER IS ALSO THE CONSENT POINT, and that is the design rather than a
+        // fallback. A reader who has refused site-wide, or not yet answered, still came here to
+        // watch one lecture — and a refusal that means "you may never watch anything" is a
+        // refusal nobody will make freely, which would undermine the banner's own validity.
+        //
+        // Pressing this is consent in the strongest form the rules describe: specific (one named
+        // recipient, one named purpose), informed (the sentence above the button says what
+        // happens), unambiguous (a deliberate press, not a scroll or a dismissal) and in context
+        // (they are looking at the thing it applies to). It grants generally rather than for this
+        // video alone, which the wording says plainly — a per-video grant would mean asking again
+        // on the next lecture, and a question re-asked until it is answered the way we want is
+        // exactly what the policy forbids.
+        if (!youtubeAllowed) {
+            return (
+                <div className="relative pb-[56.25%] h-0 rounded-lg overflow-hidden border border-border bg-surface-hover">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-5 text-center">
+                        <p className="text-sm text-text-secondary leading-loose max-w-prose" dir="auto">
+                            {t('consent.playerBody')}
+                        </p>
+                        <div className="flex flex-wrap gap-2 justify-center">
+                            <Button onClick={grantYouTube}>{t('consent.playerAllow')}</Button>
+                            {/* The way out that involves us in nothing: YouTube's own page, in a
+                                new tab. A reader who will not have Google on this site may still
+                                be perfectly willing to visit Google. */}
+                            {externalUrl && (
+                                <a
+                                    href={externalUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center px-5 py-2.5 text-[0.95rem] rounded-md border border-border text-text-secondary hover:bg-surface-hover"
+                                >
+                                    {t('video.watchOnYouTube')}
+                                </a>
+                            )}
+                        </div>
+                    </div>
+                </div>
             );
         }
 

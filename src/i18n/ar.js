@@ -821,6 +821,37 @@ export const ar = {
         backToChannel: 'العودة إلى تبويب يوتيوب',
     },
 
+    // The EU consent question, asked of every reader.
+    //
+    // WHAT IT IS FOR. Imported videos play from YouTube's own player and every card for one asks
+    // img.youtube.com for its thumbnail — both are requests from the reader's browser straight to
+    // Google, carrying their IP address, user agent and referring page, before anything has been
+    // clicked. Google's EU User Consent Policy requires consent for the storage the player sets
+    // and disclosure of Google as a recipient; ePrivacy requires the consent to come BEFORE the
+    // request, which is why nothing loads until this is answered.
+    //
+    // WORDING RULES THAT ARE NOT STYLE. Google is NAMED — consent is only informed if the
+    // recipient is identified, so «شركاؤنا» would fail. What is sent is listed concretely rather
+    // than as «بيانات». And neither button's label is weighted: «أوافق» against «رفض» rather than
+    // «أوافق» against «إدارة التفضيلات», because a refusal that takes more reading than an
+    // acceptance is not a free one.
+    consent: {
+        label: 'خيارك بشأن محتوى يوتيوب',
+        title: 'قبل أن نعرض محتوى يوتيوب',
+        body: 'بعض المحتوى هنا مستورد من يوتيوب: صورُه المصغّرة ومشغّلُه يأتيان من خوادم جوجل مباشرةً، فيصل إليها عنوانُ بروتوكول الإنترنت الخاص بك ونوعُ متصفّحك والصفحةُ التي تتصفّحها، وقد يحفظ المشغّل شيئاً في جهازك. ولن نحمّل منها شيئاً حتى تأذن. ويبقى ما رفعناه نحن يعمل في الحالين.',
+        more: 'تفصيل ما يصل إلى جوجل',
+        grant: 'أوافق',
+        deny: 'رفض',
+        // The withdrawal route, on every page. Named as reopening a choice rather than as
+        // "cookie settings", which describes a mechanism instead of a decision.
+        footerLink: 'خيارك بشأن يوتيوب',
+        // The in-context grant, on the player of a video the reader actually came to watch. Says
+        // plainly that the permission is general, because a reader who thinks they are allowing
+        // one video and finds they allowed all of them was not informed.
+        playerBody: 'هذا الفيديو يُعرض من يوتيوب. وتشغيلُه يعني أن متصفّحك سيتّصل بخوادم جوجل، فيصل إليها عنوانك ونوعُ متصفّحك، وقد تحفظ شيئاً في جهازك. وموافقتك هنا تسري على محتوى يوتيوب في الموقع كلّه، ولك سحبها متى شئت من أسفل الصفحة.',
+        playerAllow: 'أوافق وشغّل',
+    },
+
     youtube: {
         /**
          * Said before the import button is pressed, because the consequence is not reversible by
@@ -2037,7 +2068,7 @@ export const ar = {
                         // narrowly true and broadly wrong is the shape a reader has no way to
                         // catch, so the qualifier belongs here rather than only in the section
                         // that explains it.
-                        'على أن مشغّل يوتيوب — في صفحات الفيديوهات المستوردة وحدها — قد يحفظ في متصفّحك ما يخصّه هو، ولا سلطان لنا عليه. انظر قسم «يوتيوب».',
+                        'على أن مشغّل يوتيوب — في صفحات الفيديوهات المستوردة وحدها — قد يحفظ في متصفّحك ما يخصّه هو، ولا سلطان لنا عليه. ولا يُحمَّل هذا المشغّل أصلاً إلا بإذنك، وانظر قسم «يوتيوب».',
                     ],
                 },
                 {
@@ -2085,6 +2116,12 @@ export const ar = {
                         'تستعمل هذه المنصة خدمات واجهة بيانات يوتيوب (YouTube API Services) لاستيراد محتوى القنوات، وتعرض الفيديوهات المستوردة عبر مشغّل يوتيوب نفسه. وبذلك فإن جوجل جهةٌ تصلها بيانات عنك، ويحكم تعاملَها بها ',
                         ['ما تنصّ عليه ', { text: 'سياسة خصوصية جوجل', href: 'https://policies.google.com/privacy' }, ' — ونحن لا نملك من ذلك شيئاً ولا نتحكّم فيه.'],
                         'أما ما يصل إلى جوجل عنك أنت بوصفك قارئاً، فهذا بيانه: كلُّ بطاقة فيديو مستورد تعرض صورتَه المصغّرة من خوادم يوتيوب، فيطلبها متصفّحك منها مباشرةً — في الصفحة الرئيسة، وفي نتائج البحث، وفي صفحات القنوات — قبل أن تضغط على شيء. ويصل إلى جوجل مع هذا الطلب عنوانُ بروتوكول الإنترنت الخاص بك، ونوعُ متصفّحك، والصفحةُ التي جئتَ منها. فإذا فتحتَ صفحة فيديو مستورد حُمِّل مشغّل يوتيوب كذلك. ونستعمل نطاق «youtube-nocookie.com» وهو يقلّل ما يُحفَظ في متصفّحك من كوكيز، لكنه لا يمنع الطلبات نفسها.',
+                        // The consent mechanism itself. A policy that describes a data flow and
+                        // omits that the reader controls it is describing something they would
+                        // reasonably think they cannot stop — and the withdrawal route has to be
+                        // stated, not just implemented, for it to be "as easy as giving".
+                        'ولا يحدث شيء من ذلك حتى تأذن به. فعند أول زيارة نسألك، ولا يُحمَّل من خوادم جوجل شيء — لا صورةٌ مصغّرة ولا مشغّل — ما لم توافق. وإن رفضت ظهرت بطاقاتُ الفيديوهات المستوردة بصورةٍ بديلة من عندنا، وبقي الموقع كلّه يعمل، ولك أن تشغّل أيّ فيديو منها بالموافقة عند مشغّله وحده حين تشاء.',
+                        'ولك سحبُ إذنك متى شئت من رابط «خيارك بشأن يوتيوب» أسفل كلّ صفحة، فنعود إلى سؤالك من جديد ويتوقف التحميل من جوجل. ونحفظ في متصفّحك جوابَك وحده حتى لا نعيد السؤال في كل صفحة؛ وهذا الحفظ لازمٌ لتنفيذ اختيارك فلا يحتاج إذناً.',
                         'والفيديوهات التي رُفعت إلى المنصة مباشرةً لا يصل إلى جوجل عنها شيء: ملفُّها عندنا وتُعرض من خوادمنا، ولا يُطلب من يوتيوب فيها صورةٌ ولا مشغّل.',
                         'وأما ما نقرأه نحن من يوتيوب فهو المعلن للعموم وحده: عناوينُ الفيديوهات وأوصافُها وأسماءُ ملقيها وتواريخُ نشرها ومددُها وصورُها وقوائمُ التشغيل. ولا نقرأ إحصاءاتٍ ولا تعليقاتٍ ولا شيئاً عن أيّ مستخدم في يوتيوب.',
                         'ويستطيع صاحب القناة — وهو وحده — أن يستوردها مرةً واحدة، بعد أن يثبت ملكيتها. والإثبات طريقان: أن يضع رمزاً نتيحه له في وصف قناته العلنيّ على يوتيوب فنقرأه من هناك، وهذا لا يمرّ بحسابه في جوجل ألبتة؛ أو أن يسجّل الدخول بحساب جوجل الذي يدير القناة. والثاني اختياريّ، وقد لا يكون متاحاً في هذا النشر أصلاً، ولا نطلبه إلا ممّن اختاره بنفسه.',

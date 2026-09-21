@@ -5,6 +5,7 @@ import { STANDARD } from '@/lib/queryCache';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { ConsentProvider } from './contexts/ConsentContext';
 import { isPlatformAdmin } from '@/lib/user';
 import { safeSessionStorage } from '@/lib/safeStorage';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
@@ -287,13 +288,18 @@ function App() {
     return (
         <QueryClientProvider client={queryClient}>
             <ThemeProvider>
-                <BrowserRouter>
-                    <ToastProvider>
-                        <AuthProvider>
-                            <AppRoutes />
-                        </AuthProvider>
-                    </ToastProvider>
-                </BrowserRouter>
+                {/* ABOVE the router: the gate is read by a card on every route and by the footer's
+                    withdrawal link, and the banner is site-wide. Above ToastProvider too, so that
+                    nothing below it can render a Google request before the decision is loaded. */}
+                <ConsentProvider>
+                    <BrowserRouter>
+                        <ToastProvider>
+                            <AuthProvider>
+                                <AppRoutes />
+                            </AuthProvider>
+                        </ToastProvider>
+                    </BrowserRouter>
+                </ConsentProvider>
             </ThemeProvider>
         </QueryClientProvider>
     );

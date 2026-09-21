@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Play, Eye, EyeOff, Trash2, Tv, Calendar, Loader2, AlertTriangle } from 'lucide-react';
 import { resolveMediaUrl, youtubeThumbnail, durationToSeconds } from '@/lib/media';
+import { useConsent } from '@/contexts/ConsentContext';
 import { formatPublishDate, displayDate } from '@/lib/dayjsAr';
 import { useChannel } from '@/hooks/useChannels';
 import Avatar from '../ui/Avatar';
@@ -25,13 +26,21 @@ import { formatCount } from '@/lib/numbers';
 const META_GLYPH = 'w-5 flex justify-center flex-shrink-0';
 const META_ROW = 'flex items-center gap-1.5 text-xs max-w-full';
 
-function getThumbnail(video) {
+function getThumbnail(video, youtubeAllowed) {
     if (video.thumbnailUrl) {
         // Returns null for an object key — an uploaded video has no thumbnail until a
         // worker produces one, so the caller's placeholder is the correct state.
         return resolveMediaUrl(video.thumbnailUrl);
     }
-    if (video.sourceType === 'YOUTUBE') return youtubeThumbnail(video.sourceUrl);
+    // ONLY WITH CONSENT. This line is the busiest request to Google on the whole site: it fires
+    // from the reader's browser for every imported video on the home feed, in search and on every
+    // channel page, before anything has been clicked, carrying their IP address and user agent.
+    // Held back until they have said yes — the placeholder below is already the correct fallback,
+    // because an uploaded video has no thumbnail either until its transcode finishes.
+    //
+    // Note an owner's own poster is unaffected: it is served from our storage and is the branch
+    // above. A channel that uploads its own thumbnails looks identical either way.
+    if (video.sourceType === 'YOUTUBE' && youtubeAllowed) return youtubeThumbnail(video.sourceUrl);
     return null;
 }
 
@@ -47,8 +56,9 @@ function getWatchedPercent(video, watchedSeconds) {
 
 function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watchedSeconds, showChannel = true }) {
     const navigate = useNavigate();
+    const { youtubeAllowed } = useConsent();
     const [thumbnailFailed, setThumbnailFailed] = useState(false);
-    const thumbnail = thumbnailFailed ? null : getThumbnail(video);
+    const thumbnail = thumbnailFailed ? null : getThumbnail(video, youtubeAllowed);
     const watchedPercent = getWatchedPercent(video, watchedSeconds);
     // Null for everyone but the owner, and null for the owner too unless there is a verdict worth
     // showing. The backend does not send `review` to a stranger at all, so this is the second lock
