@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Play, Eye, EyeOff, Trash2, Tv, Calendar, Loader2, AlertTriangle } from 'lucide-react';
 import { resolveMediaUrl, youtubeThumbnail, durationToSeconds } from '@/lib/media';
 import { useConsent } from '@/contexts/ConsentContext';
-import { formatPublishDate, displayDate } from '@/lib/dayjsAr';
+import { formatPublishDate, displayDate } from '@/lib/datetime';
 import Avatar from '../ui/Avatar';
 import SourceBadge from './SourceBadge';
 import { t } from '@/i18n';
@@ -115,19 +115,19 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                 </div>
 
                 {video.duration && (
-                    <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs font-semibold px-2 py-0.5 rounded">
+                    <div className="absolute bottom-2 end-2 bg-black/70 text-white text-xs font-semibold px-2 py-0.5 rounded">
                         {video.duration}
                     </div>
                 )}
 
                 <SourceBadge
                     sourceType={video.sourceType}
-                    className="absolute bottom-2 right-2"
+                    className="absolute bottom-2 start-2"
                 />
 
                 {/* Both badges stack in one corner so a hidden, still-transcoding video shows
                     both rather than one covering the other. */}
-                <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
+                <div className="absolute top-2 start-2 flex flex-col items-end gap-1">
                     {video.visible === false && (
                         <div className="bg-black/70 text-white text-xs font-semibold px-2 py-0.5 rounded">
                             {t('common.hidden')}
@@ -178,7 +178,7 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                 </div>
 
                 {isOwner && (
-                    <div className="absolute top-2 left-2 flex gap-1">
+                    <div className="absolute top-2 end-2 flex gap-1">
                         <button
                             onClick={(e) => { e.stopPropagation(); onToggleVisibility(video); }}
                             title={video.visible === false ? t('common.showToVisitors') : t('common.hideFromVisitors')}
@@ -199,7 +199,7 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                 )}
 
                 {watchedPercent !== null && (
-                    <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-black/70">
+                    <div className="absolute bottom-0 inset-x-0 h-[3px] bg-black/70">
                         {/* A fixed, muted (not saturated/neon) turquoise, not the `primary` token —
                             `primary` is deliberately deep/muted for button fills (see index.css)
                             and read as barely-there here. Brighter in light mode via `dark:` —
@@ -254,7 +254,7 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                             and it is the one line of the three that is plain text, hence the
                             icon, which keeps it aligned with the avatar and the series glyph
                             above it. `displayDate` prefers originalPublishDate when there is
-                            one; see lib/dayjsAr. */}
+                            one; see lib/datetime. */}
                         {displayDate(video) && (
                             <div className={`${META_ROW} text-text-muted`}>
                                 <span className={META_GLYPH}><Calendar size={12} /></span>

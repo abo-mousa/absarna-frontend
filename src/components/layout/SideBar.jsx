@@ -64,8 +64,8 @@ function ChannelRow({ slug, name, color, currentChannel, onClose, manageLink }) 
  * <p>`--navbar-h` is measured and published by `Navbar`; see the note there for why the `60px`
  * this used to hardcode was a pixel short of the bar, and why it cannot be a constant.
  */
-const surfaceClass = `w-[240px] bg-surface border-l border-border-light py-3 overflow-y-auto flex-shrink-0
-    fixed right-0 top-0 bottom-0 z-[1100]
+const surfaceClass = `w-[240px] bg-surface border-e border-border-light py-3 overflow-y-auto flex-shrink-0
+    fixed start-0 top-0 bottom-0 z-[1100]
     lg:sticky lg:top-[var(--navbar-h)] lg:h-[calc(100vh-var(--navbar-h))] lg:z-[900] outline-none`;
 
 /**
@@ -127,15 +127,21 @@ function SideBar({ currentChannel, open = false, onClose, drawerOnly = false }) 
                 aria-modal={open ? 'true' : undefined}
                 aria-label={open ? t('nav.sideMenu') : undefined}
                 tabIndex={-1}
-                // A closed drawer is parked off the right edge, not removed, so the transition has
-                // something to animate — which leaves its links in the tab ring and in a screen
-                // reader's reading order. That was survivable while it rendered on six pages and
-                // doubled as the desktop column; now that it is on every page, a drawer-only panel
-                // is inert while closed. Not applied in column mode: there `!open` is the ordinary
-                // desktop state and the links have to stay reachable.
+                // A closed drawer is parked off the reading-start edge, not removed, so the
+                // transition has something to animate — which leaves its links in the tab ring
+                // and in a screen reader's reading order. That was survivable while it rendered
+                // on six pages and doubled as the desktop column; now that it is on every page, a
+                // drawer-only panel is inert while closed. Not applied in column mode: there
+                // `!open` is the ordinary desktop state and the links have to stay reachable.
                 inert={drawerOnly && !open ? '' : undefined}
+                // `rtl:`/`ltr:` on the closed state is the one place a logical property cannot do
+                // the work: CSS `translate` is not direction-aware and Tailwind has no logical
+                // form of it, so the closed drawer has to be sent off the physical edge it is
+                // pinned to. Both are core variants, keyed on the `dir` now set on `<html>`.
                 className={`${surfaceClass} ${drawerOnly ? 'lg:hidden' : ''}
-                    transition-transform duration-200 ${open ? 'translate-x-0' : 'translate-x-full'} lg:translate-x-0`}
+                    transition-transform duration-200
+                    ${open ? 'translate-x-0' : 'rtl:translate-x-full ltr:-translate-x-full'}
+                    lg:translate-x-0`}
             >
                 <div className="px-2 mb-4">
                     <Link to="/" onClick={onClose} className={navLinkClass(isActive('/'))}>
@@ -243,7 +249,7 @@ function SideBar({ currentChannel, open = false, onClose, drawerOnly = false }) 
                             type="button"
                             onClick={() => fetchNextPage()}
                             disabled={isFetchingNextPage}
-                            className="w-full text-right px-3 py-1.5 text-[0.8rem] font-semibold text-primary hover:bg-surface-hover rounded-md disabled:opacity-60"
+                            className="w-full text-start px-3 py-1.5 text-[0.8rem] font-semibold text-primary hover:bg-surface-hover rounded-md disabled:opacity-60"
                         >
                             {isFetchingNextPage ? t('common.loading') : t('sidebar.moreChannels')}
                         </button>

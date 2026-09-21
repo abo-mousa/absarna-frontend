@@ -1,5 +1,6 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowRight, Tv } from 'lucide-react';
+import { Tv } from 'lucide-react';
+import { ArrowBack } from '@/components/ui/DirectionalIcon';
 import PageShell from '../components/layout/PageShell';
 import { QueryState } from '../components/ui';
 import { VideoCard } from '../components/content';
@@ -52,7 +53,7 @@ function SeriesDetail() {
             <div className="max-w-[1100px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
                 <div className="mb-4">
                     <Link to={backTo} className="flex items-center gap-1.5 text-primary font-semibold w-fit">
-                        <ArrowRight size={16} /> {backLabel}
+                        <ArrowBack size={16} /> {backLabel}
                     </Link>
                 </div>
 
@@ -117,7 +118,7 @@ function SeriesDetail() {
 
                 <div className="mt-6">
                     <Link to={backTo} className="flex items-center gap-1.5 text-primary font-semibold w-fit">
-                        <ArrowRight size={16} /> {backLabel}
+                        <ArrowBack size={16} /> {backLabel}
                     </Link>
                 </div>
             </div>

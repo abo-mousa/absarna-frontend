@@ -1,15 +1,26 @@
+/**
+ * Dates and times, and the locale data behind them.
+ *
+ * <p><b>Locale data is not app copy</b>, which is why month names and relative-time forms live
+ * here and not in `i18n/`. These are shipped to dayjs, not rendered by anything of ours, and a
+ * second language swaps the whole locale object rather than translating its entries. The only
+ * strings this module takes from the catalog are «اليوم»/«أمس», which dayjs has no notion of.
+ */
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { t } from '@/i18n';
+import { currentLocaleInfo, t } from '@/i18n';
 
 dayjs.extend(relativeTime);
 
 // Registered as a named locale (the trailing `true` keeps it from becoming dayjs's *global*
-// default, so unrelated dayjs() calls elsewhere aren't affected) — call .locale('ar-latn')
+// default, so unrelated dayjs() calls elsewhere aren't affected) — call .locale(dateLocale())
 // explicitly wherever it's needed. Deliberately not dayjs's own bundled 'ar' locale: that one's
 // `postformat` swaps digits to Arabic-Indic (١٢٣...), which is what created the inconsistency
 // this fixes — durations/subscriber counts/publish dates elsewhere in the app all use Latin
 // digits, per CLAUDE.md's UX review ("ar-EG date formatting renders Arabic-Indic digits").
+//
+// English needs no registration: dayjs ships `en` built in and already in Latin digits, which is
+// why `LOCALES.en.dayjs` names it directly.
 dayjs.locale(
     'ar-latn',
     {
@@ -35,6 +46,15 @@ dayjs.locale(
     },
     true
 );
+
+/**
+ * The dayjs locale name for the interface's current language.
+ *
+ * <p>Every call site states it explicitly rather than this module setting dayjs's global default:
+ * the default is process-wide, and a `dayjs()` somewhere with nothing to do with display — a
+ * duration, a diff — would silently start formatting in it.
+ */
+export const dateLocale = () => currentLocaleInfo().dayjs;
 
 /** A backend `LocalDate` — a day with no time-of-day in it. */
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
@@ -92,7 +112,7 @@ export function formatPublishDate(dateStr) {
     if (!dateStr) return '';
     const date = dayjs(dateStr);
     if (!date.isValid()) return '';
-    const localised = date.locale('ar-latn');
+    const localised = date.locale(dateLocale());
 
     if (DATE_ONLY.test(String(dateStr).trim())) {
         // Whole days between two midnights, rather than hours between two instants.

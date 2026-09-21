@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { ArrowRight, ChevronRight, ChevronLeft, Clock, Folder, Tv, User } from 'lucide-react';
+import { Clock, Folder, Tv, User } from 'lucide-react';
+import { ArrowBack, ChevronBack, ChevronForward } from '@/components/ui/DirectionalIcon';
 import PageShell from '../components/layout/PageShell';
 import { QueryState, Avatar, Spinner, LinkifiedText, ExpandableText } from '../components/ui';
 import { VideoPlayer, CommentsSection, VideoCard, BookmarkButton, LikeButton, ReportButton, ShareButton, SourceBadge, SubscribeButton } from '../components/content';
@@ -13,7 +14,7 @@ import { ownerNotices } from '@/lib/review';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { resolveMediaUrl, youtubeThumbnail } from '@/lib/media';
 import { useConsent } from '@/contexts/ConsentContext';
-import { formatPublishDate, displayDate } from '@/lib/dayjsAr';
+import { formatPublishDate, displayDate } from '@/lib/datetime';
 import { t } from '@/i18n';
 import { formatCount } from '@/lib/numbers';
 
@@ -273,7 +274,7 @@ function VideoDetail() {
                                 title={nextVideo?.title}
                                 className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-md bg-surface-hover text-text-secondary text-sm font-semibold hover:text-text-primary transition-colors disabled:opacity-40 disabled:pointer-events-none"
                             >
-                                <ChevronLeft size={16} /> {t('video.next')}
+                                <ChevronForward size={16} /> {t('video.next')}
                             </button>
                             <button
                                 onClick={() => prevVideo && navigate(`/video/${prevVideo.id}`)}
@@ -281,7 +282,7 @@ function VideoDetail() {
                                 title={prevVideo?.title}
                                 className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-md bg-surface-hover text-text-secondary text-sm font-semibold hover:text-text-primary transition-colors disabled:opacity-40 disabled:pointer-events-none"
                             >
-                                <ChevronRight size={16} /> {t('video.previous')}
+                                <ChevronBack size={16} /> {t('video.previous')}
                             </button>
                         </div>
                     </div>
@@ -310,7 +311,7 @@ function VideoDetail() {
                         onClick={handleBack}
                         className="flex items-center gap-1.5 text-primary font-semibold w-fit"
                     >
-                        <ArrowRight size={16} /> {canGoBack ? t('common.back') : t('common.backHome')}
+                        <ArrowBack size={16} /> {canGoBack ? t('common.back') : t('common.backHome')}
                     </button>
                 </div>
             </div>

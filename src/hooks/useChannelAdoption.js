@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api/client';
 import { queryKeys } from '@/lib/queryKeys';
 import { useUserScope } from './useUserScope';
+import { currentLocale } from '@/i18n';
 
 /**
  * The owner's confirmation that an imported catalogue's titles and descriptions are their own.
@@ -34,7 +35,12 @@ export const useAdoptionProgress = (slug, enabled = true) => {
     const scope = useUserScope();
     return useQuery({
         queryKey: queryKeys.channelAdoption(slug, scope),
-        queryFn: async () => (await api.get(`/channels/${slug}/youtube/adoption`)).data,
+        // `?locale=` is what the affirmation's wording and its recorded VERSION are both chosen
+        // by, and it is deliberately this browser's active locale rather than the account's: the
+        // record's claim is that the owner read the words on their screen. The confirm below
+        // sends the same value, so the string displayed and the string recorded cannot disagree.
+        queryFn: async () => (await api.get(`/channels/${slug}/youtube/adoption`,
+            { params: { locale: currentLocale() } })).data,
         enabled: Boolean(slug) && enabled,
         retry: false,
     });
@@ -81,7 +87,8 @@ export const useAdoptMetadata = (slug) => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (videoIds) =>
-            (await api.post(`/channels/${slug}/youtube/adoption`, { videoIds })).data,
+            (await api.post(`/channels/${slug}/youtube/adoption`, { videoIds },
+                { params: { locale: currentLocale() } })).data,
         onSuccess: () =>
             queryClient.invalidateQueries({ queryKey: ['channel-adoption', slug] }),
     });

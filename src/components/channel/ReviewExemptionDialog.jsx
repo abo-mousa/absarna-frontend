@@ -122,6 +122,6 @@ export default function ReviewExemptionDialog({ channel, exemptions, open, onClo
 export function ReviewExemptionSummary({ exemptions }) {
     if (!exemptions?.length) return null;
     return t('admin.exemptions.badge', {
-        types: exemptions.map((e) => t(`admin.exemptions.detector.${e.type}`)).join('، '),
+        types: exemptions.map((e) => t(`admin.exemptions.detector.${e.type}`)).join(t('common.listSeparator')),
     });
 }

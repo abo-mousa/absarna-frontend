@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
-import { ChevronLeft, Eye, EyeOff, Pencil, Plus, Trash2, Inbox } from 'lucide-react';
+import { Eye, EyeOff, Pencil, Plus, Trash2, Inbox } from 'lucide-react';
+import { ChevronForward } from '@/components/ui/DirectionalIcon';
 import { useToast } from '@/contexts/ToastContext';
 import { Button, Input, Modal, Pager } from '@/components/ui';
 import ContentPublishForm from './ContentPublishForm';
@@ -249,7 +250,7 @@ export default function SeriesBrowser({ slug, active, onOpen }) {
     const [heldHeight, holdPlace] = useKeepScrollPlace(listRef);
 
     const rowClass = 'flex items-center justify-between gap-3 p-3 rounded-md border border-border-light';
-    const openClass = 'flex items-center gap-3 min-w-0 flex-1 text-right rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary';
+    const openClass = 'flex items-center gap-3 min-w-0 flex-1 text-start rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary';
 
     return (
         <div style={heldHeight ? { minHeight: heldHeight } : undefined}>
@@ -267,7 +268,7 @@ export default function SeriesBrowser({ slug, active, onOpen }) {
                                 <span className="text-xs text-text-muted">{t('channelManage.seriesView.noSeriesHint')}</span>
                             </div>
                         </button>
-                        <ChevronLeft size={18} className="text-text-muted flex-shrink-0" />
+                        <ChevronForward size={18} className="text-text-muted flex-shrink-0" />
                     </div>
 
                     {isLoading ? (

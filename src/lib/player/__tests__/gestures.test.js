@@ -22,11 +22,26 @@ import {
 const picture = { left: 20, right: 380, width: 360 };
 
 describe('tapZone', () => {
-    it('puts BACK on the right, because the timeline runs right to left', () => {
+    it('puts BACK on the right under RTL, because the timeline runs right to left', () => {
         // The zones are the timeline without the timeline being visible. The bar is mirrored for
         // Arabic — the handle starts at the right edge and travels left — so a tap on the right
         // goes back towards 0:00. Mirroring one and not the other is the failure this pins: the
         // gesture would send the handle away from the side that was tapped.
+        expect(tapZone(370, picture, true)).toBe('back');
+        expect(tapZone(30, picture, true)).toBe('forward');
+    });
+
+    it('puts BACK on the left under LTR', () => {
+        // The same rule, not a second one: "back" is the side the timeline starts at, and the
+        // direction is passed rather than read so both builds are actually exercised — the suite
+        // runs in one of them.
+        expect(tapZone(30, picture, false)).toBe('back');
+        expect(tapZone(370, picture, false)).toBe('forward');
+    });
+
+    it('defaults to the interface direction, which is Arabic in the test environment', () => {
+        // Guards the default: `useDoubleTapSeek` passes two arguments, so a default of LTR would
+        // pass every assertion above and seek backwards on the live player.
         expect(tapZone(370, picture)).toBe('back');
         expect(tapZone(30, picture)).toBe('forward');
     });

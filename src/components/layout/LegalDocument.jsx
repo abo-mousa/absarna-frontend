@@ -121,7 +121,12 @@ function LegalDocument({ doc }) {
         // policy is the longest continuous prose in the app and the one page nobody reads twice,
         // so it gets the reading face and keeps it through its lists and its table of contents.
         // The headings inherit it too, which is right — they are sentences here, not labels.
-        <article className="font-reading">
+        // `dir="auto"` rather than inheriting: these documents are the part of the catalog that is
+        // still Arabic on the English build, and an Arabic paragraph laid out LTR puts its full
+        // stops on the wrong end of every line. The browser reads the first strong character and
+        // gets it right for whichever language the text turns out to be in — which is also the
+        // answer once they ARE translated, at no further cost.
+        <article dir="auto" className="font-reading">
             <h1 className="text-3xl font-serif font-bold mb-3">{doc?.title}</h1>
 
             {/* Stated at the top and in muted type: it is the first thing a careful reader looks

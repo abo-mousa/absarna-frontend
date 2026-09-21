@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowRight, BookOpen, Download, X } from 'lucide-react';
+import { BookOpen, Download, X } from 'lucide-react';
+import { ArrowBack } from '@/components/ui/DirectionalIcon';
 import { resolveMediaUrl } from '@/lib/media';
-import { formatPublishDate, displayDate } from '@/lib/dayjsAr';
+import { formatPublishDate, displayDate } from '@/lib/datetime';
 import { useBookReadUrl } from '@/hooks/useMediaUrl';
 import { flushOnUnload } from '@/lib/api/beacon';
 import { useAuth } from '../contexts/AuthContext';
@@ -193,7 +194,7 @@ function BookDetail() {
 
                 <div className="mt-6">
                     <Link to="/books" className="flex items-center gap-1.5 text-primary font-semibold w-fit">
-                        <ArrowRight size={16} /> {t('books.backToLibrary')}
+                        <ArrowBack size={16} /> {t('books.backToLibrary')}
                     </Link>
                 </div>
             </div>

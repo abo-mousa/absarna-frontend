@@ -74,7 +74,9 @@ export const formatSpans = (spans, limit = 3) => {
     const remaining = usable.length - shown.length;
     // U+060C, the Arabic comma. Latin digits throughout: this app settled that question once,
     // in lib/numbers.js, after having two digit systems on one card.
-    const list = shown.join('، ');
+    // `common.listSeparator`, not a literal «، »: punctuation is locale data, and a comma written
+    // at a call site is the same bug as a word written at one.
+    const list = shown.join(t('common.listSeparator'));
     // Arabic counted nouns agree with the number, so one form cannot serve: «و1 مواضع أخرى»
     // and «و5 موضع آخر» are both wrong. One takes the singular, 3-10 the plural — which is
     // the range this covers in practice, since the remainder is the tail of a list capped at

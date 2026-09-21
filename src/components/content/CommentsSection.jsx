@@ -6,7 +6,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { EmailVerificationNotice } from '../auth';
 import { Modal } from '../ui';
 import ReportButton from './ReportButton';
-import dayjs, { parseTimestamp } from '@/lib/dayjsAr';
+import dayjs, { dateLocale, parseTimestamp } from '@/lib/datetime';
 import {
     useComments,
     useCreateComment,
@@ -21,9 +21,9 @@ const MAX_COMMENT_LENGTH = 2000;
 function formatDate(dateStr) {
     if (!dateStr) return '';
     // `parseTimestamp`, not `dayjs`: `createdAt` is a LocalDateTime and arrives with no zone on
-    // it, which dayjs would read as the reader's own. See lib/dayjsAr.js — a comment posted a
+    // it, which dayjs would read as the reader's own. See lib/datetime.js — a comment posted a
     // moment ago read «منذ ساعتين».
-    const date = parseTimestamp(dateStr).locale('ar-latn');
+    const date = parseTimestamp(dateStr).locale(dateLocale());
     if (!date.isValid()) return '';
     // Relative for anything recent (matches the app's non-addictive-but-still-friendly tone),
     // an absolute date+time once it's old enough that "منذ 12 يوماً" stops being useful.
@@ -285,7 +285,7 @@ function CommentsSection({ type, id }) {
                             )}
 
                             {comment.replies?.length > 0 && (
-                                <div className="mt-3 pr-5 border-r-2 border-border-light">
+                                <div className="mt-3 ps-5 border-s-2 border-border-light">
                                     {comment.replies.map((reply) => (
                                         <div key={reply.id} className="mb-2 px-3 py-2 bg-surface-hover rounded-md">
                                             <div className="flex justify-between">

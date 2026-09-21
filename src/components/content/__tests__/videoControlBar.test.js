@@ -60,13 +60,30 @@ describe('ratioFromPointer', () => {
     // the viewport, so its right edge — where this timeline BEGINS — is at 500.
     const track = { left: 100, right: 500, width: 400 };
 
-    it('measures from the right edge, because that is where the video starts', () => {
+    it('measures from the right edge under RTL, because that is where the video starts', () => {
         // The bar is mirrored for Arabic (see VideoControlBar): 0:00 is the right end of the
         // track and the video plays leftwards. Reading this from the left edge instead is the one
         // mistake here that produces no error and no log — every scrub simply lands at the mirror
         // image of where it was aimed, which is a thing to notice rather than a thing to see.
+        expect(ratioFromPointer(500, track, true)).toBe(0);
+        expect(ratioFromPointer(300, track, true)).toBe(0.5);
+        expect(ratioFromPointer(100, track, true)).toBe(1);
+    });
+
+    it('measures from the left edge under LTR', () => {
+        // The same arithmetic mirrored, and the direction is passed rather than read for exactly
+        // this reason: the suite runs in one locale, so a default-only helper would leave the
+        // other build's scrubbing untested and silently wrong.
+        expect(ratioFromPointer(100, track, false)).toBe(0);
+        expect(ratioFromPointer(300, track, false)).toBe(0.5);
+        expect(ratioFromPointer(500, track, false)).toBe(1);
+    });
+
+    it('defaults to the interface direction, which is Arabic in the test environment', () => {
+        // Guards the default itself: a call with no third argument is what every call site in the
+        // component makes, so a default of `false` would pass every test above and mirror the
+        // live player.
         expect(ratioFromPointer(500, track)).toBe(0);
-        expect(ratioFromPointer(300, track)).toBe(0.5);
         expect(ratioFromPointer(100, track)).toBe(1);
     });
 
@@ -74,16 +91,19 @@ describe('ratioFromPointer', () => {
         // Pointer capture keeps delivering moves from anywhere on screen, so a scrub dragged off
         // the player — or off the window, giving a negative coordinate — must pin to the ends
         // rather than seek past them.
-        expect(ratioFromPointer(-40, track)).toBe(1);
-        expect(ratioFromPointer(9999, track)).toBe(0);
+        expect(ratioFromPointer(-40, track, true)).toBe(1);
+        expect(ratioFromPointer(9999, track, true)).toBe(0);
+        expect(ratioFromPointer(-40, track, false)).toBe(0);
+        expect(ratioFromPointer(9999, track, false)).toBe(1);
     });
 
     it('refuses to divide by a track that has no width yet', () => {
         // A click during the first layout pass, or on a player that is display:none in a hidden
         // tab. Without the guard this is `NaN`, which the element rejects as a `currentTime`
         // silently — a dead timeline with nothing logged anywhere.
-        expect(ratioFromPointer(120, { left: 100, right: 100, width: 0 })).toBe(0);
-        expect(ratioFromPointer(120, null)).toBe(0);
+        expect(ratioFromPointer(120, { left: 100, right: 100, width: 0 }, true)).toBe(0);
+        expect(ratioFromPointer(120, null, true)).toBe(0);
+        expect(ratioFromPointer(120, null, false)).toBe(0);
     });
 });
 
@@ -97,12 +117,22 @@ describe('keyboardAction', () => {
         expect(keyboardAction('ArrowDown')).toBe('volume-down');
     });
 
-    it('follows the timeline, which runs right to left', () => {
+    it('follows the timeline, which under RTL runs right to left', () => {
         // The bar is mirrored for Arabic: the handle starts at the right edge and travels left as
         // the lecture plays (see VideoControlBar). The arrow that chases it is therefore Left, and
         // that is also what a native `<input type="range">` does under `dir="rtl"`. These two are
         // the pair to check on any change to the bar's direction — they are the only controls with
         // no visible affordance, so a stale mapping here seeks the wrong way in silence.
+        expect(keyboardAction('ArrowLeft', true)).toBe('seek-forward');
+        expect(keyboardAction('ArrowRight', true)).toBe('seek-back');
+    });
+
+    it('follows the timeline the other way under LTR', () => {
+        expect(keyboardAction('ArrowRight', false)).toBe('seek-forward');
+        expect(keyboardAction('ArrowLeft', false)).toBe('seek-back');
+    });
+
+    it('defaults to the interface direction', () => {
         expect(keyboardAction('ArrowLeft')).toBe('seek-forward');
         expect(keyboardAction('ArrowRight')).toBe('seek-back');
     });

@@ -19,7 +19,7 @@ export const ar = {
     common: {
         // The two days a date-only value can name without inventing a time of day. A backend
         // `LocalDate` carries no hour, so «منذ 15 ساعة» on it was never the upload time — it was
-        // the time of day, counted backwards from midnight (see lib/dayjsAr.js).
+        // the time of day, counted backwards from midnight (see lib/datetime.js).
         // The one thing every account-only control says when nobody is signed in. It is a title
         // and an aria-label rather than visible copy: the controls are disabled, and a disabled
         // control with no explanation is just a dead one (see LikeButton).
@@ -155,6 +155,12 @@ export const ar = {
         logoutShort: 'خروج',
         login: 'دخول',
         register: 'إنشاء حساب',
+        // The language switcher. `language` is the control's accessible name; each locale's own
+        // label comes from `LOCALES[...].nativeName` and is never translated — "English" has to
+        // read as English to somebody currently looking at the Arabic build, which is exactly
+        // what a translated label would destroy.
+        language: 'اللغة',
+        languageSwitchedTo: 'اللغة: {name}',
     },
 
     sidebar: {

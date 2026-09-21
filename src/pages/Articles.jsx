@@ -5,7 +5,7 @@ import PageShell from '../components/layout/PageShell';
 import { QueryState, Input } from '../components/ui';
 import { useArticles } from '../hooks/useArticles';
 import { usePageMeta } from '../hooks/usePageMeta';
-import { formatPublishDate, displayDate } from '@/lib/dayjsAr';
+import { formatPublishDate, displayDate } from '@/lib/datetime';
 import { t } from '@/i18n';
 
 const PAGE_SIZE = 15;

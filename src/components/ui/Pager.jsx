@@ -1,5 +1,5 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { t } from '@/i18n';
+import { ChevronBack, ChevronForward } from './DirectionalIcon';
 
 /**
  * Previous / position / next, for a list the backend pages rather than accumulates.
@@ -18,9 +18,10 @@ import { t } from '@/i18n';
  *
  * <h4>Direction</h4>
  *
- * <p>The chevrons are swapped relative to an LTR pager, and that is not a bug: the page is RTL, so
- * "back" points right and "forward" points left, the way the browser's own back button does under
- * `dir="rtl"`. The <em>labels</em> are what a reader actually acts on; the glyphs follow them.
+ * <p>The chevrons say <em>back</em> and <em>forward</em>, not left and right, and
+ * `DirectionalIcon` is what turns that into a glyph: on the Arabic build "back" points right, the
+ * way the browser's own back button does under `dir="rtl"`, and on the English build it points
+ * left. The <em>labels</em> are what a reader actually acts on; the glyphs follow them.
  *
  * <p>The `page` prop is the API's ZERO-based index, because that is what the caller holds and
  * converting at one boundary beats converting at three. The number shown to a person is
@@ -44,7 +45,7 @@ function Pager({ page, totalPages, hasPrevious, hasNext, onChange, className = '
                 disabled={!hasPrevious}
                 onClick={() => onChange(Math.max(0, page - 1))}
             >
-                <ChevronRight size={16} />
+                <ChevronBack size={16} />
                 {t('pager.previous')}
             </button>
             {/* `aria-live`, because on a keyboard the only thing that changes when the button is
@@ -59,7 +60,7 @@ function Pager({ page, totalPages, hasPrevious, hasNext, onChange, className = '
                 onClick={() => onChange(page + 1)}
             >
                 {t('pager.next')}
-                <ChevronLeft size={16} />
+                <ChevronForward size={16} />
             </button>
         </nav>
     );

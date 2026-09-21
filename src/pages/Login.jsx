@@ -66,7 +66,7 @@ function Login() {
                             placeholder="••••••••"
                             dir="ltr"
                         />
-                        <div className="text-left mt-1.5">
+                        <div className="text-end mt-1.5">
                             <Link to="/forgot-password" className="text-sm text-primary font-semibold">
                                 {t('auth.login.forgotPassword')}
                             </Link>

@@ -40,10 +40,10 @@ export default function CommentsTab({ slug, active }) {
                                 <div className="min-w-0">
                                     <strong className="text-primary text-sm">{comment.userName}</strong>
                                     {comment.hidden && (
-                                        <span className="mr-2 text-xs text-text-muted">{t('channelManage.commentHidden')}</span>
+                                        <span className="me-2 text-xs text-text-muted">{t('channelManage.commentHidden')}</span>
                                     )}
                                     {comment.pinned && (
-                                        <span className="mr-2 text-xs text-gold">{t('channelManage.commentPinned')}</span>
+                                        <span className="me-2 text-xs text-gold">{t('channelManage.commentPinned')}</span>
                                     )}
                                 </div>
                                 <div className="flex gap-1 flex-shrink-0">

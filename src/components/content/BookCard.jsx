@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BookOpen, Download } from 'lucide-react';
 import { resolveMediaUrl } from '@/lib/media';
-import { formatPublishDate, displayDate } from '@/lib/dayjsAr';
+import { formatPublishDate, displayDate } from '@/lib/datetime';
 import { useBookReadUrl } from '@/hooks/useMediaUrl';
 import { t } from '@/i18n';
 
@@ -101,7 +101,7 @@ function BookCard({ book, currentPage }) {
                 )}
 
                 {readPercent !== null && (
-                    <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-black/70">
+                    <div className="absolute bottom-0 inset-x-0 h-[3px] bg-black/70">
                         {/* A fixed, muted turquoise, brighter in light mode — see VideoCard's
                             identical bar for the full reasoning. */}
                         <div className="h-full bg-[#45A296] dark:bg-[#337F77]" style={{ width: `${readPercent}%` }} />

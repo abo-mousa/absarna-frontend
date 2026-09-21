@@ -1,4 +1,5 @@
 import api from './client';
+import { currentLocale } from '@/i18n';
 
 /**
  * `rememberMe` decides the refresh token's lifetime — months for a device the person calls
@@ -28,11 +29,28 @@ export const login = (username, password, rememberMe = false) =>
  * from this layer would satisfy the server's @AssertTrue for every caller and turn the stamped
  * `users.terms_accepted_at` into a record of nothing — the column is only worth the row it
  * occupies if the value travelled from a box a person actually ticked.
+ *
+ * <p>`locale` is the opposite case and IS filled in here rather than passed by the caller: it is
+ * not an answer anyone gave on the form, it is which language the form was in, and this layer is
+ * the one place that is true of every signup. The backend stores it on the account and the only
+ * thing that reads it is the mail — see `users.locale`.
  */
 export const register = (username, email, password, fullName, gender, acceptedTerms) =>
-    api.post('/auth/register', { username, email, password, fullName, gender, acceptedTerms });
+    api.post('/auth/register', {
+        username, email, password, fullName, gender, acceptedTerms, locale: currentLocale(),
+    });
 
 export const getProfile = () => api.get('/user/profile');
+
+/**
+ * Tells the account which language this browser is reading in.
+ *
+ * <p>Sent on boot when the two disagree, never at the moment of the switch: changing language
+ * reloads the page (see `lib/locale.js`), and a request fired alongside that reload races the
+ * navigation that cancels it. The reload is the trigger instead, which also repairs an account
+ * signed in from a second device where nobody touched the toggle.
+ */
+export const updateLocale = (locale) => api.put('/user/locale', { locale });
 
 export const updateProfile = (profile) => api.put('/user/profile', profile);
 

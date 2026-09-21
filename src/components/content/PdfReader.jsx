@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
-import { ChevronRight, ChevronLeft, List, Search } from 'lucide-react';
+import { List, Search } from 'lucide-react';
+import { ChevronBack, ChevronForward } from '@/components/ui/DirectionalIcon';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { t } from '@/i18n';
@@ -38,14 +39,14 @@ async function resolveOutline(pdf, items) {
 
 function OutlineList({ items, onSelect, depth = 0 }) {
     return (
-        <ul className={depth > 0 ? 'mr-3.5 border-r border-border-light pr-2.5' : ''}>
+        <ul className={depth > 0 ? 'ms-3.5 border-s border-border-light ps-2.5' : ''}>
             {items.map((item, i) => (
                 <li key={i}>
                     <button
                         type="button"
                         onClick={() => item.pageNumber && onSelect(item.pageNumber)}
                         disabled={!item.pageNumber}
-                        className="block w-full text-right py-1.5 text-sm text-text-secondary hover:text-primary disabled:opacity-50 disabled:hover:text-text-secondary transition-colors truncate"
+                        className="block w-full text-start py-1.5 text-sm text-text-secondary hover:text-primary disabled:opacity-50 disabled:hover:text-text-secondary transition-colors truncate"
                     >
                         {item.title}
                     </button>
@@ -322,7 +323,7 @@ function PdfReader({ fileUrl, initialPage = 1, onPageChange, onPageChangeImmedia
                         className="p-2 rounded-md bg-surface-hover disabled:opacity-40"
                         aria-label={t('pdfReader.nextPage')}
                     >
-                        <ChevronLeft size={18} />
+                        <ChevronForward size={18} />
                     </button>
 
                     <form onSubmit={handlePageInputSubmit} className="flex items-center gap-1.5 text-sm text-text-secondary whitespace-nowrap">
@@ -345,7 +346,7 @@ function PdfReader({ fileUrl, initialPage = 1, onPageChange, onPageChangeImmedia
                         className="p-2 rounded-md bg-surface-hover disabled:opacity-40"
                         aria-label={t('pdfReader.previousPage')}
                     >
-                        <ChevronRight size={18} />
+                        <ChevronBack size={18} />
                     </button>
                 </div>
             )}

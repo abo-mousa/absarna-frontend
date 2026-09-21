@@ -128,19 +128,19 @@ function SearchBar() {
                     }}
                     onFocus={() => setOpen(true)}
                     onKeyDown={handleKeyDown}
-                    className="peer w-full pr-10 pl-4 py-2 rounded-full border border-border bg-surface text-sm outline-none focus:border-primary transition-colors"
+                    className="peer w-full ps-10 pe-4 py-2 rounded-full border border-border bg-surface text-sm outline-none focus:border-primary transition-colors"
                 />
                 <button
                     type="submit"
                     aria-label={t('searchBar.label')}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted transition-colors hover:text-primary peer-focus:text-primary"
+                    className="absolute start-4 top-1/2 -translate-y-1/2 text-text-muted transition-colors hover:text-primary peer-focus:text-primary"
                 >
                     <Search size={16} />
                 </button>
             </form>
 
             {open && suggestions.length > 0 && (
-                <ul className="absolute top-[calc(100%+6px)] left-0 right-0 bg-surface border border-border-light rounded-lg shadow-lg overflow-hidden z-[1001] max-h-[70vh] overflow-y-auto">
+                <ul className="absolute top-[calc(100%+6px)] inset-x-0 bg-surface border border-border-light rounded-lg shadow-lg overflow-hidden z-[1001] max-h-[70vh] overflow-y-auto">
                     {suggestions.map((item, index) => (
                         <li key={item.id}>
                             <button
@@ -150,7 +150,7 @@ function SearchBar() {
                                     goToSuggestion(item);
                                 }}
                                 onMouseEnter={() => setHighlightIndex(index)}
-                                className={`w-full flex items-center gap-3 px-3 py-2.5 text-right text-sm transition-colors
+                                className={`w-full flex items-center gap-3 px-3 py-2.5 text-start text-sm transition-colors
                                     ${index === highlightIndex ? 'bg-surface-hover' : 'hover:bg-surface-hover'}`}
                             >
                                 <Search size={14} className="text-text-muted flex-shrink-0" />
@@ -162,7 +162,7 @@ function SearchBar() {
             )}
 
             {showNoMatches && (
-                <div className="absolute top-[calc(100%+6px)] left-0 right-0 bg-surface border border-border-light rounded-lg shadow-lg z-[1001] px-3 py-4 text-center text-sm text-text-muted">
+                <div className="absolute top-[calc(100%+6px)] inset-x-0 bg-surface border border-border-light rounded-lg shadow-lg z-[1001] px-3 py-4 text-center text-sm text-text-muted">
                     {t('searchBar.noMatches', { query: settledQuery })}
                 </div>
             )}

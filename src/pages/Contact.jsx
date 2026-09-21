@@ -81,7 +81,7 @@ function Contact() {
                     <p className="leading-loose">{t('legal.contact.missingBody')}</p>
                     {/* Latin, and left as one unbroken token on purpose: it is the name of an
                         environment variable, so it is a string to be copied exactly, not prose. */}
-                    <p dir="rtl" className="mt-3 text-sm text-text-secondary leading-loose">
+                    <p dir="auto" className="mt-3 text-sm text-text-secondary leading-loose">
                         {t('legal.contact.missingOperatorNote')}
                     </p>
                 </section>

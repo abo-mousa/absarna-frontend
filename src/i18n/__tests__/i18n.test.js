@@ -1,8 +1,9 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
-import { t, tOptional } from '@/i18n';
+import { afterEach, describe, expect, it } from 'vitest';
+import { currentLocale, direction, isRtl, setActiveLocale, t, tOptional } from '@/i18n';
 import { ar } from '@/i18n/ar';
+import { TRANSLATED, en } from '@/i18n/en';
 
 describe('t', () => {
     it('resolves a dotted key', () => {
@@ -87,5 +88,92 @@ describe('every key used in the source exists in the catalog', () => {
     it('resolves every one of them', () => {
         const missing = usages.filter(({ key }) => tOptional(key) === undefined);
         expect(missing).toEqual([]);
+    });
+});
+
+/**
+ * The English catalog against the Arabic one.
+ *
+ * <p>Two assertions pulling in opposite directions, which is the point. English is being filled in
+ * namespace by namespace, so an *absent* key is a planned state and must not fail; a *stale* key is
+ * a bug in every case — it is either a typo or a string whose Arabic counterpart was renamed or
+ * deleted, and because `t()` falls back to Arabic, neither one is visible by looking at a screen.
+ */
+describe('en.js against ar.js', () => {
+    const flatten = (node, prefix = '') => Object.entries(node).flatMap(([key, value]) => {
+        const path = prefix ? `${prefix}.${key}` : key;
+        return typeof value === 'string' ? [path] : flatten(value, path);
+    });
+
+    const arKeys = new Set(flatten(ar));
+    const enKeys = flatten(en);
+
+    it('has no key Arabic does not have', () => {
+        // A stale or mistyped English key. Invisible at runtime: the screen falls back to Arabic
+        // and looks exactly like a namespace nobody has translated yet.
+        expect(enKeys.filter((key) => !arKeys.has(key))).toEqual([]);
+    });
+
+    it('is complete for every namespace it declares translated', () => {
+        const declared = new Set(TRANSLATED);
+        const have = new Set(enKeys);
+        const missing = [...arKeys].filter((key) => declared.has(key.split('.')[0]) && !have.has(key));
+        expect(missing).toEqual([]);
+    });
+
+    it('declares only namespaces that exist', () => {
+        expect(TRANSLATED.filter((ns) => !(ns in ar))).toEqual([]);
+    });
+
+    it('names what is still outstanding', () => {
+        // Not an assertion about the gap's size — that would turn every translation pass red on
+        // its way to green. It prints the list, so `vitest --reporter=verbose` answers "what is
+        // left" without anyone grepping two catalogs.
+        const declared = new Set(TRANSLATED);
+        const outstanding = Object.keys(ar).filter((ns) => !declared.has(ns));
+        expect(Array.isArray(outstanding)).toBe(true);
+        if (outstanding.length) console.info(`[i18n] not translated yet: ${outstanding.join(', ')}`);
+    });
+});
+
+/**
+ * Switching locale, and the fallback that makes a partial catalog safe.
+ *
+ * <p>Every test here restores Arabic afterwards, because `setActiveLocale` is module state: this
+ * file's other suites assert against `ar` and would start failing in whatever order vitest happened
+ * to run them in.
+ */
+describe('the active locale', () => {
+    afterEach(() => setActiveLocale('ar'));
+
+    it('serves the English catalog once switched', () => {
+        setActiveLocale('en');
+        expect(t('common.save')).toBe(en.common.save);
+        expect(direction()).toBe('ltr');
+        expect(isRtl()).toBe(false);
+    });
+
+    it('falls back to Arabic for a key English does not have', () => {
+        setActiveLocale('en');
+        // A namespace that is deliberately untranslated for now. Renders Arabic rather than the
+        // dotted key — legible, obviously untranslated, and safe.
+        expect(t('legal.terms.title')).toBe(ar.legal.terms.title);
+    });
+
+    it('still returns the key when neither catalog has it', () => {
+        setActiveLocale('en');
+        expect(t('nothing.here.at.all')).toBe('nothing.here.at.all');
+        expect(tOptional('nothing.here.at.all')).toBeUndefined();
+    });
+
+    it('falls back to Arabic rather than accepting an unknown locale', () => {
+        setActiveLocale('fr');
+        expect(currentLocale()).toBe('ar');
+        expect(direction()).toBe('rtl');
+    });
+
+    it('fills placeholders in the English catalog too', () => {
+        setActiveLocale('en');
+        expect(t('common.views', { count: 12 })).toBe('12 views');
     });
 });

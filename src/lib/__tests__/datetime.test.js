@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { displayDate, formatPublishDate, parseTimestamp } from '@/lib/dayjsAr';
+import { displayDate, formatPublishDate, parseTimestamp } from '@/lib/datetime';
 
 /**
  * Both functions here exist because of a bug a reader saw on every card, and neither had a test.

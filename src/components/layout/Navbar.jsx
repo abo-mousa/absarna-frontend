@@ -9,6 +9,7 @@ import { useMyChannels } from '../../hooks/useChannels';
 import { reshuffleFeed } from '../../hooks/useVideos';
 import { IrisMark } from '../ui';
 import SearchBar from './SearchBar';
+import LanguageToggle from './LanguageToggle';
 import { t } from '@/i18n';
 
 const iconButtonClass = 'flex flex-col items-center justify-center gap-0.5 min-w-[50px] px-2.5 py-1.5 rounded-md text-text-secondary hover:bg-surface-hover transition-colors';
@@ -154,6 +155,11 @@ function Navbar({ onMenuClick, menuOpen = false }) {
                         {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
                         <span className={iconLabelClass}>{theme === 'dark' ? t('nav.lightShort') : t('nav.darkShort')}</span>
                     </button>
+
+                    {/* Beside the theme toggle because it is the same kind of control: a
+                        preference about this browser, stored here, that changes nothing about the
+                        account or the content. */}
+                    <LanguageToggle className={iconButtonClass} labelClassName={iconLabelClass} />
 
                     {token ? (
                         <>

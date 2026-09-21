@@ -568,8 +568,9 @@ const VideoPlayer = forwardRef(function VideoPlayer(
                     tapped rather than in the middle, which is also how it teaches the gesture to
                     the next viewer who finds it by accident.
 
-                    "Back" is on the RIGHT, because that is the direction this player's timeline
-                    runs (see VideoControlBar). `role="status"` so the jump is announced rather
+                    "Back" is on the STARTING side, because that is where this player's timeline
+                    begins (see VideoControlBar) — the right of the picture under RTL, the left
+                    under LTR, which `start-0` gives for free. `role="status"` so the jump is announced rather
                     than only drawn, and `pointer-events-none` so the flash never eats the tap that
                     follows it — a run of three taps is one gesture, and the second one must not
                     land on a box that appeared under the finger after the first. */}
@@ -578,14 +579,15 @@ const VideoPlayer = forwardRef(function VideoPlayer(
                         role="status"
                         className={`pointer-events-none absolute inset-y-0 flex w-[30%] flex-col
                             items-center justify-center gap-1 bg-black/30 text-white
-                            ${tapFeedback.zone === 'back' ? 'right-0' : 'left-0'}`}
+                            ${tapFeedback.zone === 'back' ? 'start-0' : 'end-0'}`}
                     >
                         {tapFeedback.zone === 'back'
                             ? <RotateCcw size={26} />
                             : <RotateCw size={26} />}
-                        {/* Latin digits like every other figure in the app, and the two Arabic
-                            forms because the numbers this produces straddle the break: ten seconds
-                            is «10 ثوانٍ» and twenty is «20 ثانية». */}
+                        {/* Latin digits like every other figure in the app, and the two forms
+                            because the Arabic numbers this produces straddle the break: ten
+                            seconds is «10 ثوانٍ» and twenty is «20 ثانية». English needs one form
+                            and `en.js` fills both entries with it. */}
                         <span className="text-xs font-semibold tabular-nums">
                             {tapFeedback.seconds <= 10
                                 ? t('video.controls.seekSecondsFew', { seconds: tapFeedback.seconds })
@@ -604,10 +606,10 @@ const VideoPlayer = forwardRef(function VideoPlayer(
                     here, and this one is about the video leaving. It fades with the bar, and comes
                     back on focus so a keyboard viewer can still reach it while faded.
 
-                    Top-LEFT, with the rest of the player: the bar is mirrored (see
-                    VideoControlBar), which put the gear and the fullscreen button on the left, and
-                    a lone corner control on the opposite side reads as belonging to something
-                    else. It is also the corner nearest the settings menu's own
+                    The TRAILING top corner, with the rest of the player: the bar runs with the
+                    text (see VideoControlBar), which puts the gear and the fullscreen button at
+                    that end, and a lone corner control on the opposite side reads as belonging to
+                    something else. It is also the corner nearest the settings menu's own
                     picture-in-picture row, which is the same toggle. */}
                 {pipSupported && (
                     <button
@@ -615,7 +617,7 @@ const VideoPlayer = forwardRef(function VideoPlayer(
                         onClick={togglePip}
                         aria-pressed={pipActive}
                         aria-label={t('video.settings.pictureInPicture')}
-                        className={`absolute left-2 top-2 z-10 flex h-9 w-9 items-center
+                        className={`absolute end-2 top-2 z-10 flex h-9 w-9 items-center
                             justify-center rounded-full bg-black/60 text-white transition-opacity
                             duration-200 hover:bg-black/80 focus:opacity-100 focus:outline-none
                             focus-visible:ring-2 focus-visible:ring-white

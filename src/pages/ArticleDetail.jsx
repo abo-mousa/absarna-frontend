@@ -1,6 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
-import { ArrowRight, Type, Clock, Calendar, Eye } from 'lucide-react';
-import { formatPublishDate, displayDate } from '@/lib/dayjsAr';
+import { Type, Clock, Calendar, Eye } from 'lucide-react';
+import { ArrowBack } from '@/components/ui/DirectionalIcon';
+import { formatPublishDate, displayDate } from '@/lib/datetime';
 import PageShell from '../components/layout/PageShell';
 import { QueryState } from '../components/ui';
 import { CommentsSection, BookmarkButton, LikeButton, ReportButton, ShareButton } from '../components/content';
@@ -79,7 +80,7 @@ function ArticleDetail() {
 
                 <div className="mt-6 print:hidden">
                     <Link to="/articles" className="flex items-center gap-1.5 text-primary font-semibold w-fit">
-                        <ArrowRight size={16} /> {t('articles.backToArticles')}
+                        <ArrowBack size={16} /> {t('articles.backToArticles')}
                     </Link>
                 </div>
             </div>

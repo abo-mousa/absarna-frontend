@@ -84,7 +84,7 @@ function PageShell({ children, sidebar = true, currentChannel, contentClassName 
         <div className="min-h-screen flex flex-col bg-bg">
             <a
                 href="#main-content"
-                className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:right-2 focus:z-[3000] focus:px-4 focus:py-2 focus:bg-primary focus:text-white focus:rounded-md"
+                className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:start-2 focus:z-[3000] focus:px-4 focus:py-2 focus:bg-primary focus:text-white focus:rounded-md"
             >
                 {t('nav.skipToContent')}
             </a>

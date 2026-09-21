@@ -1,5 +1,5 @@
 import { Calendar } from 'lucide-react';
-import { formatPublishDate } from '@/lib/dayjsAr';
+import { formatPublishDate } from '@/lib/datetime';
 import ReportButton from './ReportButton';
 
 /**

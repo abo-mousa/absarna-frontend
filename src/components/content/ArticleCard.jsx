@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Clock } from 'lucide-react';
-import { formatPublishDate, displayDate } from '@/lib/dayjsAr';
+import { formatPublishDate, displayDate } from '@/lib/datetime';
 import { t } from '@/i18n';
 
 function ArticleCard({ article }) {

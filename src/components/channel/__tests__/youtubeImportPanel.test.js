@@ -9,7 +9,7 @@ import {
     refreshSummary,
 } from '@/components/channel/YouTubeImportPanel';
 import { t } from '@/i18n';
-import dayjs from '@/lib/dayjsAr';
+import dayjs from '@/lib/datetime';
 
 /**
  * What the import panel offers, and what it says it has done.
@@ -212,7 +212,7 @@ describe('lastCheckedWhen', () => {
 
     it('reads a past check as a relative time', () => {
         expect(lastCheckedWhen(at, dayjs('2026-09-20T13:00:00Z'))).toBe('منذ 3 ساعات');
-        // «منذ 2 أيام», not the Arabic dual «منذ يومين»: lib/dayjsAr's ar-latn locale keeps Latin
+        // «منذ 2 أيام», not the Arabic dual «منذ يومين»: lib/datetime's ar-latn locale keeps Latin
         // digits with the count inline, which is the app-wide convention and not this line's to
         // change. Asserted as it actually renders so this test documents the convention.
         expect(lastCheckedWhen(at, dayjs('2026-09-22T10:00:00Z'))).toBe('منذ 2 أيام');

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { describeError, reasonMessage, serverMessage } from '@/lib/describeError';
-import { t } from '@/i18n';
+import { setActiveLocale, t } from '@/i18n';
 
 /**
  * Which sentence a failed request puts on the screen.
@@ -69,11 +69,44 @@ describe('serverMessage', () => {
     });
 
     it('prefers `message` over `error`, because that is where the Arabic is when both exist', () => {
-        // RateLimitFilter's 429 body, verbatim.
         expect(serverMessage(failure(429, {
-            error: 'Too many requests',
+            error: 'Something went wrong',
             message: 'يرجى المحاولة لاحقاً',
         }))).toBe('يرجى المحاولة لاحقاً');
+    });
+
+    it('shows nothing at all on the English build', () => {
+        // The asymmetry is the rule, not an oversight: the backend writes Arabic FOR PEOPLE and
+        // English FOR LOGS, so on an English screen an Arabic body is the wrong language and an
+        // English one is a log line. The catalog's sentence for the status is the right answer
+        // there — which is what `describeError` falls through to.
+        setActiveLocale('en');
+        try {
+            expect(serverMessage(failure(403, { error: 'غير مصرح لك' }))).toBeNull();
+            expect(describeError(failure(429, { error: 'Too many requests', reason: 'RATE_LIMITED' })))
+                .toBe(t('errors.rateLimited'));
+        } finally {
+            setActiveLocale('ar');
+        }
+    });
+
+    it('words the rate limiter from its status, in whichever language is on screen', () => {
+        // The 429 body carries `RATE_LIMITED` rather than a sentence — a servlet filter runs
+        // before any handler and cannot know which language the caller reads. The code is
+        // deliberately NOT in `errors.reasons`: `errors.rateLimited` already words this status,
+        // and a second entry would be the same sentence written twice, which is exactly the drift
+        // this catalog exists to prevent. An unmapped code falling through to its status is the
+        // documented behaviour, not an omission.
+        const limited = failure(429, { error: 'Too many requests', reason: 'RATE_LIMITED' });
+        expect(reasonMessage(limited)).toBeNull();
+        expect(describeError(limited)).toBe(t('errors.rateLimited'));
+        setActiveLocale('en');
+        try {
+            expect(describeError(limited)).toBe(t('errors.rateLimited'));
+            expect(describeError(limited)).toMatch(/Too many requests/);
+        } finally {
+            setActiveLocale('ar');
+        }
     });
 
     it('refuses an English body, whichever key it arrived in', () => {

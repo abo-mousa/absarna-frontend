@@ -37,11 +37,16 @@ export default {
         },
       },
       fontFamily: {
+        // A custom property rather than a list, because the interface face follows the interface
+        // LANGUAGE: `index.css` puts Cairo first under `lang="ar"` and Inter first under
+        // `lang="en"`. Only this one is locale-dependent — see the note there for why `serif` and
+        // `reading` are not.
+        //
         // Cairo rather than IBM Plex Sans Arabic: Plex draws no ligature for «الله», so the word
         // arrived without its shadda everywhere anyone wrote it — and no fallback font can supply
         // it, since fallback only reaches a font for characters the first one is MISSING. See the
         // note in index.html.
-        sans: ['Cairo', 'Rubik', 'Inter', 'sans-serif'],
+        sans: 'var(--font-sans)',
         // Wordmark and reading-page headings only — see CLAUDE.md's rebrand note.
         serif: ['Markazi Text', 'Amiri', 'serif'],
         // Prose: what a reader WROTE (comments) and what a reader reads at length (descriptions,

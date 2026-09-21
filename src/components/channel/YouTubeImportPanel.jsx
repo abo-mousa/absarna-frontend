@@ -18,7 +18,7 @@ import { isGoogleConsentUrl, rememberOAuthReturn } from '@/lib/youtubeOAuth';
 import { t, tOptional } from '@/i18n';
 import { describeError } from '@/lib/describeError';
 import { formatCount } from '@/lib/numbers';
-import dayjs, { parseTimestamp } from '@/lib/dayjsAr';
+import dayjs, { dateLocale, parseTimestamp } from '@/lib/datetime';
 
 /**
  * The label for the one button that starts, retries and resumes an import — or `null` where there
@@ -137,7 +137,7 @@ export function lastCheckedWhen(value, now = dayjs()) {
     const at = parseTimestamp(value);
     if (!at.isValid()) return null;
     if (!at.isBefore(now)) return t('youtube.autoUpdate.justNow');
-    return at.locale('ar-latn').from(now);
+    return at.locale(dateLocale()).from(now);
 }
 
 /**

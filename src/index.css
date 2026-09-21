@@ -31,6 +31,24 @@
        the height of a bar with the webfont already cached. Not a theme token — it lives here
        because it is read from a Tailwind arbitrary value in SideBar, which needs it on :root. */
     --navbar-h: 61px;
+
+    /* THE INTERFACE FACE, WHICH FOLLOWS THE INTERFACE LANGUAGE — Tailwind's `font-sans` reads
+       this (see tailwind.config.js). Cairo is the Arabic sans and the default; the English build
+       leads with Inter, a face drawn for Latin UI text, and keeps Cairo behind it so an Arabic
+       string inside an English screen — a video title, a channel name, all of which stay Arabic
+       whatever the chrome says — still lands on Cairo rather than falling through to whatever
+       the system calls sans-serif. Font fallback is per MISSING CHARACTER, so this costs nothing:
+       Inter has no Arabic glyphs, so the browser reaches past it by itself.
+
+       `serif` and `reading` are deliberately NOT locale-dependent. `reading` is the face for
+       CONTENT — comments, descriptions, article bodies — and the content is Arabic in both
+       builds, so translating its face would be answering a question nobody asked. `serif` is the
+       wordmark, which is one mark in one face. */
+    --font-sans: 'Cairo', 'Rubik', 'Inter', sans-serif;
+  }
+
+  :root:lang(en) {
+    --font-sans: 'Inter', 'Rubik', 'Cairo', sans-serif;
   }
 
   .dark {

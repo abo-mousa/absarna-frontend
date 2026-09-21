@@ -234,7 +234,7 @@ function AdminReview() {
                                     <button
                                         onClick={() => setSelectedId(row.videoId)}
                                         aria-current={row.videoId === selectedId}
-                                        className={`w-full text-right p-3 rounded-lg border transition-colors ${
+                                        className={`w-full text-start p-3 rounded-lg border transition-colors ${
                                             row.videoId === selectedId
                                                 ? 'border-primary bg-primary-light'
                                                 : 'border-border-light bg-surface hover:bg-surface-hover'

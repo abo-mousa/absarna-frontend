@@ -56,6 +56,26 @@
           if (dark) document.documentElement.classList.add('dark');
         } catch (e) {}
       })();
+
+      // The same pre-paint trick for the interface language, and it matters more here than it
+      // does for the theme: `dir` decides the layout, so applying it after React mounts would
+      // show an English reader one frame of a right-to-left page. The map is restated rather
+      // than imported from src/i18n/locales.js because this runs before there is a bundle —
+      // the `dark` literal above is there for the same reason. `src/i18n/index.js` reads the
+      // attribute back rather than re-deriving it, so the two cannot drift apart at runtime.
+      //
+      // Arabic is the default and `navigator.language` is deliberately not consulted: the
+      // catalogue is Arabic, so an English interface is a thing to choose, not to be given.
+      (function () {
+        var DIRS = { ar: 'rtl', en: 'ltr' };
+        try {
+          var lang = localStorage.getItem('locale');
+          if (DIRS[lang]) {
+            document.documentElement.lang = lang;
+            document.documentElement.dir = DIRS[lang];
+          }
+        } catch (e) {}
+      })();
     </script>
 </head>
 <body>

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Check, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
+import { Check, Settings } from 'lucide-react';
+import { ChevronBack, ChevronForward } from '@/components/ui/DirectionalIcon';
 import { useOutsideClick } from '@/hooks/useOutsideClick';
-import { t } from '@/i18n';
+import { isRtl, t } from '@/i18n';
 
 /**
  * The gear in the player's control bar, and the panel it opens.
@@ -30,10 +31,10 @@ import { t } from '@/i18n';
  * <p><b>Not theme tokens.</b> Like the rest of the bar this sits on top of video rather than on a
  * page: in fullscreen there is no page behind it, and `bg-surface` in light mode would put a
  * near-white panel over a dark picture. So it is translucent black with white text in both themes,
- * like every player a viewer has already used. It states `dir="rtl"` of its own accord rather than
- * inheriting it: the bar around it is mirrored today (see VideoControlBar), and this panel is
- * prose in every case — it must not follow the bar if the bar's direction is ever argued about
- * again.
+ * like every player a viewer has already used. It used to state `dir="rtl"` of its own accord
+ * rather than inheriting it, which was right while the bar's direction was the only question and
+ * became a bug the moment the interface had two: this panel is prose, so it belongs to the
+ * INTERFACE's direction, which is exactly what inheriting now gives it.
  *
  * @param groups   drill-down settings — `[{ id, title, options: [{ id, label }], activeId, onSelect }]`
  * @param toggles  on/off rows — `[{ id, label, active, onToggle }]`
@@ -98,7 +99,9 @@ export default function PlayerSettingsMenu({ groups = [], toggles = [], onOpenCh
      *
      * Tab alone would work — every row is a real `<button>` — but a screen reader announces this
      * as a menu, and a viewer who is told they are in a menu presses Down. Left/Right drill in and
-     * out, mirrored for the RTL panel: "forward" is towards the left edge here.
+     * out, and they follow the panel's direction rather than the screen's: "forward" is the arrow
+     * pointing the way the text runs, which is Left on the Arabic build and Right on the English
+     * one. A viewer pressing the arrow that points *into* the submenu must open it in both.
      */
     const handlePanelKeyDown = (e) => {
         if (e.key === 'Escape') {
@@ -109,7 +112,9 @@ export default function PlayerSettingsMenu({ groups = [], toggles = [], onOpenCh
             else dismissPanel();
             return;
         }
-        if (e.key === 'ArrowLeft' && !openGroup) {
+        const forwardKey = isRtl() ? 'ArrowLeft' : 'ArrowRight';
+        const backKey = isRtl() ? 'ArrowRight' : 'ArrowLeft';
+        if (e.key === forwardKey && !openGroup) {
             const id = document.activeElement?.dataset?.groupId;
             if (id) {
                 e.preventDefault();
@@ -117,7 +122,7 @@ export default function PlayerSettingsMenu({ groups = [], toggles = [], onOpenCh
             }
             return;
         }
-        if (e.key === 'ArrowRight' && openGroup) {
+        if (e.key === backKey && openGroup) {
             e.preventDefault();
             setOpenGroupId(null);
             return;
@@ -137,7 +142,7 @@ export default function PlayerSettingsMenu({ groups = [], toggles = [], onOpenCh
     const settings = groups.filter((group) => group.options.length > 1);
     if (settings.length === 0 && toggles.length === 0) return null;
 
-    const rowClass = `w-full flex items-center gap-2 rounded px-2 py-1.5 text-right transition-colors
+    const rowClass = `w-full flex items-center gap-2 rounded px-2 py-1.5 text-start transition-colors
         hover:bg-white/15 focus:outline-none focus-visible:bg-white/20`;
 
     return (
@@ -160,15 +165,14 @@ export default function PlayerSettingsMenu({ groups = [], toggles = [], onOpenCh
                 <div
                     ref={panelRef}
                     role="menu"
-                    dir="rtl"
                     onKeyDown={handlePanelKeyDown}
-                    // Opens upward from the gear, and anchored to its LEFT edge so a wide panel
-                    // grows into the player rather than off it: the bar is mirrored (see
-                    // VideoControlBar), which puts the gear a couple of buttons in from the left
-                    // edge of the picture, so a panel growing leftwards would hang off it. Capped
-                    // shorter on a phone, where the whole player may be barely taller than this
-                    // panel wants to be.
-                    className="absolute bottom-full left-0 mb-2 min-w-[210px] max-h-36 sm:max-h-60
+                    // Opens upward from the gear, anchored to its trailing edge so a wide panel
+                    // grows into the player rather than off it: the bar runs with the text, which
+                    // puts the gear a couple of buttons in from the picture's trailing edge, so a
+                    // panel growing outwards from there would hang off it. `end-0` rather than a
+                    // physical side, so that holds on both builds. Capped shorter on a phone,
+                    // where the whole player may be barely taller than this panel wants to be.
+                    className="absolute bottom-full end-0 mb-2 min-w-[210px] max-h-36 sm:max-h-60
                         overflow-y-auto rounded-lg bg-black/90 p-1.5 text-sm text-white shadow-lg
                         backdrop-blur-sm"
                 >
@@ -176,14 +180,14 @@ export default function PlayerSettingsMenu({ groups = [], toggles = [], onOpenCh
                         <>
                             {/* The way back, and the title of where you are — one row, because a
                                 heading a viewer cannot press is a dead end in a menu they reached
-                                by pressing something. ChevronRight is "back" in an RTL panel. */}
+                                by pressing something. */}
                             <button
                                 type="button"
                                 role="menuitem"
                                 onClick={() => setOpenGroupId(null)}
                                 className={`${rowClass} mb-1 rounded-b-none border-b border-white/15 pb-2`}
                             >
-                                <ChevronRight size={16} />
+                                <ChevronBack size={16} />
                                 <span className="font-semibold">{openGroup.title}</span>
                             </button>
 
@@ -230,7 +234,7 @@ export default function PlayerSettingsMenu({ groups = [], toggles = [], onOpenCh
                                     <span>{group.title}</span>
                                     <span className="flex items-center gap-1 text-white/60">
                                         {group.options.find((option) => option.id === group.activeId)?.label}
-                                        <ChevronLeft size={16} />
+                                        <ChevronForward size={16} />
                                     </span>
                                 </button>
                             ))}

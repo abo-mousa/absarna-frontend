@@ -136,10 +136,10 @@ function Register() {
                       * Real radio inputs underneath (sr-only, styled through `peer-checked`)
                       * rather than buttons with aria-pressed: that gives arrow-key navigation
                       * within the group, a single tab stop, the `required` constraint, and the
-                      * announcement a screen reader expects, for free. `grid-cols-2` mirrors
-                      * itself under the page's `dir="rtl"`, so the first option sits on the right
-                      * with no logical-property juggling, and each label is a full grid cell so
-                      * the tap target is the whole box rather than the word in it.
+                      * announcement a screen reader expects, for free. `grid-cols-2` follows the
+                      * page's direction on its own, so the first option sits where the reading
+                      * starts in either build with no logical-property juggling, and each label is
+                      * a full grid cell so the tap target is the whole box rather than the word.
                       */}
                     <fieldset>
                         <legend className="block mb-1.5 font-semibold text-sm text-text-secondary">

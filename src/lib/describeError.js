@@ -1,4 +1,4 @@
-import { t, tOptional } from '@/i18n';
+import { isRtl, t, tOptional } from '@/i18n';
 
 /**
  * Any Arabic letter — the test for "was this string written for a reader, or for us?".
@@ -59,6 +59,14 @@ export function reasonMessage(error) {
  * in `error`. Where there is no `message` at all, `error` is the whole answer.
  */
 export function serverMessage(error) {
+    // Only the Arabic build trusts a free-text server sentence, and the asymmetry is the rule
+    // rather than an oversight: the backend writes Arabic FOR PEOPLE and English FOR LOGS, so on
+    // an English screen an Arabic body is the wrong language and an English one is a log line.
+    // Neither is worth showing, and there is nothing left to show — the last user-facing Arabic
+    // sentence a handler produced was the rate limiter's 429, which now sends `RATE_LIMITED` and
+    // is worded from the catalog like every other refusal. This stays as the guard for anything
+    // older that was missed, and it must never start trusting English.
+    if (!isRtl()) return null;
     const data = error?.response?.data;
     const candidate = data?.message ?? data?.error;
     return typeof candidate === 'string' && ARABIC.test(candidate) ? candidate : null;
@@ -125,8 +133,8 @@ export function describeError(error, fallback) {
     const explained = reasonMessage(error);
     if (explained) return explained;
 
-    // Then the server's own sentence, where it wrote one in Arabic. Covers what predates the
-    // reason codes — a controller's ad-hoc `forbidden()`, and the rate limiter's 429.
+    // Then the server's own sentence, where it wrote one in Arabic and the reader is reading
+    // Arabic. Covers what predates the reason codes — a controller's ad-hoc `forbidden()`.
     //
     // Deliberately not extended to 5xx: there the server knows only that it broke, and
     // `buildResponse`'s text for those ("Internal server error") is ours to keep out of sight.

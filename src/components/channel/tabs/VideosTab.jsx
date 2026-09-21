@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
-import { ArrowRight, Plus, Upload } from 'lucide-react';
+import { Plus, Upload } from 'lucide-react';
+import { ArrowBack } from '@/components/ui/DirectionalIcon';
 import { useToast } from '@/contexts/ToastContext';
 import { Button, Input, Modal } from '@/components/ui';
 import ContentPublishForm, { FieldLabel } from '../ContentPublishForm';
@@ -302,7 +303,7 @@ function SeriesVideos({ slug, series, active, onBack, onSeriesChange, extraActio
                     onClick={onBack}
                     className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
                 >
-                    <ArrowRight size={16} />
+                    <ArrowBack size={16} />
                     {t('channelManage.seriesView.backToSeries')}
                 </button>
                 {!none && (

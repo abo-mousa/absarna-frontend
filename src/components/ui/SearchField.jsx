@@ -26,11 +26,14 @@ function SearchField({ value, onChange, placeholder, className = '', autoFocus =
     const hasValue = Boolean(value);
 
     return (
-        <div className={`relative ${className}`} dir="rtl">
+        // No `dir` of its own: it takes the page's, and every position below is logical, so the
+        // icon leads and the clear button trails in either direction. It used to state
+        // `dir="rtl"`, which on an LTR build would have pinned this one box backwards.
+        <div className={`relative ${className}`}>
             <Search
                 size={18}
                 aria-hidden="true"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none"
+                className="absolute start-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none"
             />
             <input
                 id={id}
@@ -46,12 +49,11 @@ function SearchField({ value, onChange, placeholder, className = '', autoFocus =
                 }}
                 placeholder={placeholder}
                 aria-label={placeholder}
-                dir="rtl"
-                // `pl-10` only when the clear button is there to occupy that space — reserving it
+                // `pe-10` only when the clear button is there to occupy that space — reserving it
                 // unconditionally leaves a visible gap on an empty box. `appearance-none` drops
                 // WebKit's own clear glyph, which would otherwise sit beside ours.
-                className={`w-full appearance-none rounded-full border border-border bg-surface py-2.5 pr-10
-                    ${hasValue ? 'pl-10' : 'pl-3.5'} text-[0.95rem] text-right outline-none
+                className={`w-full appearance-none rounded-full border border-border bg-surface py-2.5 ps-10
+                    ${hasValue ? 'pe-10' : 'pe-3.5'} text-[0.95rem] text-start outline-none
                     transition-colors focus:border-primary [&::-webkit-search-cancel-button]:hidden`}
             />
             {hasValue && (
@@ -59,7 +61,7 @@ function SearchField({ value, onChange, placeholder, className = '', autoFocus =
                     type="button"
                     onClick={() => onChange('')}
                     aria-label={t('common.clearSearch')}
-                    className="absolute left-2.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-text-muted
+                    className="absolute end-2.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-text-muted
                         hover:bg-surface-hover hover:text-text-secondary"
                 >
                     <X size={16} />

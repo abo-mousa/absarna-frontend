@@ -3,11 +3,11 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api/client';
 import { clearSession, isRemembered, readToken, storeSession } from '@/lib/authStorage';
-import { login as loginRequest, register as registerRequest } from '@/lib/api/auth';
+import { login as loginRequest, register as registerRequest, updateLocale } from '@/lib/api/auth';
 import { authFailureMessage } from '@/lib/authErrors';
 import { isProtectedPath } from '@/lib/navigation';
 import { useToast } from './ToastContext';
-import { t } from '@/i18n';
+import { currentLocale, t } from '@/i18n';
 
 const AuthContext = createContext();
 
@@ -15,6 +15,28 @@ const AuthContext = createContext();
 // making and a third is not.
 const PROFILE_RETRY_ATTEMPTS = 1;
 const PROFILE_RETRY_DELAY_MS = 1500;
+
+/**
+ * Keeps the account's language in step with this browser's.
+ *
+ * <p>Only the mail reads `users.locale`, so the cost of it being stale is a verification or reset
+ * link written in the wrong language — which is exactly the mail a person is least able to work
+ * around, since they are usually locked out at the time.
+ *
+ * <p><b>Here rather than in the language toggle.</b> Switching language reloads the page, so a
+ * request fired beside the switch races the navigation that cancels it; the reload is a more
+ * reliable trigger than the click was. It also covers the cases a click never would: an account
+ * signed in from a second browser, and one created before this column existed.
+ *
+ * <p>Fire and forget, and deliberately silent. This is a preference nobody asked to save, on the
+ * critical path of the app's first render — a failure costs one mail in the wrong language, and a
+ * toast about it would be noise about something the reader did not do.
+ */
+function syncAccountLocale(profile) {
+    const active = currentLocale();
+    if (!profile || profile.locale === active) return;
+    updateLocale(active).catch(() => { /* one mail in the other language; not worth saying */ });
+}
 
 export const AuthProvider = ({ children }) => {
     const navigate = useNavigate();
@@ -79,6 +101,7 @@ export const AuthProvider = ({ children }) => {
                 try {
                     const res = await api.get('/user/profile');
                     setUser(res.data);
+                    syncAccountLocale(res.data);
                     return;
                 } catch (err) {
                     // Status only, never the axios error object: its `config.headers.Authorization`
