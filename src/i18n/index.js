@@ -52,6 +52,20 @@ import { DEFAULT_LOCALE, isLocale, localeInfo, localizeDigits } from './locales'
 
 const catalogs = { ar, en };
 
+/**
+ * The locales that actually have strings.
+ *
+ * <p><b>Exported because it can disagree with `LOCALE_CODES`, and the disagreement is silent.</b>
+ * `locales.js` says which languages exist; this map says which ones have copy. A code added there
+ * and forgotten here makes `catalogs[active]` `undefined`, every lookup miss, and {@link t} fall
+ * back to Arabic for the entire build — a language that ships, switches, flips the layout, and
+ * renders not one word of itself. Nothing throws and nothing warns, because falling back is the
+ * correct behaviour for a single missing key and cannot tell the two cases apart.
+ *
+ * <p>`__tests__/i18n.test.js` asserts the two lists match, which is the cheapest place to notice.
+ */
+export const CATALOG_CODES = Object.keys(catalogs);
+
 // The only line in this module that knows about a bundler. Vite and Vitest both define it;
 // Metro does not, so a React Native copy replaces it with __DEV__.
 const isDev = typeof import.meta !== 'undefined' && Boolean(import.meta.env?.DEV);

@@ -1,7 +1,8 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { currentLocale, direction, formatDigits, isRtl, normalizeDigits, setActiveLocale, t, tData, tOptional } from '@/i18n';
+import { CATALOG_CODES, currentLocale, direction, formatDigits, isRtl, normalizeDigits, setActiveLocale, t, tData, tOptional } from '@/i18n';
+import { DEFAULT_LOCALE, LOCALES, LOCALE_CODES, localizeDigits } from '@/i18n/locales';
 import { ar } from '@/i18n/ar';
 import { TRANSLATED, en } from '@/i18n/en';
 
@@ -175,6 +176,77 @@ describe('en.js against ar.js', () => {
         const outstanding = Object.keys(ar).filter((ns) => !declared.has(ns));
         expect(Array.isArray(outstanding)).toBe(true);
         if (outstanding.length) console.info(`[i18n] not translated yet: ${outstanding.join(', ')}`);
+    });
+});
+
+
+/**
+ * What a new language has to satisfy, pinned so that adding one fails here rather than on a
+ * screen.
+ *
+ * <p><b>Nothing on this side is compiler-enforced.</b> The backend gets its safety free: the
+ * switches in `EmailTemplates` and `AffirmationText` carry no `default`, so a new
+ * `InterfaceLocale` constant does not build until somebody has answered every question about it.
+ * There is no equivalent here — a locale is a key in an object literal, and every way of getting
+ * it wrong renders something rather than throwing. This suite is the substitute.
+ */
+describe('adding a locale', () => {
+    afterEach(() => setActiveLocale('ar'));
+
+    /**
+     * <b>`locales.js` says which languages exist; `index.js` says which have copy.</b> They are
+     * two lists maintained by hand, and the failure when they drift apart is the quietest in the
+     * app: `catalogs[code]` is `undefined`, every lookup misses, `t()` falls back, and the new
+     * language ships with the layout flipped and not one word of itself translated. Falling back
+     * is correct for one missing key and cannot tell that case from this one.
+     */
+    it('has a catalog for every locale it offers', () => {
+        expect([...CATALOG_CODES].sort()).toEqual([...LOCALE_CODES].sort());
+    });
+
+    it('offers the default locale', () => {
+        expect(LOCALE_CODES).toContain(DEFAULT_LOCALE);
+    });
+
+    /**
+     * <b>Ten glyphs, ASCII 0-9 in order.</b> `localizeDigits` indexes straight into this string,
+     * so nine of them puts the literal `undefined` in the middle of a page number for one numeral
+     * — and only that one, which is how it survives a click-through. Mirrors
+     * `InterfaceLocaleTest` on the backend, which pins the same invariant on the copy of this
+     * decision that renders the account emails.
+     */
+    it.each(LOCALE_CODES)('maps ten distinct digits for %s', (code) => {
+        const digits = LOCALES[code].digits;
+
+        expect(digits).toHaveLength(10);
+        expect(new Set(digits).size).toBe(10);
+        expect(localizeDigits('0123456789', code)).toHaveLength(10);
+        expect(localizeDigits('0123456789', code)).not.toContain('undefined');
+    });
+
+    /** Every field a call site reads, present and the right shape. */
+    it.each(LOCALE_CODES)('describes %s completely', (code) => {
+        const info = LOCALES[code];
+
+        expect(info.code).toBe(code);
+        expect(info.dir).toMatch(/^(rtl|ltr)$/);
+        expect(info.htmlLang).toBeTruthy();
+        // The switcher's own label, which is never translated — see the brand test above for the
+        // other half of that rule.
+        expect(info.nativeName).toBeTruthy();
+        // Both go to Intl/dayjs by name; a typo is a silently unstyled date or an ungrouped count.
+        expect(info.dayjs).toBeTruthy();
+        expect(() => new Intl.NumberFormat(info.numberFormat)).not.toThrow();
+    });
+
+    /**
+     * <b>A round trip through both halves of the digit rule.</b> `formatDigits` writes a label in
+     * the locale's script and `normalizeDigits` reads one back; a locale whose map is wrong in a
+     * way length alone would miss — two glyphs swapped — fails here and nowhere else.
+     */
+    it.each(LOCALE_CODES)('reads its own digits back for %s', (code) => {
+        setActiveLocale(code);
+        expect(normalizeDigits(formatDigits(1234567890))).toBe('1234567890');
     });
 });
 
