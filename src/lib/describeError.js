@@ -1,22 +1,37 @@
-import { isRtl, t, tOptional } from '@/i18n';
+import { currentLocale, t, tOptional } from '@/i18n';
+
+/**
+ * The one language the backend ever wrote a reader-facing sentence in, and therefore the only
+ * locale in which such a sentence is worth rendering. See {@link serverMessage}.
+ */
+const BACKEND_LEGACY_LOCALE = 'ar';
 
 /**
  * Any Arabic letter — the test for "was this string written for a reader, or for us?".
  *
- * <p>The backend puts a user-facing sentence in <b>two different keys</b> depending on which side
- * of it answered, and in one of them the same key holds an English technical string:
+ * <p><b>This is now a compatibility shim, and it is worth knowing that before reading it.</b> The
+ * backend no longer writes a user-facing sentence anywhere: the rate limiter's 429 sends
+ * `RATE_LIMITED`, the four ad-hoc `forbidden()` helpers send `"Forbidden"`, and forgot-password
+ * sends no sentence at all. Every refusal is a code the catalog words. What this guards is
+ * <b>deploy skew</b> — the window where a new SPA is talking to an older backend that still
+ * answers in Arabic — plus anything in that old shape that was missed.
+ *
+ * <p>The shape it recognises: the backend used to put a user-facing sentence in <b>two different
+ * keys</b> depending on which side of it answered, and in one of them the same key held an English
+ * technical string:
  *
  * <pre>
  *   answered by                            error                  message
  *   ─────────────────────────────────────  ─────────────────────  ─────────────────────
  *   GlobalExceptionHandler.buildResponse   "Forbidden"            "Access denied"
- *   EmailNotVerified / RateLimitFilter     "Too many requests"    Arabic
- *   a controller's own forbidden()         «غير مصرح لك»          (absent)
+ *   EmailNotVerified                       "Forbidden"            Arabic
+ *   a controller's own forbidden()         «غير مصرح لك»          (absent)   ← gone
+ *   RateLimitFilter                        "Too many requests"    Arabic     ← gone
  * </pre>
  *
  * <p>So neither key can simply be preferred. Reading `error` first prints <b>"Forbidden"</b> at an
  * Arabic reader; reading `message` first and trusting it prints "Access denied". What separates the
- * two is not the key but the <b>script</b>: this backend writes everything meant for a person in
+ * two is not the key but the <b>script</b>: the old backend wrote everything meant for a person in
  * Arabic and everything meant for a log in English. Testing for that is one regex, and it fails
  * safe in both directions — an English body falls through to our own copy, and a body shape nobody
  * anticipated cannot put internals on the screen.
@@ -59,14 +74,17 @@ export function reasonMessage(error) {
  * in `error`. Where there is no `message` at all, `error` is the whole answer.
  */
 export function serverMessage(error) {
-    // Only the Arabic build trusts a free-text server sentence, and the asymmetry is the rule
-    // rather than an oversight: the backend writes Arabic FOR PEOPLE and English FOR LOGS, so on
-    // an English screen an Arabic body is the wrong language and an English one is a log line.
-    // Neither is worth showing, and there is nothing left to show — the last user-facing Arabic
-    // sentence a handler produced was the rate limiter's 429, which now sends `RATE_LIMITED` and
-    // is worded from the catalog like every other refusal. This stays as the guard for anything
-    // older that was missed, and it must never start trusting English.
-    if (!isRtl()) return null;
+    // Only an Arabic reader is shown a free-text server sentence, and the asymmetry is the rule
+    // rather than an oversight: the old backend wrote Arabic FOR PEOPLE and English FOR LOGS, so
+    // on any other screen an Arabic body is the wrong language and an English one is a log line.
+    // Neither is worth showing. It must never start trusting English.
+    //
+    // KEYED ON THE LANGUAGE, NOT ON `isRtl()`. Those answer the same today and would part company
+    // the moment a second right-to-left language shipped: Urdu and Persian are both written in
+    // this script's range, so a direction check would hand an Urdu reader the Arabic sentence and
+    // call it a match. The question here is "is this the language the backend's legacy copy was
+    // written in", which only the locale can answer — see `i18n/locales.js`.
+    if (currentLocale() !== BACKEND_LEGACY_LOCALE) return null;
     const data = error?.response?.data;
     const candidate = data?.message ?? data?.error;
     return typeof candidate === 'string' && ARABIC.test(candidate) ? candidate : null;
@@ -134,7 +152,8 @@ export function describeError(error, fallback) {
     if (explained) return explained;
 
     // Then the server's own sentence, where it wrote one in Arabic and the reader is reading
-    // Arabic. Covers what predates the reason codes — a controller's ad-hoc `forbidden()`.
+    // Arabic. Nothing this backend serves reaches here any more — it is what keeps a new SPA
+    // legible against an older one during a deploy. See `serverMessage`.
     //
     // Deliberately not extended to 5xx: there the server knows only that it broke, and
     // `buildResponse`'s text for those ("Internal server error") is ours to keep out of sight.
