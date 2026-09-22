@@ -1,4 +1,4 @@
-import { t } from '@/i18n';
+import { formatDigits, t } from '@/i18n';
 
 // Turning a detector's flagged stretches of a video into something a person can read.
 //
@@ -13,6 +13,12 @@ import { t } from '@/i18n';
 
 // mm:ss, or h:mm:ss past an hour — the same shape Video.duration already uses, so a span reads
 // like a timestamp the owner can scrub to rather than a number of seconds they have to convert.
+//
+// IN THE LOCALE'S OWN DIGITS, like every other number the app writes. This is a clock the platform
+// composed out of a number of seconds, not text anybody typed, so it is ours to localise — the
+// same call `VideoCard` makes on `video.duration` and `VideoControlBar` makes on its playhead.
+// Padded and assembled in ASCII first and converted once at the end, so the arithmetic above stays
+// arithmetic; `padStart` on Arabic-Indic digits would be counting glyphs to pad glyphs.
 export const formatTimestamp = (totalSeconds) => {
     if (typeof totalSeconds !== 'number' || !Number.isFinite(totalSeconds) || totalSeconds < 0) {
         return null;
@@ -22,7 +28,9 @@ export const formatTimestamp = (totalSeconds) => {
     const minutes = Math.floor((seconds % 3600) / 60);
     const rest = seconds % 60;
     const pad = (n) => String(n).padStart(2, '0');
-    return hours > 0 ? `${hours}:${pad(minutes)}:${pad(rest)}` : `${minutes}:${pad(rest)}`;
+    return formatDigits(
+        hours > 0 ? `${hours}:${pad(minutes)}:${pad(rest)}` : `${minutes}:${pad(rest)}`,
+    );
 };
 
 // "0:12–0:31". An en dash, not a hyphen: a hyphen next to digits reads as part of the number.
@@ -72,10 +80,14 @@ export const formatSpans = (spans, limit = 3) => {
 
     const shown = usable.slice(0, limit).map(isolateLtr);
     const remaining = usable.length - shown.length;
-    // U+060C, the Arabic comma. Latin digits throughout: this app settled that question once,
-    // in lib/numbers.js, after having two digit systems on one card.
     // `common.listSeparator`, not a literal «، »: punctuation is locale data, and a comma written
     // at a call site is the same bug as a word written at one.
+    //
+    // ONE DIGIT SYSTEM IN THE SENTENCE, which is what `formatTimestamp` above is for. The
+    // remainder count goes through `t()` and so reads in the locale's digits; leaving the ranges
+    // in Latin put «٥» next to «0:45–1:20» in one phrase — exactly the two-digit-systems-on-one-
+    // card failure lib/numbers.js exists to have settled, arriving in a sentence instead of on a
+    // card.
     const list = shown.join(t('common.listSeparator'));
     // Arabic counted nouns agree with the number, so one form cannot serve: «و1 مواضع أخرى»
     // and «و5 موضع آخر» are both wrong. One takes the singular, 3-10 the plural — which is

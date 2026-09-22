@@ -1,8 +1,17 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import {
     formatSpan, formatSpans, formatTimestamp, isolateLtr, seekTargetFor,
 } from '@/lib/spans';
+import { setActiveLocale } from '@/i18n';
 import { ar } from '@/i18n/ar';
+import { en } from '@/i18n/en';
+
+/** Arabic-Indic ٠-٩, and ASCII 0-9 — the two scripts a phrase here must never mix. */
+const ARABIC_DIGIT = /[\u0660-\u0669]/;
+const ASCII_DIGIT = /[0-9]/;
+
+// Every suite below runs in the default locale; the ones that switch put it back.
+afterEach(() => setActiveLocale('ar'));
 
 /**
  * Turning a detector's flagged stretches into something a person can read.
@@ -18,10 +27,30 @@ import { ar } from '@/i18n/ar';
  */
 describe('formatTimestamp', () => {
     it('reads as a timestamp the owner can scrub to, not a number of seconds', () => {
-        expect(formatTimestamp(0)).toBe('0:00');
-        expect(formatTimestamp(31.2)).toBe('0:31');
-        expect(formatTimestamp(91)).toBe('1:31');
+        expect(formatTimestamp(0)).toBe('٠:٠٠');
+        expect(formatTimestamp(31.2)).toBe('٠:٣١');
+        expect(formatTimestamp(91)).toBe('١:٣١');
+        expect(formatTimestamp(3725)).toBe('١:٠٢:٠٥');
+    });
+
+    /**
+     * <b>The clock is the app's number, so it reads in the app's digits.</b> It was Latin while
+     * every count around it was too; once `t()` began localising numeric placeholders, the
+     * remainder in «و٢ مواضع أخرى» changed script and the ranges beside it did not — two digit
+     * systems in one sentence, which is the failure `lib/numbers.js` exists to have settled.
+     */
+    it('reads in the active locale\'s digits', () => {
+        setActiveLocale('en');
         expect(formatTimestamp(3725)).toBe('1:02:05');
+        setActiveLocale('ar');
+        expect(formatTimestamp(3725)).toBe('١:٠٢:٠٥');
+    });
+
+    /** Padding is counted before the script is applied, never after. */
+    it('pads to two places in either script', () => {
+        expect(formatTimestamp(61)).toBe('١:٠١');
+        setActiveLocale('en');
+        expect(formatTimestamp(61)).toBe('1:01');
     });
 
     it('returns null rather than a broken string for anything that is not a time', () => {
@@ -39,7 +68,7 @@ describe('formatSpan', () => {
     it('joins the two ends with an en dash', () => {
         // An en dash, not a hyphen: these sit inside right-to-left Arabic text, where a hyphen
         // reads as part of the adjacent number.
-        expect(formatSpan({ start: 12, end: 31.2 })).toBe('0:12–0:31');
+        expect(formatSpan({ start: 12, end: 31.2 })).toBe('٠:١٢–٠:٣١');
     });
 
     it('is null when either end is unusable', () => {
@@ -78,8 +107,8 @@ describe('formatSpans', () => {
 
         expect(result.shown).toBe(3);
         expect(result.total).toBe(5);
-        expect(result.text).toContain('0:00–0:31');
-        expect(result.text).not.toContain('5:00');
+        expect(result.text).toContain('٠:٠٠–٠:٣١');
+        expect(result.text).not.toContain('٥:٠٠');
         // The remainder belongs to THIS phrase. It used to render as its own paragraph, landing
         // the fragment after the body had already finished with a different sentence -- two
         // sentences away from the list it agrees with.
@@ -91,8 +120,8 @@ describe('formatSpans', () => {
     it('isolates every range, so none of them renders backwards', () => {
         const result = formatSpans([{ start: 5, end: 45.2 }, { start: 55, end: 65.2 }]);
 
-        expect(result.text).toContain('\u20660:05–0:45\u2069');
-        expect(result.text).toContain('\u20660:55–1:05\u2069');
+        expect(result.text).toContain('\u2066٠:٠٥–٠:٤٥\u2069');
+        expect(result.text).toContain('\u2066٠:٥٥–١:٠٥\u2069');
     });
 
     it('agrees with the number of remaining spans, which Arabic requires', () => {
@@ -102,14 +131,31 @@ describe('formatSpans', () => {
         expect(one.text).toContain(ar.video.review.moreSpansOne);
         expect(one.text).not.toContain('{count}');
 
-        expect(formatSpans(many).text).toContain('2');
+        expect(formatSpans(many).text).toContain('٢');
     });
 
     it('says nothing about a remainder when there is none', () => {
         const result = formatSpans([{ start: 5, end: 45.2 }]);
 
-        expect(result.text).toBe('\u20660:05–0:45\u2069');
+        expect(result.text).toBe('\u2066٠:٠٥–٠:٤٥\u2069');
         expect(result.text).not.toContain(ar.video.review.moreSpansOne);
+    });
+
+    /**
+     * <b>The property, rather than the two spellings of it.</b> The ranges and the remainder are
+     * produced by different code — `formatTimestamp` here, `t()`'s numeric placeholder there — and
+     * the bug was that only one of them learned about digits. Asserting the phrase carries exactly
+     * one script catches that however it comes back, including from a language added later.
+     */
+    it('writes the whole phrase in one script', () => {
+        expect(formatSpans(many).text).not.toMatch(ASCII_DIGIT);
+        expect(formatSpans(many).text).toMatch(ARABIC_DIGIT);
+
+        setActiveLocale('en');
+        const english = formatSpans(many).text;
+        expect(english).not.toMatch(ARABIC_DIGIT);
+        expect(english).toMatch(ASCII_DIGIT);
+        expect(english).toContain(en.video.review.moreSpans.replace('{count}', '2'));
     });
 
     it('is null when there is nothing to point at', () => {

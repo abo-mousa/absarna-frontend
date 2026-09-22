@@ -70,7 +70,9 @@ describe('a queue row', () => {
         const row = findingRow(finding());
         expect(row.spans).toHaveLength(1);
         expect(row.spans[0].seekTo).toBe(10);
-        expect(row.spans[0].label).toBe('0:12–0:31');
+        // The label reads in the locale's digits (the default here is Arabic) while `seekTo`
+        // stays a number — the label is for the reviewer, the seek is for the video element.
+        expect(row.spans[0].label).toBe('٠:١٢–٠:٣١');
     });
 
     it('drops a span it cannot label rather than seeking to NaN', () => {
@@ -168,8 +170,9 @@ describe('what an owner is told', () => {
         expect(notice.title).toBe(ar.video.review.outcome.hidden.title);
         expect(notice.body).toContain(ar.video.review.outcome.hidden.suffix);
         // The timestamps are the actionable half -- "held for review" alone gives the owner
-        // nothing to go and check.
-        expect(notice.body).toContain('0:12–0:31');
+        // nothing to go and check. In the locale's digits, like every number the app writes: this
+        // sentence also carries a count, and the two must not be in different scripts.
+        expect(notice.body).toContain('٠:١٢–٠:٣١');
         expect(notice.body).not.toContain('{spans}');
     });
 
@@ -370,7 +373,7 @@ describe('what an owner is told', () => {
 describe('the badge on a card', () => {
     it('gives a card two words and no reason', () => {
         // A grid of the owner's own videos is the one place several of these appear at once, and
-        // "music at 0:12–0:31" repeated down a column is noise. The badge says which video to
+        // "music at ٠:١٢–٠:٣١" repeated down a column is noise. The badge says which video to
         // open; the detail page says why.
         const badge = ownerBadge(
             { review: [{ type: 'MUSIC', state: REVIEW_STATE.HELD }] }, true);
