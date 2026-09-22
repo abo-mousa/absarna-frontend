@@ -73,14 +73,26 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   `keyboardAction` take the direction as a **parameter** defaulting to `isRtl()`, so the tests
   exercise both: the suite runs in one locale, and mirrored arithmetic that is wrong neither throws
   nor logs.
-- **Two known limits of the English build, both deliberate for now.** `<html lang>` becomes `en`
-  while the *content* stays Arabic, so a screen reader pronounces Arabic titles with an English
-  voice — the fix is `lang="ar"` on content-bearing elements (the layout half is already handled,
-  since `dir="auto"` is on 29 of them), which is a sweep worth doing on its own rather than inside
-  a locale change. And `en.js` ships to everyone: ~9 KB gzipped of a ~47 KB main bundle that an
-  Arabic reader never reads. Lazy-loading it would cost `t()` its synchronous, dependency-free
-  contract and add a round trip on exactly the mobile connections the channel-card work was about,
-  so the trigger for revisiting is the catalog being finished, not now.
+- **`t()` is a STRING api and `tData` is the node one.** `t()` returns the key when the result is
+  not a string — the tests pin that, because the alternative is `[object Object]` in a page — so
+  the legal documents, which are the one part of the catalog holding structure (sections, paragraph
+  arrays, paragraphs that are arrays of text and `{text, href}` links), reach their pages through
+  `tData`. **Nothing may read a catalog module directly.** The three legal pages used to
+  `import { ar }` and read `ar.legal.terms` out of it, which was right with one catalog and became
+  invisible breakage with two: `en.js` was complete, the chrome translated, and the document under
+  it stayed Arabic.
+- **Two known limits of the English build, both deliberate.** `<html lang>` becomes `en` while the
+  *content* stays Arabic, so a screen reader pronounces Arabic titles with an English voice — the
+  fix is `lang="ar"` on content-bearing elements (the layout half is already handled, since
+  `dir="auto"` is on 29 of them), which is a sweep worth doing on its own rather than inside a
+  locale change. And `en.js` ships to everyone: ~16 KB gzipped that an Arabic reader never reads.
+  Lazy-loading it would cost `t()` its synchronous, dependency-free contract and add a round trip
+  on exactly the mobile connections the channel-card work was about — so if it is ever revisited,
+  the thing to move is `en` alone, since `ar` is needed on every build as the fallback.
+- **The legal pages are an operative text plus a translation of it, and that is not the same as
+  copy that exists twice.** `legal.sourceNotice` says the Arabic governs and `LegalDocument`
+  renders it only when the reader's locale is not `SOURCE_LOCALE`, so the Arabic build never
+  tells its own readers they are reading a translation.
 - **Switching language persists and RELOADS** (`lib/locale.js`). `t()` is a plain function called
   from 99 files, several outside React, and nothing subscribes to it — making it reactive is a
   rewrite of the app for a control a person touches about once. A reload is also the only way to
@@ -97,12 +109,12 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   repaints for free. Inline `style={{}}` only for genuinely runtime-variable values Tailwind's JIT
   can't see (`Grid`'s `minWidth`, `Spinner`'s `size`).
 - **Every user-facing string lives in a catalog (`src/i18n/ar.js`, `en.js`) and reaches the screen
-  through `t()`.** ~950 entries, ~590 call sites. A missing key returns the key and warns in dev;
-  a key the ACTIVE catalog lacks falls back to `ar` silently, because English is being filled in
-  namespace by namespace and an Arabic sentence on an English screen is legible where a dotted key
-  is not. `en.js`'s `TRANSLATED` array names the namespaces that are finished, and the test asserts
-  those complete key-for-key while allowing the rest to be partial — so a stale English key fails
-  the build and a planned gap does not. `tOptional` is for keys
+  through `t()`.** ~1,400 entries, ~590 call sites. A missing key returns the key and warns in dev;
+  a key the ACTIVE catalog lacks falls back to `ar` silently. **Both catalogs are complete today**
+  and `en.js`'s `TRANSLATED` array lists every namespace, which is what makes the test assert them
+  key-for-key — a string added to `ar.js` and forgotten in `en.js` fails the build, and a stale key
+  in `en.js` fails it too. The fallback is the safety net for the window between those two commits,
+  not a standing state. `tOptional` is for keys
   that come from *data* (a quality rung name), where a miss is normal. Namespace by the screen that
   shows it; promote to `common` only when a second screen needs the same words for the same reason.
   A test walks the source and asserts every literal `t('...')` key resolves.
