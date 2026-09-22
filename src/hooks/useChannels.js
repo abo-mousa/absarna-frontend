@@ -589,6 +589,32 @@ export const useChannelClaimLink = () =>
             (await api.get(`/channels/admin/${channelId}/claim-link`)).data,
     });
 
+/**
+ * Emails the invitation, in the language the admin picked.
+ *
+ * <p><b>Beside the copy-link button, never instead of it.</b> A scholar reachable only through a
+ * student, an assistant or a WhatsApp message is common enough that removing the clipboard would
+ * be a regression. What this adds is the two things a hand-written mail cannot have: one wording
+ * for the most delicate message the platform sends, and a record on the channel that the next
+ * admin to look at this row can see.
+ *
+ * <p>Invalidates rather than writing the reply into the cache, like `useSetChannelClaimable` above
+ * and for the same reason: the response carries the updated channel, but the row's controls read
+ * `claimState` and `claimInvitation` together, and re-reading both from the server is cheaper to
+ * reason about than patching two cached pages by hand.
+ */
+export const useInviteChannelOwner = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ channelId, email, locale }) =>
+            (await api.post(`/channels/admin/${channelId}/invite`, { email, locale })).data,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-all-channels'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-pending-channels'] });
+        },
+    });
+};
+
 export const useDeleteChannel = () => {
     const queryClient = useQueryClient();
     return useMutation({

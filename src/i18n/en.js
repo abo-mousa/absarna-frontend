@@ -1260,10 +1260,39 @@ export const en = {
          * description to PROVE ownership, and the two would otherwise sit on one screen meaning
          * different things.
          */
-        claimLink: {
-            action: 'Invitation link',
+        /**
+         * Inviting the scholar a seeded channel is about.
+         *
+         * THE WORD "INVITATION" AND NOT ANYTHING WITH "CODE" IN IT, for the reason the block
+         * below already records: a code is what a scholar once put in their YouTube description
+         * to PROVE ownership, and the two would sit on one screen meaning different things.
+         *
+         * `contents` IS THE LOAD-BEARING STRING. The admin pressing this is the sender of a
+         * letter they did not write — one that says we built a page from someone's lectures
+         * without asking, and offers to delete it on a reply. Finding that out from a scholar's
+         * response is the wrong way round, so the dialog says it before the press.
+         */
+        invite: {
+            action: 'Invite the owner',
+            actionAgain: 'Invite again',
+            title: 'Invite the owner of {name}',
+            intro: 'We will email the invitation, and record that we did. The link in it is the channel page plus the token that shows the claim offer.',
+            contents: 'The message says the page holds their lectures and how to take it over, that we assembled it from their public YouTube channel without asking first, and that replying is enough for us to delete it.',
+            emailLabel: 'Email address',
+            previousAddress: 'This is the address the last invitation went to.',
+            localeLabel: 'Write in',
+            localeHint: 'There is no account to read a language from, so this is your choice — and it is recorded with the send.',
+            send: 'Send the invitation',
+            sent: 'The invitation has been sent and recorded on the channel.',
+            // Never "delivered": nothing here consumes the provider's bounce webhook, so a hard
+            // bounce and a scholar who read it and did nothing look identical from this screen.
+            sendFailed: 'Could not send the invitation',
+            copyInstead: 'Copy the link instead',
             copied: 'Invitation link copied',
-            failed: 'Could not create an invitation link',
+            copyFailed: 'Could not create an invitation link',
+            sentNote: 'Invited {when} → {address} ({locale})',
+        },
+        claimLink: {
             /**
              * Opening an invitation is the act of inviting, and it is deliberate: linking a
              * channel no longer opens one by itself. The confirmation says what became PUBLIC
@@ -1633,7 +1662,7 @@ export const en = {
                     id: 'email-use',
                     heading: 'Email: what we send, and through whom',
                     paragraphs: [
-                        'We send you two kinds of message and no others: an address-verification message, and a password-reset message. There is no newsletter, no marketing mail and no content notifications; there is nothing in the software that sends anything but these two.',
+                        'We send you two kinds of message to your account address and no others: an address-verification message, and a password-reset message. There is no newsletter, no marketing mail and no content notifications; there is nothing in the software that sends an account holder anything but these two. (The software can send one further message, and it is never sent to an account: an administrator can email the owner of a channel we assembled for them, once, inviting them to take it over. It goes to an address an administrator was given, not to anything collected here.)',
                         'A verification link is valid for ten minutes, and a password-reset link for one hour and a single use. The brevity is deliberate: whoever holds the link holds the account.',
                         'Mail is sent through a specialist outside provider that handles delivery on our behalf, which receives your address, your display name and the text of the message. Nothing else about your account or your activity reaches it.',
                         'The number of requests is limited: three verification messages an hour, and three password-reset requests an hour.',
