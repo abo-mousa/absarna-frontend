@@ -58,18 +58,34 @@ export function applyLocaleToDocument(code) {
 }
 
 /**
- * Persists a language choice and reloads onto it.
+ * Persists a language choice and reloads onto it. Answers whether it took.
  *
- * <p>Writes the attributes first so that a browser which refuses to reload — or a person who
- * cancels the navigation — is not left on a page whose direction no longer matches its stored
- * preference. A no-op when the locale is already active, so the switcher cannot be a
- * reload button.
+ * <p>A no-op when the locale is already active, so the switcher cannot be a reload button.
+ *
+ * <h4>The write has to succeed before anything else happens</h4>
+ *
+ * <p>This is the one preference whose delivery mechanism destroys its own fallback. `safeStorage`
+ * degrades to an in-memory map when a browser has site data blocked — the right answer everywhere
+ * else, since a theme or a collapsed panel simply stops being remembered — but the way a language
+ * change reaches the app is `location.reload()`, and a reload is exactly what throws that map
+ * away. Writing, applying and reloading regardless would send the reader round a full page load to
+ * arrive back in the language they were trying to leave.
+ *
+ * <p>So a write that will not outlive the page stops here, with the document untouched: nothing
+ * happens, which is honest and cheap, rather than something happening and then unhappening. The
+ * caller gets `false` and can say so; today nothing does, and a dead-feeling button is still a
+ * better answer than a page that visibly reverts.
+ *
+ * <p>Order matters for the same reason in the success case: the attributes go on <em>before</em>
+ * the reload, so a browser that refuses to navigate — or a person who cancels it — is not left on
+ * a page whose direction disagrees with its stored preference.
  */
 export function changeLocale(code) {
-    if (!isLocale(code) || code === currentLocale()) return;
+    if (!isLocale(code) || code === currentLocale()) return false;
     // safeStorage, not localStorage: a browser with site data blocked throws on the accessor
     // itself, and the language switcher is not worth taking the app into the error boundary.
-    safeStorage.setItem(LOCALE_STORAGE_KEY, code);
+    if (!safeStorage.setItem(LOCALE_STORAGE_KEY, code)) return false;
     applyLocaleToDocument(code);
     window.location.reload();
+    return true;
 }

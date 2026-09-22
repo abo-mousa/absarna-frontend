@@ -40,18 +40,31 @@ const createSafeStorage = (resolve) => {
             }
             return memory.has(key) ? memory.get(key) : null;
         },
+        /**
+         * Writes, and <b>answers whether the write will outlive this page</b>.
+         *
+         * <p>`true` means it reached the real store; `false` means it went to the in-memory
+         * fallback and is gone on the next navigation. Almost every caller can ignore that — a
+         * remembered theme or a collapsed panel degrades to "not remembered" and nothing else.
+         *
+         * <p>`lib/locale.js` cannot ignore it, because changing language *reloads the page*: the
+         * mechanism that applies the choice is the same one that discards a memory-only copy, so
+         * without this the switcher would reload straight back into the old language and read as
+         * a dead button. It is the one preference whose own delivery destroys its fallback.
+         */
         setItem(key, value) {
             const store = backing();
             if (store) {
                 try {
                     store.setItem(key, value);
                     memory.delete(key);
-                    return;
+                    return true;
                 } catch {
                     /* fall through to memory */
                 }
             }
             memory.set(key, String(value));
+            return false;
         },
         removeItem(key) {
             memory.delete(key);
