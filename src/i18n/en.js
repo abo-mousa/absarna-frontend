@@ -2,19 +2,22 @@
  * English copy for the app. See `./index.js` for how a locale is chosen and `./ar.js` for the
  * rules about where a string belongs — the namespaces here mirror that file exactly.
  *
- * ## This catalog is deliberately incomplete, and a gap is not a bug
+ * ## This catalog is complete, and the machinery that got it there is still load-bearing
  *
- * <p>`t()` falls back to `ar` for any key missing here, so an untranslated screen renders Arabic
- * rather than a dotted key. {@link TRANSLATED} names the namespaces that are *finished*; the test
- * asserts those are complete key-for-key and prints the rest as the outstanding list. Adding a
- * namespace to that array is how a translation pass is signed off — before that it may be partial,
- * after it, a key added to `ar.js` and forgotten here turns the build red.
+ * <p>Every namespace in `ar.js` is translated and listed in {@link TRANSLATED}, so nothing falls
+ * back today. The fallback and the list both stay, and not out of sentiment:
  *
- * <p>What is outstanding, and why it is last: the channel owner's dashboard (`channelManage`), the
- * YouTube import (`youtube`, `youtubeOAuth`), the platform admin console (`admin`, `adminReports`)
- * and the legal pages (`legal`). Every one of them is read by somebody who already reads Arabic —
- * an owner managing an Arabic catalogue, a platform moderator, a reader of terms drafted in
- * Arabic — where every namespace here is read by a visitor who may not.
+ * - **`t()` falls back to `ar` for any missing key**, which is what makes a key added to `ar.js`
+ *   alone a legible Arabic sentence on an English screen rather than a dotted key in the middle of
+ *   a page. That is the state between one commit and the next, and it will keep happening.
+ * - **{@link TRANSLATED} is what turns that gap from silent into red.** The test asserts every
+ *   listed namespace matches `ar.js` key for key, so a string added on that side and forgotten
+ *   here fails the build instead of quietly rendering Arabic. Now that the list names everything,
+ *   it covers the whole catalog — dropping a namespace from it to get a build green would be
+ *   switching that alarm off, not fixing anything.
+ *
+ * <p>A namespace left out of the array is allowed to be partial, which is how a *new* translation
+ * pass works: fill it in, then add it here to sign it off.
  *
  * ## The one known wart
  *

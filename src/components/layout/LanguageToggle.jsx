@@ -36,9 +36,16 @@ function LanguageToggle({ className, labelClassName }) {
             className={className}
         >
             <Languages size={18} />
-            {/* `lang` on the label so a screen reader switches voice for it, and so the font
-                stack's own `:lang(en)` rule picks the right face for the word — this is the one
-                place in the app where a string is deliberately not in the page's language. */}
+            {/* `lang` on the label, because this is the one place in the app where a string is
+                deliberately not in the page's language: a screen reader switches voice for it
+                rather than reading «العربية» through an English synthesiser, and the browser's
+                own per-language defaults apply to it.
+
+                It does NOT change the face. `index.css` scopes the font stack to
+                `:root:lang(en)`, so it answers what the *page* is in, not what this span is —
+                and that is deliberate: a rule matching any `lang` would re-pick fonts for
+                arbitrary nested content. The word renders in Cairo on the Arabic build, which
+                draws Latin perfectly well. */}
             <span className={labelClassName} lang={localeInfo(next).htmlLang}>{nextName}</span>
         </button>
     );
