@@ -17,6 +17,24 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 // quickly flipping through several pages doesn't fire a write per page.
 const REPORT_DEBOUNCE_MS = 1000;
 
+/**
+ * How long a resize has to settle before the page is re-rendered at the new width.
+ *
+ * <p>The page is drawn fit-to-width (`<Page width={containerWidth}>`), so every change of width
+ * re-rasterises a PDF page onto a canvas — the most expensive thing this component does. A
+ * `ResizeObserver` fires on every frame of a drag, so an un-debounced observer re-rasterised the
+ * page tens of times to show one final width.
+ *
+ * <p>Short on purpose. This is not a network call, and the page visibly lags the window until it
+ * fires, so the number is doing one job: turning a drag into a single render rather than dozens.
+ * Long enough and the reader looks broken mid-resize.
+ *
+ * <p><b>Above roughly a 750px viewport this never runs at all</b>: the reader sits inside
+ * `max-w-reading`, so the container stops growing and the observer reports the same width, which
+ * React discards without a render.
+ */
+const RESIZE_DEBOUNCE_MS = 150;
+
 // A TOC entry's `dest` is either a named destination (string, needs an extra lookup) or an
 // already-explicit destination array — either way it resolves to a page *reference*, not a
 // page number, hence the second `getPageIndex` round trip. Recurses into `items` for nested
@@ -76,6 +94,10 @@ function PdfReader({ fileUrl, initialPage = 1, onPageChange, onPageChangeImmedia
     const [searching, setSearching] = useState(false);
     const containerRef = useRef(null);
     const debounceRef = useRef(null);
+    // Its own timer, deliberately not `debounceRef`: that one reports page turns, and sharing it
+    // would let a resize cancel a pending progress write.
+    const resizeTimerRef = useRef(null);
+    const hasMeasuredRef = useRef(false);
     const appliedInitialPageRef = useRef(initialPage <= 1);
     const pdfRef = useRef(null);
     // Extracted page text is cached per document (keyed by page number) so re-running a search
@@ -104,11 +126,36 @@ function PdfReader({ fileUrl, initialPage = 1, onPageChange, onPageChangeImmedia
     useEffect(() => {
         const el = containerRef.current;
         if (!el) return undefined;
+
+        // Rounded: `contentRect.width` is fractional, and a sub-pixel wobble would otherwise be a
+        // new value every time. Passing the same number back to `setContainerWidth` is free —
+        // React bails out of the render — so rounding is what makes that bail-out actually happen.
+        const apply = (width) => setContainerWidth(Math.round(width));
+
         const observer = new ResizeObserver((entries) => {
-            setContainerWidth(entries[0].contentRect.width);
+            const { width } = entries[0].contentRect;
+
+            // THE FIRST MEASUREMENT IS IMMEDIATE, and that is the point of the flag rather than a
+            // plain debounce. Nothing renders until `containerWidth > 0`, so debouncing the first
+            // one would leave the reader blank for the delay every single time it is opened — a
+            // guaranteed cost on every open, to save a cost that only occurs while dragging.
+            if (!hasMeasuredRef.current) {
+                if (width > 0) hasMeasuredRef.current = true;
+                apply(width);
+                return;
+            }
+
+            clearTimeout(resizeTimerRef.current);
+            resizeTimerRef.current = setTimeout(() => apply(width), RESIZE_DEBOUNCE_MS);
         });
+
         observer.observe(el);
-        return () => observer.disconnect();
+        return () => {
+            // Dropped rather than flushed, unlike the page-turn debounce below: a resize that
+            // never settled describes an element that no longer exists.
+            clearTimeout(resizeTimerRef.current);
+            observer.disconnect();
+        };
     }, []);
 
     // Flush (not drop) a still-pending debounced report on unmount — navigating away from the
