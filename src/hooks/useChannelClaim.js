@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import api from '@/lib/api/client';
 import { queryKeys } from '@/lib/queryKeys';
 import { useUserScope } from './useUserScope';
@@ -49,54 +49,16 @@ export const useChannelClaim = (slug, claimToken = null, enabled = true) => {
 };
 
 /**
- * Issues the token the claimant places in their YouTube channel description.
- *
- * <p>Sends no body, and that is the safety property rather than an omission: a claim proves
- * control of the channel the row is <em>already</em> bound to. Letting the caller name a target
- * would let anyone point a seeded channel at a YouTube channel they do control and verify against
- * that — the whole transfer, proving nothing.
- */
-export const useStartClaimToken = (slug, claimToken) =>
-    useMutation({
-        mutationFn: async () =>
-            (await api.post(withToken(`/channels/${slug}/claim/token`, claimToken))).data,
-    });
-
-/**
- * Re-reads the description and, if the token is there, takes the channel.
- *
- * <p><b>`claimed: false` is an answer, not a failure.</b> The usual cause is that YouTube's API
- * has not caught up with a description saved a minute ago, so the caller offers to try again
- * rather than rendering an error.
- *
- * <p>On success the viewer is suddenly this channel's owner, which changes far more than this
- * query: the channel itself now names them, the manage link appears, and their channel list has
- * grown by one. Everything keyed on the slug goes, plus `my-channels`.
- */
-export const useCheckClaimToken = (slug, claimToken) => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: async () =>
-            (await api.post(withToken(`/channels/${slug}/claim/token/check`, claimToken))).data,
-        onSuccess: (data) => {
-            if (!data?.claimed) return;
-            queryClient.invalidateQueries({ queryKey: ['channel-claim', slug] });
-            queryClient.invalidateQueries({ queryKey: ['channel', slug] });
-            queryClient.invalidateQueries({ queryKey: ['channel-youtube', slug] });
-            queryClient.invalidateQueries({ queryKey: ['my-channels'] });
-        },
-    });
-};
-
-/**
  * Starts "claim with Google": asks for the consent URL and leaves it to the caller to navigate.
  *
  * <p>The returning flow lands on the ordinary OAuth callback and completes at
  * `/youtube/oauth/complete`, which does the transfer when the channel it resolves is unclaimed.
  * There is deliberately no second completion endpoint — one OAuth flow, two reasons to run it.
  *
- * <p>Offered only when the status carries `oauthAvailable`; the description token is the fallback
- * that keeps working when Google sign-in is switched off.
+ * <p>Offered only when the status carries `oauthAvailable`. It is the only way to claim a
+ * channel: a description-token method stood beside it until Google reviewed this app's sensitive
+ * `youtube.readonly` scope, and went when that review landed. A deployment with no OAuth client
+ * cannot take claims at all, which the panel says rather than offering a button that cannot work.
  */
 export const useStartClaimOAuth = (slug, claimToken) =>
     useMutation({

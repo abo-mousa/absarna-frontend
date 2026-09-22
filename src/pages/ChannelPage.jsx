@@ -24,7 +24,7 @@ import { useChannelClaim } from '../hooks/useChannelClaim';
 import { ClaimPanel } from '@/components/channel';
 import {
     shouldShowClaimNotice, shouldOfferClaim,
-    rememberClaimInvite, claimInviteFor, forgetClaimInvite,
+    rememberClaimInvite, claimInviteFor,
 } from '@/lib/claim';
 import { t } from '@/i18n';
 
@@ -268,12 +268,10 @@ function ChannelPage() {
 
                     {claimOpen && token && (
                         <div className="mt-5">
-                            <ClaimPanel
-                                slug={slug}
-                                status={claim}
-                                claimToken={claimToken}
-                                onClaimed={() => { forgetClaimInvite(slug); setClaimOpen(false); }}
-                            />
+                            {/* No `onClaimed`: the claim finishes on Google's side now, so this
+                                page is left rather than updated. The callback clears the spent
+                                invitation and lands the new owner on their manage page. */}
+                            <ClaimPanel slug={slug} status={claim} claimToken={claimToken} />
                         </div>
                     )}
                 </div>

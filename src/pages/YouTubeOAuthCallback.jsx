@@ -7,6 +7,7 @@ import { useToast } from '../contexts/ToastContext';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { useCompleteYouTubeOAuth } from '@/hooks/useChannelYouTube';
 import { describeError } from '@/lib/describeError';
+import { forgetClaimInvite } from '@/lib/claim';
 import {
     forgetOAuthReturn,
     manageYouTubePath,
@@ -21,8 +22,11 @@ import { t } from '@/i18n';
  * <p>A page of its own rather than a query parameter on the manage page, because the redirect URI
  * is registered on the Google client character for character and must not carry a slug. On success
  * it forwards straight to the channel's YouTube tab; it only renders anything of its own when the
- * sign-in did not work, and then it always offers the way back — where the description token still
- * works whatever went wrong here.
+ * sign-in did not work, and then it always offers the way back.
+ *
+ * <p><b>There is nothing behind a failure here any more.</b> This page used to tell whoever landed
+ * on it that the description token still worked. It does not — Google sign-in is the only proof —
+ * so the copy says to try again rather than pointing at a method that no longer exists.
  */
 function YouTubeOAuthCallback() {
     usePageMeta({ title: t('youtubeOAuth.title') });
@@ -56,7 +60,12 @@ function YouTubeOAuthCallback() {
         complete({ code: outcome.code, state: outcome.state })
             .then((data) => {
                 forgetOAuthReturn();
-                showToast(t('youtubeOAuth.success'), 'success');
+                // The invitation is spent the moment the claim lands, and this is now the only
+                // place that can say so: the token path used to do it from the channel page, and
+                // that path is gone. Left behind, a stale invite keeps the claim offer rendering
+                // for a channel this viewer already owns.
+                if (data.claimed) forgetClaimInvite(data.slug);
+                showToast(t(data.claimed ? 'youtubeOAuth.claimed' : 'youtubeOAuth.success'), 'success');
                 navigate(manageYouTubePath(data.slug), { replace: true });
             })
             .catch((error) => {
@@ -80,7 +89,7 @@ function YouTubeOAuthCallback() {
                         <XCircle className="mx-auto text-red-600 dark:text-red-400" size={48} />
                         <h2 className="text-xl font-bold mt-4">{t('youtubeOAuth.failedHeading')}</h2>
                         <p className="text-text-muted mt-2" dir="auto">{failure}</p>
-                        <p className="text-sm text-text-muted mt-2">{t('youtubeOAuth.tokenStillWorks')}</p>
+                        <p className="text-sm text-text-muted mt-2">{t('youtubeOAuth.tryAgain')}</p>
                         {/* The CHANNEL page, not the manage page. This branch is also where a
                             failed claim lands — someone proving a seeded channel is theirs who
                             signed in with the wrong Google account — and they do not own the

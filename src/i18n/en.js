@@ -569,14 +569,7 @@ export const en = {
             linkedChannel: 'Linked YouTube channel',
             withGoogle: 'Prove it by signing in with Google',
             withGoogleHint: 'The quickest and most reliable way: just sign in with the account that owns the channel.',
-            withToken: 'Or prove it through the channel description',
-            withTokenOnly: 'Prove it through the channel description',
-            tokenStep1: 'Copy this code:',
-            tokenStep2: 'Put it in your YouTube channel description and save.',
-            tokenStep3: 'Then press "Check". You can remove the code once the check succeeds.',
-            getToken: 'Get the code',
-            check: 'Check',
-            notYet: 'We have not found the code in the channel description yet. YouTube can take a minute — save the description, then try again.',
+            unavailable: 'Taking channels over is not available on this platform right now. Get in touch and we will sort it out.',
             success: 'Channel taken over. It is yours now.',
             failed: 'Could not take the channel over',
         },
@@ -602,7 +595,8 @@ export const en = {
         failedHeading: 'Verification did not complete',
         denied: 'You cancelled the Google sign-in, so nothing was verified.',
         invalidLink: 'The return link from Google is not valid, or is incomplete.',
-        tokenStillWorks: 'You can always verify by putting the code in your channel description instead.',
+        tryAgain: 'Try signing in again with the Google account that manages the channel.',
+        claimed: 'The channel has been transferred to you',
         backToChannel: 'Back to the YouTube tab',
     },
 
@@ -628,28 +622,18 @@ export const en = {
         foundChannel: 'Found the channel: {title}',
 
         verifyHeading: 'Prove you own the channel',
+        // No steps any more: signing in IS the method, and it happens on Google's screen. What
+        // this carries instead is the reassurance the old steps carried by being visible — that
+        // nothing on the owner's YouTube channel is touched.
+        verifyIntro: 'Prove the channel is yours by signing in with the Google account that manages it. We change nothing on your channel, and we read only the name of the channel that account manages.',
         // Spells out where the description actually lives: "add it to your channel description"
         // assumes the owner knows that means YouTube Studio → Customisation → Basic info, which
         // is three levels deep and not called "description" at the top level.
-        verifyIntro: 'To prove the channel is yours, put the code below in your YouTube channel description. In practice nobody else will see it, and you can remove it as soon as the check succeeds.',
-        verifyStep1: '1. Copy the code:',
-        verifyStep2: '2. Open YouTube Studio → Customisation → Basic info, paste it into the "Description" box, and press "Publish".',
-        verifyStep3: '3. Come back here and press "Check".',
-        verifyStep4: '4. Once the check succeeds you can remove the code from your description.',
-        openStudio: 'Open YouTube Studio',
         // YouTube's API can lag a minute behind a save; without saying so, a correct attempt reads
         // as a failure and people redo work they already did right.
-        verifyPatience: 'If the check does not succeed straight away, wait a minute and try again \u2014 YouTube needs time to update its data.',
-        copyToken: 'Copy code',
-        tokenCopied: 'Code copied',
-        tokenCopyHint: 'Press the code to copy it',
         // Clipboard access is refused outside a secure context and by some privacy settings. The
         // code is selected for them, so copying is one keystroke rather than a careful drag.
-        tokenCopyManually: 'The code is selected \u2014 copy it manually (Ctrl+C)',
-        verify: 'Check',
-        verifying: 'Checking...',
         // The overwhelmingly common failure: YouTube's API has not caught up with the save yet.
-        notFoundYet: 'We have not found the code in the channel description yet. YouTube can take a minute \u2014 try again.',
         verified: 'Your ownership of this channel is verified',
         verifiedByAdmin: 'This channel was linked by the platform team',
 
@@ -657,23 +641,26 @@ export const en = {
             button: 'Verify with a Google account',
             redirecting: 'Taking you to Google...',
             hintUnlinked: 'The quickest way: sign in with the Google account that manages your channel, and we link and verify it in one step without changing anything on YouTube.',
-            hintLinked: 'Sign in with the Google account that manages this channel and you will not need to edit its description.',
+            hintLinked: 'Sign in with the Google account that manages this channel and you will not need to change anything on it.',
             hintUpgrade: 'If you own the channel, sign in with the Google account that manages it to prove ownership yourself \u2014 that is what lets you upload original files.',
-            orManual: 'Or link the channel by its URL and verify with a code in its description:',
-            orToken: 'Or put the verification code in the channel description:',
-            startFailed: 'Could not start verification with Google. Try again, or use the verification code.',
+            // Still "or", because the URL form below it remains a real second way to LINK a
+            // channel — it just does not verify one.
+            orManual: 'Or link the channel by its URL first:',
+            // There is no fallback behind this any more, so an owner on a deployment with no
+            // OAuth client cannot verify at all. It points at the platform, not at them.
+            unavailable: 'Verifying with Google is not available on this platform right now. Get in touch and we will enable it for your channel.',
+            startFailed: 'Could not start verification with Google. Try again in a moment.',
         },
 
         // Admin-only. Worded as an assertion the admin is making, not as a step being skipped \u2014
         // it is a different check, not a shortcut past one, and it is recorded as such.
         adminAttest: 'Link as platform admin',
         adminAttesting: 'Linking...',
-        adminAttestHint: 'Platform team only: for a channel created on its owner\u2019s behalf, where a verification code cannot be added to their description.',
+        adminAttestHint: 'Platform team only: for a channel created on its owner\u2019s behalf, where we cannot sign in with their Google account.',
         adminAttestWarning: 'An admin link permits importing only. Uploading the original file in place of a YouTube link needs the channel owner\u2019s own verification.',
         adminAttestFailed: 'Could not link it. Check the URL and try again.',
         // The "check" button's own failure \u2014 the request never got an answer worth reading. Not
         // the same as a check that ran and found no code.
-        checkFailed: 'Could not check just now. Try again shortly.',
 
         /**
          * Confirming that an imported catalogue's metadata is the owner's own work.

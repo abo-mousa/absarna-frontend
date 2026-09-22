@@ -350,8 +350,11 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   presigned URL is a bearer credential, so `BookCard` enables the query on pointer-enter/focus.
 - **`YouTubeImportPanel`** — three states in one panel (not linked → linked → verified), polls only
   while `RUNNING`, and must treat `PARTIAL` as *paused, press resume* rather than an error.
-  "Verify with Google" appears **only when the status says `oauthAvailable`**, above the token steps
-  and never instead of them — the token is the fallback while the backend has OAuth switched off.
+  **"Verify with Google" is the whole of verification**, and appears only when the status says
+  `oauthAvailable`. A description-token flow used to sit under it as a fallback and is gone with
+  the backend's; when `oauthAvailable` is false there is now nothing behind it, so the panel (and
+  `ClaimPanel`) **says the deployment cannot verify** rather than rendering a button that fails on
+  the first press.
   It leaves the SPA for Google and returns through `pages/YouTubeOAuthCallback` at
   `/youtube/oauth/callback`, a path registered verbatim on the Google client: **don't move it**.
   The page strips the one-time code off the URL before doing anything else (history, RUM), and

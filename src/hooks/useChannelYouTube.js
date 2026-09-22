@@ -9,13 +9,13 @@ import { useUserScope } from './useUserScope';
  * <p>Every call returns the same flattened state object — verification and the latest import run
  * together — so each mutation can write straight into the query cache and the panel never renders
  * a half-updated view. That matters more than usual here because the flow spans an excursion to
- * another website: the owner leaves to edit their YouTube description and comes back, and the
- * state they return to has to be exactly the state they left.
+ * another website: the owner leaves for Google's consent screen and comes back, and the state
+ * they return to has to be exactly the state they left.
  */
 
-// Owner-scoped: what this returns includes a verification token minted for one owner, so it
-// must not survive into the next session on a shared machine. Scope is the last segment, so
-// `['channel-youtube', slug]` still matches it as a prefix.
+// Owner-scoped: this is one owner's view of their own channel, including whether it is verified
+// and what an import did, so it must not survive into the next session on a shared machine.
+// Scope is the last segment, so `['channel-youtube', slug]` still matches it as a prefix.
 const key = queryKeys.channelYouTube;
 
 export const useChannelYouTube = (slug, enabled = true) => {
@@ -33,7 +33,13 @@ export const useChannelYouTube = (slug, enabled = true) => {
     });
 };
 
-/** Resolves what the owner typed and returns the token to publish. */
+/**
+ * Resolves what the owner typed and links the channel to the YouTube channel it names.
+ *
+ * <p>Linking is not verifying — it records which channel is claimed, and Google sign-in is what
+ * proves it. An owner with no link yet can skip this entirely: signing in takes whichever channel
+ * the account controls.
+ */
 export const useLinkYouTubeChannel = (slug) => {
     const queryClient = useQueryClient();
     const scope = useUserScope();
@@ -44,25 +50,13 @@ export const useLinkYouTubeChannel = (slug) => {
     });
 };
 
-/** Re-reads the YouTube channel description looking for the token. */
-export const useCheckYouTubeVerification = (slug) => {
-    const queryClient = useQueryClient();
-    const scope = useUserScope();
-    return useMutation({
-        mutationFn: async () =>
-            (await api.post(`/channels/${slug}/youtube/verification/check`)).data,
-        // Not an error when the token isn't there yet — `verified: false` is the answer, and the
-        // caller renders "try again in a minute" rather than a failure.
-        onSuccess: (data) => queryClient.setQueryData(key(slug, scope), data),
-    });
-};
-
 /**
  * Starts "verify with Google": asks the backend for Google's consent URL. The caller navigates the
  * browser there — nothing is cached, because the next thing that happens is leaving the SPA.
  *
- * <p>Offered only when the status carries `oauthAvailable`. When it does not (no OAuth client, or
- * switched off while Google has not approved the app), the description token is the whole flow.
+ * <p>Offered only when the status carries `oauthAvailable`. When it does not, the deployment has
+ * no OAuth client configured and there is no longer a fallback behind it — the panel says so
+ * rather than showing a button that cannot work.
  */
 export const useStartYouTubeOAuth = (slug) =>
     useMutation({

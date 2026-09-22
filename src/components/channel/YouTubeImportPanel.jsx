@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { Link2, Check, Copy, RefreshCw, ShieldCheck } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link2, Check, RefreshCw, ShieldCheck } from 'lucide-react';
 import { Input, Button, Spinner } from '@/components/ui';
 import { useToast } from '@/contexts/ToastContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,7 +9,6 @@ import { adoptionRemainingLine, adoptionState } from './MetadataAdoptionView';
 import {
     useChannelYouTube,
     useLinkYouTubeChannel,
-    useCheckYouTubeVerification,
     useStartYouTubeImport,
     useAttestYouTubeChannel,
     useStartYouTubeOAuth,
@@ -228,7 +227,6 @@ function YouTubeImportPanel({ slug, onOpenAdoption }) {
 
     const { data: state, isLoading } = useChannelYouTube(slug);
     const link = useLinkYouTubeChannel(slug);
-    const check = useCheckYouTubeVerification(slug);
     const startImport = useStartYouTubeImport(slug);
     const attest = useAttestYouTubeChannel(slug);
     const startOAuth = useStartYouTubeOAuth(slug);
@@ -244,15 +242,6 @@ function YouTubeImportPanel({ slug, onOpenAdoption }) {
             setSource((current) => current || state.youtubeSource);
         }
     }, [state?.youtubeSource, state?.youtubeChannelId]);
-    // Only after a check that came back unverified — not on first render, where the owner has not
-    // done anything yet and "we couldn't find it" would be an accusation rather than a hint.
-    const [checkedAndMissing, setCheckedAndMissing] = useState(false);
-    // Mirrors ShareButton: the icon becomes a tick for a moment, so the confirmation is where the
-    // click was rather than only in a toast at the edge of the screen.
-    const [copied, setCopied] = useState(false);
-    const copiedTimer = useRef(null);
-    const tokenRef = useRef(null);
-    useEffect(() => () => clearTimeout(copiedTimer.current), []);
 
     if (isLoading) {
         return <div className="bg-surface p-6 rounded-lg border border-border-light"><Spinner /></div>;
@@ -264,28 +253,6 @@ function YouTubeImportPanel({ slug, onOpenAdoption }) {
             await link.mutateAsync(source.trim());
         } catch {
             showToast(t('youtube.linkFailed'), 'error');
-        }
-    };
-
-    /**
-     * "Check" — ask the backend to re-read the channel description for the token.
-     *
-     * <p>The catch is the whole point. `mutateAsync` rejects on any failure, and with nothing here
-     * the rejection was unhandled: a 503 from a spent daily quota, or a dropped connection, left
-     * the owner pressing a button that did nothing at all and said nothing either — the one
-     * outcome indistinguishable from the app being broken. `describeError` words the backend's
-     * `reason` (`YOUTUBE_QUOTA_EXHAUSTED` is the likely one, and it is not a fault anybody should
-     * sit and wait out) and falls back to our own sentence.
-     *
-     * <p>`checkedAndMissing` is deliberately NOT set on a failure: it drives the "the token is not
-     * in your description yet" notice, and the check never got far enough to have an opinion.
-     */
-    const handleCheck = async () => {
-        try {
-            const result = await check.mutateAsync();
-            setCheckedAndMissing(!result.verified);
-        } catch (error) {
-            showToast(describeError(error, t('youtube.checkFailed')), 'error');
         }
     };
 
@@ -326,7 +293,7 @@ function YouTubeImportPanel({ slug, onOpenAdoption }) {
 
     /**
      * Offered only when the backend says the deployment has it (`oauthAvailable`). When it does not
-     * — no OAuth client yet, or switched off while Google has not approved the app — the token
+     * — no OAuth client configured — nothing
      * steps are the whole flow, so there is no disabled button explaining a feature nobody can use.
      */
     const googleVerify = (hint) =>
@@ -362,37 +329,6 @@ function YouTubeImportPanel({ slug, onOpenAdoption }) {
         </div>
     );
 
-    /**
-     * Copies the token, and degrades to selecting it when the clipboard is unavailable.
-     *
-     * <p>`navigator.clipboard` requires a secure context and can be refused by privacy settings.
-     * This used to swallow that failure silently: the owner clicked, nothing happened, and there
-     * was no hint that they should select the text by hand. Selecting it for them turns the
-     * fallback into one keystroke instead of a careful drag across a random-looking string.
-     */
-    const copyToken = async () => {
-        try {
-            await navigator.clipboard.writeText(state.token);
-            setCopied(true);
-            clearTimeout(copiedTimer.current);
-            copiedTimer.current = setTimeout(() => setCopied(false), 2000);
-            showToast(t('youtube.tokenCopied'), 'success');
-        } catch {
-            selectToken();
-            showToast(t('youtube.tokenCopyManually'), 'error');
-        }
-    };
-
-    /** Puts the whole token in the selection, so the manual path is Ctrl+C and nothing else. */
-    const selectToken = () => {
-        const node = tokenRef.current;
-        if (!node || !window.getSelection) return;
-        const range = document.createRange();
-        range.selectNodeContents(node);
-        const selection = window.getSelection();
-        selection.removeAllRanges();
-        selection.addRange(range);
-    };
 
     return (
         <div className="grid gap-4 bg-surface p-6 rounded-lg border border-border-light">
@@ -441,71 +377,21 @@ function YouTubeImportPanel({ slug, onOpenAdoption }) {
                 </div>
             )}
 
-            {/* Unverified: the token and what to do with it. */}
-            {state?.youtubeChannelId && !state.verified && state.token && (
+            {/* Linked but unverified: Google sign-in, which is the whole of it now. */}
+            {state?.youtubeChannelId && !state.verified && (
                 <div className="grid gap-2 p-4 rounded-md bg-surface-hover border border-border">
                     <strong className="text-sm">{t('youtube.verifyHeading')}</strong>
-                    {state.oauthAvailable && (
+                    {state.oauthAvailable ? (
                         <>
+                            <p className="text-sm text-text-secondary">{t('youtube.verifyIntro')}</p>
                             {googleVerify(t('youtube.oauth.hintLinked'))}
-                            <p className="text-sm text-text-secondary pt-2 mt-1 border-t border-border">
-                                {t('youtube.oauth.orToken')}
-                            </p>
                         </>
+                    ) : (
+                        /* No OAuth client on this deployment. There is no second method behind it
+                           any more, so this is a dead end for the owner and saying so is the only
+                           honest thing on screen — an empty box reads as a page that failed. */
+                        <p className="text-sm text-gold">{t('youtube.oauth.unavailable')}</p>
                     )}
-                    <p className="text-sm text-text-secondary">{t('youtube.verifyIntro')}</p>
-                    <p className="text-sm text-text-secondary">{t('youtube.verifyStep1')}</p>
-                    {/* The whole row copies, not just the icon. On a phone, tapping a 12-point
-                        random string to select it is the fiddliest gesture in this flow, and the
-                        button beside it is easy to miss. */}
-                    <div className="flex items-center gap-2">
-                        <button
-                            type="button"
-                            onClick={copyToken}
-                            title={t('youtube.copyToken')}
-                            className="flex-1 min-w-0 text-start px-3 py-2 rounded-md bg-surface border border-border
-                                hover:border-primary transition-colors cursor-pointer"
-                        >
-                            <code ref={tokenRef} dir="ltr" className="text-sm block overflow-x-auto">
-                                {state.token}
-                            </code>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={copyToken}
-                            title={t('youtube.copyToken')}
-                            aria-label={t('youtube.copyToken')}
-                            className={`p-2.5 rounded-md text-white flex-shrink-0 transition-colors ${
-                                copied ? 'bg-emerald-600' : 'bg-primary'
-                            }`}
-                        >
-                            {copied ? <Check size={16} /> : <Copy size={16} />}
-                        </button>
-                    </div>
-                    <p className="text-xs text-text-muted">{t('youtube.tokenCopyHint')}</p>
-                    <p className="text-sm text-text-secondary">{t('youtube.verifyStep2')}</p>
-                    {/* Straight to the page that holds the description, rather than leaving the
-                        owner to find Customisation → Basic info themselves. Deep-linked by channel
-                        id, which is exactly what we just resolved. */}
-                    <a
-                        href={`https://studio.youtube.com/channel/${state.youtubeChannelId}/editing/details`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-primary font-semibold w-fit hover:underline"
-                    >
-                        {t('youtube.openStudio')} ↗
-                    </a>
-                    <p className="text-sm text-text-secondary">{t('youtube.verifyStep3')}</p>
-                    <p className="text-sm text-text-muted">{t('youtube.verifyStep4')}</p>
-
-                    {checkedAndMissing && (
-                        <p className="text-sm text-gold">{t('youtube.notFoundYet')}</p>
-                    )}
-                    <p className="text-xs text-text-muted">{t('youtube.verifyPatience')}</p>
-
-                    <Button onClick={handleCheck} disabled={check.isPending} className="w-fit">
-                        {check.isPending ? t('youtube.verifying') : t('youtube.verify')}
-                    </Button>
 
                     {isAdmin && (
                         <div className="pt-3 mt-1 border-t border-border">
@@ -530,8 +416,7 @@ function YouTubeImportPanel({ slug, onOpenAdoption }) {
                 <p className="text-xs text-text-muted">{t('youtube.adminAttestWarning')}</p>
             )}
 
-            {/* The only route from an admin link to the owner's own: attesting clears the token, so
-                the description method has nothing to offer this owner. Hidden for the admin who
+            {/* The only route from an admin link to the owner's own. Hidden for the admin who
                 made the link — it is the owner's Google account that has to sign in. */}
             {state?.verifiedBy === 'ADMIN' && !isAdmin && googleVerify(t('youtube.oauth.hintUpgrade'))}
 

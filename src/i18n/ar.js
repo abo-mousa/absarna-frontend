@@ -794,21 +794,11 @@ export const ar = {
             linkedChannel: 'قناة يوتيوب المرتبطة',
             withGoogle: 'أثبت عبر تسجيل الدخول بجوجل',
             withGoogleHint: 'الأسرع والأدق: يكفي أن تسجّل الدخول بالحساب الذي يملك القناة.',
-            // Two wordings for one step, picked by whether Google sign-in is offered above it.
-            // With OAuth switched off there is no first option for «أو» to follow, and a heading
-            // that opens with a dangling "or" reads as a page with something missing from it —
-            // which, on the deployment where this is the ONLY way to claim, is the worst possible
-            // impression to give of the only route available.
-            withToken: 'أو أثبت عبر وصف القناة',
-            withTokenOnly: 'أثبت عبر وصف القناة',
-            tokenStep1: 'انسخ هذا الرمز:',
-            tokenStep2: 'ضعه في وصف قناتك على يوتيوب واحفظ.',
-            tokenStep3: 'ثم اضغط «تحقّق». يمكنك حذف الرمز بعد نجاح التحقق.',
-            getToken: 'احصل على الرمز',
-            check: 'تحقّق',
-            // A check that did not find the token. Deliberately not an error: the usual cause is
-            // that YouTube's API has not caught up with a description saved a minute ago.
-            notYet: 'لم نجد الرمز في وصف القناة بعد. قد يستغرق يوتيوب دقيقة — احفظ الوصف ثم حاول مرة أخرى.',
+            // Google sign-in is the only proof, so a deployment without an OAuth client cannot
+            // take claims at all. This says so plainly instead of leaving an empty panel, which
+            // reads as a page that failed to load — and it points at the platform rather than at
+            // the reader, because there is nothing for them to fix.
+            unavailable: 'استلام القنوات غير متاح حالياً على هذه المنصة. تواصل معنا وسنتولى الأمر.',
             success: 'تم استلام القناة. أصبحت الآن قناتك.',
             failed: 'تعذر استلام القناة',
         },
@@ -827,7 +817,13 @@ export const ar = {
         failedHeading: 'لم يكتمل التحقق',
         denied: 'ألغيت تسجيل الدخول بحساب Google، فلم يتم التحقق.',
         invalidLink: 'رابط العودة من Google غير صالح أو ناقص.',
-        tokenStillWorks: 'يمكنك دائماً التحقق بوضع الرمز في وصف القناة بدلاً من ذلك.',
+        // Replaced `tokenStillWorks`, which pointed at a description-token method that no longer
+        // exists. Nothing stands behind a failure here now, so the only honest thing to say is
+        // "try again" — naming a second route the reader cannot take is worse than saying little.
+        tryAgain: 'حاول تسجيل الدخول مرة أخرى بحساب Google الذي يدير القناة.',
+        // A claim is a transfer, not just a verification: the reader now OWNS this channel. Saying
+        // «تم التحقق» for it would undersell what just happened to someone who had been waiting.
+        claimed: 'تم نقل ملكية القناة إليك',
         backToChannel: 'العودة إلى تبويب يوتيوب',
     },
 
@@ -903,56 +899,36 @@ export const ar = {
         foundChannel: 'وجدنا القناة: {title}',
 
         verifyHeading: 'أثبت ملكيتك للقناة',
-        // Spells out where the description actually lives. "Add it to your channel description"
-        // assumes the owner knows that this means YouTube Studio → Customisation → Basic info,
-        // which is three levels deep and not called "description" at the top level.
-        verifyIntro: 'لإثبات أنك صاحب القناة، ضع الرمز التالي في وصف قناتك على يوتيوب. لن يراه أحد غيرك عملياً، ويمكنك حذفه فور نجاح التحقق.',
-        verifyStep1: '١. انسخ الرمز:',
-        verifyStep2: '٢. افتح يوتيوب استوديو ← التخصيص ← معلومات أساسية، والصقه في خانة "الوصف"، ثم اضغط "نشر".',
-        verifyStep3: '٣. ارجع إلى هنا واضغط "تحقق".',
-        verifyStep4: '٤. بعد نجاح التحقق يمكنك حذف الرمز من وصف قناتك.',
-        openStudio: 'افتح يوتيوب استوديو',
-        // YouTube's API can lag a minute or so behind a save; without saying so, a correct attempt
-        // reads as a failure and people re-do work they already did right.
-        verifyPatience: 'إن لم ينجح التحقق فوراً، انتظر دقيقة ثم أعد المحاولة — يوتيوب يحتاج وقتاً لتحديث البيانات.',
-        copyToken: 'نسخ الرمز',
-        tokenCopied: 'تم نسخ الرمز',
-        tokenCopyHint: 'اضغط على الرمز لنسخه',
-        // Clipboard access is refused outside a secure context and by some privacy settings.
-        // The token is selected for them, so copying is one keystroke rather than a careful drag.
-        tokenCopyManually: 'تم تحديد الرمز — انسخه يدوياً (Ctrl+C)',
-        verify: 'تحقق',
-        verifying: 'جاري التحقق...',
-        // The overwhelmingly common failure: YouTube's API hasn't caught up with the save yet.
-        // Saying "failed" would send people to re-check work they already did correctly.
-        notFoundYet: 'لم نجد الرمز في وصف القناة بعد. قد يستغرق يوتيوب دقيقة، حاول مرة أخرى.',
+        // No steps any more: signing in IS the method, and it happens on Google's screen. What
+        // this has to carry instead is the reassurance the old steps carried by being visible —
+        // that nothing on the owner's YouTube channel is touched.
+        verifyIntro: 'أثبت ملكيتك بتسجيل الدخول بحساب Google الذي يدير القناة. لا نعدّل شيئاً على قناتك، ولا نطّلع إلا على اسم القناة التي يديرها الحساب.',
         verified: 'تم التحقق من ملكيتك لهذه القناة',
         verifiedByAdmin: 'تم ربط هذه القناة بواسطة إدارة المنصة',
 
-        // "Verify with Google". Shown only when the deployment offers it; the token steps are the
-        // fallback and stay on screen beneath it.
+        // "Verify with Google" — the only way an owner proves a channel is theirs.
         oauth: {
             button: 'تحقق عبر حساب Google',
             redirecting: 'جاري الانتقال إلى Google...',
             hintUnlinked: 'الطريقة الأسرع: سجّل الدخول بحساب Google الذي يدير قناتك، فنربطها ونتحقق منها في خطوة واحدة دون تعديل أي شيء على يوتيوب.',
-            hintLinked: 'سجّل الدخول بحساب Google الذي يدير هذه القناة، ولن تحتاج إلى تعديل وصفها.',
+            hintLinked: 'سجّل الدخول بحساب Google الذي يدير هذه القناة، ولن تحتاج إلى تعديل أي شيء فيها.',
             hintUpgrade: 'إن كنت صاحب القناة، سجّل الدخول بحساب Google الذي يديرها لتثبت ملكيتك بنفسك، فيصبح بإمكانك رفع الملفات الأصلية.',
-            orManual: 'أو اربط القناة برابطها وتحقق برمز في وصفها:',
-            orToken: 'أو ضع رمز التحقق في وصف القناة:',
-            startFailed: 'تعذر بدء التحقق عبر Google. حاول مرة أخرى أو استخدم رمز التحقق.',
+            // Still «أو», because the URL form below it remains a real second way to LINK a
+            // channel — it just does not verify one.
+            orManual: 'أو اربط القناة برابطها أولاً:',
+            // There is no fallback behind this any more, so an owner on a deployment with no
+            // OAuth client cannot verify at all. It points at the platform, not at them.
+            unavailable: 'التحقق عبر Google غير متاح حالياً على هذه المنصة. تواصل معنا حتى نفعّله لقناتك.',
+            startFailed: 'تعذر بدء التحقق عبر Google. حاول مرة أخرى بعد قليل.',
         },
 
         // Admin-only. Worded as an assertion the admin is making, not as a step being skipped —
         // it is a different check, not a shortcut past one, and it is recorded as such.
         adminAttest: 'ربط بواسطة الإدارة',
         adminAttesting: 'جاري الربط...',
-        adminAttestHint: 'للإدارة فقط: يُستخدم عند إنشاء قناة نيابة عن صاحبها، حيث لا يمكن إضافة رمز التحقق إلى وصف قناته.',
+        adminAttestHint: 'للإدارة فقط: يُستخدم عند إنشاء قناة نيابة عن صاحبها، حيث لا يمكن تسجيل الدخول بحسابه.',
         adminAttestWarning: 'الربط بواسطة الإدارة يسمح بالاستيراد فقط. رفع الملف الأصلي بدل رابط يوتيوب يتطلب تحقق صاحب القناة نفسه.',
         adminAttestFailed: 'تعذر الربط. تأكد من الرابط وحاول مرة أخرى.',
-        // The "check" button's own failure — the request never got an answer worth reading. Not
-        // the same as a check that ran and found no token, which is `tokenMissing` in place.
-        checkFailed: 'تعذر التحقق الآن. حاول مرة أخرى بعد قليل.',
-
         // Confirming that an imported catalogue's metadata is the owner's own work.
         //
         // WHY THE PLATFORM ASKS. Titles read through YouTube's API may only be kept for thirty
