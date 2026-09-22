@@ -5,6 +5,7 @@ import { ChevronBack, ChevronForward } from '@/components/ui/DirectionalIcon';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { formatDigits, normalizeDigits, t } from '@/i18n';
+import { normalizeArabic } from '@/lib/arabic';
 
 // Bundled locally (not the browser's native PDF plugin) so rendering is identical across
 // Chrome/Firefox/Safari/etc — this is the whole point of using react-pdf over <object>.
@@ -95,7 +96,6 @@ function PdfReader({ fileUrl, initialPage = 1, onPageChange, onPageChangeImmedia
     const [pageHeight, setPageHeight] = useState(0);
     const [panel, setPanel] = useState(null); // null | 'toc' | 'search'
     const [outline, setOutline] = useState(null); // null = not fetched yet, [] = fetched, none found
-    const [outlineLoading, setOutlineLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState(null);
     const [searching, setSearching] = useState(false);
@@ -207,24 +207,41 @@ function PdfReader({ fileUrl, initialPage = 1, onPageChange, onPageChangeImmedia
         setPanel(null);
     };
 
-    const togglePanel = async (name) => {
-        if (panel === name) {
-            setPanel(null);
-            return;
-        }
-        setPanel(name);
-        if (name === 'toc' && outline === null && pdfRef.current) {
-            setOutlineLoading(true);
+    const togglePanel = (name) => setPanel(panel === name ? null : name);
+
+    /**
+     * Reads the table of contents as soon as the document is open, rather than when the button is
+     * pressed.
+     *
+     * <p><b>So that the button can be absent when there is nothing behind it.</b> Fetching lazily
+     * meant the control had to be rendered before anyone knew whether it led anywhere, and plenty
+     * of books have no outline at all — pressing «المحتويات» to be told «لا توجد قائمة محتويات
+     * لهذا الملف» is a control that exists only to refuse.
+     *
+     * <p>It costs one call against the document catalog, which is metadata and not page content,
+     * so it does not touch the pages or the text layer. `resolveOutline` then turns each entry's
+     * destination into a page number, which is the part that needs the document.
+     *
+     * <p>Guarded on the pdf it started with, like the search below: opening another book while
+     * this is in flight must not write the old book's contents onto the new one.
+     */
+    useEffect(() => {
+        const pdf = pdfRef.current;
+        if (!numPages || !pdf || outline !== null) return;
+        let cancelled = false;
+        (async () => {
+            let resolved = [];
             try {
-                const raw = await pdfRef.current.getOutline();
-                setOutline(raw?.length ? await resolveOutline(pdfRef.current, raw) : []);
+                const raw = await pdf.getOutline();
+                if (raw?.length) resolved = await resolveOutline(pdf, raw);
             } catch {
-                setOutline([]);
-            } finally {
-                setOutlineLoading(false);
+                resolved = [];
             }
-        }
-    };
+            if (cancelled || pdfRef.current !== pdf) return;
+            setOutline(resolved);
+        })();
+        return () => { cancelled = true; };
+    }, [numPages, outline]);
 
     // Extracts every page's text once (cached in pageTextCacheRef) and searches the cache —
     // there's no pdfjs viewer's FindController available outside the full viewer widget react-pdf
@@ -232,7 +249,10 @@ function PdfReader({ fileUrl, initialPage = 1, onPageChange, onPageChangeImmedia
     // "which pages mention this" result list the reader can jump from.
     const runSearch = async (e) => {
         e.preventDefault();
-        const query = searchQuery.trim().toLocaleLowerCase();
+        // Folded the way `absarna_normalize_arabic` folds every server-side search: the four
+        // alefs together, alef maqsura into ya, ta marbuta into ha, and every mark dropped. A
+        // reader types «اسلامية» and the page says «إسلاميّة»; without this they do not meet.
+        const query = normalizeArabic(searchQuery.trim());
         if (!query || !pdfRef.current || !numPages) {
             setSearchResults(null);
             return;
@@ -250,7 +270,10 @@ function PdfReader({ fileUrl, initialPage = 1, onPageChange, onPageChangeImmedia
                 try {
                     const page = await pdf.getPage(i);
                     const content = await page.getTextContent();
-                    text = content.items.map((item) => item.str).join(' ').toLocaleLowerCase();
+                    // Both sides through the same fold, so the comparison is like for like — and
+                    // the NFKC inside it is what turns a PDF's pre-shaped presentation forms back
+                    // into the letters a reader actually typed.
+                    text = normalizeArabic(content.items.map((item) => item.str).join(' '));
                 } catch {
                     text = '';
                 }
@@ -277,16 +300,22 @@ function PdfReader({ fileUrl, initialPage = 1, onPageChange, onPageChangeImmedia
         <div className="flex flex-col items-center w-full">
             {numPages && (
                 <div className="flex items-center gap-2 mb-3 w-full justify-center flex-wrap">
-                    <button
-                        type="button"
-                        onClick={() => togglePanel('toc')}
-                        aria-pressed={panel === 'toc'}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-semibold transition-colors ${
-                            panel === 'toc' ? 'bg-primary-light text-primary' : 'bg-surface-hover text-text-secondary hover:text-text-primary'
-                        }`}
-                    >
-                        <List size={15} /> {t('pdfReader.contents')}
-                    </button>
+                    {/* Only when the book HAS a table of contents. Plenty do not, and a control
+                        whose only outcome is «لا توجد قائمة محتويات لهذا الملف» is one that exists
+                        to refuse — so the outline is read when the document opens (see the effect
+                        above) and this is absent rather than disappointing. */}
+                    {outline?.length > 0 && (
+                        <button
+                            type="button"
+                            onClick={() => togglePanel('toc')}
+                            aria-pressed={panel === 'toc'}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-semibold transition-colors ${
+                                panel === 'toc' ? 'bg-primary-light text-primary' : 'bg-surface-hover text-text-secondary hover:text-text-primary'
+                            }`}
+                        >
+                            <List size={15} /> {t('pdfReader.contents')}
+                        </button>
+                    )}
                     <button
                         type="button"
                         onClick={() => togglePanel('search')}
@@ -300,15 +329,11 @@ function PdfReader({ fileUrl, initialPage = 1, onPageChange, onPageChangeImmedia
                 </div>
             )}
 
+            {/* No loading or empty branch: this panel cannot be opened unless the button above
+                exists, and the button only exists once the outline is loaded and not empty. */}
             {panel === 'toc' && (
                 <div className="w-full max-w-[500px] mb-4 p-3.5 rounded-md border border-border-light bg-surface-hover max-h-[280px] overflow-y-auto">
-                    {outlineLoading ? (
-                        <p className="text-sm text-text-muted text-center py-3">{t('common.loading')}</p>
-                    ) : outline?.length ? (
-                        <OutlineList items={outline} onSelect={handleSelectFromPanel} />
-                    ) : (
-                        <p className="text-sm text-text-muted text-center py-3">{t('pdfReader.noContents')}</p>
-                    )}
+                    <OutlineList items={outline} onSelect={handleSelectFromPanel} />
                 </div>
             )}
 

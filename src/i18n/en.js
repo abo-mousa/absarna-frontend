@@ -502,7 +502,6 @@ export const en = {
         openInNewTab: 'Open the file in a new tab',
         contents: 'Contents',
         search: 'Search',
-        noContents: 'This file has no table of contents',
         searchPlaceholder: 'Search inside the file...',
         searching: 'Searching the file...',
         resultPage: 'Page {page}',

@@ -696,7 +696,6 @@ export const ar = {
         openInNewTab: 'افتح الملف في تبويب جديد',
         contents: 'المحتويات',
         search: 'بحث',
-        noContents: 'لا توجد قائمة محتويات لهذا الملف',
         searchPlaceholder: 'ابحث داخل الملف...',
         searching: 'جاري البحث في الملف...',
         resultPage: 'صفحة {page}',
