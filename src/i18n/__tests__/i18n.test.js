@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { currentLocale, direction, isRtl, setActiveLocale, t, tOptional } from '@/i18n';
+import { currentLocale, direction, isRtl, setActiveLocale, t, tData, tOptional } from '@/i18n';
 import { ar } from '@/i18n/ar';
 import { TRANSLATED, en } from '@/i18n/en';
 
@@ -162,6 +162,41 @@ describe('en.js against ar.js', () => {
  * file's other suites assert against `ar` and would start failing in whatever order vitest happened
  * to run them in.
  */
+/**
+ * The legal documents are the one part of the catalog that is structure rather than sentences, and
+ * the one part `t()` cannot serve. The bug this pins was invisible from the catalog: `en.js` was
+ * complete and correct, and the pages rendered Arabic anyway, because all three imported `{ ar }`
+ * and read `ar.legal.terms` out of it directly.
+ */
+describe('tData', () => {
+    afterEach(() => setActiveLocale('ar'));
+
+    it('returns the document for the active locale', () => {
+        setActiveLocale('en');
+        expect(tData('legal.terms')).toBe(en.legal.terms);
+        setActiveLocale('ar');
+        expect(tData('legal.terms')).toBe(ar.legal.terms);
+    });
+
+    it('serves all three documents in both languages', () => {
+        for (const locale of ['ar', 'en']) {
+            setActiveLocale(locale);
+            for (const name of ['privacy', 'terms', 'contact']) {
+                const doc = tData(`legal.${name}`);
+                expect(doc, `${name} in ${locale}`).toBeTruthy();
+                expect(doc.sections.length, `${name} sections in ${locale}`)
+                    .toBe(ar.legal[name].sections.length);
+            }
+        }
+    });
+
+    it('refuses to hand back a string, so a node caller never renders one', () => {
+        // `t()` answers with the key for a non-string; this is the mirror of that rule.
+        expect(tData('legal.contentsHeading')).toBeUndefined();
+        expect(tData('nothing.here')).toBeUndefined();
+    });
+});
+
 describe('the active locale', () => {
     afterEach(() => setActiveLocale('ar'));
 
@@ -172,11 +207,25 @@ describe('the active locale', () => {
         expect(isRtl()).toBe(false);
     });
 
-    it('falls back to Arabic for a key English does not have', () => {
+    /**
+     * <b>No dotted key can ever reach a screen on the English build.</b> This used to name a
+     * namespace that was deliberately untranslated and assert it rendered Arabic; every namespace
+     * is translated now, so there is no such example left to point at — and pinning one would mean
+     * pinning a gap, which is the opposite of what this file is for.
+     *
+     * <p>Walking every Arabic key under the English locale is the stronger property and it
+     * maintains itself: it passes today because `en.js` is complete, and it will still pass on the
+     * day somebody adds a key to `ar.js` alone, because `t()` falls back. What it refuses is the
+     * third case — a key in neither — which is the only one that puts `legal.terms.titel` in the
+     * middle of a page.
+     */
+    it('never renders a dotted key on the English build', () => {
         setActiveLocale('en');
-        // A namespace that is deliberately untranslated for now. Renders Arabic rather than the
-        // dotted key — legible, obviously untranslated, and safe.
-        expect(t('legal.terms.title')).toBe(ar.legal.terms.title);
+        const flat = (node, prefix = '') => Object.entries(node).flatMap(([key, value]) => {
+            const path = prefix ? `${prefix}.${key}` : key;
+            return typeof value === 'string' ? [path] : flat(value, path);
+        });
+        expect(flat(ar).filter((key) => t(key) === key)).toEqual([]);
     });
 
     it('still returns the key when neither catalog has it', () => {

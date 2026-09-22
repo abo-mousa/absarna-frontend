@@ -1525,6 +1525,395 @@ export const en = {
             },
         },
     },
+    /**
+     * The legal pages, translated. `sourceNotice` is the one string here with no counterpart in
+     * the Arabic document: it says which version governs, and `LegalDocument` renders it only when
+     * the page is being read in a language it was not written in. A translation of an operative
+     * text that does not say it is a translation is a second operative text.
+     */
+    legal: {
+        lastUpdated: 'Last updated: {date}',
+        lastUpdatedDate: '16 September 2026',
+        contentsHeading: 'On this page',
+        sourceNotice: 'These pages were written in Arabic. This English text is provided for convenience; where the two differ, the Arabic version is the one that governs.',
+
+        footer: {
+            navLabel: 'Site links',
+            privacy: 'Privacy Policy',
+            terms: 'Terms of Use',
+            contact: 'Contact us',
+            rights: '© {year} أَبْصَرْنا',
+        },
+
+        privacy: {
+            title: 'Privacy Policy',
+            metaDescription: 'What أَبْصَرْنا collects about you, why, where it is kept, and who sees it.',
+            intro: [
+                'This page describes what أَبْصَرْنا actually collects, not what platforms usually collect. Every clause here is written about behaviour that exists in the software itself: what you read here happens, and what you do not find here does not.',
+                'You can browse the platform, read the articles and watch the videos without creating an account. What follows sets out what is collected in both cases: with an account and without one.',
+            ],
+            sections: [
+                {
+                    id: 'account-data',
+                    heading: 'Account data',
+                    paragraphs: [
+                        'When you create an account we ask for a username, a password and your gender. Gender is required at registration and cannot be changed afterwards from within the platform; it is shown to you on your profile and to the platform team, and is neither displayed to visitors nor sent to any outside party.',
+                        'An email address is optional at registration, but it is necessary to activate the account, to recover your password if you forget it, and to open a channel — a channel cannot be opened without a verified address.',
+                        'Your password is stored hashed, and nobody — the platform team included — can read it or recover it. We also store the date your account was created and your role on the platform: reader, channel owner, or moderator.',
+                        'The following are entirely optional; you may add them or leave them empty:',
+                    ],
+                    bullets: [
+                        'Full name — shown in place of your username wherever you appear.',
+                        'Country — a two-letter country code only, no city and no address.',
+                        'A short bio — free text you write on your profile.',
+                        'A profile picture URL — a link to an image hosted elsewhere. The platform does not upload or store your picture; it stores the link and displays it.',
+                    ],
+                },
+                {
+                    id: 'email-use',
+                    heading: 'Email: what we send, and through whom',
+                    paragraphs: [
+                        'We send you two kinds of message and no others: an address-verification message, and a password-reset message. There is no newsletter, no marketing mail and no content notifications; there is nothing in the software that sends anything but these two.',
+                        'A verification link is valid for ten minutes, and a password-reset link for one hour and a single use. The brevity is deliberate: whoever holds the link holds the account.',
+                        'Mail is sent through a specialist outside provider that handles delivery on our behalf, which receives your address, your display name and the text of the message. Nothing else about your account or your activity reaches it.',
+                        'The number of requests is limited: three verification messages an hour, and three password-reset requests an hour.',
+                    ],
+                },
+                {
+                    id: 'activity',
+                    heading: 'Your activity on the platform',
+                    paragraphs: [
+                        'If you are signed in, the following is stored against your account. Your watch and reading histories are lists for your own convenience, not tracking logs: each is capped at two hundred entries with the oldest dropped automatically, and each is cleared in full with one press.',
+                    ],
+                    bullets: [
+                        'Watch history — the last two hundred videos you watched and where you stopped in each, so that "continue watching" works.',
+                        'Reading history — the same for books: the last two hundred, and the last page you reached.',
+                        'Saved items — what you saved to read or watch later.',
+                        'Likes, and your channel subscriptions.',
+                        'Your comments: their text, your display name and their date. Your email address at the time of writing is stored with the comment for administrative purposes; it is shown to no reader and does not leave with the comment’s data.',
+                    ],
+                },
+                {
+                    id: 'view-counts',
+                    heading: 'How the view counter is calculated',
+                    paragraphs: [
+                        'The counter under each video, book or article counts once per viewer per item, not once per page load. To tell viewers apart without tracking them, a "key" is built as follows.',
+                        'No cookie, advertising identifier or device fingerprint is involved in any of this. That is the substantive difference between this and an ordinary view counter.',
+                        'A channel owner’s own views of their own content are not counted, and neither are the views of platform moderators.',
+                    ],
+                    bullets: [
+                        'If you are signed in, the key is your account number, so one view is counted for the item even if you return to it a year later.',
+                        'If you are a visitor with no account, the key is a hash of three things together: today’s date, your IP address and your browser type. Because the date is part of the hash, your key changes every day, so today’s visit cannot be linked to yesterday’s.',
+                        'The IP address is not stored at all; what is stored is the hash alone, and it cannot be reversed.',
+                        'Rows for visitors without an account are deleted every night, so none survives more than two days.',
+                    ],
+                },
+                {
+                    id: 'ip-addresses',
+                    heading: 'IP addresses',
+                    paragraphs: [
+                        'The server uses your IP address in exactly two places and no third: rate-limiting requests, to protect against abuse and flooding, and building the view hash described above.',
+                        'In the first, the address stays in the server’s memory temporarily, is never written to a database, and is gone when the server restarts. In the second it is not stored at all; its hash is.',
+                        'One exception is worth stating: if an address exceeds the permitted request rate, a warning line containing that address is written to the server logs. Those logs are held on a monitoring server we run ourselves.',
+                    ],
+                },
+                {
+                    id: 'analytics',
+                    heading: 'Performance and error measurement',
+                    paragraphs: [
+                        'The application sends performance measurements for how quickly a page appears and responds, unexpected JavaScript errors, and video playback failures. The purpose is one thing: that we learn of a fault when it happens to a reader, rather than when it is reported some time later.',
+                        'The difference worth stating is that these measurements go to a server we run, not to an analytics company. There is no advertising tracker on the platform, no ad network and no third-party measurement tool.',
+                        'The page address is truncated before sending: everything after the question mark is removed, so no verification code, password-reset code or signed file link leaves your browser. No page text, page content or access token is sent.',
+                        'If measurement collection is not configured in this deployment, the module is disabled entirely and nothing at all is sent.',
+                    ],
+                },
+                {
+                    id: 'cookies',
+                    heading: 'Cookies and local storage',
+                    paragraphs: [
+                        'The platform sets no cookies, for tracking or for anything else; there is nothing on the server that creates a cookie at all.',
+                        'It does use your browser’s local storage, for things that concern your browser alone and never reach us: your access token after signing in, your choice of light or dark mode, the playback speed and volume you set in the player, and the state of an unfinished upload until you resume it.',
+                        'An access token is valid for an hour and is renewed with a refresh token valid for seven days. Signing out erases both from your browser.',
+                        'The YouTube player, however — on pages of imported videos alone — may store things of its own in your browser, over which we have no control. That player is not loaded at all without your permission; see the "YouTube" section.',
+                    ],
+                },
+                {
+                    id: 'your-content',
+                    heading: 'What you publish',
+                    paragraphs: [
+                        'If you open a channel, its name, description, logo and content are public, as is your display name as its owner. Any video, book, article or post you upload is public the moment you publish it, unless you hide it yourself.',
+                        'Comments are public, with your display name. Deleting your comment hides it from readers.',
+                        'Video and book files are kept in cloud storage and served over a content delivery network, and their links are unguessable.',
+                    ],
+                },
+                {
+                    id: 'moderation',
+                    heading: 'Review of uploaded content',
+                    paragraphs: [
+                        'Every video uploaded to the platform passes, before publication, through an automatic check for two things: music, and explicit content. The check runs on the file itself while it is being processed and does not leave our servers for any other party.',
+                        'If something is detected, the video may be held from view until a person from the platform team has reviewed it. The video’s owner alone sees the result of the check, in their channel dashboard; it is not shown to readers.',
+                        'This check applies to video alone. Books, articles and posts pass through no automatic check, and are reviewed by a person when a report arrives.',
+                    ],
+                },
+                {
+                    id: 'youtube',
+                    heading: 'YouTube: what we read from it, and what reaches it about you',
+                    paragraphs: [
+                        'This platform uses YouTube API Services to import channel content, and displays imported videos through YouTube’s own player. Google is therefore a party that receives data about you, and its handling of that data is governed by',
+                        ['what is set out in ', { text: 'Google’s Privacy Policy', href: 'https://policies.google.com/privacy' }, ' — over which we have no say and no control.'],
+                        'As for what reaches Google about you as a reader, this is the account of it: every imported video card displays its thumbnail from YouTube’s servers, which your browser requests directly from them — on the home page, in search results and on channel pages — before you have pressed anything. Sent to Google with that request are your IP address, your browser type and the page you came from. If you open an imported video’s page, the YouTube player is loaded as well. We use the "youtube-nocookie.com" domain, which reduces what is stored in your browser as cookies, but it does not prevent the requests themselves.',
+                        'None of that happens until you permit it. We ask on your first visit, and nothing is loaded from Google’s servers — neither a thumbnail nor the player — unless you agree. If you refuse, imported video cards appear with a substitute image of ours, the whole site carries on working, and you may play any one of those videos by agreeing at that player alone, whenever you wish.',
+                        'You may withdraw your permission at any time from the "Your choice about YouTube" link at the foot of every page, after which we ask you again and loading from Google stops. We store only your answer in your browser, so as not to repeat the question on every page; that storage is necessary to carry out your choice and so requires no permission.',
+                        'For videos uploaded to the platform directly, nothing about them reaches Google: their file is with us and they are served from our servers, and neither an image nor a player is requested from YouTube.',
+                        'As for what we read from YouTube, it is the publicly listed material alone: video titles, descriptions, speaker names, publication dates, durations, thumbnails and playlists. We read no statistics, no comments and nothing about any YouTube user.',
+                        'A channel’s owner — and they alone — may import it once, after proving they own it. Proof takes two routes: placing a code we issue them in their channel’s public description on YouTube, which we then read from there, and which involves their Google account not at all; or signing in with the Google account that manages the channel. The second is optional, may not be available in this deployment at all, and we ask it only of someone who chose it themselves.',
+                        ['If you choose to sign in with Google, we ask permission to see the name of your YouTube channel and nothing else, and once only: we ask Google "which channel does this account manage?" and then revoke the permission immediately, in the same moment. We store no token and keep no renewable access to your account, and we read neither your mail nor your private videos nor anything besides that. You can review the permissions you have granted, and withdraw them, at any time from ', { text: 'your Google account permissions page', href: 'https://myaccount.google.com/permissions' }, '.'],
+                        ['What we receive from Google’s APIs, our use and transfer of it, are governed by the ', { text: 'Google API Services User Data Policy', href: 'https://developers.google.com/terms/api-services-user-data-policy' }, ', including the Limited Use requirement. We use this data only in the platform functions visible to you, never sell it, never use it for advertising or for creditworthiness assessment, and transfer it to nobody except with your permission, where a law requires it, or as the platform’s own safety requires for detecting fraud or abuse.'],
+                    ],
+                },
+                {
+                    id: 'third-parties',
+                    heading: 'Parties that receive data',
+                    paragraphs: [
+                        'These are the categories of outside party the system deals with, and they are all there is. Among them there is no ad network, no payment gateway and no external analytics tool.',
+                        'We name them by category rather than by name. Anyone who wants the name of a particular provider, and the extent of what reaches it, may ask at the contact address and will be told.',
+                    ],
+                    bullets: [
+                        'A hosting provider — the servers the site runs on, and its database.',
+                        'A cloud storage provider and content delivery network — storing video and book files and serving them to readers, and managing the site’s domain.',
+                        'An email delivery provider — delivering the verification and password-reset messages.',
+                        'Google (YouTube) — in two respects: reading imported channels’ data at import time and at the channel owner’s request, which does not concern readers; and serving thumbnails and the player for imported videos, which every reader’s browser requests directly from Google’s servers. See the "YouTube" section above.',
+                    ],
+                },
+                {
+                    id: 'data-location',
+                    heading: 'Where data is kept, and where it travels',
+                    paragraphs: [
+                        'The servers and the database are in Germany, inside the European Union. That is where your account, your content and your activity on the platform are kept.',
+                        'Some of the parties named above — the storage and delivery-network provider, and the email provider — are companies based outside the European Union. Uploaded video and book files travel to the first, and your email address, display name and the text of the message to the second, and nothing more. Neither your watch history, nor your reading history, nor your password travels to either.',
+                    ],
+                },
+                {
+                    id: 'retention',
+                    heading: 'Retention and backups',
+                    paragraphs: [
+                        'Your account data and your content are kept for as long as the account exists.',
+                        'An exception is anything refused under the content rules: a video held or rejected for music or explicit content is deleted, with its files, two weeks after the last change in its state, even if the account remains. This is set out in detail in the Terms of Use.',
+                        'View-counter rows for visitors without an account are deleted every night and never exceed two days. Rows tied to a registered account remain, because they are what stops your view being counted more than once; they are a list of the item numbers you opened, and clearing your watch history does not erase them. If you want them deleted, write to us.',
+                        'An encrypted backup of the database is taken every night and kept in dedicated storage. This means that what is deleted from the database may remain in backups until their cycle completes.',
+                        'Server logs — which contain your account number with every request you send while signed in, and an IP address in the event of a rate limit being exceeded — are kept on the monitoring server we run.',
+                    ],
+                },
+                {
+                    id: 'your-rights',
+                    heading: 'Your rights, and deleting your account',
+                    paragraphs: [
+                        'From within the platform you can: edit your full name, bio, picture link and country; change your email address by confirming your current password; change your password; clear your watch history, reading history and saved items; remove likes and subscriptions; delete your comments; and hide or delete your channel’s content.',
+                        'You can delete your account yourself from the "Profile" page, by confirming your password. That deletes your account and personal details, your comments, your likes, your subscriptions, your saved items, your watch and reading histories, and your reports; and it deletes your channels with them, with every video, book, article and post in them, and removes their files from storage. The deletion is permanent and cannot be undone.',
+                        'After deletion the view counters on what you watched remain, because a counter is a cumulative total that identifies nobody in particular, and old comments written before comments were tied to accounts remain, since nothing links them to your account.',
+                        'You may also ask for a copy of what is stored about you, or for an error in it to be corrected, at the same address.',
+                    ],
+                },
+                {
+                    id: 'privacy-changes',
+                    heading: 'Changes to this policy',
+                    paragraphs: [
+                        'If anything described here changes, the text of the page is amended and the "last updated" date at the top of it is brought up to date. There is no other copy of this policy anywhere else.',
+                    ],
+                },
+                {
+                    id: 'privacy-contact',
+                    heading: 'Getting in touch about privacy',
+                    paragraphs: [
+                        'Everything above — asking for a copy, a correction, an account deletion, or a question about a clause — is addressed to the contact address given on the "Contact us" page.',
+                    ],
+                },
+            ],
+        },
+
+        terms: {
+            title: 'Terms of Use',
+            metaDescription: 'The terms for using أَبْصَرْنا: who may open a channel, what a publisher is answerable for, what may not be published, and how complaints are made.',
+            intro: [
+                'أَبْصَرْنا is a platform for publishing Islamic educational content: videos, books, articles and posts, organised into channels owned by the people who run them. By using the platform — with an account or without one — you agree to what is on this page.',
+                'It is written to be read. We have preferred clarity to fortification, because its reader is a teacher or a student of knowledge, not a legal department.',
+            ],
+            sections: [
+                {
+                    id: 'terms-content-rule',
+                    heading: 'What may be published: an Islamic platform',
+                    paragraphs: [
+                        'أَبْصَرْنا is an Islamic platform, and what is published on it is governed by religious rules, not by editorial taste nor by a policy revisited each season. Two plain consequences follow most visibly: music and instruments are not published, and sexual or explicit content is not published.',
+                        'These two are not a matter of ranking, nor a notice displayed beside the content, but a condition of publication itself: anything in which such a thing is detected is not shown to readers at all, and stays held until a person from the platform team has looked at it.',
+                        'What is refused — whether the automatic check held it or a reviewer rejected it — is not kept here indefinitely: it and its files are deleted two weeks after the last change in its state. The delay is deliberate and means one thing: it is its owner’s opportunity to replace the file with a sound one, and replacing the file voids every prior verdict on it and returns it to checking from the beginning.',
+                        'The period is counted from the last change in state, not from the day of the check. If a check held a video and a reviewer then looked at it months later and rejected it, the period begins on the day of rejection, not on the day it was held — otherwise the rejection would be a same-day deletion, leaving its owner nothing to do.',
+                        'Anything that could not be checked — because of a fault in the checking tools, for instance — is not included in this deletion, even though it remains held. A check that could not complete is not a verdict on the content, and deleting what has not yet been looked at wrongs its owner.',
+                    ],
+                },
+                {
+                    id: 'terms-content-rule-limits',
+                    heading: 'And the limits of that check',
+                    paragraphs: [
+                        'The automatic check is not complete, and we claim no such thing for it. Some things escape it — such as music accompanying speech with a singing voice — and some things it is uncertain about, so it records a preliminary note without holding the item.',
+                        'Among these is that a video carrying a preliminary note (such as possible background audio under speech) remains on display while it awaits review, because that note falls on most recitation recordings, so holding them would have meant holding most of the library on a suspicion that does not hold up.',
+                        'For that reason reporting was put within every reader’s reach: on videos, books, articles, posts and comments alike. Reports that arrive are looked at by a person. It is readers who see what the machine does not, and the attribution of a saying to a scholar who never said it is something no automatic check uncovers at all.',
+                    ],
+                },
+                {
+                    id: 'terms-accounts',
+                    heading: 'The account',
+                    paragraphs: [
+                        'An account is personal, and you are answerable for what happens through it. Keep your password safe, and if you see anything that troubles you, change it from your profile page.',
+                        'You may not impersonate anyone else in your username, display name or picture, nor give the impression of a scholarly standing or of an affiliation you do not hold.',
+                        'We may suspend an account that breaches these terms.',
+                    ],
+                },
+                {
+                    id: 'terms-channels',
+                    heading: 'Who may open a channel, and what they are answerable for',
+                    paragraphs: [
+                        'Opening a channel is available to any account holder with a verified email address. A new channel is not published immediately, but awaits the platform team’s approval; and the team may approve, refuse, or suspend an existing channel.',
+                        'A channel’s owner is answerable for everything published on it: the soundness of its attribution, its freedom from breaches, and the publication rights in it. The platform is not a co-publisher of what is in the channels.',
+                        'They are likewise answerable for the comments published on their channel, to the extent the management tools allow them.',
+                    ],
+                },
+                {
+                    id: 'terms-upload-rights',
+                    heading: 'The publisher’s declaration of rights in what they upload',
+                    paragraphs: [
+                        'By uploading any file — video, book or image — or publishing any text, you declare that you hold the right to publish it, or that you are properly authorised to do so, or that it is among what may lawfully be published.',
+                        'You declare that publishing it here infringes no right of an author, editor, publisher or publishing house. Ownership of what you publish remains yours; publishing it on the platform is permission for the platform to store, process and display it to readers within the service.',
+                        'We do not verify this in advance — nobody can — and instead act when a report arrives.',
+                    ],
+                },
+                {
+                    id: 'terms-prohibited',
+                    heading: 'What may not be published',
+                    paragraphs: [
+                        'Publishing the following on the platform is forbidden, in channel content and in comments alike:',
+                    ],
+                    bullets: [
+                        'Anything that infringes another’s rights, such as books, recordings or images published without their owners’ permission.',
+                        'Music and instruments, and audio clips and effects built on them.',
+                        'Sexual or explicit content, and anything approaching it.',
+                        'Calls to violence, declaring a named individual an unbeliever, or incitement against a person or a group.',
+                        'Insult, slander and defamation, and exposing people’s private affairs and personal data.',
+                        'Deception, fraud, disguised marketing and repeated messages.',
+                        'Falsely attributing a saying to a scholar or a book, and distorting quoted texts.',
+                        'Anything contrary to the law of the country you publish from.',
+                    ],
+                },
+                {
+                    id: 'terms-moderation',
+                    heading: 'Review, removal and channel suspension',
+                    paragraphs: [
+                        'Every uploaded video passes through an automatic check for music and for explicit content before it is shown, and it may be held until a person reviews it. The video’s owner sees the result of the check in their channel dashboard.',
+                        'The platform team may remove any content, hide it, delete a comment, or suspend or refuse a channel — without prior notice if the matter requires it — and the reason is given to the person concerned on request.',
+                        'Reviewing a held video is for the platform team alone and not for the channel’s owner: a person reviewing what they uploaded themselves is not a review.',
+                        'What is held or rejected is not kept here indefinitely: it and its files are deleted two weeks after the last change in its state, as set out at the start of this page.',
+                    ],
+                },
+                {
+                    id: 'terms-comments',
+                    heading: 'Comments',
+                    paragraphs: [
+                        'Commenting is available to account holders. You may edit or delete your comment, and the channel’s owner and the platform team may hide or delete it.',
+                        'There is at present no button within the page for reporting a comment; reporting is done by writing to us or to the channel’s owner.',
+                    ],
+                },
+                {
+                    id: 'terms-takedown',
+                    heading: 'Complaints and rights reports',
+                    paragraphs: [
+                        'The platform has a report button on videos, books, articles, posts and comments, which reaches the platform team directly and requires you to be signed in.',
+                        'If the matter is an infringement of your right, or something the report button does not cover, write to us at the contact address given on the "Contact us" page.',
+                        'Help us decide quickly: include the address of the page or video, state how it breaches the rules, and if it is a rights report, state your standing and the basis of your ownership.',
+                        'A report may result in the content being removed, hidden, or the channel suspended.',
+                    ],
+                },
+                {
+                    id: 'terms-authorship',
+                    heading: 'Scholarly and religious content represents those who produced it',
+                    paragraphs: [
+                        'The lessons, books, articles and opinions published in the channels represent their authors alone. The platform adopts no speaker’s position, does not weigh between schools of thought, and the presence of content on it is no endorsement of it or of its author.',
+                        'Accepting a channel is not a testament to its owner’s qualification; it is acceptance of opening a publishing space. Whoever wishes to benefit should verify, and whoever wishes to learn from someone should consider from whom they are learning.',
+                        'The platform is no substitute for people of knowledge, and what is on it is neither a ruling directed at you personally nor a judgement on your situation.',
+                    ],
+                },
+                {
+                    id: 'terms-service',
+                    heading: 'Availability of the service, and disclaimer of warranties',
+                    paragraphs: [
+                        'The service is provided as it is and as available. We do not warrant that it is free of faults, that it will run without interruption, or that any particular content will remain available indefinitely.',
+                        'We are not answerable for the accuracy of what channel owners publish, nor for an error in the attribution of a text, nor for harm arising from reliance on published content.',
+                        'Keep a copy of the files that matter to you: the platform is not a storage archive, and a channel’s owner may delete their content whenever they wish.',
+                        'To the extent the law permits, our liability is limited to what these terms provide.',
+                    ],
+                },
+                {
+                    id: 'terms-youtube',
+                    heading: 'Videos displayed from YouTube',
+                    paragraphs: [
+                        'Some of the content displayed here is imported from YouTube, and plays from YouTube’s own player rather than from our servers. On each such video’s card you will find a mark indicating its source.',
+                        ['By using this platform you agree to be bound by the ', { text: 'YouTube Terms of Service', href: 'https://www.youtube.com/t/terms' }, ' in respect of that content, since it is displayed under them.'],
+                        'We neither own this content nor control whether it remains: once its owner deletes it from YouTube or makes it private, it stops being shown here, and that is not in our hands.',
+                    ],
+                },
+                {
+                    id: 'terms-changes',
+                    heading: 'Amendment of these terms',
+                    paragraphs: [
+                        'These terms may be amended. The "last updated" date at the top of the page is brought up to date with each amendment, and your continued use of the platform afterwards is acceptance of it.',
+                    ],
+                },
+            ],
+        },
+
+        contact: {
+            title: 'Contact us',
+            metaDescription: 'How to write to the أَبْصَرْنا team: rights reports, complaints, and privacy and account-deletion requests.',
+            intro: [
+                'This is how to reach the platform team. There is no ticketing system and no live chat; email is the route.',
+            ],
+            emailHeading: 'Address for correspondence',
+            emailAction: 'Write to us by email',
+            missingHeading: 'No contact address is configured yet',
+            missingBody: 'No contact email address has been configured in this build of the site, which is why no write-to-us link appears here. Showing a guessed address would only lose your message with somebody who does not read it.',
+            missingOperatorNote: 'Note for whoever runs this deployment: set the VITE_CONTACT_EMAIL variable, then rebuild the frontend.',
+            responseNote: 'The platform is run by a small team, and we do not commit to a fixed response time; rights reports and complaints, however, are taken before anything else.',
+            sections: [
+                {
+                    id: 'contact-takedown',
+                    heading: 'A rights report or a removal request',
+                    paragraphs: [
+                        'If a book, recording or text whose rights you hold has been published on the platform without your permission, or there is content you consider to breach the Terms of Use, write to us and state three things: the address of the page or video, how it breaches the rules, and your standing if it is a rights report.',
+                    ],
+                },
+                {
+                    id: 'contact-account',
+                    heading: 'Account and privacy requests',
+                    paragraphs: [
+                        'Account deletion is not available from within the platform today, and is carried out manually on request by email. The same applies to requesting a copy of what is stored about you, correcting data, or deleting the view-counter rows tied to your account.',
+                        'Write to us from the address registered on your account if you can, as that is quicker for establishing that it is yours.',
+                    ],
+                },
+                {
+                    id: 'contact-channel',
+                    heading: 'Opening a channel and following up the request',
+                    paragraphs: [
+                        'A request to open a channel is made from within the platform, and its state is shown to you in your list of channels. If it is delayed or refused and you want an explanation, write to us.',
+                    ],
+                },
+                {
+                    id: 'contact-technical',
+                    heading: 'A technical fault',
+                    paragraphs: [
+                        'If a video will not play, or a book will not open, or you see an error on the page, tell us what you were doing, the address of the page, and the browser you are using. Those three cover most of what we need.',
+                    ],
+                },
+            ],
+        },
+    },
 };
 
 /**
@@ -1541,7 +1930,7 @@ export const TRANSLATED = [
     'auth', 'validation', 'home', 'video', 'books', 'pdfReader', 'articles', 'series',
     'channel', 'consent', 'createChannel', 'comments', 'likes', 'bookmarks', 'history',
     'subscriptions', 'profile', 'search', 'biography', 'share', 'upload', 'notFound',
-    'channelManage', 'youtube', 'youtubeOAuth', 'admin', 'adminReports',
+    'channelManage', 'youtube', 'youtubeOAuth', 'admin', 'adminReports', 'legal',
     'pager', 'report',
 ];
 

@@ -1,5 +1,15 @@
 import { useEffect } from 'react';
-import { t } from '@/i18n';
+import { currentLocale, t } from '@/i18n';
+
+/**
+ * The language these documents were written in.
+ *
+ * <p>Everything else in the app is copy that happens to exist in two languages. These are an
+ * operative text that exists in one, plus a translation of it \u2014 and the difference has to be
+ * visible to the person reading the translation, or there are two texts and no answer to which one
+ * governs. Below, that is the only thing `sourceNotice` says.
+ */
+const SOURCE_LOCALE = 'ar';
 
 /**
  * Renders one long legal document — the privacy policy and the terms of use, today.
@@ -121,11 +131,10 @@ function LegalDocument({ doc }) {
         // policy is the longest continuous prose in the app and the one page nobody reads twice,
         // so it gets the reading face and keeps it through its lists and its table of contents.
         // The headings inherit it too, which is right — they are sentences here, not labels.
-        // `dir="auto"` rather than inheriting: these documents are the part of the catalog that is
-        // still Arabic on the English build, and an Arabic paragraph laid out LTR puts its full
-        // stops on the wrong end of every line. The browser reads the first strong character and
-        // gets it right for whichever language the text turns out to be in — which is also the
-        // answer once they ARE translated, at no further cost.
+        // `dir="auto"` rather than inheriting: the browser reads the first strong character and
+        // lays the document out for whichever language it turns out to be in. That was load-bearing
+        // while these pages were the untranslated part of the catalog, and it stays correct now
+        // that they are translated — at no cost, and it is what a third language would need too.
         <article dir="auto" className="font-reading">
             <h1 className="text-3xl font-serif font-bold mb-3">{doc?.title}</h1>
 
@@ -137,6 +146,20 @@ function LegalDocument({ doc }) {
             <p className="text-sm text-text-muted mb-8 pb-6 border-b border-border-light">
                 {t('legal.lastUpdated', { date: t('legal.lastUpdatedDate') })}
             </p>
+
+            {/* WHICH VERSION GOVERNS, and only to the reader of a translation. An Arabic reader is
+                reading the original, and telling them they are reading a translation would be
+                false; an English reader is reading one, and not saying so would leave two texts
+                that both read as operative. `dir="auto"` so it lays out in its own language rather
+                than the document's. */}
+            {currentLocale() !== SOURCE_LOCALE && (
+                <p
+                    dir="auto"
+                    className="text-sm text-text-secondary mb-8 p-4 rounded-lg bg-surface border border-border-light"
+                >
+                    {t('legal.sourceNotice')}
+                </p>
+            )}
 
             {doc?.intro?.map((paragraph, index) => (
                 <p key={index} className="leading-loose text-[1.05rem] mb-4">{paragraph}</p>

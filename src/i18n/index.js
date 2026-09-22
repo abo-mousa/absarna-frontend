@@ -151,6 +151,34 @@ export function t(key, params) {
 }
 
 /**
+ * The catalog node at a dotted key — an object or an array, not a string.
+ *
+ * <p><b>`t()` cannot do this and must not learn to.</b> It is a string API by contract: it returns
+ * the key itself when the result is not a string, and `__tests__` pins that deliberately, because
+ * the alternative is `[object Object]` rendered into a page. The legal documents are the one place
+ * the catalog holds structure rather than sentences — sections, paragraph arrays, and paragraphs
+ * that are themselves arrays of text and `{ text, href }` links — so they need an accessor that
+ * hands back the node.
+ *
+ * <p>It exists because the three legal pages used to import `{ ar }` and read `ar.legal.terms`
+ * straight out of it. That was correct while there was one catalog and became a bug the moment
+ * there were two: the page chrome translated and the document itself stayed Arabic, which reads as
+ * a half-broken page rather than an untranslated one.
+ *
+ * <p>Falls back to the default catalog for the same reason {@link t} does, and returns `undefined`
+ * rather than a string, so a caller that reaches for a node and finds a sentence gets nothing
+ * instead of something it cannot render.
+ */
+export function tData(key) {
+    const value = lookup(catalogs[active], key);
+    if (value !== undefined && typeof value !== 'string') {
+        return value;
+    }
+    const fallback = lookup(catalogs[DEFAULT_LOCALE], key);
+    return typeof fallback === 'string' ? undefined : fallback;
+}
+
+/**
  * Like {@link t}, but a missing key is an expected answer rather than a bug: returns `undefined`
  * and warns about nothing.
  *

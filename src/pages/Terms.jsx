@@ -1,7 +1,7 @@
 import { PageShell, LegalDocument } from '../components/layout';
 import { usePageMeta } from '../hooks/usePageMeta';
-import { ar } from '@/i18n/ar';
-import { t } from '@/i18n';
+
+import { t, tData } from '@/i18n';
 
 /**
  * The terms of use. The twin of `Privacy.jsx` in every respect — same shell, same reading column,
@@ -21,7 +21,7 @@ function Terms() {
 
     return (
         <PageShell sidebar={false} contentClassName="max-w-reading mx-auto px-4 sm:px-6 py-10">
-            <LegalDocument doc={ar.legal.terms} />
+            <LegalDocument doc={tData('legal.terms')} />
         </PageShell>
     );
 }

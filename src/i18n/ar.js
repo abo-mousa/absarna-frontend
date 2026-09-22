@@ -2001,6 +2001,12 @@ export const ar = {
         lastUpdated: 'آخر تحديث: {date}',
         lastUpdatedDate: '16 سبتمبر 2026',
         contentsHeading: 'محتويات الصفحة',
+        // WHICH VERSION GOVERNS. Rendered by `LegalDocument` only when the page is being read in a
+        // language it was not written in, so the Arabic build never shows it — these documents ARE
+        // the Arabic, and telling their own readers they are a translation would be false. The
+        // entry exists here because the catalogs have to carry the same keys, and because the
+        // sentence it states is a fact about the Arabic text rather than about the English one.
+        sourceNotice: 'كُتبت هذه الصفحات بالعربية، وهذا النصّ العربي هو المعتمد عند الاختلاف.',
 
         footer: {
             navLabel: 'روابط الموقع',

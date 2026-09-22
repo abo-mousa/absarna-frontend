@@ -2,8 +2,8 @@ import { Mail, AlertTriangle } from 'lucide-react';
 import { PageShell } from '../components/layout';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { CONTACT_EMAIL } from '@/lib/env';
-import { ar } from '@/i18n/ar';
-import { t } from '@/i18n';
+
+import { t, tData } from '@/i18n';
 
 /**
  * The contact page — and, today, the only route from a reader to a human.
@@ -35,7 +35,7 @@ import { t } from '@/i18n';
  * that matters for editing the copy.
  */
 function Contact() {
-    const doc = ar.legal.contact;
+    const doc = tData('legal.contact');
     const hasAddress = CONTACT_EMAIL.length > 0;
 
     usePageMeta({
