@@ -209,6 +209,10 @@ export const en = {
             CHANNEL_REJECTED: 'This channel was rejected by the platform team, so nothing can be imported into it. Contact us if you believe that is a mistake.',
             CHANNEL_SUSPENDED: 'This channel is suspended, and nothing can be imported into it until the suspension is lifted.',
 
+            // See the note on the Arabic entry: the invitation letter opens with the number of
+            // lectures, so there is nothing to send until there are some.
+            CHANNEL_HAS_NO_CONTENT: 'This channel has no lectures yet, and the invitation opens by naming how many there are. Run the import first, then send it.',
+
             YOUTUBE_NOT_VERIFIED: 'You have not proved ownership of the YouTube channel yet. Sign in with the Google account that manages it, from the YouTube tab.',
             YOUTUBE_NEEDS_OWNER_VERIFICATION: 'This channel was linked by the platform team, which is enough to import and no more. Uploading the original file needs the channel’s own owner to prove ownership by signing in with Google from the YouTube tab.',
 

@@ -227,6 +227,12 @@ export const ar = {
             CHANNEL_REJECTED: 'تم رفض هذه القناة من قبل إدارة المنصة، ولا يمكن الاستيراد إليها. راسل الإدارة إن كنت ترى أن هذا خطأ.',
             CHANNEL_SUSPENDED: 'هذه القناة موقوفة مؤقتاً، ولا يمكن الاستيراد إليها حتى يُرفع الإيقاف.',
 
+            // Sending a claim invitation. The letter opens by saying how many lectures we hold, so
+            // a channel with none makes it read "أعددنا لقناتكم صفحةً وفيها ٠ محاضرة" — which is
+            // why the backend refuses rather than sending it. Worded as "not yet", because that
+            // is what it is: the import has not run or it failed.
+            CHANNEL_HAS_NO_CONTENT: 'لا توجد محاضرات على هذه القناة بعد، والدعوة تبدأ بذكر عددها. شغّل الاستيراد أولاً ثم أرسل الدعوة.',
+
             // YouTube ownership. The two are separated because the remedy is completely different:
             // the first is something the owner does, the second is something only they can do and
             // an admin cannot do for them.
