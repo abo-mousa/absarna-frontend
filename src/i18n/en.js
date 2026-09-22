@@ -1562,7 +1562,11 @@ export const en = {
                     ],
                     bullets: [
                         'Video — lessons and lectures uploaded to our servers and served from them, or imported from what their owner published on YouTube.',
-                        'Books — files uploaded here and read inside the platform in its own reader, with no download and no other software, and your place in them is kept.',
+                        // "No NEED to download", not "no download": this page describes what the software
+                        // does, and a download button sits beside the read button on every book that
+                        // has a file. The first is a true description of what the built-in reader
+                        // saves you; the second read as a denial that the button exists.
+                        'Books — files uploaded here and read inside the platform in its own reader, with no need to download anything or install other software, and your place in them is kept. The file can be downloaded as well, if you would rather have it.',
                         'Articles and posts — text written here in the first place.',
                         'Series and biographies — lessons ordered into a series to be followed in sequence, and an introduction to the people behind the material.',
                     ],
