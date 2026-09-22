@@ -329,9 +329,17 @@ function PdfReader({ fileUrl, initialPage = 1, onPageChange, onPageChangeImmedia
                 </div>
             )}
 
-            {/* No loading or empty branch: this panel cannot be opened unless the button above
-                exists, and the button only exists once the outline is loaded and not empty. */}
-            {panel === 'toc' && (
+            {/* No loading or empty branch: the button above only exists once the outline is
+                loaded and not empty, so there is no state where this panel has nothing to show.
+
+                THE OUTLINE IS CHECKED AGAIN HERE ANYWAY, and not out of caution. `panel` and
+                `outline` are separate pieces of state and only one of them is reset when a
+                document loads: `onLoadSuccess` sets the outline back to `null` and leaves the
+                panel open, so a reader with the contents open when the file reloads would render
+                this branch with nothing in it — and `OutlineList` maps over what it is given.
+                One condition covers it; the alternative is `panel` being reset in a second place
+                and staying correct there for ever. */}
+            {panel === 'toc' && outline?.length > 0 && (
                 <div className="w-full max-w-[500px] mb-4 p-3.5 rounded-md border border-border-light bg-surface-hover max-h-[280px] overflow-y-auto">
                     <OutlineList items={outline} onSelect={handleSelectFromPanel} />
                 </div>
