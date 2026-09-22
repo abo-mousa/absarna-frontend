@@ -126,6 +126,21 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   that come from *data* (a quality rung name), where a miss is normal. Namespace by the screen that
   shows it; promote to `common` only when a second screen needs the same words for the same reason.
   A test walks the source and asserts every literal `t('...')` key resolves.
+  - **Adding a locale touches six places and the compiler guards none of them** (the backend's
+    `switch`es with no `default` do that job on its side; there is no equivalent here):
+    `i18n/locales.js`, a new catalog, the `catalogs` map in `i18n/index.js`, `index.html`'s
+    pre-paint `DIRS` map, `index.css`'s `:root:lang()` font stack, and a dayjs locale in
+    `lib/datetime.js`. `i18n.test.js`'s **"adding a locale"** suite is the substitute: it pins
+    `CATALOG_CODES` against `LOCALE_CODES` (a code in `locales.js` with no catalog makes *every*
+    key fall back, so the language ships with the layout flipped and not one word translated,
+    silently), that each `digits` map is ten distinct glyphs (nine puts the literal `undefined` in
+    one numeral and no other), and that each record's `numberFormat` and `dayjs` names are real.
+  - **`changeLocale` will not reload unless the choice was actually stored.** It is the one
+    preference whose delivery mechanism destroys its own fallback: `safeStorage` degrades to an
+    in-memory map when site data is blocked, and `location.reload()` is exactly what discards that
+    — so writing regardless meant a full page load back into the language the reader was leaving.
+    `safeStorage.setItem` returns whether the write will outlive the page; nothing else needs to
+    care.
 - **Every GET goes through a `useQuery`/`useInfiniteQuery` hook in `hooks/`**, never a raw `api.get`
   in a `useEffect`. The one exception is `AuthContext`'s own profile fetch.
 - **Cache tiers are named** (`lib/queryCache.js`): `NO_CACHE` (the feed), `LIVE`, `STANDARD`
@@ -177,11 +192,19 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   another loading/error/empty ternary.
 - **Errors go through `lib/describeError.js`**, which prefers the backend's `reason` code (worded in
   `errors.reasons`), then the backend's own Arabic sentence, then a status-based fallback. It only
-  trusts a server body **that contains an Arabic letter, and only on the Arabic build** — the
-  backend writes Arabic for people and English for logs, so on an English screen an Arabic body is
-  the wrong language and an English one is a log line. After the rate limiter stopped writing its
-  own sentence there is nothing left for it to find; it stays as the guard for anything older, and
-  **must never start trusting English**.
+  trusts a server body **that contains an Arabic letter, and only when the reader is reading
+  Arabic** — the old backend wrote Arabic for people and English for logs, so on any other screen
+  an Arabic body is the wrong language and an English one is a log line. The backend no longer
+  writes a reader-facing sentence at all (the rate limiter's 429, four `forbidden()` helpers and
+  forgot-password were the last of it), so `serverMessage` is now purely a **deploy-skew** shim —
+  it stays for the window where a new SPA meets an older API, and **must never start trusting
+  English**.
+  - **The gate is `currentLocale() !== BACKEND_LEGACY_LOCALE`, never `isRtl()`.** The two agree
+    today and would part company on the first other right-to-left language: Urdu and Persian are
+    written in this script's range, so a direction check would hand an Urdu reader an Arabic
+    sentence and call it a match. Every *other* `isRtl()` in the tree is genuinely about direction
+    — `DirectionalIcon`, `ratioFromPointer`, `tapZone`, `keyboardAction`, `Input` — and this was
+    the one that meant language.
 - **Each locale's own digits, and the line is WHO WROTE THE NUMBER.** A number the *app* formats
   reads in the locale's digits — counts, dates, page numbers, the player clock, durations, character
   counters — so the Arabic build shows «١٥ سبتمبر ٢٠٢٦» and «٥٧:١٥». Text a *person* wrote is never
@@ -195,7 +218,11 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
 - **This reversed an earlier decision and the reversal is the point.** The app once mixed
   Arabic-Indic counts with Latin dates; that was settled by making everything Latin, and is now
   settled the other way. The mixture was the bug, not the script. What must never come back is one
-  screen with both.
+  screen with both — and it did come back once, in one phrase: `lib/spans.js` built
+  «٠:٤٥–١:٢٠ ... و٢ مواضع أخرى» out of a `formatTimestamp` that was still Latin and a count that
+  `t()` had started localising. Two functions, one sentence, and only one of them learned. Its test
+  now asserts **the phrase carries exactly one script**, rather than asserting the two spellings,
+  because that is the property and it survives a language added later.
 - **dayjs needs `preParsePostFormat` for this.** Core never calls `postformat` — the word does not
   appear in it — so without the plugin the locale's digit mapping is dead code, and the failure is
   silent: month names come out right and only the digits stay Latin. `datetime.test.js` pins it.
