@@ -134,7 +134,18 @@ function Navbar({ onMenuClick, menuOpen = false }) {
                         className="w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0"
                     />
                     <span className="sr-only">{t('nav.brandAlt')}</span>
-                    <span className="font-serif">{t('nav.brand')}</span>
+                    {/* `items-center` centres BOXES, and a text box is the font's metric
+                        envelope, not its ink. Markazi Text reserves 0.839em above the baseline
+                        and 0.361em below it, so the box is symmetric about a point 0.233em up —
+                        while «أَبْصَرْنا», fully vocalised, puts ink 0.91em up (the fatḥa over the
+                        أ overshoots the font's own ascent) and only 0.24em down, for an ink
+                        centre 0.333em up. The mark, centred in its own viewBox, therefore sat
+                        3px below the word it stands beside. The nudge is in `em` so it holds at
+                        `text-2xl` and at `sm:text-3xl` alike, and it is a transform so the
+                        wordmark moves without the row growing under it. Leading cannot fix this:
+                        half-leading is split evenly, so changing `line-height` moves both edges
+                        of the box and leaves its centre exactly where it was. */}
+                    <span className="font-serif translate-y-[0.1em]">{t('nav.brand')}</span>
                 </Link>
 
                 {/* Centred in whatever is left between the two anchored ends. `min-w-0` so this
