@@ -20,7 +20,7 @@ import { t } from '@/i18n';
  * a multi-day import below, as though they were more of the same (2026-09-16). What the owner does
  * here is a migration with its own steps and its own progress, which is what a tab is for.
  */
-export default function YouTubeTab({ slug, youtubeState, active }) {
+export default function YouTubeTab({ slug, youtubeState, isOwner, active }) {
     useImportCompletionToast(slug, youtubeState);
 
     // WHICH OF THE TWO SCREENS IS SHOWING LIVES IN THE URL, for the reason the open tab does
@@ -32,7 +32,8 @@ export default function YouTubeTab({ slug, youtubeState, active }) {
     // `replace` so that the back button leaves the dashboard rather than stepping through every
     // time the owner opened and closed this — the same call `setActiveTab` makes.
     const [searchParams, setSearchParams] = useSearchParams();
-    const confirming = searchParams.get('confirm') === '1';
+    // Only the owner can confirm, so a `?confirm=1` link opened by anyone else lands on the panel.
+    const confirming = isOwner && searchParams.get('confirm') === '1';
 
     const setConfirming = (next) => {
         const params = new URLSearchParams(searchParams);
@@ -47,7 +48,7 @@ export default function YouTubeTab({ slug, youtubeState, active }) {
 
     return confirming
         ? <MetadataAdoptionView slug={slug} onClose={() => setConfirming(false)} />
-        : <YouTubeImportPanel slug={slug} onOpenAdoption={() => setConfirming(true)} />;
+        : <YouTubeImportPanel slug={slug} isOwner={isOwner} onOpenAdoption={() => setConfirming(true)} />;
 }
 
 /**

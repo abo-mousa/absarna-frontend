@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePageMeta } from '@/hooks/usePageMeta';
 import PageShell from '@/components/layout/PageShell';
 import { QueryState, Button } from '@/components/ui';
-import { canManageChannel } from '@/lib/user';
+import { canManageChannel, isChannelOwner } from '@/lib/user';
 import { useChannel } from '@/hooks/useChannels';
 import { useChannelYouTube } from '@/hooks/useChannelYouTube';
 import ChannelManageNav, { resolveTab } from '@/components/channel/ChannelManageNav';
@@ -54,15 +54,25 @@ function ChannelManage() {
     const navigate = useNavigate();
     const { user, loading: authLoading } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
-    // The same query key AdoptionNotice uses, so react-query serves both from one request. Read
-    // here only for the menu's dot, which has to be visible from whichever tab the owner is on.
-    const { data: adoptionProgress } = useAdoptionProgress(slug);
     const activeTab = resolveTab(searchParams.get('tab'));
     const setActiveTab = (tab) => setSearchParams({ tab }, { replace: true });
 
     const {
         data: channel, isLoading: channelLoading, isError: channelError, error: channelFetchError,
     } = useChannel(slug, !authLoading);
+
+    // THE OWNER'S CHORES ARE THE OWNER'S. A platform admin can manage any channel, and used to be
+    // shown everything its owner is asked to do — confirm the imported metadata, verify with
+    // Google — on a channel somebody else has claimed and is responsible for. None of it is theirs
+    // to do: the backend refuses an admin's confirmation outright (ADOPTION_OWNER_ONLY), and a
+    // Google sign-in would verify the admin's account, not the owner's. So every "you still have
+    // to…" surface is gated on ownership, not on managing. What an admin keeps is everything that
+    // is a platform decision or a plain fact: status, exemptions, attestation, the content itself.
+    const isOwner = isChannelOwner(user, channel);
+
+    // The same query key AdoptionNotice uses, so react-query serves both from one request. Read
+    // here only for the menu's dot, which has to be visible from whichever tab the owner is on.
+    const { data: adoptionProgress } = useAdoptionProgress(slug, isOwner);
     usePageMeta({
         title: channel
             ? t('channelManage.titleFor', { name: channel.name })
@@ -139,11 +149,13 @@ function ChannelManage() {
                             itself when the count reaches zero and has no dismiss button, because a
                             dismissable version of this is one that was shown once, months ago.
                             Clicking through switches to the YouTube tab's confirmation screen. */}
-                        <AdoptionNotice
-                            slug={slug}
-                            onOpen={() => setSearchParams({ tab: 'youtube', confirm: '1' },
-                                { replace: true })}
-                        />
+                        {isOwner && (
+                            <AdoptionNotice
+                                slug={slug}
+                                onOpen={() => setSearchParams({ tab: 'youtube', confirm: '1' },
+                                    { replace: true })}
+                            />
+                        )}
 
                         {/* Every tab stays MOUNTED and is hidden rather than unmounted, and that is
                             load-bearing rather than tidy. A half-finished upload lives in its tab — the
@@ -157,6 +169,7 @@ function ChannelManage() {
                                 slug={slug}
                                 channel={channel}
                                 youtubeState={youtubeState}
+                                isOwner={isOwner}
                                 active={activeTab === 'videos'}
                             />
                         </TabPanel>
@@ -176,6 +189,7 @@ function ChannelManage() {
                             <YouTubeTab
                                 slug={slug}
                                 youtubeState={youtubeState}
+                                isOwner={isOwner}
                                 active={activeTab === 'youtube'}
                             />
                         </TabPanel>

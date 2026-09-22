@@ -43,7 +43,7 @@ import { t } from '@/i18n';
  * which is already gated. `ownerNotices` is passed `true` for that reason — and the backend does
  * not send `review` to anyone else regardless, so neither side can leak it alone.
  */
-function VideoManageStatus({ video, slug }) {
+function VideoManageStatus({ video, slug, isOwner }) {
     const { showToast } = useToast();
     const retry = useRetryTranscode(slug);
     const notices = ownerNotices(video, true);
@@ -62,7 +62,9 @@ function VideoManageStatus({ video, slug }) {
     // Explicitly false, not falsy: the backend leaves this NULL on a video that was never
     // imported, which means "the question does not apply here" rather than "not yet done".
     // `!video.metadataConfirmed` would badge every ordinary upload on the channel.
-    const needsConfirming = video.metadataConfirmed === false;
+    // And only for the owner: confirming is their statement to make, and a platform admin
+    // managing a claimed channel would otherwise see it on every imported row.
+    const needsConfirming = isOwner && video.metadataConfirmed === false;
 
     if (!gone && !needsConfirming && video.status !== 'UPLOADED' && video.status !== 'FAILED'
         && notices.length === 0) {

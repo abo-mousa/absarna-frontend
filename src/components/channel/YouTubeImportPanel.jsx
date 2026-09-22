@@ -218,7 +218,7 @@ export function AdoptionPanelLine({ slug, onOpen }) {
  * ones, which is the entire reason to import into this platform rather than link out: they can
  * join a series, be searched, be bookmarked and be resumed.
  */
-function YouTubeImportPanel({ slug, onOpenAdoption }) {
+function YouTubeImportPanel({ slug, isOwner, onOpenAdoption }) {
     const { showToast } = useToast();
     const { user } = useAuth();
     // Hidden rather than shown-and-rejected: the backend 403s anyone else, and offering an action
@@ -296,8 +296,11 @@ function YouTubeImportPanel({ slug, onOpenAdoption }) {
      * — no OAuth client configured — nothing
      * steps are the whole flow, so there is no disabled button explaining a feature nobody can use.
      */
+    // The owner's alone: signing in with Google proves control of the YouTube channel with
+    // whichever account signs in, so offered to an admin managing somebody else's channel it can
+    // only verify the wrong person. An admin has the attestation instead.
     const googleVerify = (hint) =>
-        state?.oauthAvailable ? (
+        state?.oauthAvailable && isOwner ? (
             <div className="grid gap-1.5">
                 <Button
                     type="button"
@@ -339,7 +342,7 @@ function YouTubeImportPanel({ slug, onOpenAdoption }) {
 
             {/* Not linked yet: signing in with Google links AND verifies in one step, so it goes
                 first. The URL form stays below as the other way in. */}
-            {!state?.youtubeChannelId && state?.oauthAvailable && (
+            {!state?.youtubeChannelId && state?.oauthAvailable && isOwner && (
                 <div className="grid gap-3">
                     {googleVerify(t('youtube.oauth.hintUnlinked'))}
                     <p className="text-sm text-text-secondary">{t('youtube.oauth.orManual')}</p>
@@ -381,7 +384,7 @@ function YouTubeImportPanel({ slug, onOpenAdoption }) {
             {state?.youtubeChannelId && !state.verified && (
                 <div className="grid gap-2 p-4 rounded-md bg-surface-hover border border-border">
                     <strong className="text-sm">{t('youtube.verifyHeading')}</strong>
-                    {state.oauthAvailable ? (
+                    {!isOwner ? null : state.oauthAvailable ? (
                         <>
                             <p className="text-sm text-text-secondary">{t('youtube.verifyIntro')}</p>
                             {googleVerify(t('youtube.oauth.hintLinked'))}
@@ -416,8 +419,9 @@ function YouTubeImportPanel({ slug, onOpenAdoption }) {
                 <p className="text-xs text-text-muted">{t('youtube.adminAttestWarning')}</p>
             )}
 
-            {/* The only route from an admin link to the owner's own. Hidden for the admin who
-                made the link — it is the owner's Google account that has to sign in. */}
+            {/* The only route from an admin link to the owner's own. Only for the owner — it is
+                their Google account that has to sign in (googleVerify checks) — and never for an
+                admin, including one who owns a channel they seeded for somebody else. */}
             {state?.verifiedBy === 'ADMIN' && !isAdmin && googleVerify(t('youtube.oauth.hintUpgrade'))}
 
             {state?.verified && (
@@ -541,7 +545,8 @@ function YouTubeImportPanel({ slug, onOpenAdoption }) {
                 affirmation sentence next to it, needs a page the owner actually reads, and needs
                 an end — none of which survives being a third block on a panel that is already
                 verification plus a multi-day import. See MetadataAdoptionView. */}
-            {state?.verified && state?.importStatus && (
+            {/* The owner's statement to make, and nobody else's — see ChannelManage's isOwner. */}
+            {state?.verified && state?.importStatus && isOwner && (
                 <div className="grid gap-2 pt-2 border-t border-border-light">
                     <strong className="text-sm flex items-center gap-1.5">
                         <ShieldCheck size={14} /> {t('youtube.adoption.heading')}

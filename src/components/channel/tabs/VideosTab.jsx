@@ -56,7 +56,7 @@ export function videoPageHref(video) {
  * component's state, not the dialog's, so closing the dialog mid-upload loses nothing — the button
  * shows the progress, and reopening it shows the form as it was left.
  */
-export default function VideosTab({ slug, channel, youtubeState, active }) {
+export default function VideosTab({ slug, channel, youtubeState, isOwner, active }) {
     const [view, setView] = useState('all');
     // A series object, 'none' for the videos in no series, or null for the series list.
     const [openSeries, setOpenSeries] = useState(null);
@@ -260,7 +260,7 @@ export default function VideosTab({ slug, channel, youtubeState, active }) {
                             // The transcode state, the retry out of a failed one, and the moderation verdicts
                             // — on the screen an owner actually opens. A held video is READY, visible and
                             // reachable by nobody, and before this the dashboard said nothing about it at all.
-                            renderStatus={(video) => <VideoManageStatus video={video} slug={slug} />}
+                            renderStatus={(video) => <VideoManageStatus video={video} slug={slug} isOwner={isOwner} />}
                         />
                     )}
 
@@ -278,6 +278,7 @@ export default function VideosTab({ slug, channel, youtubeState, active }) {
                             onBack={() => openSeriesView(null)}
                             onSeriesChange={setOpenSeries}
                             extraActions={uploadOriginalAction}
+                            isOwner={isOwner}
                         />
                     )}
                 </div>
@@ -290,7 +291,7 @@ export default function VideosTab({ slug, channel, youtubeState, active }) {
  * One series opened: its videos, a page at a time in the series' own order, with the series'
  * actions above them. `series` is `'none'` for the videos in no series, which has no actions.
  */
-function SeriesVideos({ slug, series, active, onBack, onSeriesChange, extraActions }) {
+function SeriesVideos({ slug, series, active, onBack, onSeriesChange, extraActions, isOwner }) {
     const none = series === 'none';
     const content = useChannelContentTab(slug, 'videos', active, none ? 'none' : String(series.id));
     const title = none ? t('channelManage.seriesView.noSeries') : series.title;
@@ -318,7 +319,7 @@ function SeriesVideos({ slug, series, active, onBack, onSeriesChange, extraActio
                 content={content}
                 getHref={videoPageHref}
                 extraActions={extraActions}
-                renderStatus={(video) => <VideoManageStatus video={video} slug={slug} />}
+                renderStatus={(video) => <VideoManageStatus video={video} slug={slug} isOwner={isOwner} />}
             />
         </div>
     );

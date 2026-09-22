@@ -296,6 +296,12 @@ export const ar = {
             CURRENT_PASSWORD_REQUIRED: 'هذا الإجراء يتطلب تأكيد كلمة المرور الحالية. أدخلها ثم أعد المحاولة.',
             ADMIN_ACCOUNT_CANNOT_BE_DELETED: 'لا يمكن حذف حساب إدارة المنصة من هنا.',
             CURRENT_PASSWORD_INVALID: 'كلمة المرور الحالية غير صحيحة. تأكد منها ثم أعد المحاولة.',
+            // Deleting a channel through its own settings is the owner's alone; an admin has
+            // the admin screen's delete.
+            CHANNEL_OWNER_ONLY: 'حذف القناة من هنا متاح لمالكها فقط.',
+            // Confirming imported metadata is a statement by the owner about their own words, so
+            // nobody else — a platform admin included — can make it for them.
+            ADOPTION_OWNER_ONLY: 'تأكيد بيانات المقاطع المستوردة متاح لمالك القناة فقط.',
             // Email is required at signup now, so this reaches only accounts created before that
             // — a profile edit cannot clear the field, since a blank one is read as "no change".
             // Adding an address on the profile page sends the link by itself.
@@ -1380,6 +1386,21 @@ export const ar = {
         visibilityFailed: 'فشل في تحديث الظهور',
         saved: 'تم حفظ التغييرات',
         saveFailed: 'فشل في الحفظ',
+
+        // The owner closing their own channel, from the settings tab. Password-confirmed for the
+        // reason deleting the account is: nothing here can be brought back.
+        deleteChannel: {
+            heading: 'حذف القناة',
+            intro: 'حذف القناة نهائي ولا يمكن التراجع عنه.',
+            whatGoes: 'ستُحذف القناة بكل ما فيها من فيديوهات وكتب ومقالات ومنشورات وسلاسل وتعليقات، وتُحذف ملفاتها من التخزين. يبقى حسابك كما هو.',
+            button: 'حذف هذه القناة نهائياً',
+            confirmTitle: 'تأكيد حذف القناة',
+            confirmBody: 'أدخل كلمة المرور لتأكيد حذف قناة «{name}». هذا الإجراء نهائي.',
+            confirmButton: 'أؤكد حذف القناة',
+            deleting: 'جاري الحذف...',
+            done: 'تم حذف القناة',
+            failed: 'تعذر حذف القناة',
+        },
 
         resumePrompt: 'تم العثور على رفع غير مكتمل للملف "{name}". هل تريد إكماله؟',
         /**

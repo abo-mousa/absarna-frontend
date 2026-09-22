@@ -241,6 +241,8 @@ export const en = {
             CURRENT_PASSWORD_REQUIRED: 'This action needs your current password. Enter it and try again.',
             ADMIN_ACCOUNT_CANNOT_BE_DELETED: 'A platform admin account cannot be deleted from here.',
             CURRENT_PASSWORD_INVALID: 'That current password is not correct. Check it and try again.',
+            CHANNEL_OWNER_ONLY: 'Only the channel\'s owner can delete it from here.',
+            ADOPTION_OWNER_ONLY: 'Only the channel\'s owner can confirm its imported video details.',
             EMAIL_ADDRESS_MISSING: 'Your account has no email address on it. Add one on your profile page and the verification link will be sent by itself.',
 
             TRANSCODE_NOT_RETRYABLE: 'This video cannot be reprocessed right now: either its processing did not fail, or it was never uploaded here in the first place. Refresh the page to see its current state.',
@@ -1016,6 +1018,21 @@ export const en = {
         visibilityFailed: 'Could not update visibility',
         saved: 'Changes saved',
         saveFailed: 'Could not save',
+
+        // The owner closing their own channel, from the settings tab. Password-confirmed for the
+        // reason deleting the account is: nothing here can be brought back.
+        deleteChannel: {
+            heading: 'Delete channel',
+            intro: 'Deleting a channel is permanent and cannot be undone.',
+            whatGoes: 'The channel goes with everything in it — videos, books, articles, posts, series and comments — and its files are removed from storage. Your account stays as it is.',
+            button: 'Delete this channel permanently',
+            confirmTitle: 'Confirm channel deletion',
+            confirmBody: 'Enter your password to confirm deleting “{name}”. This is permanent.',
+            confirmButton: 'Delete the channel',
+            deleting: 'Deleting...',
+            done: 'The channel has been deleted',
+            failed: 'Could not delete the channel',
+        },
 
         resumePrompt: 'We found an unfinished upload of "{name}". Would you like to resume it?',
         /**

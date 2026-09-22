@@ -624,6 +624,27 @@ export const useDeleteChannel = () => {
 };
 
 /**
+ * The owner deleting their own channel (`DELETE /channels/{id}`), password-confirmed.
+ *
+ * <p>Not `useDeleteChannel`: that is the admin route, which the backend refuses to anyone else, and
+ * this one it refuses to anyone but the owner — an admin included. On success the channel's own
+ * entry is dropped rather than invalidated, because a refetch of a deleted channel is a 404 the
+ * dashboard would render on the way out.
+ */
+export const useDeleteOwnChannel = (slug, channelId) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (currentPassword) =>
+            api.delete(`/channels/${channelId}`, { data: { currentPassword } }),
+        onSuccess: () => {
+            queryClient.removeQueries({ queryKey: ['channel', slug] });
+            queryClient.invalidateQueries({ queryKey: ['my-channels'] });
+            invalidateAdminChannels(queryClient);
+        },
+    });
+};
+
+/**
  * Replaces a channel's content-detection exemptions.
  *
  * <p><b>PUT of the whole set, not a grant and a revoke.</b> The screen is a checkbox per detector

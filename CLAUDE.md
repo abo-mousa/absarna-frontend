@@ -498,6 +498,16 @@ What this app relies on; the mirror lives in the backend's `CLAUDE.md`.
   - `spans` is a jump-list, **not an edit decision list**, truncated to three: measured on a file
     that is music end to end they cover only 63% of it, so a recording comes back as many separate
     stretches. `peak` is the detector's highest score, for ranking a queue.
+- **An owner's chores are shown to the owner, never to an admin managing the channel.**
+  `canManageChannel` lets a platform admin into every dashboard, and it used to show them everything
+  the owner is asked to do — the metadata-confirmation notice, its nav dot and row badges, the
+  "verify with Google" buttons — on channels somebody else had claimed. `ChannelManage` computes
+  `isOwner` (`isChannelOwner`) and threads it down; the backend refuses an admin's confirmation
+  anyway (`ADOPTION_OWNER_ONLY`), and a Google sign-in by an admin would verify the wrong account.
+  Status, exemptions, attestation and the content itself stay the admin's.
+- **An owner deletes their own channel with `DELETE /api/channels/{id}` and their password**
+  (`ChannelSettingsTab`'s `DeleteChannelCard`). Owner only — `CHANNEL_OWNER_ONLY` for anyone else,
+  an admin included, who has `DELETE /channels/admin/{id}` behind the admin screen's typed slug.
 - **Confirm is idempotent on `uploadSessionId`**, which is what lets a timed-out publish read as
   "still working" for videos/books — and why it must read as an ordinary failure for articles/posts,
   which have no session.
