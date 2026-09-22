@@ -86,6 +86,9 @@ function PdfReader({ fileUrl, initialPage = 1, onPageChange, onPageChangeImmedia
     const [pageInput, setPageInput] = useState(String(initialPage));
     const [loadError, setLoadError] = useState(false);
     const [containerWidth, setContainerWidth] = useState(0);
+    // The height the last page rendered at, held on the container so a page turn does not
+    // collapse it — see the note on the container below.
+    const [pageHeight, setPageHeight] = useState(0);
     const [panel, setPanel] = useState(null); // null | 'toc' | 'search'
     const [outline, setOutline] = useState(null); // null = not fetched yet, [] = fetched, none found
     const [outlineLoading, setOutlineLoading] = useState(false);
@@ -346,7 +349,23 @@ function PdfReader({ fileUrl, initialPage = 1, onPageChange, onPageChangeImmedia
                 </div>
             )}
 
-            <div ref={containerRef} className="w-full flex justify-center overflow-x-auto">
+            {/* WHY THE HEIGHT IS HELD. Turning a page unmounts one canvas and mounts another, and
+                rasterising the new one takes a moment — during which this box has nothing in it and
+                collapses to nothing. The document above the scrollbar shrinks by a page's worth of
+                height, the browser clamps the scroll position to the new maximum, and by the time
+                the canvas reappears the reader has been thrown to the top. That is the "it
+                refreshes and jumps" — not a reload, a relayout.
+
+                Reserving the last rendered height means the box never shrinks, so there is nothing
+                to clamp and the scroll position survives the turn. `onRenderSuccess` hands back the
+                height in CSS pixels at the scale it actually drew, so this tracks the real page
+                rather than an assumed A4, and it re-measures on every page — a document that mixes
+                portrait and landscape settles on each new size as it reaches it. */}
+            <div
+                ref={containerRef}
+                style={pageHeight ? { minHeight: pageHeight } : undefined}
+                className="w-full flex justify-center overflow-x-auto"
+            >
                 <Document
                     file={fileUrl}
                     onLoadSuccess={(pdf) => {
@@ -355,25 +374,43 @@ function PdfReader({ fileUrl, initialPage = 1, onPageChange, onPageChangeImmedia
                         setOutline(null);
                         setSearchResults(null);
                         setNumPages(pdf.numPages);
+                        // A different document is a different page size; holding the old one's
+                        // height would leave a gap under the first page of the new one.
+                        setPageHeight(0);
                     }}
                     onLoadError={() => setLoadError(true)}
                     loading={<div className="py-16 text-text-muted">{t('common.loading')}</div>}
                 >
                     {containerWidth > 0 && (
-                        <Page pageNumber={pageNumber} width={containerWidth} renderAnnotationLayer={false} />
+                        <Page
+                            pageNumber={pageNumber}
+                            width={containerWidth}
+                            renderAnnotationLayer={false}
+                            onRenderSuccess={({ height }) => setPageHeight(height)}
+                        />
                     )}
                 </Document>
             </div>
 
             {numPages && (
+                // BACK, POSITION, FORWARD — in that source order, which is what puts each control
+                // on the side its own arrow points to. A flex row follows the page's direction, so
+                // under `ltr` this reads «← back | page 3 of 99 | forward →» and under `rtl` it
+                // mirrors to «forward ← | page | back →»: backward is always on the side the text
+                // starts, forward always on the side it runs towards.
+                //
+                // It used to be forward-first, which put "next" on the LEFT in English with an
+                // arrow pointing right — the control and its own glyph disagreeing about which way
+                // they went. Under RTL it was wrong the same way and simply harder to catch.
+                // `ui/Pager` has always been in this order; this row was the odd one out.
                 <div className="flex items-center gap-4 mt-4 py-3 border-t border-border-light w-full justify-center">
                     <button
-                        onClick={() => goToPage(pageNumber + 1)}
-                        disabled={pageNumber >= numPages}
+                        onClick={() => goToPage(pageNumber - 1)}
+                        disabled={pageNumber <= 1}
                         className="p-2 rounded-md bg-surface-hover disabled:opacity-40"
-                        aria-label={t('pdfReader.nextPage')}
+                        aria-label={t('pdfReader.previousPage')}
                     >
-                        <ChevronForward size={18} />
+                        <ChevronBack size={18} />
                     </button>
 
                     <form onSubmit={handlePageInputSubmit} className="flex items-center gap-1.5 text-sm text-text-secondary whitespace-nowrap">
@@ -391,12 +428,12 @@ function PdfReader({ fileUrl, initialPage = 1, onPageChange, onPageChangeImmedia
                     </form>
 
                     <button
-                        onClick={() => goToPage(pageNumber - 1)}
-                        disabled={pageNumber <= 1}
+                        onClick={() => goToPage(pageNumber + 1)}
+                        disabled={pageNumber >= numPages}
                         className="p-2 rounded-md bg-surface-hover disabled:opacity-40"
-                        aria-label={t('pdfReader.previousPage')}
+                        aria-label={t('pdfReader.nextPage')}
                     >
-                        <ChevronBack size={18} />
+                        <ChevronForward size={18} />
                     </button>
                 </div>
             )}
