@@ -209,15 +209,15 @@ export const en = {
             CHANNEL_REJECTED: 'This channel was rejected by the platform team, so nothing can be imported into it. Contact us if you believe that is a mistake.',
             CHANNEL_SUSPENDED: 'This channel is suspended, and nothing can be imported into it until the suspension is lifted.',
 
-            YOUTUBE_NOT_VERIFIED: 'You have not proved ownership of the YouTube channel yet. Put the verification code in your channel description, then press "Check".',
+            YOUTUBE_NOT_VERIFIED: 'You have not proved ownership of the YouTube channel yet. Sign in with the Google account that manages it, from the YouTube tab.',
             YOUTUBE_NEEDS_OWNER_VERIFICATION: 'This channel was linked by the platform team, which is enough to import and no more. Uploading the original file needs the channel’s own owner to prove ownership by signing in with Google from the YouTube tab.',
 
-            YOUTUBE_OAUTH_NOT_CONFIGURED: 'Verifying with a Google account is unavailable right now. Use the verification code in the channel description instead.',
+            YOUTUBE_OAUTH_NOT_CONFIGURED: 'Verifying with a Google account is not switched on for this platform, and it is the only way to prove ownership. Get in touch and we will enable it.',
             YOUTUBE_OAUTH_STATE_INVALID: 'That verification attempt has expired or is no longer valid. Go back to the YouTube tab and start again.',
             YOUTUBE_OAUTH_FAILED: 'Signing in with Google did not complete. Please try again.',
             YOUTUBE_OAUTH_SCOPE_DENIED: 'You did not grant permission to see your YouTube account, which is how we identify your channel. Try again and allow it, or use the verification code instead.',
-            YOUTUBE_OAUTH_UNAVAILABLE: 'We could not reach Google just now. Try again later, or use the verification code in the channel description.',
-            YOUTUBE_OAUTH_QUOTA_EXHAUSTED: 'The platform’s daily YouTube quota is spent. Use the verification code in the channel description, or try tomorrow.',
+            YOUTUBE_OAUTH_UNAVAILABLE: 'We could not reach Google just now. Nothing is wrong with your channel — try again in a moment.',
+            YOUTUBE_OAUTH_QUOTA_EXHAUSTED: 'The platform’s daily YouTube quota is spent. It refreshes every day — try again tomorrow.',
             YOUTUBE_OAUTH_CHANNEL_MISMATCH: 'The account you signed in with manages a different YouTube channel from the one linked here. Try again and pick the account that manages the linked channel — if it belongs to a Brand Account, choose that entry in the list.',
             YOUTUBE_OAUTH_NO_CHANNEL: 'The account you chose has no YouTube channel on it. Try again and pick the account that manages your channel.',
 

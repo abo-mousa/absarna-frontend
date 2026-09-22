@@ -230,18 +230,18 @@ export const ar = {
             // YouTube ownership. The two are separated because the remedy is completely different:
             // the first is something the owner does, the second is something only they can do and
             // an admin cannot do for them.
-            YOUTUBE_NOT_VERIFIED: 'لم يتم إثبات ملكيتك لقناة اليوتيوب بعد. ضع رمز التحقق في وصف قناتك ثم اضغط "تحقق".',
+            YOUTUBE_NOT_VERIFIED: 'لم يتم إثبات ملكيتك لقناة اليوتيوب بعد. سجّل الدخول بحساب Google الذي يدير القناة من تبويب يوتيوب.',
             YOUTUBE_NEEDS_OWNER_VERIFICATION: 'تم ربط هذه القناة بواسطة إدارة المنصة، وهذا يكفي للاستيراد فقط. رفع الملف الأصلي يتطلب أن يثبت صاحب القناة ملكيتها بنفسه، بتسجيل الدخول بحساب Google من تبويب يوتيوب.',
 
             // "Verify with Google". Every one of these ends by pointing somewhere the owner can go:
             // the description token needs none of this machinery, so it is always the way out.
-            YOUTUBE_OAUTH_NOT_CONFIGURED: 'التحقق عبر حساب Google غير متاح حالياً. استخدم رمز التحقق في وصف القناة بدلاً منه.',
+            YOUTUBE_OAUTH_NOT_CONFIGURED: 'التحقق عبر حساب Google غير مفعّل على المنصة حالياً، وهو الطريقة الوحيدة لإثبات الملكية. تواصل معنا حتى نفعّله.',
             // Expired (ten minutes), or started by another account on this browser.
             YOUTUBE_OAUTH_STATE_INVALID: 'انتهت صلاحية عملية التحقق أو لم تعد صالحة. ارجع إلى تبويب يوتيوب وابدأ من جديد.',
             YOUTUBE_OAUTH_FAILED: 'لم يكتمل تسجيل الدخول بحساب Google. حاول مرة أخرى.',
             YOUTUBE_OAUTH_SCOPE_DENIED: 'لم تمنح الإذن بعرض حساب يوتيوب الخاص بك، وهو ما نحتاجه لمعرفة قناتك. حاول مرة أخرى ووافق على هذا الإذن، أو استخدم رمز التحقق.',
-            YOUTUBE_OAUTH_UNAVAILABLE: 'تعذر الاتصال بـ Google الآن. حاول لاحقاً، أو استخدم رمز التحقق في وصف القناة.',
-            YOUTUBE_OAUTH_QUOTA_EXHAUSTED: 'استُهلكت حصة المنصة اليومية من طلبات يوتيوب. استخدم رمز التحقق في وصف القناة، أو حاول غداً.',
+            YOUTUBE_OAUTH_UNAVAILABLE: 'تعذر الاتصال بـ Google الآن. لا يوجد خلل في قناتك — حاول مرة أخرى بعد قليل.',
+            YOUTUBE_OAUTH_QUOTA_EXHAUSTED: 'استُهلكت حصة المنصة اليومية من طلبات يوتيوب. الحصة تتجدد يومياً — حاول غداً.',
             // By far the likeliest: the right person, the wrong account in Google's chooser — a
             // channel run under a Brand Account is a separate entry there from the personal one.
             YOUTUBE_OAUTH_CHANNEL_MISMATCH: 'الحساب الذي سجلت الدخول به يدير قناة يوتيوب مختلفة عن القناة المربوطة هنا. أعد المحاولة واختر الحساب الذي يدير القناة المربوطة (إن كانت القناة تابعة لحساب علامة تجارية فاختره من القائمة).',
