@@ -234,6 +234,10 @@ export const en = {
             YOUTUBE_NOT_CONFIGURED: 'Importing from YouTube is not enabled on this platform. Please contact the platform team.',
             YOUTUBE_QUOTA_EXHAUSTED: 'The platform’s daily YouTube quota is spent. Please try tomorrow.',
 
+            USERNAME_TAKEN: 'That username is taken. Please choose another one.',
+            EMAIL_TAKEN: 'An account with this email address already exists. Sign in with it, or register with a different address. If you have forgotten the password, ask for a reset link on the sign-in page.',
+            PROFILE_EMAIL_TAKEN: 'This email address is used by another account. Please choose a different one.',
+
             CURRENT_PASSWORD_REQUIRED: 'This action needs your current password. Enter it and try again.',
             ADMIN_ACCOUNT_CANNOT_BE_DELETED: 'A platform admin account cannot be deleted from here.',
             CURRENT_PASSWORD_INVALID: 'That current password is not correct. Check it and try again.',

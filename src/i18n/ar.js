@@ -273,6 +273,21 @@ export const ar = {
             // tomorrow", here there is nothing in progress to continue.
             YOUTUBE_QUOTA_EXHAUSTED: 'استُهلكت حصة المنصة اليومية من طلبات يوتيوب. حاول غداً.',
 
+            // Signing up with a name or an address somebody already has. The only two refusals
+            // on that form the visitor could not have been warned about while typing — every
+            // other one is checked here before the request leaves — so they are also the only
+            // two that used to reach the screen as «تعذر إنشاء الحساب» and leave a person
+            // pressing the same button again.
+            USERNAME_TAKEN: 'اسم المستخدم هذا محجوز. اختر اسماً آخر.',
+            // Points at the login page rather than just refusing: somebody whose address is
+            // already registered almost always has an account and has forgotten it, and telling
+            // them "used already" without saying where to go leaves them stuck on a form that
+            // will never accept them.
+            EMAIL_TAKEN: 'يوجد حساب مسجّل بهذا البريد الإلكتروني. سجّل الدخول به، أو أنشئ الحساب ببريد آخر. وإن نسيت كلمة المرور فاطلب رابط استعادتها من صفحة الدخول.',
+            // The same situation from inside the account, where the advice above does not apply:
+            // this reader is already signed in.
+            PROFILE_EMAIL_TAKEN: 'هذا البريد الإلكتروني مستخدم في حساب آخر. اختر بريداً غيره.',
+
             // Two actions ask for the password: changing the email address (a step in taking the
             // account over — the verification and reset links both go to whatever is stored) and
             // deleting the account. So the wording names neither: one string, both callers. The
