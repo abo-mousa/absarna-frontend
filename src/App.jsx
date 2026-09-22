@@ -40,6 +40,7 @@ const AdminReview = lazy(() => import('./pages/AdminReview'));
 const AdminReports = lazy(() => import('./pages/AdminReports'));
 const CreateChannel = lazy(() => import('./pages/CreateChannel'));
 const ChannelManage = lazy(() => import('./pages/ChannelManage'));
+const About = lazy(() => import('./pages/About'));
 const Privacy = lazy(() => import('./pages/Privacy'));
 const Terms = lazy(() => import('./pages/Terms'));
 const Contact = lazy(() => import('./pages/Contact'));
@@ -216,6 +217,7 @@ function AppRoutes() {
                     from someone who does not have an account here and never will, and a privacy
                     policy behind a login is not a privacy policy. Linked from the footer, which
                     PageShell renders on every page. */}
+                <Route path="/about" element={<About />} />
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/contact" element={<Contact />} />

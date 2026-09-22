@@ -1533,16 +1533,83 @@ export const en = {
      */
     legal: {
         lastUpdated: 'Last updated: {date}',
-        lastUpdatedDate: '16 September 2026',
+        lastUpdatedDate: '22 September 2026',
         contentsHeading: 'On this page',
         sourceNotice: 'These pages were written in Arabic. This English text is provided for convenience; where the two differ, the Arabic version is the one that governs.',
 
         footer: {
             navLabel: 'Site links',
+            about: 'About',
             privacy: 'Privacy Policy',
             terms: 'Terms of Use',
             contact: 'Contact us',
             rights: '© {year} أَبْصَرْنا',
+        },
+
+        about: {
+            title: 'About the platform',
+            metaDescription: 'What أَبْصَرْنا is, who runs it, and how videos are uploaded to its servers, processed, and served from them.',
+            intro: [
+                'أَبْصَرْنا is a platform for publishing Islamic educational material: videos, books, articles and posts, organised into channels their owners hold and run themselves.',
+                'This page describes what the platform actually does: what is uploaded to it, what happens to it, and where it is served to the reader from.',
+            ],
+            sections: [
+                {
+                    id: 'about-what',
+                    heading: 'What the platform offers',
+                    paragraphs: [
+                        'The platform is a place to publish, not a directory pointing somewhere else. Every content owner has a channel of their own, which they publish in, arrange and delete from as they see fit, and it holds four kinds of thing:',
+                    ],
+                    bullets: [
+                        'Video — lessons and lectures uploaded to our servers and served from them, or imported from what their owner published on YouTube.',
+                        'Books — files uploaded here and read inside the platform in its own reader, with no download and no other software, and your place in them is kept.',
+                        'Articles and posts — text written here in the first place.',
+                        'Series and biographies — lessons ordered into a series to be followed in sequence, and an introduction to the people behind the material.',
+                    ],
+                },
+                {
+                    id: 'about-video',
+                    heading: 'Video: uploaded to us, processed by us, served from our servers',
+                    paragraphs: [
+                        'A channel owner uploads the original video file to our servers straight from their browser, however large it is: the file is split into parts uploaded in turn, so an interrupted upload resumes where it stopped rather than starting again.',
+                        'It is then processed here automatically: re-encoded into several qualities so that it suits a slow connection and a fast one alike, cut into short segments delivered as adaptive streaming — so your player picks the quality your connection can carry and moves up or down as you watch — and a thumbnail is extracted from it, which its owner may replace with one of their own.',
+                        'Once processing is done the video is served from our own servers, and reaches the reader from them, in a player we built rather than someone else’s. YouTube is not on that path, and neither is anyone else.',
+                        'Everything uploaded is scanned automatically before it is published — see the terms of use for what may not be published and what is held back until a human has seen it.',
+                        'Books work the same way: the file is uploaded to us, kept here, and read from our servers in the platform’s reader.',
+                    ],
+                },
+                {
+                    id: 'about-youtube',
+                    heading: 'And what is imported from YouTube',
+                    paragraphs: [
+                        'A channel owner who already has material published on YouTube may import it into their channel here, once they have proved they own that channel — so their lessons become searchable, ordered into series, and resumable from where you stopped, like everything else on the platform.',
+                        'Those, and only those, are played from YouTube’s own player rather than from our servers. Each carries a mark on its card showing where it comes from, and none of it loads at all without your permission.',
+                        'The moment its owner uploads the original file to our servers, serving from us replaces that player and the mark disappears by itself. Importing is a door into the platform, not the platform.',
+                    ],
+                },
+                {
+                    id: 'about-operator',
+                    heading: 'Who runs it',
+                    paragraphs: [
+                        'One person runs it, in a personal capacity: it is not a company, an institution, or a body with a board. There is no investor and no funder behind it.',
+                        'What is published on it belongs to the channel owners, not to us: we host it, display it, and keep from readers what may not be published — we claim ownership of no lesson and no book.',
+                        'The address on the "Contact us" page reaches the person who runs the platform: for rights complaints, for other complaints, and for privacy requests.',
+                    ],
+                },
+                {
+                    id: 'about-not',
+                    heading: 'And what it does not do',
+                    paragraphs: [
+                        'These are not general promises but a description of what is absent from the software itself — the privacy policy sets out the detail:',
+                    ],
+                    bullets: [
+                        'No advertising and no ad network, no charge to watch and no paid subscription: there is nowhere on the platform where money changes hands.',
+                        'No advertising tracker and no third-party measurement. Performance and error measurements go to a server we run ourselves, not to an analytics company.',
+                        'No cookies set by the platform.',
+                        'No recommendation engine measuring how long you stay in order to lengthen it: the home page shows a bounded amount, fixed for the day; nothing autoplays one video after another; and what you have watched is not used to rank what you are shown.',
+                    ],
+                },
+            ],
         },
 
         privacy: {
@@ -1851,10 +1918,20 @@ export const en = {
                     ],
                 },
                 {
+                    id: 'terms-hosting',
+                    heading: 'Uploading content to our servers, and serving it from them',
+                    paragraphs: [
+                        'The norm on this platform is that content is uploaded to it and served from it: a channel owner uploads the video or book file to our servers, and it is kept here.',
+                        'A video is processed automatically after it is uploaded: re-encoded into several qualities, cut into segments delivered adaptively according to your connection speed, and a thumbnail is extracted from it. It is then served from our servers in the platform’s player, and reaches you from them.',
+                        'That processing requires keeping copies of your file at different qualities, which falls within the permission you grant the platform when you upload. When you delete the content, all of its copies are deleted with it.',
+                        'Uploaded material is not published until processing is complete and it has passed the automatic scan described above; depending on the length of the material, that may take some time.',
+                    ],
+                },
+                {
                     id: 'terms-youtube',
                     heading: 'Videos displayed from YouTube',
                     paragraphs: [
-                        'Some of the content displayed here is imported from YouTube, and plays from YouTube’s own player rather than from our servers. On each such video’s card you will find a mark indicating its source.',
+                        'Some of the content displayed here — as distinct from the above — is imported from YouTube, and plays from YouTube’s own player rather than from our servers. On each such video’s card you will find a mark indicating its source. A channel owner may upload the original file to our servers, and it is then served from us like everything else uploaded here.',
                         ['By using this platform you agree to be bound by the ', { text: 'YouTube Terms of Service', href: 'https://www.youtube.com/t/terms' }, ' in respect of that content, since it is displayed under them.'],
                         'We neither own this content nor control whether it remains: once its owner deletes it from YouTube or makes it private, it stops being shown here, and that is not in our hands.',
                     ],

@@ -1999,7 +1999,7 @@ export const ar = {
         // human last read the wording, and a page that silently dates itself to today is lying
         // about exactly the thing this line exists to establish.
         lastUpdated: 'آخر تحديث: {date}',
-        lastUpdatedDate: '16 سبتمبر 2026',
+        lastUpdatedDate: '22 سبتمبر 2026',
         contentsHeading: 'محتويات الصفحة',
         // WHICH VERSION GOVERNS. Rendered by `LegalDocument` only when the page is being read in a
         // language it was not written in, so the Arabic build never shows it — these documents ARE
@@ -2010,12 +2010,104 @@ export const ar = {
 
         footer: {
             navLabel: 'روابط الموقع',
+            about: 'عن المنصة',
             privacy: 'سياسة الخصوصية',
             terms: 'شروط الاستخدام',
             contact: 'تواصل معنا',
             // {year} comes from the clock in Footer.jsx. Latin digits, like every other number in
             // this app — see lib/numbers.js on why the app has one digit system and not two.
             rights: '© {year} أَبْصَرْنا',
+        },
+
+        /**
+         * WHAT THIS PLATFORM IS — the page that did not exist, and the absence showed in two
+         * directions at once.
+         *
+         * <p>A reader arriving on a lecture had no page telling them what they had arrived at, who
+         * runs it, or whether the video they are watching is ours or YouTube's. And an outside
+         * reviewer — Google's, when the OAuth client is verified, or YouTube's under III.I's
+         * "significant independent value" test — had nothing to read but a feed, from which a
+         * platform that hosts, transcodes and serves its own media is indistinguishable from a
+         * site that embeds other people's.
+         *
+         * <p><b>The video section is the load-bearing one</b> and is written for both readers at
+         * once, which is why it describes the pipeline in plain words rather than claiming a
+         * capability. Upload, re-encode into several qualities, segment, serve from our own
+         * hosts — every clause is a thing `UploadSessionService`, the worker and
+         * `MediaUrlService` actually do, and the import is placed after it as the secondary path
+         * it is. Getting that order wrong is how the page would read as a YouTube front end with
+         * a feature list attached.
+         *
+         * <p>NOT rendered with `LegalDocument`: it is not an operative text, so the shared
+         * "last updated" line (a claim about when the *terms* were last reviewed) and the numbered
+         * table of contents would both be borrowed clothes. Same data shape, own page — exactly
+         * the trade `Contact.jsx` documents.
+         */
+        about: {
+            title: 'عن المنصة',
+            metaDescription: 'ما هي منصة أَبْصَرْنا، ومن يديرها، وكيف تُرفَع الفيديوهات إلى خوادمها وتُعالَج وتُعرَض منها.',
+            intro: [
+                'أَبْصَرْنا منصةٌ لنشر محتوى إسلاميّ تعليميّ: فيديوهاتٌ وكتبٌ ومقالاتٌ ومنشورات، منظَّمةٌ في قنواتٍ يملكها أصحابها ويديرونها بأنفسهم.',
+                'وهذه الصفحة تصف ما تفعله المنصة فعلاً: ما يُرفَع إليها، وما يجري عليه، ومن أين يُعرَض للقارئ.',
+            ],
+            sections: [
+                {
+                    id: 'about-what',
+                    heading: 'ما تقدّمه المنصة',
+                    paragraphs: [
+                        'المنصة موضعُ نشرٍ لأصحاب المحتوى العلميّ، لا مجرّد دليلٍ يحيل إلى مواضع أخرى. ولكلّ صاحب محتوى قناةٌ يملكها، ينشر فيها ويرتّبها ويحذف منها متى شاء، وفيها أربعةُ أنواع:',
+                    ],
+                    bullets: [
+                        'الفيديو — دروسٌ ومحاضراتٌ تُرفَع إلى خوادمنا وتُعرَض منها، أو تُستورَد ممّا نشره صاحبها على يوتيوب.',
+                        'الكتب — ملفّاتٌ تُرفَع فتُقرَأ داخل المنصة في قارئها الخاصّ، بلا تنزيلٍ ولا برنامجٍ آخر، ويُحفَظ لك موضعُ وقوفك منها.',
+                        'المقالات والمنشورات — نصوصٌ تُكتَب هنا ابتداءً.',
+                        'السلاسل والتراجم — ترتيبُ الدروس في سلسلةٍ تُتابَع على وجهها، وتعريفٌ بأصحاب المحتوى.',
+                    ],
+                },
+                {
+                    // THE SECTION THIS PAGE WAS ADDED FOR. See the block comment above.
+                    id: 'about-video',
+                    heading: 'الفيديو: يُرفَع إلينا، ويُعالَج عندنا، ويُعرَض من خوادمنا',
+                    paragraphs: [
+                        'يرفع صاحبُ القناة ملفَّ الفيديو الأصليّ إلى خوادمنا من متصفّحه مباشرةً، مهما كَبُر: يُقسَّم الملف أجزاءً تُرفَع على التوالي، فإن انقطع الرفع استُؤنف من موضعه ولم يُعَد من أوّله.',
+                        'ثم يُعالَج آلياً عندنا: يُعاد ترميزُه إلى عدّة جودات ليناسب الشبكة البطيئة والسريعة جميعاً، ويُقطَّع مقاطعَ قصيرة تُبَثّ بالبثّ المتكيّف — فيختار مشغّلُك الجودةَ التي تحتملها شبكتُك ويرتفع بها أو ينزل أثناء المشاهدة — وتُستخرج له صورةٌ مصغّرة، ولصاحبه أن يضع صورةً من عنده بدلاً منها.',
+                        'فإذا فرغت المعالجة عُرِض الفيديو من خوادمنا نحن، ومنها يصل إلى القارئ، في مشغّلٍ من صنعنا لا من صنع غيرنا. وليس في هذا الطريق يوتيوب ولا سواه.',
+                        'ويُفحَص كلُّ ما يُرفَع فحصاً آلياً قبل أن يُنشَر — انظر شروط الاستخدام في بيان ما يُمنع نشره وما يُحجَب حتى يراه إنسان.',
+                        'والكتب مثلُه: يُرفَع الملفّ إلينا ويُحفَظ عندنا، ويُقرَأ من خوادمنا في قارئ المنصة.',
+                    ],
+                },
+                {
+                    id: 'about-youtube',
+                    heading: 'والمستورَد من يوتيوب',
+                    paragraphs: [
+                        'ولصاحب القناة — إن كان له محتوًى منشورٌ على يوتيوب — أن يستورده إلى قناته هنا بعد أن يثبت ملكيتَه لها، فتصير دروسه مفهرسةً في البحث، ومرتَّبةً في سلاسل، ومحفوظاً موضعُ وقوفك منها، كسائر ما في المنصة.',
+                        'وهذه وحدها تُعرَض من مشغّل يوتيوب نفسه لا من خوادمنا، وعلى بطاقة كلّ واحدٍ منها علامةٌ تدلّ على مصدره، ولا يُحمَّل شيءٌ منها إلا بإذنك.',
+                        'ومتى رفع صاحبُها الملفَّ الأصليَّ إلى خوادمنا حلَّ العرضُ من عندنا محلَّ ذلك المشغّل وسقطت العلامة من نفسها. فالاستيراد بابٌ من أبواب المنصة إليها، وليس هو المنصة.',
+                    ],
+                },
+                {
+                    id: 'about-operator',
+                    heading: 'من يديرها',
+                    paragraphs: [
+                        'يديرها شخصٌ واحدٌ بصفته الشخصيّة: ليست شركةً ولا مؤسسةً ولا جهةً لها هيئةُ إدارة، وليس وراءها مستثمرٌ ولا مموّل.',
+                        'وما يُنشَر فيها فهو لأصحاب القنوات، لا لنا: نحن نستضيفه ونعرضه ونحمي القارئَ ممّا يُمنع نشرُه، ولا ندّعي ملكيةَ درسٍ ولا كتاب.',
+                        'وعنوان التواصل في صفحة «تواصل معنا» هو الطريق إلى مُدير المنصة: للبلاغات عن الحقوق، وللشكاوى، ولطلبات الخصوصية.',
+                    ],
+                },
+                {
+                    id: 'about-not',
+                    heading: 'وما لا تفعله',
+                    paragraphs: [
+                        'وهذه ليست وعوداً عامّة، وإنما وصفٌ لما ليس في البرنامج أصلاً — ومَن أراد التفصيل ففي سياسة الخصوصية بيانُه:',
+                    ],
+                    bullets: [
+                        'لا إعلانَ في المنصة ولا شبكةَ إعلانات، ولا رسمَ مشاهدةٍ ولا اشتراكاً مدفوعاً: ليس في المنصة موضعٌ يُدفَع فيه مال.',
+                        'ولا أداةَ تتبّعٍ إعلانيّ ولا مقياسَ طرفٍ ثالث. وقياساتُ الأداء والأعطال تُرسَل إلى خادمٍ نديره نحن، لا إلى شركة تحليلات.',
+                        'ولا كوكيز تضعها المنصة.',
+                        'ولا ترشيحَ يقيس زمنَ بقائك ليطيله: الصفحة الرئيسة تعرض قدراً محدوداً ثابتاً في يومه، ولا تشغيلَ تلقائياً لفيديو بعد فيديو، وما شاهدتَه لا يُستعمل لترتيب ما يُعرَض عليك.',
+                    ],
+                },
+            ],
         },
 
         privacy: {
@@ -2383,6 +2475,27 @@ export const ar = {
                     ],
                 },
                 {
+                    // WHAT HAPPENS TO A FILE AFTER IT IS UPLOADED, and it is deliberately placed
+                    // IMMEDIATELY BEFORE the YouTube clause rather than beside the upload-rights
+                    // one. Read in that order the document says "this is what we do with your
+                    // video" and then "and here is the one kind we don't host" — the true shape.
+                    // The other order leaves the YouTube clause as the only statement anywhere
+                    // about how video reaches a reader, from which both a reader and an outside
+                    // reviewer would reasonably conclude that embedding is all this platform does.
+                    //
+                    // `terms-upload-rights` already grants the licence to «تخزينه ومعالجته
+                    // وعرضه». That is the permission; this is the description of what is done
+                    // with it, which is a different thing and was missing.
+                    id: 'terms-hosting',
+                    heading: 'رفعُ المحتوى إلى خوادمنا وعرضُه منها',
+                    paragraphs: [
+                        'الأصل في هذه المنصة أن المحتوى يُرفَع إليها ويُعرَض منها: يرفع صاحبُ القناة ملفَّ الفيديو أو الكتاب إلى خوادمنا، فيُحفَظ عندنا.',
+                        'ويُعالَج الفيديو بعد رفعه آلياً: يُعاد ترميزُه إلى عدّة جودات، ويُقطَّع مقاطعَ تُبَثّ بثّاً متكيّفاً مع سرعة شبكتك، وتُستخرج له صورةٌ مصغّرة. ثم يُعرَض من خوادمنا في مشغّل المنصة، ويصل إليك منها.',
+                        'وهذه المعالجة تقتضي حفظَ نسخٍ من ملفك بجودات مختلفة، وهو داخلٌ في الإذن الذي تمنحه المنصة عند الرفع. ومتى حذفتَ المحتوى حُذفت نسخُه كلُّها.',
+                        'ولا يُنشَر المرفوع حتى تتمّ معالجتُه ويجتاز الفحص الآليّ المبيَّن أعلاه؛ وقد يمضي على ذلك وقتٌ بحسب طول المادّة.',
+                    ],
+                },
+                {
                     // REQUIRED BY III.A OF YOUTUBE'S API SERVICES TERMS, which says a client's
                     // terms of use must display a link to youtube.com/t/terms and state that
                     // users of the client agree to be bound by it. `Terms.jsx` did not mention
@@ -2394,7 +2507,7 @@ export const ar = {
                     id: 'terms-youtube',
                     heading: 'الفيديوهات المعروضة من يوتيوب',
                     paragraphs: [
-                        'بعض المحتوى المعروض هنا مستوردٌ من يوتيوب، ويُشغَّل من مشغّل يوتيوب نفسه لا من خوادمنا. وتجد على بطاقة كلّ فيديو من هذه علامةً تدلّ على مصدره.',
+                        'وبعض المحتوى المعروض هنا — دون ما سبق — مستوردٌ من يوتيوب، ويُشغَّل من مشغّل يوتيوب نفسه لا من خوادمنا. وتجد على بطاقة كلّ فيديو من هذه علامةً تدلّ على مصدره. ولصاحب القناة أن يرفع الملفَّ الأصليَّ إلى خوادمنا، فيُعرَض حينئذٍ من عندنا كسائر ما رُفِع إلينا.',
                         ['وباستعمالك هذه المنصة فإنك توافق على أن تلتزم بـ', { text: 'شروط خدمة يوتيوب', href: 'https://www.youtube.com/t/terms' }, ' فيما يخصّ هذا المحتوى، فهو معروض بمقتضاها.'],
                         'ونحن لا نملك هذا المحتوى ولا نتحكّم في بقائه: فمتى حذفه صاحبه من يوتيوب أو جعله خاصاً توقّف عرضه هنا، وليس ذلك بأيدينا.',
                     ],

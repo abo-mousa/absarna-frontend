@@ -55,6 +55,7 @@ function Footer() {
                     landmark list needs these distinguished from the main and side navigation, and
                     "روابط" alone would not do it. */}
                 <nav aria-label={t('legal.footer.navLabel')} className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+                    <Link to="/about" className={footerLinkClass}>{t('legal.footer.about')}</Link>
                     <Link to="/privacy" className={footerLinkClass}>{t('legal.footer.privacy')}</Link>
                     <Link to="/terms" className={footerLinkClass}>{t('legal.footer.terms')}</Link>
                     <Link to="/contact" className={footerLinkClass}>{t('legal.footer.contact')}</Link>
