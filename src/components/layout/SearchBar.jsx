@@ -154,7 +154,7 @@ function SearchBar() {
                                     ${index === highlightIndex ? 'bg-surface-hover' : 'hover:bg-surface-hover'}`}
                             >
                                 <Search size={14} className="text-text-muted flex-shrink-0" />
-                                <span className="truncate text-text-primary">{item.title}</span>
+                                <span dir="auto" className="truncate text-text-primary">{item.title}</span>
                             </button>
                         </li>
                     ))}

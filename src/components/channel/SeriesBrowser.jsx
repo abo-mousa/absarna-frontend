@@ -283,7 +283,7 @@ export default function SeriesBrowser({ slug, active, onOpen }) {
                             >
                                 <button type="button" onClick={() => onOpen(series)} className={openClass}>
                                     <div className="min-w-0">
-                                        <strong className="block truncate hover:text-primary">{series.title}</strong>
+                                        <strong dir="auto" className="block truncate hover:text-primary">{series.title}</strong>
                                         <SeriesSummary series={series} />
                                     </div>
                                 </button>

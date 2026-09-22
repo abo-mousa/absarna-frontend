@@ -434,9 +434,9 @@ function ChannelPage() {
                                         </span>
                                     )}
                                 </div>
-                                <h3 className="text-base font-semibold mb-2 leading-snug line-clamp-2">{s.title}</h3>
+                                <h3 dir="auto" className="text-base font-semibold mb-2 leading-snug line-clamp-2">{s.title}</h3>
                                 {s.description && (
-                                    <p className="text-text-secondary text-sm leading-relaxed line-clamp-2 mb-2">{s.description}</p>
+                                    <p dir="auto" className="text-text-secondary text-sm leading-relaxed line-clamp-2 mb-2">{s.description}</p>
                                 )}
                                 <span className="text-xs text-text-muted">{t('common.videoCount', { count: s.contentCount ?? 0 })}</span>
                             </Link>

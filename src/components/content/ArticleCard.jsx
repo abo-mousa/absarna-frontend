@@ -14,11 +14,11 @@ function ArticleCard({ article }) {
                     {article.category}
                 </span>
             )}
-            <h3 className="text-base font-semibold mb-2 leading-snug line-clamp-2">
+            <h3 dir="auto" className="text-base font-semibold mb-2 leading-snug line-clamp-2">
                 {article.title}
             </h3>
             {article.content && (
-                <p className="text-text-secondary text-sm leading-relaxed line-clamp-3 mb-3">
+                <p dir="auto" className="text-text-secondary text-sm leading-relaxed line-clamp-3 mb-3">
                     {article.content.substring(0, 150)}...
                 </p>
             )}

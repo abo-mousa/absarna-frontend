@@ -116,7 +116,7 @@ function BookCard({ book, currentPage }) {
                     </span>
                 )}
 
-                <h3 className="text-[0.95rem] font-semibold mb-2 leading-snug line-clamp-2">
+                <h3 dir="auto" className="text-[0.95rem] font-semibold mb-2 leading-snug line-clamp-2">
                     <Link to={`/books/${book.id}`} className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm">
                         {book.title}
                     </Link>

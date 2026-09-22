@@ -219,7 +219,7 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                 natural width, which silently breaks the title's `line-clamp-2` and the
                 channel/series `truncate`. */}
             <div className="p-4 min-w-0">
-                <h3 className="text-[0.95rem] font-semibold mb-1.5 leading-snug line-clamp-2">
+                <h3 dir="auto" className="text-[0.95rem] font-semibold mb-1.5 leading-snug line-clamp-2">
                     {video.title}
                 </h3>
 
@@ -234,7 +234,7 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                                 className={`${META_ROW} text-text-secondary hover:text-primary transition-colors`}
                             >
                                 <Avatar src={resolveMediaUrl(video.channelLogoUrl)} name={video.channelName} size="sm" className="!w-5 !h-5 !text-[0.65rem] flex-shrink-0" />
-                                <span className="truncate">{video.channelName}</span>
+                                <span dir="auto" className="truncate">{video.channelName}</span>
                             </button>
                         )}
                         {/* Which series this belongs to. A link, because the series page is where
@@ -247,7 +247,7 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                                 className={`${META_ROW} text-text-muted hover:text-primary transition-colors`}
                             >
                                 <span className={META_GLYPH}><Tv size={12} /></span>
-                                <span className="truncate">{video.seriesTitle}</span>
+                                <span dir="auto" className="truncate">{video.seriesTitle}</span>
                             </button>
                         )}
                         {/* Not a count, so it belongs here rather than in the numbers column —

@@ -120,7 +120,7 @@ export default function ChannelManageNav({ channel, activeTab, onSelect, youtube
                 <Avatar src={channel.logoUrl} name={channel.name} color={channel.primaryColor} size="md" />
                 <div className="min-w-0">
                     <p className="text-xs text-text-muted">{t('channelManage.subtitle')}</p>
-                    <h1 className="font-bold truncate">{channel.name}</h1>
+                    <h1 dir="auto" className="font-bold truncate">{channel.name}</h1>
                     <Link
                         to={`/channel/${channel.slug}`}
                         className="inline-flex items-center gap-1 text-xs text-primary hover:underline"

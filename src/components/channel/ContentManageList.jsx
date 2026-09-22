@@ -56,7 +56,15 @@ function ContentManageList({ items, loading, onToggleVisibility, onDelete, onEdi
                         item.visible ? 'bg-surface' : 'bg-surface-hover'
                     }`}
                 >
-                    <div className="min-w-0">
+                    {/* `dir="auto"` ON THE WHOLE ITEM BLOCK, not just the title. Two things
+                        depend on it. The title is `truncate`d, and an RTL run clipped inside an
+                        LTR block puts its ellipsis at the physical right — which for Arabic is the
+                        BEGINNING of the sentence, so a long title lost «السيرة النبوية | 103» and
+                        kept the speaker's name. That is content loss, not a nicety. And the block
+                        rather than the title alone keeps the status badge under it in the same
+                        direction, so a row never reads half one way and half the other. An item
+                        whose title is Latin resolves `ltr` and is unaffected. */}
+                    <div dir="auto" className="min-w-0">
                         <strong className={`block truncate ${item.visible ? '' : 'text-text-muted'}`}>
                             {getHref?.(item) ? (
                                 <Link

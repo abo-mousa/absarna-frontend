@@ -41,7 +41,7 @@ function Subscriptions() {
                                 <h3 className="font-semibold">{sub.channelName}</h3>
                                 <p className="text-sm text-text-muted">@{sub.channelSlug}</p>
                                 {sub.channelDescription && (
-                                    <p className="text-sm text-text-muted truncate">{sub.channelDescription}</p>
+                                    <p dir="auto" className="text-sm text-text-muted truncate">{sub.channelDescription}</p>
                                 )}
                             </div>
 

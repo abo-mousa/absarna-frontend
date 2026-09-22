@@ -241,7 +241,7 @@ function AdminReview() {
                                         }`}
                                     >
                                         <div className="flex items-start justify-between gap-2 mb-1">
-                                            <span className="font-semibold text-sm line-clamp-2">
+                                            <span dir="auto" className="font-semibold text-sm line-clamp-2">
                                                 {row.title}
                                             </span>
                                             <Badge variant={BADGE_VARIANT[row.state] ?? 'muted'}>

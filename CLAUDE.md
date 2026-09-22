@@ -83,12 +83,20 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   it stayed Arabic.
 - **Two known limits of the English build, both deliberate.** `<html lang>` becomes `en` while the
   *content* stays Arabic, so a screen reader pronounces Arabic titles with an English voice — the
-  fix is `lang="ar"` on content-bearing elements (the layout half is already handled, since
-  `dir="auto"` is on 29 of them), which is a sweep worth doing on its own rather than inside a
-  locale change. And `en.js` ships to everyone: ~16 KB gzipped that an Arabic reader never reads.
+  fix is `lang="ar"` on content-bearing elements, which is a sweep worth doing on its own rather
+  than inside a locale change. And `en.js` ships to everyone: ~16 KB gzipped that an Arabic reader never reads.
   Lazy-loading it would cost `t()` its synchronous, dependency-free contract and add a round trip
   on exactly the mobile connections the channel-card work was about — so if it is ever revisited,
   the thing to move is `en` alone, since `ar` is needed on every build as the fallback.
+- **Anything that renders a reader's or an owner's own words carries `dir="auto"`.** Not a
+  nicety: an element that also clips (`truncate`, `line-clamp-*`) puts its ellipsis at the *end of
+  the line box*, which under `ltr` is the physical right — and the physical right of an Arabic run
+  is where the sentence BEGINS. So a long Arabic title in the English build lost «السيرة النبوية |
+  103» and kept the speaker's name. The Arabic build never had it, because there the box direction
+  and the text direction agreed by accident. `dir="auto"` makes them agree on purpose, per item,
+  and a Latin title resolves `ltr` and is laid out correctly for the first time in either build.
+  On the dashboard rows it sits on the whole item block rather than the title alone, so the status
+  badge under a title stays in the same direction as it.
 - **The legal pages are an operative text plus a translation of it, and that is not the same as
   copy that exists twice.** `legal.sourceNotice` says the Arabic governs and `LegalDocument`
   renders it only when the reader's locale is not `SOURCE_LOCALE`, so the Arabic build never

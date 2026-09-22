@@ -36,7 +36,7 @@ function ChannelRow({ slug, name, color, currentChannel, onClose, manageLink }) 
                 className={`flex-1 min-w-0 ${channelLinkClass(currentChannel === slug)}`}
             >
                 <ChannelDot color={color} name={name} />
-                <span className="truncate">{name}</span>
+                <span dir="auto" className="truncate">{name}</span>
             </Link>
             {manageLink && (
                 <Link

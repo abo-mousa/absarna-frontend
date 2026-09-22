@@ -46,6 +46,9 @@ function OutlineList({ items, onSelect, depth = 0 }) {
                         type="button"
                         onClick={() => item.pageNumber && onSelect(item.pageNumber)}
                         disabled={!item.pageNumber}
+                        // The outline comes from inside the PDF, so it is the document's
+                        // language and not the interface's.
+                        dir="auto"
                         className="block w-full text-start py-1.5 text-sm text-text-secondary hover:text-primary disabled:opacity-50 disabled:hover:text-text-secondary transition-colors truncate"
                     >
                         {item.title}
