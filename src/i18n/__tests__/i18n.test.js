@@ -24,8 +24,31 @@ describe('t', () => {
     });
 
     it('fills placeholders', () => {
-        expect(t('common.views', { count: 12 })).toContain('12');
+        // The default locale is Arabic, so a NUMBER arrives in Arabic digits — see the rule below.
+        expect(t('common.views', { count: 12 })).toContain('١٢');
         expect(t('search.heading', { query: 'ابن تيمية' })).toContain('ابن تيمية');
+    });
+
+    /**
+     * <b>A number is the app's, a string is somebody's.</b> Everything the app counts or numbers
+     * arrives as a number and reads in the locale's digits; everything a person wrote arrives as a
+     * string and is nobody's to rewrite. That split is the entire rule about digits, and it is
+     * enforced here rather than at ~40 call sites.
+     */
+    it('localises a numeric placeholder and never a string one', () => {
+        expect(t('common.views', { count: 12 })).toContain('١٢');
+        // A title carrying Latin digits is the case this protects: it is the owner's text.
+        expect(t('home.deleteVideoConfirm', { title: 'Lecture 103' })).toContain('Lecture 103');
+        // And a count already grouped by `formatCount` arrives as a string, carrying digits it has
+        // localised itself — a second pass would find no ASCII in it anyway.
+        expect(t('common.views', { count: '١٬٩٤٣' })).toContain('١٬٩٤٣');
+
+        setActiveLocale('en');
+        try {
+            expect(t('common.views', { count: 12 })).toContain('12');
+        } finally {
+            setActiveLocale('ar');
+        }
     });
 
     it('fills the same placeholder everywhere it appears', () => {
@@ -40,7 +63,7 @@ describe('t', () => {
     });
 
     it('treats zero as a value, not as missing', () => {
-        expect(t('common.videoCount', { count: 0 })).toContain('0');
+        expect(t('common.videoCount', { count: 0 })).toContain('٠');
         expect(t('common.videoCount', { count: 0 })).not.toContain('{count}');
     });
 });

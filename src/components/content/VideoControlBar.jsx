@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Airplay, Loader2, Maximize, Minimize, Pause, Play, Volume1, Volume2, VolumeX } from 'lucide-react';
 import { safeStorage } from '@/lib/safeStorage';
-import { isRtl, t } from '@/i18n';
+import { formatDigits, isRtl, t } from '@/i18n';
 import PlayerSettingsMenu from './PlayerSettingsMenu';
 
 /**
@@ -807,8 +807,8 @@ export default function VideoControlBar({
                         // A screen reader reading "1263" for a position is useless; the two clock
                         // values are what a viewer would say out loud.
                         aria-valuetext={t('video.controls.timeOf', {
-                            current: formatTime(shownTime),
-                            total: formatTime(shownDuration),
+                            current: formatDigits(formatTime(shownTime)),
+                            total: formatDigits(formatTime(shownDuration)),
                         })}
                         onPointerDown={handleTrackPointerDown}
                         onPointerMove={handleTrackPointerMove}
@@ -865,7 +865,7 @@ export default function VideoControlBar({
                             around the slash and shows the total first, so a lecture four minutes
                             in reads «45:10 / 4:02». */}
                         <span dir="ltr" className="text-xs text-white/90 tabular-nums">
-                            {formatTime(shownTime)} / {formatTime(shownDuration)}
+                            {formatDigits(formatTime(shownTime))} / {formatDigits(formatTime(shownDuration))}
                         </span>
 
                         <div className="flex-1" />

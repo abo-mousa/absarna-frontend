@@ -83,7 +83,9 @@ describe('formatSpans', () => {
         // The remainder belongs to THIS phrase. It used to render as its own paragraph, landing
         // the fragment after the body had already finished with a different sentence -- two
         // sentences away from the list it agrees with.
-        expect(result.text).toContain(ar.video.review.moreSpans.replace('{count}', '2'));
+        // «٢», not «2»: the Arabic build reads in its own digits, and `t()` localises a numeric
+        // placeholder — see i18n/__tests__ on why that split lives there and not at the call site.
+        expect(result.text).toContain(ar.video.review.moreSpans.replace('{count}', '٢'));
     });
 
     it('isolates every range, so none of them renders backwards', () => {

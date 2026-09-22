@@ -4,7 +4,7 @@ import { List, Search } from 'lucide-react';
 import { ChevronBack, ChevronForward } from '@/components/ui/DirectionalIcon';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
-import { t } from '@/i18n';
+import { formatDigits, normalizeDigits, t } from '@/i18n';
 
 // Bundled locally (not the browser's native PDF plugin) so rendering is identical across
 // Chrome/Firefox/Safari/etc — this is the whole point of using react-pdf over <object>.
@@ -83,7 +83,11 @@ function OutlineList({ items, onSelect, depth = 0 }) {
 function PdfReader({ fileUrl, initialPage = 1, onPageChange, onPageChangeImmediate }) {
     const [numPages, setNumPages] = useState(null);
     const [pageNumber, setPageNumber] = useState(initialPage);
-    const [pageInput, setPageInput] = useState(String(initialPage));
+    // Shown in the locale's digits like every other number, but NOT forced on what the reader
+    // types: the box keeps their own characters until they submit, and `normalizeDigits` accepts
+    // either script — rewriting an input as someone types in it is hostile, and refusing a Latin
+    // keyboard on an Arabic page would be worse.
+    const [pageInput, setPageInput] = useState(formatDigits(initialPage));
     const [loadError, setLoadError] = useState(false);
     const [containerWidth, setContainerWidth] = useState(0);
     // The height the last page rendered at, held on the container so a page turn does not
@@ -181,7 +185,7 @@ function PdfReader({ fileUrl, initialPage = 1, onPageChange, onPageChangeImmedia
         if (!numPages) return;
         const clamped = Math.min(Math.max(1, page), numPages);
         setPageNumber(clamped);
-        setPageInput(String(clamped));
+        setPageInput(formatDigits(clamped));
         // Zero-cost (no network call) — just lets the parent keep a `pagehide`-safe ref of the
         // true latest page, since the debounced `reportPage` write below may not have fired yet.
         onPageChangeImmediate?.(clamped, numPages);
@@ -190,11 +194,11 @@ function PdfReader({ fileUrl, initialPage = 1, onPageChange, onPageChangeImmedia
 
     const handlePageInputSubmit = (e) => {
         e.preventDefault();
-        const parsed = parseInt(pageInput, 10);
+        const parsed = parseInt(normalizeDigits(pageInput), 10);
         if (Number.isFinite(parsed)) {
             goToPage(parsed);
         } else {
-            setPageInput(String(pageNumber));
+            setPageInput(formatDigits(pageNumber));
         }
     };
 

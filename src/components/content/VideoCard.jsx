@@ -6,7 +6,7 @@ import { useConsent } from '@/contexts/ConsentContext';
 import { formatPublishDate, displayDate } from '@/lib/datetime';
 import Avatar from '../ui/Avatar';
 import SourceBadge from './SourceBadge';
-import { t } from '@/i18n';
+import { formatDigits, t } from '@/i18n';
 import { ownerBadge } from '@/lib/review';
 import { formatCount } from '@/lib/numbers';
 
@@ -116,7 +116,10 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
 
                 {video.duration && (
                     <div className="absolute bottom-2 end-2 bg-black/70 text-white text-xs font-semibold px-2 py-0.5 rounded">
-                        {video.duration}
+                        {/* A display string the backend sends verbatim ("45:30"), so it never
+                            passed through `formatCount` or a `t()` placeholder. Mapping its
+                            digits is the whole of what is safe to do to it. */}
+                        {formatDigits(video.duration)}
                     </div>
                 )}
 

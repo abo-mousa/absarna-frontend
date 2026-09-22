@@ -182,7 +182,23 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   the wrong language and an English one is a log line. After the rate limiter stopped writing its
   own sentence there is nothing left for it to find; it stays as the guard for anything older, and
   **must never start trusting English**.
-- **Latin digits everywhere** (`lib/numbers.js` `formatCount`) — counts and dates must agree.
+- **Each locale's own digits, and the line is WHO WROTE THE NUMBER.** A number the *app* formats
+  reads in the locale's digits — counts, dates, page numbers, the player clock, durations, character
+  counters — so the Arabic build shows «١٥ سبتمبر ٢٠٢٦» and «٥٧:١٥». Text a *person* wrote is never
+  touched: «السيرة النبوية | 102» keeps its 102, as do YouTube ids, slugs and rungs like `1080p`.
+  Two mechanisms enforce it and you rarely call either. `formatCount` asks `Intl.NumberFormat` for
+  the locale on the record, which brings the digits *and* the grouping separator («١٬٩٤٣»); and
+  `t()` localises a **numeric** placeholder while passing a **string** through untouched, which is
+  what keeps `{title}` and `{query}` out of it. Use `formatDigits` only for a number that reaches
+  the screen outside both — a backend duration string, the clock — and never for grouping, since
+  «٢٬٠٢٦» is not a year.
+- **This reversed an earlier decision and the reversal is the point.** The app once mixed
+  Arabic-Indic counts with Latin dates; that was settled by making everything Latin, and is now
+  settled the other way. The mixture was the bug, not the script. What must never come back is one
+  screen with both.
+- **dayjs needs `preParsePostFormat` for this.** Core never calls `postformat` — the word does not
+  appear in it — so without the plugin the locale's digit mapping is dead code, and the failure is
+  silent: month names come out right and only the digits stay Latin. `datetime.test.js` pins it.
   `displayDate(item)` = `originalPublishDate || publishDate`, or an imported back catalogue all reads
   «منذ ١٩ ساعة».
 

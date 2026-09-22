@@ -14,7 +14,7 @@ import {
     useUpdateComment,
     useDeleteComment,
 } from '../../hooks/useComments';
-import { t } from '@/i18n';
+import { formatDigits, t } from '@/i18n';
 
 const MAX_COMMENT_LENGTH = 2000;
 
@@ -172,7 +172,7 @@ function CommentsSection({ type, id }) {
                 className="font-reading px-3 py-2 rounded-md border border-border outline-none focus:border-primary transition-colors"
             />
             <div className="flex items-center justify-between">
-                <span className="text-xs text-text-muted">{editContent.length}/{MAX_COMMENT_LENGTH}</span>
+                <span className="text-xs text-text-muted">{formatDigits(editContent.length)}/{formatDigits(MAX_COMMENT_LENGTH)}</span>
                 <div className="flex gap-2">
                     <button
                         type="button"
@@ -214,7 +214,7 @@ function CommentsSection({ type, id }) {
                         className="font-reading px-3.5 py-2.5 rounded-md border border-border resize-y outline-none focus:border-primary transition-colors"
                     />
                     <div className="flex items-center justify-between">
-                        <span className="text-xs text-text-muted">{newComment.length}/{MAX_COMMENT_LENGTH}</span>
+                        <span className="text-xs text-text-muted">{formatDigits(newComment.length)}/{formatDigits(MAX_COMMENT_LENGTH)}</span>
                         <button
                             type="submit"
                             disabled={createComment.isPending}
@@ -272,7 +272,7 @@ function CommentsSection({ type, id }) {
                                         className="font-reading px-3 py-2 rounded-md border border-border outline-none focus:border-primary transition-colors"
                                     />
                                     <div className="flex items-center justify-between">
-                                        <span className="text-xs text-text-muted">{replyContent.length}/{MAX_COMMENT_LENGTH}</span>
+                                        <span className="text-xs text-text-muted">{formatDigits(replyContent.length)}/{formatDigits(MAX_COMMENT_LENGTH)}</span>
                                         <button
                                             type="submit"
                                             disabled={replyComment.isPending}

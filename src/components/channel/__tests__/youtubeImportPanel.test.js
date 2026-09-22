@@ -52,16 +52,16 @@ describe('importButtonLabel', () => {
 describe('importProgress', () => {
     it('reads as a fraction once YouTube has told us the total', () => {
         expect(importProgress({ importedVideos: 25000, importTotalEstimate: 137412 }))
-            .toBe(t('youtube.progressOfTotal', { count: '25,000', total: '137,412' }));
+            .toBe(t('youtube.progressOfTotal', { count: '٢٥٬٠٠٠', total: '١٣٧٬٤١٢' }));
     });
 
     it('reads as a bare count before the total is known', () => {
         // `importTotalEstimate` is null before the first page comes back and again once the import
         // finishes, so the shape has to work without a denominator.
         expect(importProgress({ importedVideos: 50, importTotalEstimate: null }))
-            .toBe(t('youtube.progress', { count: '50' }));
+            .toBe(t('youtube.progress', { count: '٥٠' }));
         expect(importProgress({ importedVideos: 50 }))
-            .toBe(t('youtube.progress', { count: '50' }));
+            .toBe(t('youtube.progress', { count: '٥٠' }));
     });
 
     it('says nothing while there is nothing to report', () => {
@@ -74,7 +74,9 @@ describe('importProgress', () => {
     });
 
     it('groups the digits, since the numbers this reports are five and six figures', () => {
-        expect(importProgress({ importedVideos: 137412 })).toContain('137,412');
+        // Grouped with «٬», the Arabic thousands separator — `formatCount` asks Intl for the
+        // locale's own grouping rather than mapping digits onto a Latin comma.
+        expect(importProgress({ importedVideos: 137412 })).toContain('١٣٧٬٤١٢');
     });
 });
 
@@ -158,9 +160,9 @@ describe('refreshSummary', () => {
 
     it('counts anything more, with grouped digits', () => {
         expect(refreshSummary({ refreshRanAt: '2026-09-20T10:45:00', refreshNewVideos: 4 }, 'أمس'))
-            .toBe(t('youtube.autoUpdate.lastCheckedAdded', { when: 'أمس', count: '4' }));
+            .toBe(t('youtube.autoUpdate.lastCheckedAdded', { when: 'أمس', count: '٤' }));
         expect(refreshSummary({ refreshRanAt: '2026-09-20T10:45:00', refreshNewVideos: 1200 }, 'أمس'))
-            .toContain('1,200');
+            .toContain('١٬٢٠٠');
     });
 
     it('says nothing before the first check', () => {
@@ -211,11 +213,13 @@ describe('lastCheckedWhen', () => {
     const at = '2026-09-20T10:00:00';
 
     it('reads a past check as a relative time', () => {
-        expect(lastCheckedWhen(at, dayjs('2026-09-20T13:00:00Z'))).toBe('منذ 3 ساعات');
-        // «منذ 2 أيام», not the Arabic dual «منذ يومين»: lib/datetime's ar-latn locale keeps Latin
-        // digits with the count inline, which is the app-wide convention and not this line's to
-        // change. Asserted as it actually renders so this test documents the convention.
-        expect(lastCheckedWhen(at, dayjs('2026-09-22T10:00:00Z'))).toBe('منذ 2 أيام');
+        expect(lastCheckedWhen(at, dayjs('2026-09-20T13:00:00Z'))).toBe('منذ ٣ ساعات');
+        // «منذ ٢ أيام», not the Arabic dual «منذ يومين»: this locale's `relativeTime` uses a
+        // single `%d` form with the count inline rather than spelling out the dual, which is the
+        // app-wide convention and not this line's to change. The digits are Arabic-Indic because
+        // every number the app formats now is. Asserted exactly as it renders, so this test
+        // documents both conventions rather than only checking the arithmetic.
+        expect(lastCheckedWhen(at, dayjs('2026-09-22T10:00:00Z'))).toBe('منذ ٢ أيام');
     });
 
     it('never renders a check as happening in the FUTURE', () => {

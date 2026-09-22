@@ -48,7 +48,7 @@
 
 import { ar } from './ar';
 import { en } from './en';
-import { DEFAULT_LOCALE, isLocale, localeInfo } from './locales';
+import { DEFAULT_LOCALE, isLocale, localeInfo, localizeDigits } from './locales';
 
 const catalogs = { ar, en };
 
@@ -92,6 +92,23 @@ export const direction = () => localeInfo(active).dir;
  * `ms-`/`me-`/`ps-`/`pe-`/`start-`/`end-` and flips on its own.
  */
 export const isRtl = () => localeInfo(active).dir === 'rtl';
+
+/**
+ * The active locale's digits for a number that is a LABEL — a page, an index, a year.
+ *
+ * <p>Glyphs only, never grouping: «٢٬٠٢٦» is not a year. A magnitude goes through
+ * `lib/numbers.js`'s `formatCount` instead, which groups it properly for the locale.
+ *
+ * <p>Never hand this text a person wrote. It maps every ASCII digit it is given, so a title or a
+ * YouTube id would be rewritten along with everything else.
+ */
+export const formatDigits = (value) => localizeDigits(value, active);
+
+/**
+ * The inverse of {@link formatDigits}, for reading a number back out of something a person typed.
+ * Accepts either script whatever the locale is — see `locales.js`.
+ */
+export { normalizeDigits } from './locales';
 
 /**
  * Sets the locale for a host that has no `<html lang>` to read — a React Native shell, or a test
@@ -146,8 +163,18 @@ export function t(key, params) {
     }
     // An unmatched placeholder is left as written rather than replaced with "undefined" — the
     // literal `{count}` on screen says which value the caller forgot to pass.
-    return value.replace(PLACEHOLDER, (match, name) =>
-        params[name] === undefined || params[name] === null ? match : String(params[name]));
+    //
+    // A NUMBER is localised, a STRING is passed through untouched, and that split is the whole
+    // rule about digits. Everything the app counts or numbers arrives here as a number and should
+    // read in the locale's own digits; everything a person wrote — a title in `{title}`, a search
+    // in `{query}` — arrives as a string and is nobody's to rewrite. Call sites that pre-format a
+    // magnitude with `formatCount` hand in a string that is already localised, and a second pass
+    // would find no ASCII digits in it anyway.
+    return value.replace(PLACEHOLDER, (match, name) => {
+        const supplied = params[name];
+        if (supplied === undefined || supplied === null) return match;
+        return typeof supplied === 'number' ? localizeDigits(supplied, active) : String(supplied);
+    });
 }
 
 /**

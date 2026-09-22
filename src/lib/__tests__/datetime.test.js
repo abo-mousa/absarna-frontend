@@ -43,7 +43,7 @@ describe('formatPublishDate', () => {
         // Bad data — a wrong timezone on an import, a mistyped year. «بعد يومين» on a video that
         // is already playing reads as a broken page; the date reads as a mistake in the data,
         // which is what it is.
-        expect(formatPublishDate('2026-09-20')).toBe('20 سبتمبر 2026');
+        expect(formatPublishDate('2026-09-20')).toBe('٢٠ سبتمبر ٢٠٢٦');
     });
 
     it('is relative for something published in the last week', () => {
@@ -53,22 +53,29 @@ describe('formatPublishDate', () => {
     });
 
     it('is an absolute date past a week', () => {
-        expect(formatPublishDate('2026-06-17')).toBe('17 يونيو 2026');
+        expect(formatPublishDate('2026-06-17')).toBe('١٧ يونيو ٢٠٢٦');
     });
 
     it('names the month in Arabic on the absolute branch too', () => {
         // The regression: only the relative branch carried .locale('ar-latn'), so this printed
         // "17 June 2007". Asserted against the whole string rather than a contains, because an
         // English month is a substring failure, not a missing one.
-        expect(formatPublishDate('2007-06-17')).toBe('17 يونيو 2007');
-        expect(formatPublishDate('2011-01-05')).toBe('5 يناير 2011');
+        expect(formatPublishDate('2007-06-17')).toBe('١٧ يونيو ٢٠٠٧');
+        expect(formatPublishDate('2011-01-05')).toBe('٥ يناير ٢٠١١');
     });
 
-    it('keeps Latin digits, unlike dayjs\'s own ar locale', () => {
-        // dayjs's bundled 'ar' postformats to Arabic-Indic (١٢٣), which is what made durations,
-        // subscriber counts and publish dates disagree with each other across the app.
-        expect(formatPublishDate('2007-06-17')).toMatch(/\d/);
-        expect(formatPublishDate('2007-06-17')).not.toMatch(/[٠-٩]/);
+    /**
+     * <b>The reverse of what this file used to assert.</b> It once pinned Latin digits here, to
+     * end an era when counts were Arabic-Indic and dates were not; the mixture was the bug, and the
+     * app now reads in Arabic digits throughout. What must not come back is a screen with both.
+     *
+     * <p>The `postformat` doing this is dead code without `dayjs/plugin/preParsePostFormat` — dayjs
+     * core never calls it — and the failure is silent, so it is worth a test of its own: the month
+     * name would still be right and only the digits would stay Latin.
+     */
+    it('reads in Arabic digits, which needs the preParsePostFormat plugin', () => {
+        expect(formatPublishDate('2007-06-17')).toMatch(/[٠-٩]/);
+        expect(formatPublishDate('2007-06-17')).not.toMatch(/[0-9]/);
     });
 
     it('is empty rather than "Invalid Date" for something unparseable', () => {
@@ -85,7 +92,7 @@ describe('formatPublishDate', () => {
         // Six days is still relative; eight is not. The exact boundary matters only because
         // CommentsSection uses the same threshold and the two must agree.
         expect(formatPublishDate('2026-09-02')).toMatch(/^منذ/);
-        expect(formatPublishDate('2026-08-31')).toBe('31 أغسطس 2026');
+        expect(formatPublishDate('2026-08-31')).toBe('٣١ أغسطس ٢٠٢٦');
     });
 });
 

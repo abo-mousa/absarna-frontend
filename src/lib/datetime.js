@@ -8,23 +8,35 @@
  */
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { currentLocaleInfo, t } from '@/i18n';
+import preParsePostFormat from 'dayjs/plugin/preParsePostFormat';
+import { currentLocaleInfo, formatDigits, t } from '@/i18n';
 
 dayjs.extend(relativeTime);
+// WITHOUT THIS THE `postformat` BELOW IS DEAD CODE. dayjs core never calls `preparse`/`postformat`
+// — the word does not appear in it — even though its own bundled locales declare them; this plugin
+// is what wires them in. Worth stating because the failure is silent and looks like a wrong locale
+// rather than a missing plugin: the month names come out right and only the digits stay Latin.
+dayjs.extend(preParsePostFormat);
 
 // Registered as a named locale (the trailing `true` keeps it from becoming dayjs's *global*
 // default, so unrelated dayjs() calls elsewhere aren't affected) — call .locale(dateLocale())
-// explicitly wherever it's needed. Deliberately not dayjs's own bundled 'ar' locale: that one's
-// `postformat` swaps digits to Arabic-Indic (١٢٣...), which is what created the inconsistency
-// this fixes — durations/subscriber counts/publish dates elsewhere in the app all use Latin
-// digits, per CLAUDE.md's UX review ("ar-EG date formatting renders Arabic-Indic digits").
+// explicitly wherever it's needed.
 //
-// English needs no registration: dayjs ships `en` built in and already in Latin digits, which is
+// STILL NOT dayjs's bundled `ar`, even though this now uses Arabic-Indic digits like that one
+// does. Its month names are the Levantine set (كانون الثاني…) where this catalogue's readers use
+// the Gregorian transliterations (يناير…), and its relative-time strings differ from the wording
+// chosen here. The digits were only ever one of the reasons to own this object.
+//
+// `postformat` is dayjs's own hook for exactly this, and it runs on the FORMATTED string, so it
+// covers the absolute dates and the `%d` inside the relative-time forms in one place.
+//
+// English needs no registration: dayjs ships `en` built in, and its digits are ASCII, which is
 // why `LOCALES.en.dayjs` names it directly.
 dayjs.locale(
-    'ar-latn',
+    'ar',
     {
-        name: 'ar-latn',
+        name: 'ar',
+        postformat: (formatted) => formatDigits(formatted),
         months: 'يناير_فبراير_مارس_أبريل_مايو_يونيو_يوليو_أغسطس_سبتمبر_أكتوبر_نوفمبر_ديسمبر'.split('_'),
         weekdays: 'الأحد_الإثنين_الثلاثاء_الأربعاء_الخميس_الجمعة_السبت'.split('_'),
         weekStart: 6,
