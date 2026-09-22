@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { currentLocale, direction, isRtl, setActiveLocale, t, tData, tOptional } from '@/i18n';
+import { currentLocale, direction, formatDigits, isRtl, normalizeDigits, setActiveLocale, t, tData, tOptional } from '@/i18n';
 import { ar } from '@/i18n/ar';
 import { TRANSLATED, en } from '@/i18n/en';
 
@@ -217,6 +217,51 @@ describe('tData', () => {
         // `t()` answers with the key for a non-string; this is the mirror of that rule.
         expect(tData('legal.contentsHeading')).toBeUndefined();
         expect(tData('nothing.here')).toBeUndefined();
+    });
+});
+
+/**
+ * The two halves of the digit rule that are NOT grouping. `formatDigits` is for a number that is a
+ * label — a page, an index, a year — where `Intl` would wrongly group it; `normalizeDigits` reads
+ * one back out of something a person typed.
+ */
+describe('formatDigits and normalizeDigits', () => {
+    afterEach(() => setActiveLocale('ar'));
+
+    it('maps glyphs without grouping, so a year stays a year', () => {
+        setActiveLocale('ar');
+        expect(formatDigits(2026)).toBe('٢٠٢٦');
+        expect(formatDigits(3)).toBe('٣');
+        // The whole point of not going through Intl here: «٢٬٠٢٦» is not a year.
+        expect(formatDigits(2026)).not.toContain('٬');
+        // Non-digits are left exactly as they are, which is what lets a clock through.
+        expect(formatDigits('45:30')).toBe('٤٥:٣٠');
+    });
+
+    it('is identity on the English build', () => {
+        setActiveLocale('en');
+        expect(formatDigits(2026)).toBe('2026');
+        expect(formatDigits('45:30')).toBe('45:30');
+    });
+
+    it('is idempotent, since a value may pass through more than one layer', () => {
+        setActiveLocale('ar');
+        expect(formatDigits(formatDigits(1234))).toBe('١٢٣٤');
+    });
+
+    /**
+     * <b>Accepts either script, whatever the locale.</b> The PDF reader's page box is the caller:
+     * its value is shown in Arabic digits but a reader may type on a Latin keyboard, and refusing
+     * one of the two would be a worse answer than accepting both.
+     */
+    it('reads a number back from either script', () => {
+        expect(normalizeDigits('٩٩')).toBe('99');
+        expect(normalizeDigits('99')).toBe('99');
+        expect(normalizeDigits('١٠٣')).toBe('103');
+        expect(parseInt(normalizeDigits('٤٢'), 10)).toBe(42);
+        // Non-digits survive, so the caller still has to parse.
+        expect(normalizeDigits('صفحة ٥')).toBe('صفحة 5');
+        expect(normalizeDigits(null)).toBe('');
     });
 });
 

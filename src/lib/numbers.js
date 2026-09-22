@@ -24,14 +24,31 @@
  */
 import { currentLocaleInfo } from '@/i18n';
 
+/**
+ * One formatter per locale tag, built on first use.
+ *
+ * <p>Not a module-level constant, because that would be built before a test calls
+ * `setActiveLocale` and would then format every locale as the first one. Not one per call either:
+ * `Intl.NumberFormat` is comparatively expensive to construct, and a home page draws three counts
+ * on each of two dozen cards and rebuilds them on every render. Keyed by the tag, so the cache
+ * cannot serve the wrong locale's formatter.
+ */
+const formatters = new Map();
+
+const formatterFor = (tag) => {
+    let formatter = formatters.get(tag);
+    if (!formatter) {
+        formatter = new Intl.NumberFormat(tag, { maximumFractionDigits: 0 });
+        formatters.set(tag, formatter);
+    }
+    return formatter;
+};
+
 export const formatCount = (value) => {
     if (value === null || value === undefined || value === '') return '';
     const number = Number(value);
     if (!Number.isFinite(number)) return '';
-    // Built per call rather than once at module load: the locale is fixed for the life of the
-    // page, but a module-level formatter would be built before `setActiveLocale` in a test.
-    return new Intl.NumberFormat(currentLocaleInfo().numberFormat, { maximumFractionDigits: 0 })
-        .format(number);
+    return formatterFor(currentLocaleInfo().numberFormat).format(number);
 };
 
 export default formatCount;
