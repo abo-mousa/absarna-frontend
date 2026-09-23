@@ -7,7 +7,7 @@ import { useUserScope } from './useUserScope';
 import { useDebouncedValue } from './useDebouncedValue';
 
 export const fetchVideos = async ({ pageParam = 0, queryKey }) => {
-    const [, { search, category, size, diversify }] = queryKey;
+    const [, { search, category, size, diversify, exclude }] = queryKey;
 
     let url = `/videos?page=${pageParam}&size=${size || 12}`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
@@ -16,20 +16,26 @@ export const fetchVideos = async ({ pageParam = 0, queryKey }) => {
     // while keeping the order newest-first within each round. The backend ignores it unless the
     // request is the unnarrowed one, so it is only ever meaningful for the home page's tail.
     if (diversify) url += '&diversify=true';
+    // What the feed sections above already show, left out server-side BEFORE paging, so each page
+    // is twelve new videos — whole rows at every grid width — rather than twelve minus the overlap.
+    if (diversify && exclude?.length) url += `&exclude=${exclude.join(',')}`;
 
     const res = await api.get(url);
     return res.data;
 };
 
 /**
+ * @param exclude ids the feed sections already show (diversified tail only); see fetchVideos.
  * @param diversify ask the backend to round-robin the listing across channels. The home tail
  *   sends it; the browse view does not, so "كل الفيديوهات" stays a straight chronological view.
  *   It is part of the query key because the two produce different pages from the same URL path,
  *   and sharing a cache entry would serve one view the other's rows.
  */
-export const useInfiniteVideos = (search = '', category = '', size = 12, enabled = true, diversify = false) => {
+export const useInfiniteVideos = (search = '', category = '', size = 12, enabled = true, diversify = false, exclude = undefined) => {
     return useInfiniteQuery({
-        queryKey: ['videos', { search, category, size, diversify }],
+        // `exclude` is in the key: it changes the pages, and a reshuffled feed must not reuse the
+        // tail built against the previous one. Sorted by the caller, so the same set is one entry.
+        queryKey: ['videos', { search, category, size, diversify, exclude }],
         queryFn: fetchVideos,
         initialPageParam: 0,
         getNextPageParam: (lastPage) => {

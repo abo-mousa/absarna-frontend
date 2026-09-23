@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import PageShell from '../components/layout/PageShell';
@@ -8,6 +8,11 @@ import { VideoCard } from '../components/content';
 import { useInfiniteVideos, useCategories, useFeed, useWatchProgressMap } from '../hooks/useVideos';
 import { useMyChannels, useToggleVideoVisibilityByChannelId, useDeleteVideoByChannelId } from '../hooks/useChannels';
 import { t } from '@/i18n';
+import { useGridColumns } from '../hooks/useGridColumns';
+import { fitFeedToRows } from '@/lib/gridRows';
+
+// The feed's three sections, in the order they render.
+const FEED_SECTION_KEYS = ['subscribed', 'discover', 'featured'];
 
 // One chip, three callers — the class string was already duplicated twice before a third arrived.
 const chipClass = (active) =>
@@ -57,6 +62,24 @@ function Home() {
     };
 
     const feedQuery = useFeed(isDefaultView);
+
+    const feedSections = [
+        { key: 'subscribed', title: t('home.subscribed') },
+        { key: 'discover', title: t('home.discover') },
+        { key: 'featured', title: t('home.featured') },
+    ];
+
+    /*
+     * The ids the sections show, sorted so the same set is the same query key. The tail waits for
+     * the feed so it can send them: the server then leaves them out before paging, and every tail
+     * page is twelve videos nobody has seen above it. A failed feed releases the tail unfiltered —
+     * the tail is then the whole page, and waiting on a request that already failed would blank it.
+     */
+    const feedShownIdList = useMemo(() => FEED_SECTION_KEYS
+        .flatMap((key) => feedQuery.data?.[key] || [])
+        .map((video) => video.id)
+        .sort((a, b) => a - b), [feedQuery.data]);
+
     const {
         data: infiniteData,
         isLoading: infiniteLoading,
@@ -79,25 +102,22 @@ function Home() {
         // Browse keeps strict recency on purpose. "كل الفيديوهات" is the one place left to see
         // what was genuinely published most recently, and a reader who picked a category has
         // already said what they want.
-    } = useInfiniteVideos('', selectedCategory, 12, true, isDefaultView);
-
-    const feedSections = [
-        { key: 'subscribed', title: t('home.subscribed') },
-        { key: 'discover', title: t('home.discover') },
-        { key: 'featured', title: t('home.featured') },
-    ];
+    } = useInfiniteVideos('', selectedCategory, 12, !isDefaultView || feedQuery.isSuccess || feedQuery.isError,
+        isDefaultView, isDefaultView ? feedShownIdList : undefined);
 
     /**
      * The feed's tail: everything the curated sections did not show, paginated.
      *
-     * <p>The three feed sections are capped at 8/6/4 by design and that stays — they answer "what
-     * should I watch". But with no subscriptions and nothing featured they yield six videos, and
-     * the home page of a two-thousand-video platform then ended at six with no way forward. This
+     * <p>The three feed sections are capped at 12 by design and that stays — they answer "what
+     * should I watch". But with no subscriptions and nothing featured they yield one section, and
+     * the home page of a two-thousand-video platform would then end there with no way forward. This
      * is the way forward, and it is the same query the browse view uses rather than a second
      * source that could disagree with it.
      *
-     * <p>De-duplicated against the sections above, because the tail is "all recent videos" and
-     * will naturally include whatever discover just picked.
+     * <p>The server leaves out what the sections above show (`exclude`), so this filter is a guard
+     * rather than the mechanism: a backend from before that parameter ignores it, and during a
+     * deploy the two can be out of step. Without the guard the same video would sit in discover
+     * and directly below it.
      */
     const feedShownIds = new Set(
         feedSections.flatMap((section) => feedQuery.data?.[section.key] || []).map((v) => v.id),
@@ -113,6 +133,24 @@ function Home() {
      */
     const sectionsEmpty = feedSections.every((section) => !(feedQuery.data?.[section.key]?.length));
     const feedEmpty = sectionsEmpty && feedTail.length === 0;
+
+    // Complete grid rows only — see fitFeedToRows for what moves where and why nothing is lost.
+    const columns = useGridColumns();
+    const fitted = fitFeedToRows({
+        sections: feedSections.map((section) => ({ key: section.key, items: feedQuery.data?.[section.key] || [] })),
+        tail: feedTail,
+        columns,
+        tailComplete: !hasNextPage,
+    });
+    const fittedItems = Object.fromEntries(fitted.sections.map((section) => [section.key, section.items]));
+
+    // A tail that fits in less than one row has nothing to show until the next page arrives, and a
+    // heading over an empty grid with a "load more" under it reads as broken. Fetch it instead.
+    useEffect(() => {
+        if (isDefaultView && fitted.tail.length === 0 && fitted.heldBack > 0 && hasNextPage && !isFetchingNextPage) {
+            fetchNextPage();
+        }
+    }, [isDefaultView, fitted.tail.length, fitted.heldBack, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
     const toggleVisibility = useToggleVideoVisibilityByChannelId();
     const deleteVideo = useDeleteVideoByChannelId();
@@ -189,7 +227,7 @@ function Home() {
                 >
                     <div className="flex flex-col gap-8">
                         {feedSections.map((section) => {
-                            const items = feedQuery.data?.[section.key] || [];
+                            const items = fittedItems[section.key] || [];
                             if (items.length === 0) return null;
                             return (
                                 <div key={section.key}>
@@ -204,11 +242,11 @@ function Home() {
                         })}
                     </div>
 
-                    {feedTail.length > 0 && (
+                    {fitted.tail.length > 0 && (
                         <div className="mt-8">
                             <h2 className="text-lg font-bold mb-3">{t('home.more')}</h2>
                             <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-                                {feedTail.map((video) => (
+                                {fitted.tail.map((video) => (
                                     <VideoCard {...videoCardProps(video)} />
                                 ))}
                             </div>
