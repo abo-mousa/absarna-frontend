@@ -1442,8 +1442,6 @@ export const ar = {
     likes: {
         add: 'إعجاب',
         remove: 'إلغاء الإعجاب',
-        // VideoCard's counts column, phrased like common.views / common.commentCount beside it.
-        count: '{count} إعجاب',
     },
     bookmarks: {
         title: 'المحفوظات',

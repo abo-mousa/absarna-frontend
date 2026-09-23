@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { formatCount } from '@/lib/numbers';
+import { formatCount, formatCompactCount } from '@/lib/numbers';
 import { setActiveLocale } from '@/i18n';
 
 /**
@@ -45,5 +45,52 @@ describe('formatCount', () => {
 
     it('treats zero as a number', () => {
         expect(formatCount(0)).toBe('٠');
+    });
+});
+
+/**
+ * View counts at reading precision. Truncated rather than rounded, so a card never claims a
+ * thousand views that have not happened yet.
+ */
+describe('formatCompactCount', () => {
+    afterEach(() => setActiveLocale('ar'));
+
+    it('leaves anything under a thousand exact', () => {
+        setActiveLocale('en');
+        expect(formatCompactCount(0)).toBe('0');
+        expect(formatCompactCount(999)).toBe('999');
+    });
+
+    it('abbreviates thousands with one truncated decimal, and drops a zero decimal', () => {
+        setActiveLocale('en');
+        expect(formatCompactCount(1000)).toBe('1k');
+        expect(formatCompactCount(1099)).toBe('1k');
+        expect(formatCompactCount(1100)).toBe('1.1k');
+        expect(formatCompactCount(1999)).toBe('1.9k');
+        expect(formatCompactCount(10_000)).toBe('10k');
+        expect(formatCompactCount(10_100)).toBe('10.1k');
+        expect(formatCompactCount(999_999)).toBe('999.9k');
+    });
+
+    it('moves to millions at a million, and keeps the capital M', () => {
+        setActiveLocale('en');
+        expect(formatCompactCount(1_000_000)).toBe('1M');
+        expect(formatCompactCount(1_250_000)).toBe('1.2M');
+    });
+
+    it("uses the locale's own digits and words in Arabic", () => {
+        setActiveLocale('ar');
+        expect(formatCompactCount(999)).toBe('٩٩٩');
+        // A NO-BREAK space between number and word, from Intl itself: a card column can never
+        // wrap «١٫١» onto one line and «ألف» onto the next.
+        expect(formatCompactCount(1100)).toBe('١٫١\u00a0ألف');
+        expect(formatCompactCount(10_100)).toBe('١٠٫١\u00a0ألف');
+        expect(formatCompactCount(1_000_000)).toBe('١\u00a0مليون');
+    });
+
+    it('renders nothing rather than NaN for a value that is not a number', () => {
+        expect(formatCompactCount(null)).toBe('');
+        expect(formatCompactCount(undefined)).toBe('');
+        expect(formatCompactCount('abc')).toBe('');
     });
 });

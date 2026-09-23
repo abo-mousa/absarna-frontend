@@ -8,7 +8,7 @@ import Avatar from '../ui/Avatar';
 import SourceBadge from './SourceBadge';
 import { formatDigits, t } from '@/i18n';
 import { ownerBadge } from '@/lib/review';
-import { formatCount } from '@/lib/numbers';
+import { formatCompactCount } from '@/lib/numbers';
 
 /**
  * One metadata row in the card's left-hand column, and the box its leading glyph sits in.
@@ -70,6 +70,9 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
     // after the list it belongs to had already arrived. A home page drawing on eleven channels
     // issued eleven of them.
     const showChannelRow = showChannel && !!video.channelSlug;
+    // Zero is a real count and is left off on purpose — see the meta line below.
+    const hasViews = Number(video.viewCount) > 0;
+    const date = displayDate(video);
 
     // Nested icon buttons (visibility/delete/channel) already stopPropagation on click; for
     // keyboard, only treat Enter/Space as "activate the card" when the card itself is
@@ -213,91 +216,84 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                 )}
             </div>
 
-            {/* Title on its own full-width row, then the metadata as two columns beside each
-                other, split by kind rather than by how many fit: <b>what this video is</b>
-                (channel, series, date) at the start edge, and <b>its numbers</b> (views,
-                comments, likes) at the end edge. Keeping the counts to one column of their own
-                is what lets them line up as a readable stack instead of one text line mixed in
-                among links. `min-w-0` — without it a flex item won't shrink below its content's
-                natural width, which silently breaks the title's `line-clamp-2` and the
-                channel/series `truncate`. */}
+            {/* Title, then one column of what this video is: channel, series, and a last line
+                carrying its number and its date together — «١٫٢ ألف مشاهدات · ٣ مارس ٢٠٢٤».
+
+                ONE COLUMN, NOT TWO, now that there is one number. The card used to split into
+                "what it is" at the start edge and "its numbers" (views, comments, likes) at the
+                far edge, which was right for a stack of three counts and wrong for one: a lone
+                "٢٣ مشاهدات" floating at the far edge of an otherwise empty column read as a card
+                missing the rest of its data. Comments and likes left the card deliberately — on a
+                young catalogue nearly every one read «٠ تعليق · ٠ إعجاب», which says "nothing
+                here" about lectures that are simply new, and they are social-proof numbers the
+                feed already refuses to rank by. Both are on the detail page, where the like button
+                is. The backend no longer sends them on lists at all.
+
+                Views and date share a line because they answer one question — "how established is
+                this?" — and are read together; on their own lines each looked like a fragment.
+                The view count is abbreviated (formatCompactCount: «1.1k», «١٫١ ألف»), because it
+                is the one number compared across a grid. A video nobody has watched yet shows its
+                date alone rather than «٠ مشاهدات», which reads as a verdict on a lecture that was
+                published an hour ago. `min-w-0` — without it a flex item won't shrink below its
+                content's natural width, which silently breaks the title's `line-clamp-2` and the
+                rows' `truncate`. */}
             <div className="p-4 min-w-0">
-                <h3 dir="auto" className="text-[0.95rem] font-semibold mb-1.5 leading-snug line-clamp-2">
+                {/* Two lines reserved whether the title needs them or not. Cards in a grid row
+                    stretch to the tallest, so a one-line title used to leave its card's rows a line
+                    higher than its neighbours' and a blank band at the bottom: the "this card is
+                    missing something" look. With the slot fixed, channel, series and views sit on
+                    the same lines across a row. 2.75em is exactly two lines at leading-snug. */}
+                <h3 dir="auto" className="text-[0.95rem] font-semibold mb-1.5 leading-snug line-clamp-2 min-h-[2.75em]">
                     {video.title}
                 </h3>
 
-                <div className="flex items-start justify-between gap-3">
-                    {/* Always rendered even when empty: it is what holds the meta column at the
-                        far edge, since `justify-between` on a lone child places it at the start. */}
-                    <div className="min-w-0 space-y-1">
-                        {showChannelRow && (
-                            <button
-                                onClick={(e) => { e.stopPropagation(); navigate(`/channel/${video.channelSlug}`); }}
-                                aria-label={t('video.goToChannelAria', { name: video.channelName })}
-                                className={`${META_ROW} text-text-secondary hover:text-primary transition-colors`}
-                            >
-                                <Avatar src={resolveMediaUrl(video.channelLogoUrl)} name={video.channelName} size="sm" className="!w-5 !h-5 !text-[0.65rem] flex-shrink-0" />
-                                <span dir="auto" className="truncate">{video.channelName}</span>
-                            </button>
-                        )}
-                        {/* Which series this belongs to. A link, because the series page is where
-                            someone who recognises the name actually wants to go — and stopPropagation
-                            so it does not also trigger the card's own navigate-to-video. */}
-                        {video.seriesId && video.seriesTitle && (
-                            <button
-                                onClick={(e) => { e.stopPropagation(); navigate(`/series/${video.seriesId}`); }}
-                                title={t('series.partOf', { title: video.seriesTitle })}
-                                className={`${META_ROW} text-text-muted hover:text-primary transition-colors`}
-                            >
-                                <span className={META_GLYPH}><Tv size={12} /></span>
-                                <span dir="auto" className="truncate">{video.seriesTitle}</span>
-                            </button>
-                        )}
-                        {/* Not a count, so it belongs here rather than in the numbers column —
-                            and it is the one line of the three that is plain text, hence the
-                            icon, which keeps it aligned with the avatar and the series glyph
-                            above it. `displayDate` prefers originalPublishDate when there is
-                            one; see lib/datetime. */}
-                        {displayDate(video) && (
-                            <div className={`${META_ROW} text-text-muted`}>
-                                <span className={META_GLYPH}><Calendar size={12} /></span>
-                                <span className="truncate">{formatPublishDate(displayDate(video))}</span>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Counts only. commentCount and likeCount are real DTO fields, each computed
-                        server-side by one grouped COUNT per list response — not fetched per card,
-                        see backend CLAUDE.md.
-
-                        All three phrased the same way ("{n} مشاهدة"), including likes: an icon +
-                        bare number for one of the three and words for the other two read as an
-                        odd one out, and the label is what makes the number legible to a screen
-                        reader without an aria-label to maintain. The heart lives on the detail
-                        page's LikeButton, where it is a control rather than a statistic.
-
-                        Read-only here, deliberately not a toggle: the card has no per-viewer
-                        `liked` state (VideoDTO carries the public count only), and giving every
-                        card one would mean a status request per card on every feed page.
-
-                        `text-start`, not `text-end`: the three lines are different lengths, so
-                        whichever edge is not aligned is ragged — and end-aligned put the ragged
-                        edge at the START, which in RTL is the edge the eye lands on first. The
-                        three numbers, the only part anyone is scanning for, stepped inward one
-                        after another. Aligning at the start puts them on one vertical line and
-                        moves the raggedness to the far edge, where nothing is being compared. */}
-                    {(video.viewCount != null || video.commentCount != null
-                        || video.likeCount != null) && (
-                        <div className="flex-shrink-0 text-xs text-text-muted space-y-1 whitespace-nowrap text-start">
-                            {video.viewCount != null && <div>{t('common.views', { count: formatCount(video.viewCount) })}</div>}
-                            {video.commentCount != null && <div>{t('common.commentCount', { count: formatCount(video.commentCount) })}</div>}
-                            {video.likeCount != null && <div>{t('likes.count', { count: formatCount(video.likeCount) })}</div>}
+                <div className="min-w-0 space-y-1">
+                    {showChannelRow && (
+                        <button
+                            onClick={(e) => { e.stopPropagation(); navigate(`/channel/${video.channelSlug}`); }}
+                            aria-label={t('video.goToChannelAria', { name: video.channelName })}
+                            className={`${META_ROW} text-text-secondary hover:text-primary transition-colors`}
+                        >
+                            <Avatar src={resolveMediaUrl(video.channelLogoUrl)} name={video.channelName} size="sm" className="!w-5 !h-5 !text-[0.65rem] flex-shrink-0" />
+                            <span dir="auto" className="truncate">{video.channelName}</span>
+                        </button>
+                    )}
+                    {/* Which series this belongs to. A link, because the series page is where
+                        someone who recognises the name actually wants to go — and stopPropagation
+                        so it does not also trigger the card's own navigate-to-video. */}
+                    {video.seriesId && video.seriesTitle && (
+                        <button
+                            onClick={(e) => { e.stopPropagation(); navigate(`/series/${video.seriesId}`); }}
+                            title={t('series.partOf', { title: video.seriesTitle })}
+                            className={`${META_ROW} text-text-muted hover:text-primary transition-colors`}
+                        >
+                            <span className={META_GLYPH}><Tv size={12} /></span>
+                            <span dir="auto" className="truncate">{video.seriesTitle}</span>
+                        </button>
+                    )}
+                    {(hasViews || date) && (
+                        <div className={`${META_ROW} text-text-muted`}>
+                            {/* The glyph names the line's first item: the eye when it opens with
+                                views, the calendar when the date stands alone. */}
+                            <span className={META_GLYPH}>
+                                {hasViews ? <Eye size={12} /> : <Calendar size={12} />}
+                            </span>
+                            {hasViews && (
+                                <span className="flex-shrink-0 whitespace-nowrap">
+                                    {t('common.views', { count: formatCompactCount(video.viewCount) })}
+                                </span>
+                            )}
+                            {hasViews && date && <span aria-hidden="true">·</span>}
+                            {/* The date gives way first on a narrow card: it is the longer of the
+                                two, and the number is what a reader scanning the grid compares.
+                                `displayDate` prefers originalPublishDate; see lib/datetime. */}
+                            {date && <span className="truncate">{formatPublishDate(date)}</span>}
                         </div>
                     )}
                 </div>
 
                 {video.category && (
-                    <span className="inline-block mt-1.5 px-2.5 py-0.5 bg-primary-light text-primary rounded-full text-xs font-semibold">
+                    <span className="inline-block mt-2 px-2.5 py-0.5 bg-primary-light text-primary rounded-full text-xs font-semibold">
                         {video.category}
                     </span>
                 )}

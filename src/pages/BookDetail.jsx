@@ -13,7 +13,7 @@ import { CommentsSection, BookmarkButton, LikeButton, ReportButton, ShareButton 
 import { useBook, useBookReadProgress, useSaveReadProgress } from '../hooks/useBooks';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { t } from '@/i18n';
-import { formatCount } from '@/lib/numbers';
+import { formatCompactCount } from '@/lib/numbers';
 
 // Code-split: pdfjs is a large dependency that only visitors who actually open a book should pay for.
 const PdfReader = lazy(() => import('../components/content/PdfReader'));
@@ -124,7 +124,7 @@ function BookDetail() {
                             {book.originalPublishDate && book.originalPublishDate !== book.publishDate && (
                                 <span>{t('common.originalPublishDate', { date: book.originalPublishDate })}</span>
                             )}
-                            <span>{t('common.views', { count: formatCount(book.viewCount ?? 0) })}</span>
+                            <span>{t('common.views', { count: formatCompactCount(book.viewCount ?? 0) })}</span>
                         </div>
 
                         {/* Collapsed to four lines, the same as a video's. A book's blurb is the

@@ -16,7 +16,7 @@ import { resolveMediaUrl, youtubeThumbnail } from '@/lib/media';
 import { useConsent } from '@/contexts/ConsentContext';
 import { formatPublishDate, displayDate } from '@/lib/datetime';
 import { t } from '@/i18n';
-import { formatCount } from '@/lib/numbers';
+import { formatCount, formatCompactCount } from '@/lib/numbers';
 
 function VideoDetail() {
     const { id } = useParams();
@@ -112,7 +112,7 @@ function VideoDetail() {
     // the meta row below, so it reads as this video's own stats rather than one more attribute
     // alongside duration/category.
     const stats = [
-        video.viewCount != null && t('common.views', { count: formatCount(video.viewCount) }),
+        video.viewCount != null && t('common.views', { count: formatCompactCount(video.viewCount) }),
         video.commentCount != null && t('common.commentCount', { count: formatCount(video.commentCount) }),
         displayDate(video) && formatPublishDate(displayDate(video)),
         // Not the like count: LikeButton above already shows it, next to the control that

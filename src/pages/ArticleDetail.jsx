@@ -8,7 +8,7 @@ import { CommentsSection, BookmarkButton, LikeButton, ReportButton, ShareButton 
 import { useArticle } from '../hooks/useArticles';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { t } from '@/i18n';
-import { formatCount } from '@/lib/numbers';
+import { formatCompactCount } from '@/lib/numbers';
 
 function ArticleDetail() {
     const { id } = useParams();
@@ -65,7 +65,7 @@ function ArticleDetail() {
                             </span>
                         )}
                         <span className="flex items-center gap-1.5">
-                            <Eye size={14} /> {t('common.views', { count: formatCount(article.viewCount ?? 0) })}
+                            <Eye size={14} /> {t('common.views', { count: formatCompactCount(article.viewCount ?? 0) })}
                         </span>
                     </div>
 

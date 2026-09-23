@@ -8,33 +8,6 @@ import { useUserScope } from './useUserScope';
 const ITEM_TYPE = { video: 'VIDEO', book: 'BOOK', article: 'ARTICLE' };
 
 /**
- * Every cached shape that carries a `VideoDTO.likeCount`, as query-key prefixes.
- *
- * <p>Exported so a test can assert the list rather than trusting a comment. This exists because
- * `onSettled` used to invalidate only the status query while its own doc claimed the counts on
- * cards were refreshed too: liking a video from its detail page left every list that had already
- * rendered it — the feed you came from, the related row right underneath — showing the old
- * number until its staleTime elapsed.
- *
- * <p>Only video lists: the backend attaches `likeCount` to `VideoDTO` alone, and
- * `BookDTO`/`ArticleDTO` get their count from the status endpoint instead (see backend
- * CLAUDE.md's Likes section). `invalidateQueries` refetches only *mounted* queries and merely
- * marks the rest stale, so a broad list here costs at most the lists actually on screen.
- */
-export const VIDEO_LIST_KEYS_WITH_LIKE_COUNT = [
-    'videos',
-    'feed',
-    'search',
-    'search-infinite',
-    'related-video',
-    'channel-videos',
-    'series',
-    'watch-history',
-    'bookmarks',
-    'channel-manage',
-];
-
-/**
  * `{liked, likeCount}` for one item.
  *
  * Unlike useBookmarkStatus this runs for anonymous visitors too, and that is deliberate: the
@@ -119,14 +92,12 @@ export const useToggleLike = (type, id, initialCount = undefined) => {
         },
         onSettled: () => {
             queryClient.invalidateQueries({ queryKey: key });
-            // The count on every card that already rendered this video. Without these, liking
-            // from a detail page left the feed behind it — and the related row under it —
-            // showing the pre-press number for the rest of their staleTime.
+            // The video's own DTO carries `likeCount` too, and is what seeds this button next
+            // time. Only the video: cards show views and nothing else, and the backend no longer
+            // sends a like count on any list — so the feed, search and every other list used to be
+            // refetched on each press to refresh a number nothing renders any more.
             if (type === 'video') {
                 queryClient.invalidateQueries({ queryKey: ['video', id] });
-                VIDEO_LIST_KEYS_WITH_LIKE_COUNT.forEach((prefix) => {
-                    queryClient.invalidateQueries({ queryKey: [prefix] });
-                });
             }
         },
     });

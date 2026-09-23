@@ -210,7 +210,9 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   counters — so the Arabic build shows «١٥ سبتمبر ٢٠٢٦» and «٥٧:١٥». Text a *person* wrote is never
   touched: «السيرة النبوية | 102» keeps its 102, as do YouTube ids, slugs and rungs like `1080p`.
   Two mechanisms enforce it and you rarely call either. `formatCount` asks `Intl.NumberFormat` for
-  the locale on the record, which brings the digits *and* the grouping separator («١٬٩٤٣»); and
+  the locale on the record, which brings the digits *and* the grouping separator («١٬٩٤٣»);
+  **view counts use `formatCompactCount` instead** («1.1k», «10.1k», «1M» / «١٫١ ألف»), truncated
+  and never rounded up, because a view count is the one number compared across a grid; and
   `t()` localises a **numeric** placeholder while passing a **string** through untouched, which is
   what keeps `{title}` and `{query}` out of it. Use `formatDigits` only for a number that reaches
   the screen outside both — a backend duration string, the clock — and never for grouping, since
@@ -545,7 +547,15 @@ What this app relies on; the mirror lives in the backend's `CLAUDE.md`.
   neutral either — `ProtectedRoute` reads `isPlatformAdmin(user)`, so a failed profile probe
   bounces an admin off `/admin` exactly as a logout would, which is why that probe retries once.
 - **Likes' status endpoint is public** (`{liked:false, likeCount:N}` when anonymous); `POST`/`DELETE`
-  need a login. `VideoDTO.likeCount` is on cards; books/articles use the status call.
+  need a login. `VideoDTO.likeCount` and `commentCount` are on the **video detail DTO only** — list
+  rows carry `null` — so `useToggleLike` refreshes the video and never a list; books/articles use
+  the status call.
+- **A video card shows views and nothing else countable.** Comments and likes left the card on
+  purpose (on a young catalogue they read «٠ تعليق · ٠ إعجاب» — a verdict on lectures that are only
+  new — and they are the popularity signal the feed refuses to rank by); they are on the detail
+  page. Views and date share one line, a zero-view video shows its date alone, and the title slot is
+  always two lines tall so a grid row's cards line up. Don't bring back a far-edge counts column for
+  one number: alone, it reads as a card missing the rest of its data.
 - **Rate limits are per IP and per rule**, and the 429 body carries `reason: RATE_LIMITED` rather
   than a sentence (the limiter runs after the backend's CORS filter, so the body is readable — but
   a servlet filter runs before any handler and cannot know which language the caller reads).

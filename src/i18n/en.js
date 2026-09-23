@@ -1071,7 +1071,6 @@ export const en = {
     likes: {
         add: 'Like',
         remove: 'Unlike',
-        count: '{count} likes',
     },
     bookmarks: {
         title: 'Saved',

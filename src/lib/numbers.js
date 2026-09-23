@@ -1,5 +1,6 @@
 /**
- * Counts shown to readers — views, comments, likes, pages, results.
+ * Counts shown to readers — views, pages, results. View counts are abbreviated
+ * ({@link formatCompactCount}); everything else is exact.
  *
  * <p><b>Each locale's own digits, grouped its own way.</b> `Intl.NumberFormat` is given the tag on
  * the locale record, so Arabic gets Arabic-Indic digits and the Arabic thousands separator from one
@@ -49,6 +50,49 @@ export const formatCount = (value) => {
     const number = Number(value);
     if (!Number.isFinite(number)) return '';
     return formatterFor(currentLocaleInfo().numberFormat).format(number);
+};
+
+/**
+ * A count at reading precision — «1.1k», «10.1k», «1M» / «١٫١ ألف», «١ مليون» — for view counts.
+ *
+ * <p><b>Why views get this and nothing else does.</b> A view count is the one number a reader
+ * scans across a grid of cards, and «١٬٩٤٣» next to «٢٣٬٤١٧» is two different widths of digits to
+ * compare; «١٫٩ ألف» next to «٢٣٫٤ ألف» is a glance. Below a thousand the exact number is already
+ * that short, so it is left alone. A page count or a result count is a quantity someone may act
+ * on, and stays exact with {@link formatCount}.
+ *
+ * <p><b>Truncated, never rounded up.</b> 1,999 views is «1.9k», not «2k»: a rounded count claims
+ * views that have not happened, and a number that reaches the next step only when it is true is
+ * the one that can be trusted as it grows. `roundingMode: 'trunc'` is what `Intl` offers for that.
+ *
+ * <p><b>One decimal at every scale</b> — «10.1k», «100.5k» — and none when it is zero («10k», not
+ * «10.0k»). The abbreviation is each locale's own: Arabic reads «ألف»/«مليون» as words, English
+ * gets the short suffix. English's thousands suffix is lowercased («1.1k») to match how the
+ * product writes it; millions keep «M», where a lowercase «m» reads as metres or minutes.
+ */
+const compactFormatters = new Map();
+
+const compactFormatterFor = (tag) => {
+    let formatter = compactFormatters.get(tag);
+    if (!formatter) {
+        formatter = new Intl.NumberFormat(tag, {
+            notation: 'compact',
+            maximumFractionDigits: 1,
+            roundingMode: 'trunc',
+        });
+        compactFormatters.set(tag, formatter);
+    }
+    return formatter;
+};
+
+export const formatCompactCount = (value) => {
+    if (value === null || value === undefined || value === '') return '';
+    const number = Number(value);
+    if (!Number.isFinite(number)) return '';
+    return compactFormatterFor(currentLocaleInfo().numberFormat)
+        .formatToParts(number)
+        .map((part) => (part.type === 'compact' && part.value === 'K' ? 'k' : part.value))
+        .join('');
 };
 
 export default formatCount;
