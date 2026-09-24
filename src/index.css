@@ -156,12 +156,15 @@
 }
 
 /* ----------------------------------------------------------------------------------
-   Spinner.jsx — the mark drawing itself, then settling into a turn.
+   Spinner.jsx — the mark drawing itself, over and over, until the content arrives.
 
    The loading state IS the act of drawing: the two rings trace themselves along their
-   own outlines, the iris fades in behind them, and the aperture lights last. Once it is
-   whole the blades keep turning until the content arrives, so the draw happens exactly
-   once per loading episode instead of flickering on a loop.
+   own outlines, the iris fades in behind them, and the aperture lights last. The rings
+   then keep going — each trace holds for a beat and is drawn off again in the same
+   direction, then starts over — while the blades turn underneath. It used to draw once
+   and only turn after that, and the turn alone (45deg in 2.4s, eight identical blades)
+   is too quiet to read as "still loading": a slow request looked like a finished
+   animation over a page that had stopped.
 
    `--len` is the true perimeter of each ring (265.10 and 212.08 user units, measured off
    the geometry, rounded up). stroke-dasharray of one full-length dash plus an offset of
@@ -170,9 +173,15 @@
    part-drawn or never finishes.
    ---------------------------------------------------------------------------------- */
 
+/* In, hold, out. Offset `--len` and `-len` are both the whole stroke in the gap (the
+   dash pattern repeats every 2 x len), so the loop restarts from invisible to invisible
+   with no seam; going on to `-len` rather than back to `+len` erases it from its start,
+   the same direction it was drawn in, instead of rewinding it. */
 @keyframes iris-draw {
-  from { stroke-dashoffset: var(--len); }
-  to   { stroke-dashoffset: 0; }
+  0%   { stroke-dashoffset: var(--len); }
+  40%  { stroke-dashoffset: 0; }
+  70%  { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: calc(var(--len) * -1); }
 }
 
 @keyframes iris-emerge {
@@ -201,7 +210,7 @@
 .iris-ring {
   stroke-dasharray: var(--len);
   stroke-dashoffset: var(--len);
-  animation: iris-draw 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: iris-draw 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 .iris-field   { opacity: 0; animation: iris-emerge 0.5s ease-out forwards; }

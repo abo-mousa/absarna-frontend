@@ -19,11 +19,12 @@ import { useId } from 'react';
  * without it the opening reads as a bright slab rather than as a source. Below about 24px
  * the iris stops resolving at all — use a plain icon there rather than shrinking this.
  *
- * <h2>The mark draws itself, then turns</h2>
+ * <h2>The mark draws itself, and keeps drawing</h2>
  * In the `draw` state, the loading state is the act of drawing: the two rings trace along their
- * own outlines, the iris fades in behind them, the aperture lights last, and only once the
- * mark is whole do the blades start turning. So the draw happens once per loading episode
- * rather than flickering on a loop. The choreography lives in `src/index.css`; `--len` is
+ * own outlines, the iris fades in behind them, the aperture lights last, and once the mark is
+ * whole the blades start turning. The rings then keep tracing themselves in and out for as long
+ * as the mark is mounted, so a slow load still looks like one in progress. The choreography
+ * lives in `src/index.css`; `--len` is
  * each ring's true perimeter, measured off the geometry — get it wrong and a ring either
  * starts part-drawn or never closes.
  *
@@ -31,8 +32,8 @@ import { useId } from 'react';
  * `state` picks one:
  *
  * <ul>
- *   <li><b>`draw`</b> (default) — the loading indicator. Draws itself once, then turns for as
- *       long as it is mounted. Right when the mark <em>appears</em> because something is
+ *   <li><b>`draw`</b> (default) — the loading indicator. Draws itself on a loop, blades turning,
+ *       for as long as it is mounted. Right when the mark <em>appears</em> because something is
  *       loading, which is what `Spinner` does.
  *   <li><b>`turn`</b> — already whole, turning. For a mark that was <em>already on screen</em>
  *       before the loading started, the navbar's being the case that matters: redrawing a logo
