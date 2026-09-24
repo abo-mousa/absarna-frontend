@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { phoneMenuActions } from '@/components/layout/SideBar';
+import { accountMenuActions } from '@/components/layout/AccountMenu';
 import { canUpload, uploadPathFor } from '@/lib/user';
 import { t } from '@/i18n';
 
@@ -8,47 +8,61 @@ import { t } from '@/i18n';
  * The phone navbar. Pure-function tests, as elsewhere in this repo (no jsdom).
  *
  * <p>The regression being guarded: below `md` the bar held every control in one unwrapping row,
- * and the search box — the only item allowed to shrink — was squeezed to nothing. The fix moves
- * five controls out of the phone's bar and into the drawer, which is only a fix while every one
- * of them is actually IN the drawer: a control hidden from the bar and forgotten here is
- * unreachable on a phone, and nothing on a desktop would show it.
+ * and the search box — the only item allowed to shrink — was squeezed to nothing. The fix takes
+ * controls out of the phone's bar and puts them in the account menu, which is only a fix while
+ * every one of them actually arrives there: a control
+ * hidden from the bar and forgotten there is unreachable on a phone, and nothing on a desktop
+ * would show it.
  */
 
 const admin = { role: 'PLATFORM_ADMIN' };
 const creator = { role: 'CREATOR' };
 const viewer = { role: 'USER' };
 
-describe('phoneMenuActions', () => {
-    it('gives a platform admin every control the phone bar drops', () => {
-        expect(phoneMenuActions(admin, true)).toEqual(['upload', 'admin', 'theme', 'language', 'logout']);
+describe('accountMenuActions', () => {
+    it('gives a platform admin every account control', () => {
+        expect(accountMenuActions(admin)).toEqual(['profile', 'upload', 'admin', 'theme', 'language', 'logout']);
     });
 
     it('offers upload to a creator and not the admin panel', () => {
-        expect(phoneMenuActions(creator, true)).toEqual(['upload', 'theme', 'language', 'logout']);
+        expect(accountMenuActions(creator)).toEqual(['profile', 'upload', 'theme', 'language', 'logout']);
     });
 
-    it('offers a plain account the settings and sign-out only', () => {
-        expect(phoneMenuActions(viewer, true)).toEqual(['theme', 'language', 'logout']);
+    it('offers a plain account its profile, the settings and sign-out', () => {
+        expect(accountMenuActions(viewer)).toEqual(['profile', 'theme', 'language', 'logout']);
     });
 
-    it('offers a visitor registration and the settings, never sign-out', () => {
-        expect(phoneMenuActions(null, false)).toEqual(['register', 'theme', 'language']);
+    it('offers a visitor sign-in first, then registration and the settings', () => {
+        expect(accountMenuActions(null, false)).toEqual(['login', 'register', 'theme', 'language']);
     });
 
     /**
-     * The pairing itself. Every control `Navbar` hides below `md` uses `desktopIconButtonClass`;
-     * a signed-in platform admin sees all of them on a wide screen, so the drawer must offer that
-     * account exactly as many. A sixth control added to the bar that way, and not here, fails.
+     * The pairing itself. Every button `Navbar` hides below `md` uses `desktopIconButtonClass`:
+     * a creator's upload, and a visitor's theme and language. Each must be in the menu for the
+     * state it belongs to, or a phone cannot press it. A button added to the bar that way, and
+     * not to the menu, changes the count and fails here.
      */
-    it('matches every control the navbar hides on a phone', () => {
+    it('puts every button the navbar hides on a phone into the menu', () => {
         const navbar = readFileSync('src/components/layout/Navbar.jsx', 'utf8');
         const hidden = [...navbar.matchAll(/className=\{`?\$?\{?desktopIconButtonClass/g)].length;
-        expect(hidden).toBe(phoneMenuActions(admin, true).length);
+        expect(hidden).toBe(3);
+        expect(accountMenuActions(creator)).toContain('upload');
+        expect(accountMenuActions(null, false)).toEqual(expect.arrayContaining(['theme', 'language']));
     });
 
-    it('labels the phone search with strings the catalog has', () => {
-        expect(t('nav.closeSearch')).not.toBe('nav.closeSearch');
-        expect(t('searchBar.label')).not.toBe('searchBar.label');
+    it('hides the visitor sign-in buttons only where the menu offers them', () => {
+        const navbar = readFileSync('src/components/layout/Navbar.jsx', 'utf8');
+        for (const to of ['/login', '/register']) {
+            expect(navbar).toMatch(new RegExp(`<Link to="${to}" className="hidden md:block`));
+        }
+    });
+});
+
+describe('strings', () => {
+    it('labels the phone controls with strings the catalog has', () => {
+        for (const key of ['nav.closeSearch', 'nav.accountMenu', 'searchBar.label']) {
+            expect(t(key)).not.toBe(key);
+        }
     });
 });
 

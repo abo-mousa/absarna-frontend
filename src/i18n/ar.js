@@ -163,6 +163,8 @@ export const ar = {
         languageSwitchedTo: 'اللغة: {name}',
         // The back arrow on the phone's full-width search row.
         closeSearch: 'إغلاق البحث',
+        // The avatar button on a phone, which opens the account menu.
+        accountMenu: 'قائمة الحساب',
     },
 
     sidebar: {

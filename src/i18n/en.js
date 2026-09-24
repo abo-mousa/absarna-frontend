@@ -161,6 +161,8 @@ export const en = {
         languageSwitchedTo: 'Language: {name}',
         // The back arrow on the phone's full-width search row.
         closeSearch: 'Close search',
+        // The avatar button on a phone, which opens the account menu.
+        accountMenu: 'Account menu',
     },
 
     sidebar: {

@@ -1,34 +1,35 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useIsFetching, useIsMutating, useQueryClient } from '@tanstack/react-query';
-import { Upload, User, Shield, LogOut, Menu, Sun, Moon, Search, ArrowLeft } from 'lucide-react';
+import { Upload, Menu, Sun, Moon, Search, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { canUpload, isPlatformAdmin, uploadPathFor } from '@/lib/user';
+import { canUpload, uploadPathFor } from '@/lib/user';
 import { useMyChannels } from '../../hooks/useChannels';
 import { reshuffleFeed } from '../../hooks/useVideos';
 import { IrisMark } from '../ui';
 import SearchBar from './SearchBar';
 import LanguageToggle from './LanguageToggle';
+import AccountMenu from './AccountMenu';
 import { t } from '@/i18n';
 
 const iconButtonShape = 'flex-col items-center justify-center gap-0.5 min-w-[50px] px-2.5 py-1.5 rounded-md text-text-secondary hover:bg-surface-hover transition-colors';
-const iconButtonClass = `flex ${iconButtonShape}`;
 /**
- * The controls a phone does not get in the bar: theme, language, upload, admin and sign-out.
+ * The buttons a phone does not get in the bar: a creator's upload, and a visitor's theme and
+ * language.
  *
  * <p>One row with no wrapping, and only the search box allowed to shrink — so below `md` the
- * fixed-width controls (five of them for a signed-in owner, 50px each) took every pixel and the
- * search box was squeezed to nothing, or the row overflowed outright. They are occasional
- * settings, not things a visit needs, so on a phone they live in the drawer instead
- * (`SideBar`'s phone-only group, which is `md:hidden` for the same reason this is `md:flex`: at
- * every width exactly one of the two shows them). From `md` up the bar is what it always was.
+ * fixed-width controls took every pixel and the search box was squeezed to nothing. On a phone a
+ * signed-in account finds upload in `AccountMenu` (its row there is `md:hidden`, the exact
+ * complement of this), and a visitor finds theme, language, sign-in and registration in the
+ * same menu, which is phone-only for a visitor. Everything else about an account is in
+ * `AccountMenu` at every width.
  */
 const desktopIconButtonClass = `hidden md:flex ${iconButtonShape}`;
 const iconLabelClass = 'hidden sm:block text-[0.65rem] font-medium text-text-muted';
 
 function Navbar({ onMenuClick, menuOpen = false }) {
-    const { token, user, logout } = useAuth();
+    const { token, user } = useAuth();
     const { theme, toggleTheme } = useTheme();
 
     const location = useLocation();
@@ -212,23 +213,11 @@ function Navbar({ onMenuClick, menuOpen = false }) {
                         <Search size={20} />
                     </button>
 
-                    <button
-                        onClick={toggleTheme}
-                        title={theme === 'dark' ? t('nav.lightMode') : t('nav.darkMode')}
-                        aria-label={theme === 'dark' ? t('nav.lightMode') : t('nav.darkMode')}
-                        className={desktopIconButtonClass}
-                    >
-                        {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-                        <span className={iconLabelClass}>{theme === 'dark' ? t('nav.lightShort') : t('nav.darkShort')}</span>
-                    </button>
-
-                    {/* Beside the theme toggle because it is the same kind of control: a
-                        preference about this browser, stored here, that changes nothing about the
-                        account or the content. */}
-                    <LanguageToggle className={desktopIconButtonClass} labelClassName={iconLabelClass} />
-
                     {token ? (
                         <>
+                            {/* The one account control that stays a button of its own on a wide
+                                screen: it is what a creator comes back to do. On a phone there is
+                                no room, and it is in the avatar's menu instead. */}
                             {canUpload(user) && (
                                 <Link to={uploadLink} title={t('nav.upload')} aria-label={t('nav.upload')} className={desktopIconButtonClass}>
                                     <Upload size={18} />
@@ -236,31 +225,33 @@ function Navbar({ onMenuClick, menuOpen = false }) {
                                 </Link>
                             )}
 
-                            <Link to="/profile" title={t('nav.profile')} aria-label={t('nav.profile')} className={iconButtonClass}>
-                                <User size={18} />
-                                <span className={iconLabelClass}>{t('nav.profileShort')}</span>
-                            </Link>
-
-                            {isPlatformAdmin(user) && (
-                                <Link to="/admin" title={t('nav.adminPanel')} aria-label={t('nav.adminPanel')} className={`${desktopIconButtonClass} bg-primary-dark text-white hover:bg-primary-dark/90`}>
-                                    <Shield size={18} />
-                                    <span className="hidden sm:block text-[0.65rem] font-medium text-white">{t('nav.adminShort')}</span>
-                                </Link>
-                            )}
-
-                            <button onClick={logout} title={t('nav.logout')} aria-label={t('nav.logout')} className={`${desktopIconButtonClass} bg-surface-hover border border-border`}>
-                                <LogOut size={18} />
-                                <span className={iconLabelClass}>{t('nav.logoutShort')}</span>
-                            </button>
+                            {/* Profile, admin, theme, language and sign-out, at every width. */}
+                            <AccountMenu />
                         </>
                     ) : (
                         <>
-                            <Link to="/login" className="px-4 sm:px-5 py-2 bg-primary text-white rounded-full font-semibold text-sm whitespace-nowrap">
+                            {/* A visitor has no avatar to hang a menu from, so the two browser
+                                preferences stay buttons here — and in the drawer on a phone. */}
+                            <button
+                                onClick={toggleTheme}
+                                title={theme === 'dark' ? t('nav.lightMode') : t('nav.darkMode')}
+                                aria-label={theme === 'dark' ? t('nav.lightMode') : t('nav.darkMode')}
+                                className={desktopIconButtonClass}
+                            >
+                                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                                <span className={iconLabelClass}>{theme === 'dark' ? t('nav.lightShort') : t('nav.darkShort')}</span>
+                            </button>
+                            <LanguageToggle className={desktopIconButtonClass} labelClassName={iconLabelClass} />
+
+                            <Link to="/login" className="hidden md:block px-5 py-2 bg-primary text-white rounded-full font-semibold text-sm whitespace-nowrap">
                                 {t('nav.login')}
                             </Link>
-                            <Link to="/register" className="hidden sm:block px-5 py-2 bg-primary-light text-primary border border-primary rounded-full font-semibold text-sm whitespace-nowrap">
+                            <Link to="/register" className="hidden md:block px-5 py-2 bg-primary-light text-primary border border-primary rounded-full font-semibold text-sm whitespace-nowrap">
                                 {t('nav.register')}
                             </Link>
+
+                            {/* On a phone, all four of the above live in one menu. */}
+                            <AccountMenu />
                         </>
                     )}
                 </div>
