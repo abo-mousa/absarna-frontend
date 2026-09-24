@@ -173,6 +173,8 @@ export const useDecideReport = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-reports'] });
             queryClient.invalidateQueries({ queryKey: ['admin-reports-target'] });
+            // The navbar badge counts open reports.
+            queryClient.invalidateQueries({ queryKey: ['admin-attention'] });
         },
     });
 };

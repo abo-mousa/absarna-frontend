@@ -151,6 +151,7 @@ export const ar = {
         profileShort: 'حسابي',
         adminPanel: 'لوحة التحكم',
         adminShort: 'الإدارة',
+        adminPanelWaiting: 'لوحة التحكم — {count} بانتظارك',
         logout: 'تسجيل الخروج',
         logoutShort: 'خروج',
         login: 'دخول',

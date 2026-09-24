@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useIsFetching, useIsMutating, useQueryClient } from '@tanstack/react-query';
-import { Upload, Menu, Sun, Moon, Search, ArrowLeft } from 'lucide-react';
+import { Upload, Menu, Sun, Moon, Search, ArrowLeft, Shield } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { canUpload, uploadPathFor } from '@/lib/user';
+import { canUpload, isPlatformAdmin, uploadPathFor } from '@/lib/user';
+import { useAdminAttention, badgeText } from '@/hooks/useAdminAttention';
 import { useMyChannels } from '../../hooks/useChannels';
 import { reshuffleFeed } from '../../hooks/useVideos';
 import { IrisMark } from '../ui';
@@ -122,6 +123,8 @@ function Navbar({ onMenuClick, menuOpen = false }) {
     const busy = useIsFetching() + useIsMutating() > 0;
 
     const { data: myChannels = [] } = useMyChannels(!!token);
+    const { data: attention } = useAdminAttention();
+    const attentionCount = attention?.total ?? 0;
     const uploadLink = uploadPathFor(myChannels);
 
     return (
@@ -225,8 +228,36 @@ function Navbar({ onMenuClick, menuOpen = false }) {
                                 </Link>
                             )}
 
+                            {/* A platform admin's panel, beside upload from `md` up: only admins see
+                                it, so nobody else's bar is busier, and it is the page they open
+                                most. The badge is what is waiting on them — channels to review,
+                                findings for a reviewer, open reports — which until now nothing
+                                announced. On a phone it stays in the account menu, badge included. */}
+                            {isPlatformAdmin(user) && (
+                                <Link
+                                    to="/admin"
+                                    title={t('nav.adminPanel')}
+                                    aria-label={attentionCount
+                                        ? t('nav.adminPanelWaiting', { count: attentionCount })
+                                        : t('nav.adminPanel')}
+                                    className={`${desktopIconButtonClass} relative bg-primary-dark text-white hover:bg-primary-dark/90`}
+                                >
+                                    <Shield size={18} />
+                                    <span className="hidden sm:block text-[0.65rem] font-medium text-white">{t('nav.adminShort')}</span>
+                                    {badgeText(attentionCount) && (
+                                        <span
+                                            aria-hidden="true"
+                                            className="absolute -top-2 -end-2 min-w-[1.375rem] h-[1.375rem] px-1 rounded-full bg-gold text-gray-900
+                                                text-xs font-bold leading-[1.375rem] text-center ring-2 ring-bg"
+                                        >
+                                            {badgeText(attentionCount)}
+                                        </span>
+                                    )}
+                                </Link>
+                            )}
+
                             {/* Profile, admin, theme, language and sign-out, at every width. */}
-                            <AccountMenu />
+                            <AccountMenu attentionCount={attentionCount} />
                         </>
                     ) : (
                         <>

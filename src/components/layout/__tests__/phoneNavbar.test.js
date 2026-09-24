@@ -38,15 +38,16 @@ describe('accountMenuActions', () => {
 
     /**
      * The pairing itself. Every button `Navbar` hides below `md` uses `desktopIconButtonClass`:
-     * a creator's upload, and a visitor's theme and language. Each must be in the menu for the
-     * state it belongs to, or a phone cannot press it. A button added to the bar that way, and
-     * not to the menu, changes the count and fails here.
+     * a creator's upload, a platform admin's panel, and a visitor's theme and language. Each must
+     * be in the menu for the state it belongs to, or a phone cannot press it. A button added to
+     * the bar that way, and not to the menu, changes the count and fails here.
      */
     it('puts every button the navbar hides on a phone into the menu', () => {
         const navbar = readFileSync('src/components/layout/Navbar.jsx', 'utf8');
         const hidden = [...navbar.matchAll(/className=\{`?\$?\{?desktopIconButtonClass/g)].length;
-        expect(hidden).toBe(3);
+        expect(hidden).toBe(4);
         expect(accountMenuActions(creator)).toContain('upload');
+        expect(accountMenuActions(admin)).toContain('admin');
         expect(accountMenuActions(null, false)).toEqual(expect.arrayContaining(['theme', 'language']));
     });
 
@@ -79,5 +80,18 @@ describe('upload shortcut', () => {
         expect(uploadPathFor([{ slug: 'tafsir' }, { slug: 'fiqh' }])).toBe('/channel/tafsir/manage');
         expect(uploadPathFor([])).toBe('/create-channel');
         expect(uploadPathFor(undefined)).toBe('/create-channel');
+    });
+});
+
+describe('admin badge', () => {
+    it('shows nothing at zero, the number up to 99, then 99+', async () => {
+        const { badgeText } = await import('@/hooks/useAdminAttention');
+        expect(badgeText(0)).toBeNull();
+        expect(badgeText(undefined)).toBeNull();
+        // In the interface's digits — the test runs the Arabic build, like every visitor by default.
+        const { formatCount } = await import('@/lib/numbers');
+        expect(badgeText(7)).toBe(formatCount(7));
+        expect(badgeText(99)).toBe(formatCount(99));
+        expect(badgeText(100)).toBe(`${formatCount(99)}+`);
     });
 });

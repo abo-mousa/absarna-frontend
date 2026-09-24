@@ -7,14 +7,15 @@ import { useMyChannels } from '../../hooks/useChannels';
 import { useOutsideClick } from '@/hooks/useOutsideClick';
 import { canUpload, isPlatformAdmin, uploadPathFor } from '@/lib/user';
 import { Avatar } from '../ui';
+import { badgeText } from '@/hooks/useAdminAttention';
 import LanguageToggle from './LanguageToggle';
 import { t } from '@/i18n';
 
 /**
  * What the account menu holds, in order.
  *
- * <p>Signed in: `upload` is here for the phone only — from `md` up it is a button in the bar,
- * and its row is `md:hidden`. Signed out: sign-in first, because on a phone this menu is where
+ * <p>Signed in: `upload` and `admin` are here for the phone only — from `md` up each is a
+ * button in the bar, and their rows are `md:hidden`. Signed out: sign-in first, because on a phone this menu is where
  * the sign-in button went, then the two browser preferences. Exported so what each state is
  * offered is tested rather than remembered.
  */
@@ -49,7 +50,11 @@ const itemClass = 'flex w-full items-center gap-3 px-4 py-2.5 text-sm text-text-
  * sign-in, registration, theme and language. From `md` up a visitor's bar has room for all four
  * as buttons, and this renders nothing.
  */
-function AccountMenu() {
+/**
+ * @param attentionCount what is waiting on a platform admin — the navbar asks once and passes it
+ *        in, so the phone's menu row and the desktop button cannot show different numbers.
+ */
+function AccountMenu({ attentionCount = 0 }) {
     const { token, user, logout } = useAuth();
     const signedIn = !!token;
     const { theme, toggleTheme } = useTheme();
@@ -168,10 +173,17 @@ function AccountMenu() {
                                     </Link>
                                 );
                             case 'admin':
+                                // Phone only: from `md` up the admin panel is its own button in the
+                                // bar, badge and all.
                                 return (
-                                    <Link key={action} role="menuitem" to="/admin" className={itemClass}>
+                                    <Link key={action} role="menuitem" to="/admin" className={`md:hidden ${itemClass}`}>
                                         <Shield size={18} />
-                                        {t('nav.adminPanel')}
+                                        <span className="flex-1">{t('nav.adminPanel')}</span>
+                                        {badgeText(attentionCount) && (
+                                            <span className="min-w-[1.25rem] h-5 px-1.5 rounded-full bg-gold text-gray-900 text-[0.7rem] font-bold leading-5 text-center">
+                                                {badgeText(attentionCount)}
+                                            </span>
+                                        )}
                                     </Link>
                                 );
                             case 'theme':

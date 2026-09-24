@@ -82,6 +82,8 @@ export const useDecideReview = () => {
             // MUSIC decision used to dual-write videos.music_review, and the old tab would
             // otherwise have shown a verdict this one had already changed.
             queryClient.invalidateQueries({ queryKey: ['review'] });
+            // The navbar badge counts this backlog.
+            queryClient.invalidateQueries({ queryKey: ['admin-attention'] });
             // And the video, because a decision changes whether the public can see it at all: a
             // DTO cached from before would show the owner a notice on a video that is now
             // published.

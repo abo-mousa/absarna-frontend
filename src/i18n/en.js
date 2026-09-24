@@ -149,6 +149,7 @@ export const en = {
         profileShort: 'Account',
         adminPanel: 'Admin panel',
         adminShort: 'Admin',
+        adminPanelWaiting: 'Admin panel — {count} waiting',
         logout: 'Sign out',
         logoutShort: 'Out',
         login: 'Sign in',

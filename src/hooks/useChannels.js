@@ -513,6 +513,8 @@ const invalidateAdminChannels = (queryClient) => {
     queryClient.invalidateQueries({ queryKey: ['admin-pending-channels'] });
     queryClient.invalidateQueries({ queryKey: ['admin-all-channels'] });
     queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+    // The navbar badge counts pending channels — approving or rejecting one changes it.
+    queryClient.invalidateQueries({ queryKey: ['admin-attention'] });
 };
 
 export const useApproveChannel = () => {
