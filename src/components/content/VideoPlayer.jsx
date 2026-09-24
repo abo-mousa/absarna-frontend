@@ -630,10 +630,6 @@ const VideoPlayer = forwardRef(function VideoPlayer(
                 <VideoControlBar
                     videoRef={videoRef}
                     mediaKey={playbackUrl}
-                    // The video, as opposed to the source: a rung swap changes `mediaKey` and not
-                    // this one, which is what keeps the centre play button from reappearing over a
-                    // lecture in progress. See the bar's `videoKey`.
-                    videoKey={videoId}
                     // The catalogue knows how long the video is; on the HLS path the element does
                     // not, until the first play. See parseDuration.
                     durationHint={duration}

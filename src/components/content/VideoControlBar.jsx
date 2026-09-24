@@ -48,10 +48,6 @@ import PlayerSettingsMenu from './PlayerSettingsMenu';
  * @param videoRef  the `<video>` — a ref rather than the node, since it does not exist on the
  *                  renders before the signed URL arrives
  * @param mediaKey  changes when the element's source does (a rung swap), to re-read its state
- * @param videoKey  identifies the VIDEO, not the source. Distinct from `mediaKey` on purpose: a
- *                  rung swap changes the source of the same video, and the poster-state overlay
- *                  below must not come back over the middle of a lecture because the viewer
- *                  switched to the audio rung
  * @param durationHint  the catalogue's `VideoDTO.duration` string, shown until the element itself
  *                  knows the length — which on the HLS path is not until the first play
  * @param visible   whether the bar is showing; it fades on idle like the bar it replaces. The
@@ -351,7 +347,6 @@ const VolumeIcon = ({ muted, volume }) => {
 export default function VideoControlBar({
     videoRef,
     mediaKey,
-    videoKey,
     durationHint,
     visible = true,
     isFullscreen = false,
@@ -368,10 +363,6 @@ export default function VideoControlBar({
     // only one of the two wants the big button back: after the last frame the next action is
     // "start again", which is the same offer the poster makes.
     const [ended, setEnded] = useState(false);
-    // Which video has been played, rather than a boolean — so it resets itself when the viewer
-    // opens a different video without the player unmounting (a related-video click keeps this
-    // component mounted), and does NOT reset on a rung swap, which changes `mediaKey` alone.
-    const [startedFor, setStartedFor] = useState(null);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(NaN);
     const [buffered, setBuffered] = useState(0);
@@ -427,13 +418,6 @@ export default function VideoControlBar({
             setPlaying(!el.paused && !el.ended);
             setEnded(el.ended);
         };
-        // On the event only, never from the element's state at bind time. A rung swap does not
-        // need it — `videoKey` is unchanged, so the value set by the original play still matches
-        // and the centre button stays away — while reading it at bind time gets the CROSS-VIDEO
-        // case wrong: opening a related video keeps this component mounted and re-binds against
-        // an element still playing the previous one, which would mark the new video as started
-        // and leave it with no button on its poster.
-        const markStarted = () => setStartedFor(videoKey);
         const syncTime = () => setCurrentTime(el.currentTime);
         const syncDuration = () => setDuration(el.duration);
         const syncVolume = () => {
@@ -497,7 +481,6 @@ export default function VideoControlBar({
 
         const events = [
             ['play', syncPlayState],
-            ['play', markStarted],
             ['pause', syncPlayState],
             ['ended', syncPlayState],
             ['timeupdate', syncTime],
@@ -532,7 +515,7 @@ export default function VideoControlBar({
             for (const [event, handler] of events) el.removeEventListener(event, handler);
             clearTimeout(bufferingTimerRef.current);
         };
-    }, [videoRef, mediaKey, videoKey]);
+    }, [videoRef, mediaKey]);
 
     /**
      * AirPlay, offered only once the browser says a receiver is there.
@@ -676,18 +659,16 @@ export default function VideoControlBar({
         transition-colors hover:bg-white/20 focus:outline-none focus-visible:ring-2
         focus-visible:ring-white`;
 
-    // The two moments where the next action is "start" rather than "resume": the poster, before
-    // this video has been played at all, and the last frame after it has ended. Turning
-    // `controls` off took the browser's big centre button with it, and the bar's own 32px one is
-    // not the same offer — on a poster it is the difference between a page that invites a press
-    // and a page that looks like a still image with a strip of chrome under it.
+    // Whenever the video is not playing: on the poster, after a pause, and on the last frame.
+    // Turning `controls` off took the browser's big centre button with it, and the bar's own
+    // 32px one is not the same offer — on a phone it is the difference between a thumb-sized
+    // target and a corner of chrome.
     //
-    // Deliberately NOT shown on every pause, which is what most players do. A viewer who paused
-    // a lecture usually paused to look at what is on screen — a slide, a line of text — and a
-    // 64px disc in the middle of it is in the way. The bar is up whenever the video is paused
-    // (see nudgeControls), so the small button is right there, and clicking the picture toggles
-    // playback too. Suppressed while buffering, where the spinner is the honest answer.
-    const showCentrePlay = !playing && !buffering && (startedFor !== videoKey || ended);
+    // It used to be shown on the poster and the last frame only, on the theory that a viewer who
+    // paused wants the frame unobstructed. In use that read as the play button vanishing the
+    // moment you paused, which is what people noticed rather than the frame. Suppressed while
+    // buffering, where the spinner is the honest answer.
+    const showCentrePlay = !playing && !buffering;
 
     // ...and the one where it is "stop". A playing video shows a centre PAUSE for exactly as long
     // as the rest of the controls are up — under a mouse that means while the pointer is on the
