@@ -1,6 +1,7 @@
+import { resolveMediaUrl } from '@/lib/media';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, X, Pause, Trash2, ExternalLink, ShieldOff, Link2, Mail } from 'lucide-react';
+import { Check, X, Pause, Play, Trash2, ExternalLink, ShieldOff, Link2, Mail } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
 import AdminNav from '../components/admin/AdminNav';
 import { QueryState, Avatar, Badge, Button, Modal, Input, Pager } from '../components/ui';
@@ -161,7 +162,7 @@ function AdminChannels() {
                         <div className="grid gap-3 mb-8">
                             {pendingChannels.map((channel) => (
                                 <div key={channel.id} className="flex items-center gap-4 bg-surface p-4 rounded-lg border border-border-light flex-wrap">
-                                    <Avatar name={channel.name} color={channel.primaryColor} />
+                                    <Avatar src={resolveMediaUrl(channel.logoUrl)} name={channel.name} />
                                     <div className="flex-1 min-w-[150px]">
                                         {/* The whole row's name is the link, not a small icon
                                             beside it: opening the channel is the FIRST thing a
@@ -208,7 +209,7 @@ function AdminChannels() {
                     <div className="grid gap-3">
                         {allChannels.map((channel) => (
                             <div key={channel.id} className="flex items-center gap-4 bg-surface p-4 rounded-lg border border-border-light flex-wrap">
-                                <Avatar name={channel.name} color={channel.primaryColor} />
+                                <Avatar src={resolveMediaUrl(channel.logoUrl)} name={channel.name} />
                                 <div className="flex-1 min-w-[150px]">
                                     {/* Same link as the queue above: suspending or deleting a
                                         channel is also a decision worth looking at it first. */}
@@ -292,6 +293,23 @@ function AdminChannels() {
                                 {channel.status === 'ACTIVE' && (
                                     <Button size="sm" onClick={() => handleSuspend(channel.id)} icon={<Pause size={14} />} className="!bg-gold hover:!bg-gold">
                                         {t('admin.suspend')}
+                                    </Button>
+                                )}
+                                {/* The way back. Suspending says it is the reversible option, and
+                                    nothing on this page could reverse it: approve lived in the
+                                    pending queue only, which a suspended or rejected channel is not
+                                    in. The same approve call — it sets ACTIVE from any state. */}
+                                {(channel.status === 'SUSPENDED' || channel.status === 'REJECTED') && (
+                                    <Button
+                                        size="sm"
+                                        onClick={() => approveChannel.mutate(channel.id, {
+                                            onSuccess: () => showToast(t('admin.reactivated'), 'success'),
+                                            onError: () => showToast(t('admin.reactivateFailed'), 'error'),
+                                        })}
+                                        disabled={approveChannel.isPending}
+                                        icon={<Play size={14} className="rtl:scale-x-[-1]" />}
+                                    >
+                                        {t('admin.reactivate')}
                                     </Button>
                                 )}
                                 <Button

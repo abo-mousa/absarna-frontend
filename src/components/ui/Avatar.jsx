@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useConsent } from '@/contexts/ConsentContext';
+import { isGoogleHostedImage } from '@/lib/consent';
 
 const SIZES = {
     sm: 'w-8 h-8 text-sm',
@@ -19,11 +21,26 @@ const SIZES = {
  *
  * <p>The failed URL is latched rather than a boolean, so a re-render does not retry a URL already
  * known to fail while a genuinely different `src` still gets its own attempt.
+ *
+ * <p><b>A Google-hosted picture waits for consent</b>, like every other request to Google on this
+ * site: the logos the create form prefilled from YouTube are `yt3.ggpht.com` links, and drawing one
+ * sends the reader's browser to Google before they have answered the banner. Every channel logo in
+ * the app is drawn here — cards, channel page, sidebar — so this is the one place that has to know.
+ * Until consent, the initial below is what shows. An uploaded logo is on our own host and is never
+ * held back.
  */
-function Avatar({ src, name = '', size = 'md', color, className = '' }) {
+/**
+ * <p><b>One look for every picture-less channel and account: the brand's own pair.</b> The initial
+ * is gold on the platform's teal — the two colours of the iris mark itself. It used to be each
+ * channel's `primaryColor`, which put a random palette down the sidebar and across the cards, and
+ * the colour picker behind it has gone from the create form now that a channel can have a photo.
+ */
+function Avatar({ src, name = '', size = 'md', className = '' }) {
     const [failedSrc, setFailedSrc] = useState(null);
+    const { youtubeAllowed } = useConsent();
+    const heldForConsent = isGoogleHostedImage(src) && !youtubeAllowed;
 
-    if (src && src !== failedSrc) {
+    if (src && src !== failedSrc && !heldForConsent) {
         return (
             <img
                 src={src}
@@ -36,8 +53,7 @@ function Avatar({ src, name = '', size = 'md', color, className = '' }) {
 
     return (
         <div
-            className={`${SIZES[size]} rounded-full text-white flex items-center justify-center font-semibold flex-shrink-0 ${color ? '' : 'bg-primary'} ${className}`}
-            style={color ? { background: color } : undefined}
+            className={`${SIZES[size]} rounded-full bg-primary text-gold flex items-center justify-center font-semibold flex-shrink-0 ${className}`}
         >
             {name?.trim()?.[0]?.toUpperCase() || '?'}
         </div>

@@ -1,3 +1,4 @@
+import { resolveMediaUrl } from '@/lib/media';
 import { Link } from 'react-router-dom';
 import PageShell from '../components/layout/PageShell';
 import { QueryState, Avatar } from '../components/ui';
@@ -35,7 +36,7 @@ function Subscriptions() {
                 <div className="grid gap-4">
                     {subscriptions.map((sub) => (
                         <div key={sub.subscriptionId} className="flex items-center gap-4 bg-surface p-4 rounded-lg border border-border-light shadow-sm flex-wrap">
-                            <Avatar name={sub.channelName || t('subscriptions.avatarFallback')} color={sub.channelColor} size="lg" />
+                            <Avatar src={resolveMediaUrl(sub.channelLogoUrl)} name={sub.channelName || t('subscriptions.avatarFallback')} size="lg" />
 
                             <div className="flex-1 min-w-0">
                                 <h3 className="font-semibold">{sub.channelName}</h3>

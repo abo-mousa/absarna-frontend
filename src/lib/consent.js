@@ -87,3 +87,23 @@ export function allowsYouTube(consent) {
 export function shouldAskConsent(consent) {
     return consent === null;
 }
+
+/** Google's image hosts — where a YouTube-derived channel avatar or cover is served from. */
+const GOOGLE_IMAGE_HOSTS = ['ggpht.com', 'googleusercontent.com', 'ytimg.com'];
+
+/**
+ * Is this picture served by Google — a channel logo the create form prefilled from YouTube?
+ *
+ * <p>Those load from Google as surely as a thumbnail does, so they wait for consent like one. An
+ * uploaded logo is on our own media host and never matches; nor does a relative path.
+ */
+export function isGoogleHostedImage(url) {
+    if (!url) return false;
+    let host;
+    try {
+        host = new URL(url).hostname.toLowerCase();
+    } catch {
+        return false;
+    }
+    return GOOGLE_IMAGE_HOSTS.some((suffix) => host === suffix || host.endsWith(`.${suffix}`));
+}

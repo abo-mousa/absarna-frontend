@@ -1,3 +1,4 @@
+import { resolveMediaUrl } from '@/lib/media';
 import { Link } from 'react-router-dom';
 import { Video, BookOpen, FileText, MessageSquare, MessagesSquare, Settings, Import, ExternalLink } from 'lucide-react';
 import { Avatar } from '@/components/ui';
@@ -117,7 +118,7 @@ export default function ChannelManageNav({ channel, activeTab, onSelect, youtube
     return (
         <aside className="bg-surface border-b border-border-light lg:border-b-0 lg:border-l lg:w-[240px] lg:flex-shrink-0 lg:sticky lg:top-[var(--navbar-h)] lg:h-[calc(100vh-var(--navbar-h))] lg:overflow-y-auto">
             <div className="flex items-center gap-3 px-4 py-3 lg:p-4 border-b border-border-light">
-                <Avatar src={channel.logoUrl} name={channel.name} color={channel.primaryColor} size="md" />
+                <Avatar src={resolveMediaUrl(channel.logoUrl)} name={channel.name} size="md" />
                 <div className="min-w-0">
                     <p className="text-xs text-text-muted">{t('channelManage.subtitle')}</p>
                     <h1 dir="auto" className="font-bold truncate">{channel.name}</h1>

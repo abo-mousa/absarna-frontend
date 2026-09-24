@@ -5,9 +5,10 @@ import api from '@/lib/api/client';
 import { changePassword, deleteAccount } from '@/lib/api/auth';
 import { isRemembered } from '@/lib/authStorage';
 import PageShell from '../components/layout/PageShell';
-import { Input, Button, Modal } from '../components/ui';
+import { Input, Button, Modal, ImageUploadField } from '../components/ui';
 import { EmailVerificationNotice } from '../components/auth';
 import { useMyChannels } from '../hooks/useChannels';
+import { useProfilePicture } from '../hooks/useOwnerImage';
 import { useNavigate } from 'react-router-dom';
 import { getPasswordRules, getPasswordStrengthLabel, isPasswordValid } from '@/lib/validation';
 import { describeError } from '@/lib/describeError';
@@ -237,11 +238,47 @@ function ChangePasswordCard() {
     );
 }
 
+/**
+ * The account's own picture — shown in the account menu. Uploading needs a verified address (the
+ * platform hosts it publicly); an unverified account is told so here rather than only by a refusal.
+ */
+function ProfilePictureField({ user }) {
+    const { showToast } = useToast();
+    const picture = useProfilePicture();
+    const unverified = user?.emailVerified === false;
+
+    const run = async (action, okKey) => {
+        try {
+            await action();
+            showToast(t(okKey), 'success');
+        } catch (err) {
+            showToast(t('ownerImage.failed', { reason: describeError(err) }), 'error');
+        }
+    };
+
+    return (
+        <ImageUploadField
+            label={t('ownerImage.profilePicture')}
+            hint={unverified ? t('ownerImage.profilePictureNeedsVerification') : t('ownerImage.profilePictureHint')}
+            previewUrl={user?.profilePictureUrl}
+            shape="round"
+            hasUpload={user?.hasUploadedProfilePicture}
+            uploading={picture.uploading}
+            removing={picture.removing}
+            onPick={(file) => run(() => picture.upload(file), 'ownerImage.saved')}
+            onRemove={() => run(picture.remove, 'ownerImage.removed')}
+        />
+    );
+}
+
 function UserProfile() {
     usePageMeta({ title: t('profile.title') });
     const { user } = useAuth();
     const { showToast } = useToast();
-    const [form, setForm] = useState({ fullName: '', bio: '', email: '', profilePictureUrl: '' });
+    // No profilePictureUrl: the form had no field for it and re-sent whatever the profile held on
+    // every save, which after an upload is the picture's media address — written back into the
+    // URL column by a bio edit. The picture is ProfilePictureField's, and saves on its own.
+    const [form, setForm] = useState({ fullName: '', bio: '', email: '' });
     const [saving, setSaving] = useState(false);
     /**
      * The address currently stored on the account, and the only thing "did this edit change the
@@ -266,7 +303,6 @@ function UserProfile() {
                 fullName: user.fullName || '',
                 bio: user.bio || '',
                 email: user.email || '',
-                profilePictureUrl: user.profilePictureUrl || '',
             });
             setSavedEmail(user.email || '');
         }
@@ -315,6 +351,10 @@ function UserProfile() {
             <div className="max-w-[500px] mx-auto my-8 sm:my-10 px-4">
                 <div className="bg-surface p-6 sm:p-8 rounded-lg shadow-sm border border-border-light">
                     <h1 className="text-xl font-bold mb-6">{t('profile.title')}</h1>
+
+                    <div className="mb-6">
+                        <ProfilePictureField user={user} />
+                    </div>
 
                     <form onSubmit={handleSubmit} className="grid gap-4">
                         <Input label={t('fields.username')} value={user?.username || ''} dir="ltr" disabled />

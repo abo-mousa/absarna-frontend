@@ -188,6 +188,40 @@ export const ar = {
         noMatches: 'لا توجد نتائج مطابقة لـ "{query}"',
     },
 
+    // صورة يضعها الشخص على قناته أو حسابه: شعار القناة وغلافها، أو الصورة الشخصية.
+    ownerImage: {
+        channelHeading: 'الشعار وصورة الغلاف',
+        logo: 'شعار القناة',
+        logoHint: 'يظهر بجانب اسم القناة وعلى كل بطاقة فيديو. الأفضل أن يكون مربعاً.',
+        banner: 'صورة الغلاف',
+        bannerHint: 'تظهر أعلى صفحة القناة. الأفضل أن تكون صورة عريضة، بمقاس 2560×800 تقريباً.',
+        profilePicture: 'الصورة الشخصية',
+        profilePictureHint: 'تظهر في قائمة حسابك.',
+        profilePictureNeedsVerification: 'أكّد بريدك الإلكتروني أولاً، ثم يمكنك رفع صورة.',
+        choose: 'اختيار صورة',
+        replace: 'استبدال',
+        remove: 'إزالة',
+        uploading: 'جارٍ الرفع…',
+        removing: 'جارٍ الإزالة…',
+        saved: 'تم حفظ الصورة',
+        removed: 'تمت إزالة الصورة',
+        failed: 'تعذّر حفظ الصورة: {reason}',
+        unsupported: 'صيغة الصورة غير مدعومة. اختر صورة بصيغة JPG أو PNG أو WEBP.',
+        tooLarge: 'الصورة كبيرة جداً. اختر صورة أصغر من 5 ميغابايت.',
+        confirm: {
+            explain: 'نُسخت هذه الصور من قناتك على يوتيوب. إلى أن تؤكد أنها لك، نحدّثها من يوتيوب كل شهر، فأي تغيير هناك يستبدلها هنا.',
+            action: 'تأكيد أن هذه صوري',
+            done: 'تم تأكيد صورك، وستبقى كما هي',
+        },
+        youtube: {
+            explain: 'يمكنك استخدام شعار قناتك وصورة غلافها على يوتيوب. سننسخهما إلى المنصة، ويمكنك تغييرهما من هنا في أي وقت.',
+            action: 'استخدام شعار يوتيوب وصورة الغلاف',
+            copying: 'جارٍ النسخ…',
+            copied: 'تم نسخ صورك من يوتيوب',
+            nothing: 'لا يوجد شعار أو صورة غلاف على قناتك في يوتيوب لنسخها',
+        },
+    },
+
     errorBoundary: {
         title: 'عذراً، حدث خطأ غير متوقع',
         fallback: 'يرجى المحاولة مرة أخرى',
@@ -265,6 +299,11 @@ export const ar = {
             // tab closed mid-upload. Nothing was changed, so picking the file again is the fix.
             THUMBNAIL_NOT_UPLOADED: 'لم يكتمل رفع الصورة. اختر الصورة مرة أخرى.',
             THUMBNAIL_KEY_INVALID: 'تعذر حفظ الصورة. اختر الصورة مرة أخرى.',
+            IMAGE_FORMAT_NOT_ALLOWED: 'صيغة الصورة غير مدعومة. اختر صورة بصيغة JPG أو PNG أو WEBP.',
+            IMAGE_TOO_LARGE: 'الصورة كبيرة جداً. اختر صورة أصغر من 5 ميغابايت.',
+            IMAGE_NOT_UPLOADED: 'لم يكتمل رفع الصورة. اختر الملف مرة أخرى.',
+            IMAGE_KEY_INVALID: 'تعذّر حفظ الصورة. اختر الملف مرة أخرى.',
+            YOUTUBE_IMAGES_OWNER_ONLY: 'نسخ صور القناة من يوتيوب متاح لمالك القناة فقط.',
 
             YOUTUBE_IMPORT_ALREADY_RUN: 'تم استيراد هذه القناة بالفعل، أو هناك استيراد جارٍ الآن.',
             // A 503, and the one case where "try again later" is actively wrong: nothing will
@@ -1110,6 +1149,7 @@ export const ar = {
     },
 
     createChannel: {
+        logoHint: 'اختياري. إن ربطت قناتك على يوتيوب، يُنسخ شعارها وغلافها عند الاستيراد، والصورة التي تختارها هنا تُقدَّم عليهما.',
         title: 'إنشاء قناة',
         heading: 'إنشاء قناة جديدة',
         // A channel is live the moment it is created. What USED to be here — «سيتم مراجعة قناتك
@@ -1658,6 +1698,8 @@ export const ar = {
         approve: 'موافقة',
         reject: 'رفض',
         suspend: 'تعليق',
+        reactivate: 'إعادة التفعيل',
+        reactivated: 'أصبحت القناة ظاهرة من جديد',
         delete: 'حذف القناة',
         deleteTitle: 'حذف القناة نهائياً',
         // States the blast radius plainly. The delete cascades in SQL and nothing is recoverable.
@@ -1670,6 +1712,7 @@ export const ar = {
         approveFailed: 'فشل في الموافقة',
         rejectFailed: 'فشل في الرفض',
         suspendFailed: 'فشل في التعليق',
+        reactivateFailed: 'فشل في إعادة التفعيل',
 
         /**
          * Excusing a channel from the content detectors.

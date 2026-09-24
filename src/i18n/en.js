@@ -185,6 +185,41 @@ export const en = {
         noMatches: 'Nothing matches "{query}"',
     },
 
+    // A picture a person puts on their own channel or account: a channel's logo and cover, or a
+    // profile picture. The upload flow is the video poster's, so the wording is too.
+    ownerImage: {
+        channelHeading: 'Logo and cover',
+        logo: 'Channel logo',
+        logoHint: 'Shown beside the channel name and on every video card. Square works best.',
+        banner: 'Cover image',
+        bannerHint: 'Shown across the top of the channel page. A wide picture works best, around 2560×800.',
+        profilePicture: 'Profile picture',
+        profilePictureHint: 'Shown in your account menu.',
+        profilePictureNeedsVerification: 'Confirm your email address first, then you can upload a picture.',
+        choose: 'Choose a picture',
+        replace: 'Replace',
+        remove: 'Remove',
+        uploading: 'Uploading…',
+        removing: 'Removing…',
+        saved: 'Picture saved',
+        removed: 'Picture removed',
+        failed: 'The picture could not be saved: {reason}',
+        unsupported: 'That image format is not supported. Choose a JPG, PNG or WEBP.',
+        tooLarge: 'That image is too large. Choose one under 5 MB.',
+        confirm: {
+            explain: 'These pictures were copied from your YouTube channel. Until you confirm they are yours, we refresh them from YouTube every month — so a change there replaces them here.',
+            action: 'Confirm these are my pictures',
+            done: 'Your pictures are confirmed and will stay as they are',
+        },
+        youtube: {
+            explain: 'You can use the logo and cover from your YouTube channel. We copy them onto the platform, and you can change them here any time.',
+            action: 'Use my YouTube logo and cover',
+            copying: 'Copying…',
+            copied: 'Copied your pictures from YouTube',
+            nothing: 'Your YouTube channel has no logo or cover to copy',
+        },
+    },
+
     errorBoundary: {
         title: 'Sorry — something went wrong',
         fallback: 'Please try again',
@@ -233,6 +268,11 @@ export const en = {
             THUMBNAIL_TOO_LARGE: 'That image is too large. Choose one under 5 MB.',
             THUMBNAIL_NOT_UPLOADED: 'The image did not finish uploading. Choose the file again.',
             THUMBNAIL_KEY_INVALID: 'The image could not be saved. Choose the file again.',
+            IMAGE_FORMAT_NOT_ALLOWED: 'That image format is not supported. Choose a JPG, PNG or WEBP.',
+            IMAGE_TOO_LARGE: 'That image is too large. Choose one under 5 MB.',
+            IMAGE_NOT_UPLOADED: 'The image did not finish uploading. Choose the file again.',
+            IMAGE_KEY_INVALID: 'The image could not be saved. Choose the file again.',
+            YOUTUBE_IMAGES_OWNER_ONLY: 'Only the channel\'s owner can copy its pictures from YouTube.',
 
             YOUTUBE_IMPORT_ALREADY_RUN: 'This channel has already been imported, or an import is running right now.',
             YOUTUBE_NOT_CONFIGURED: 'Importing from YouTube is not enabled on this platform. Please contact the platform team.',
@@ -791,6 +831,7 @@ export const en = {
     },
 
     createChannel: {
+        logoHint: 'Optional. If you link your YouTube channel, its logo and cover are copied when you import — a picture you choose here comes first.',
         title: 'Create a channel',
         heading: 'Create a new channel',
         subheading: 'Your channel goes live the moment you create it, and you can publish straight away.',
@@ -1269,6 +1310,8 @@ export const en = {
         approve: 'Approve',
         reject: 'Reject',
         suspend: 'Suspend',
+        reactivate: 'Reactivate',
+        reactivated: 'The channel is live again',
         delete: 'Delete channel',
         deleteTitle: 'Delete the channel permanently',
         // States the blast radius plainly. The delete cascades in SQL and nothing is recoverable.
@@ -1281,6 +1324,7 @@ export const en = {
         approveFailed: 'Could not approve it',
         rejectFailed: 'Could not reject it',
         suspendFailed: 'Could not suspend it',
+        reactivateFailed: 'Could not reactivate it',
 
         /**
          * The invitation link an admin copies into the email. Called an invitation rather than
@@ -2058,7 +2102,7 @@ export const TRANSLATED = [
     'channel', 'consent', 'createChannel', 'comments', 'likes', 'bookmarks', 'history',
     'subscriptions', 'profile', 'search', 'biography', 'share', 'upload', 'notFound',
     'channelManage', 'youtube', 'youtubeOAuth', 'admin', 'adminReports', 'legal',
-    'pager', 'report',
+    'pager', 'report', 'ownerImage',
 ];
 
 export default en;

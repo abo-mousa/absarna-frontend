@@ -15,6 +15,11 @@
       for a full button fill even though it works fine as the logo's own color */
     --color-primary-dark: 10 74 69; /* #0A4A45 — hover-darken of the above */
     --color-primary-light: 227 246 244; /* #E3F6F4 */
+    /* The navbar wordmark only. A step brighter than --color-primary, which was deepened for
+       solid button fills and read a little heavy as the name beside the mark; halfway to the
+       logo's own #17A398 rather than all the way, so it still reads as the same teal. Large bold
+       text, so 3:1 is the bar and this clears it on the parchment page. */
+    --color-wordmark: 19 137 139; /* #13898B */
     --color-gold: 242 174 48; /* #F2AE30 */
     --color-gold-light: 252 239 215; /* #FCEFD7 */
     --color-surface: 254 253 249; /* #FEFDF9 — warm parchment surface */
@@ -56,6 +61,7 @@
       page, but noticeably less neon than #22C4BC read as a solid button fill */
     --color-primary-dark: 21 113 105; /* #157169 — hover-darken of the above */
     --color-primary-light: 12 46 44; /* #0C2E2C — dark teal tint, not a lightened primary */
+    --color-wordmark: 38 169 156; /* #26A99C — the same step up from the dark primary */
     --color-gold: 245 193 90; /* #F5C15A */
     --color-gold-light: 58 46 19; /* #3A2E13 */
     --color-surface: 23 29 43; /* #171D2B — indigo-night surface */

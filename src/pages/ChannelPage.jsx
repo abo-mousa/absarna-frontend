@@ -185,43 +185,59 @@ function ChannelPage() {
 
     return (
         <PageShell currentChannel={slug} contentClassName="p-4 sm:p-6">
-            <div className="rounded-lg overflow-hidden mb-5" style={{ background: channel.primaryColor || '#0D6B4D' }}>
-                {/* Owner-supplied and external. On failure the banner is dropped entirely and
-                    the header falls back to the channel's own primaryColor behind it — which is
-                    what a channel with no banner already looks like. */}
-                {channel.bannerUrl && !bannerFailed && (
-                    <div className="h-[120px] sm:h-[160px] w-full overflow-hidden">
-                        <img
-                            src={resolveMediaUrl(channel.bannerUrl)}
-                            alt=""
-                            onError={() => setBannerFailed(true)}
-                            className="w-full h-full object-cover"
-                        />
-                    </div>
+            {/* The cover on its own, and the channel's identity BELOW it rather than on a coloured
+                band fused to it. They used to share one box — the cover, then a primaryColor panel
+                carrying the photo, name and subscriber count — which read as text laid over the
+                cover, and a strong colour under someone's own banner fought with it. Now the cover
+                is only a picture, and the identity row sits on the page like the rest of it.
+
+                Owner-supplied or copied from YouTube; on failure the cover is dropped and the page
+                simply starts at the identity row, which is what a channel with no cover looks like. */}
+            {channel.bannerUrl && !bannerFailed && (
+                <div className="rounded-lg overflow-hidden mb-4 aspect-[16/5] max-h-[260px] w-full bg-surface-hover">
+                    <img
+                        src={resolveMediaUrl(channel.bannerUrl)}
+                        alt=""
+                        onError={() => setBannerFailed(true)}
+                        className="w-full h-full object-cover"
+                    />
+                </div>
+            )}
+
+            <div className="flex items-center gap-4 flex-wrap mb-5">
+                <Avatar
+                    src={resolveMediaUrl(channel.logoUrl)}
+                    name={channel.name}
+                    size="lg"
+                    className="sm:!w-20 sm:!h-20"
+                />
+
+                <div className="flex-1 min-w-[150px]">
+                    <h1 className="m-0 text-xl sm:text-2xl font-bold text-text-primary">{channel.name}</h1>
+                    {/* Subscribers for a signed-in reader only (the count comes with their own
+                        subscription status), and the video count for everyone — the channel's
+                        whole public catalogue, the same frozen total the Videos tab badge shows,
+                        so a search on the page does not make it shrink. */}
+                    <p className="text-text-muted text-sm mt-1 flex flex-wrap items-center gap-x-2">
+                        {token && <span>{t('channel.subscriberCount', { count: subscriberCount })}</span>}
+                        {token && videoPages && <span aria-hidden="true">·</span>}
+                        {videoPages && <span>{t('common.videoCount', { count: videoCount })}</span>}
+                    </p>
+                    {channel.description && (
+                        <p className="text-text-secondary text-sm mt-2 max-w-[600px]">{channel.description}</p>
+                    )}
+                </div>
+
+                {canManage && (
+                    <Link
+                        to={`/channel/${slug}/manage`}
+                        className="flex items-center gap-1.5 px-4 py-2.5 border border-border text-text-secondary rounded-full font-semibold text-sm hover:bg-surface-hover"
+                    >
+                        <Settings size={18} /> {t('channel.manage')}
+                    </Link>
                 )}
 
-                <div className="p-5 sm:p-6 text-white flex items-center gap-4 flex-wrap">
-                    <Avatar src={resolveMediaUrl(channel.logoUrl)} name={channel.name} size="lg" className="!bg-white/20" />
-
-                    <div className="flex-1 min-w-[150px]">
-                        <h1 className="text-white m-0 text-xl sm:text-2xl font-bold">{channel.name}</h1>
-                        {token && <p className="opacity-90 text-sm mt-1">{t('channel.subscriberCount', { count: subscriberCount })}</p>}
-                        {channel.description && (
-                            <p className="opacity-90 text-sm mt-2 max-w-[500px]">{channel.description}</p>
-                        )}
-                    </div>
-
-                    {canManage && (
-                        <Link
-                            to={`/channel/${slug}/manage`}
-                            className="flex items-center gap-1.5 px-4 py-2.5 bg-white/20 text-white rounded-full font-semibold text-sm"
-                        >
-                            <Settings size={18} /> {t('channel.manage')}
-                        </Link>
-                    )}
-
-                    <SubscribeButton channelId={channel.id} variant="banner" />
-                </div>
+                <SubscribeButton channelId={channel.id} />
             </div>
 
             {/* TWO AUDIENCES, ONE BANNER, AND THEY GET DIFFERENT WEIGHTS.

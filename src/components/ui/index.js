@@ -15,3 +15,4 @@ export { default as LinkifiedText } from './LinkifiedText';
 export { default as ExpandableText } from './ExpandableText';
 export { default as SwapLabel } from './SwapLabel';
 export { default as SearchField } from './SearchField';
+export { default as ImageUploadField } from './ImageUploadField';

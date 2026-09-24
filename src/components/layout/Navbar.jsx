@@ -156,7 +156,7 @@ function Navbar({ onMenuClick, menuOpen = false }) {
                 <Link
                     to="/"
                     onClick={handleLogoClick}
-                    className="flex items-center gap-1 text-2xl sm:text-3xl font-bold text-primary flex-shrink-0"
+                    className="flex items-center gap-1 text-2xl sm:text-3xl font-bold text-[rgb(var(--color-wordmark))] flex-shrink-0"
                 >
                     {/* The mark turns for as long as anything is in flight, and rests when
                         nothing is. It is the one piece of chrome on every screen, so it can say

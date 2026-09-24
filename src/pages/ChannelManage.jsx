@@ -194,7 +194,7 @@ function ChannelManage() {
                             />
                         </TabPanel>
                         <TabPanel active={activeTab === 'settings'}>
-                            <ChannelSettingsTab slug={slug} channel={channel} />
+                            <ChannelSettingsTab slug={slug} channel={channel} youtubeState={youtubeState} isOwner={isOwner} />
                         </TabPanel>
                     </div>
                 </div>

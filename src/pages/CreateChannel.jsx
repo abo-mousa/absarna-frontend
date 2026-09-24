@@ -1,16 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '@/lib/api/client';
 import PageShell from '../components/layout/PageShell';
-import { Input, Button } from '../components/ui';
+import { Input, Button, ImageUploadField } from '../components/ui';
 import { EmailVerificationNotice } from '../components/auth';
 import { useToast } from '../contexts/ToastContext';
 import { usePageMeta } from '../hooks/usePageMeta';
-import { FieldLabel } from '@/components/channel';
 import { useResolveYouTubeChannel } from '@/hooks/useChannelYouTube';
 import { useAuth } from '../contexts/AuthContext';
 import { isPlatformAdmin } from '@/lib/user';
 import { describeError } from '@/lib/describeError';
+import { uploadOwnerImage, channelImagePath } from '@/hooks/useOwnerImage';
+import { IMAGE_LIMITS } from '@/lib/imageResize';
 import { t } from '@/i18n';
 
 /**
@@ -39,13 +40,44 @@ const slugFromYouTube = (source) => {
     return handle ? slugFrom(handle[1]) : '';
 };
 
+/**
+ * A picture chosen on the form but not uploaded yet: the File, and a local preview of it. The
+ * object URL is revoked when the picture is replaced or the form goes away, so choosing several in
+ * a row does not keep every one of them in memory.
+ */
+function usePickedImage() {
+    const [file, setFile] = useState(null);
+    const [previewUrl, setPreviewUrl] = useState(null);
+    useEffect(() => () => { if (previewUrl) URL.revokeObjectURL(previewUrl); }, [previewUrl]);
+    return {
+        file,
+        previewUrl,
+        pick: (picked) => {
+            setFile(picked);
+            setPreviewUrl(URL.createObjectURL(picked));
+        },
+        clear: () => {
+            setFile(null);
+            setPreviewUrl(null);
+        },
+    };
+}
+
 function CreateChannel() {
     usePageMeta({ title: t('createChannel.title') });
     const { showToast } = useToast();
     const navigate = useNavigate();
+    // No primaryColor and no logoUrl. The colour only ever filled the letter circle of a channel
+    // with no photo, which is not worth a form field now that a channel can have a photo; the
+    // backend keeps its default. The logo used to be prefilled from the YouTube lookup as a
+    // Google-hosted link — a request to Google from every reader's browser before consent. A
+    // linked channel's logo and cover now arrive as stored copies when it imports, and a picture
+    // chosen here is uploaded straight after creation and always comes first.
     const [form, setForm] = useState({
-        name: '', slug: '', description: '', primaryColor: '#0D6B4D', logoUrl: '', youtubeSource: '',
+        name: '', slug: '', description: '', youtubeSource: '',
     });
+    const logo = usePickedImage();
+    const banner = usePickedImage();
     const [error, setError] = useState('');
     const [needsVerification, setNeedsVerification] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -74,8 +106,6 @@ function CreateChannel() {
                 ...current,
                 name: current.name || found.title || '',
                 description: current.description || found.description || '',
-                // Hotlinked, not copied — a default the owner can replace, not a claim on the image.
-                logoUrl: current.logoUrl || found.thumbnailUrl || '',
                 // Handle first, title second: an Arabic title slugs to nothing.
                 slug: current.slug || slugFromYouTube(current.youtubeSource) || slugFrom(found.title || ''),
             }));
@@ -101,6 +131,18 @@ function CreateChannel() {
         try {
             await api.post('/channels', form);
             showToast(t('createChannel.created'), 'success');
+
+            // The pictures need the channel to exist — there is no slug to upload under before
+            // this — so they go now, and a failure here never loses the channel: it exists, and
+            // the settings tab can take the picture again.
+            const pictures = [['logo', logo.file], ['banner', banner.file]].filter(([, file]) => file);
+            for (const [kind, file] of pictures) {
+                try {
+                    await uploadOwnerImage(channelImagePath(form.slug, kind), file, IMAGE_LIMITS[kind]);
+                } catch (err) {
+                    showToast(t('ownerImage.failed', { reason: describeError(err) }), 'error');
+                }
+            }
 
             const source = form.youtubeSource.trim();
             if (!source) {
@@ -222,15 +264,27 @@ function CreateChannel() {
                             </p>
                         </div>
 
-                        <div>
-                            <FieldLabel>{t('fields.primaryColor')}</FieldLabel>
-                            <input
-                                type="color"
-                                value={form.primaryColor}
-                                onChange={(e) => setForm({ ...form, primaryColor: e.target.value })}
-                                className="w-[60px] h-10 cursor-pointer"
-                            />
-                        </div>
+                        <ImageUploadField
+                            label={t('ownerImage.logo')}
+                            hint={t('createChannel.logoHint')}
+                            previewUrl={logo.previewUrl}
+                            shape="round"
+                            hasUpload={!!logo.file}
+                            uploading={loading && !!logo.file}
+                            onPick={logo.pick}
+                            onRemove={logo.clear}
+                        />
+
+                        <ImageUploadField
+                            label={t('ownerImage.banner')}
+                            hint={t('ownerImage.bannerHint')}
+                            previewUrl={banner.previewUrl}
+                            shape="wide"
+                            hasUpload={!!banner.file}
+                            uploading={loading && !!banner.file}
+                            onPick={banner.pick}
+                            onRemove={banner.clear}
+                        />
 
                         {needsVerification && (
                             <EmailVerificationNotice message={t('auth.verificationNotice.beforeChannel')} />

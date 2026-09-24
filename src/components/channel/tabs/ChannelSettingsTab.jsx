@@ -1,23 +1,23 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Save, ShieldOff, Trash2 } from 'lucide-react';
+import { Save, ShieldOff, Trash2, ImageDown, BadgeCheck } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { Input, Button, Modal } from '@/components/ui';
-import { FieldLabel } from '../ContentPublishForm';
+import { Input, Button, Modal, ImageUploadField } from '@/components/ui';
 import ReviewExemptionDialog, { ReviewExemptionSummary } from '../ReviewExemptionDialog';
 import { useUpdateChannel, useChannelReviewExemptions, useDeleteOwnChannel } from '@/hooks/useChannels';
+import { useChannelImage, useCopyYouTubeImages, useConfirmYouTubeImages } from '@/hooks/useOwnerImage';
 import { isPlatformAdmin, isChannelOwner } from '@/lib/user';
 import { t } from '@/i18n';
 import { describeError } from '@/lib/describeError';
 
 /**
- * The channel's own properties: name, description, colour.
+ * The channel's own properties: name and description — and its two pictures.
  *
  * <p>Nothing else. The YouTube link and import used to sit under this form, which read as more
  * settings — a one-time migration stacked below a name field — and has its own tab now.
  */
-export default function ChannelSettingsTab({ slug, channel }) {
+export default function ChannelSettingsTab({ slug, channel, youtubeState, isOwner }) {
     const { showToast } = useToast();
     const { user } = useAuth();
     const updateChannel = useUpdateChannel(slug, channel?.id);
@@ -31,9 +31,10 @@ export default function ChannelSettingsTab({ slug, channel }) {
     const [form, setForm] = useState({
         name: channel.name || '',
         description: channel.description || '',
-        primaryColor: channel.primaryColor || '#0D6B4D',
-        logoUrl: channel.logoUrl || '',
-        bannerUrl: channel.bannerUrl || '',
+        // No logoUrl/bannerUrl here. They were carried through a form with no field for either,
+        // so every save re-sent whatever the DTO held — and since an uploaded logo's DTO value is
+        // its media address, saving the name would have written that address into the URL column.
+        // The two pictures are the image pickers' now, which save on their own.
     });
 
     const handleSave = async (e) => {
@@ -62,14 +63,15 @@ export default function ChannelSettingsTab({ slug, channel }) {
         <form onSubmit={handleSave} className="grid gap-4 bg-surface p-6 rounded-lg border border-border-light">
             <Input label={t('channelManage.channelName')} value={form.name} onChange={field('name')} />
             <Input label={t('fields.description')} textarea rows={3} value={form.description} onChange={field('description')} />
-            <div>
-                <FieldLabel>{t('fields.primaryColor')}</FieldLabel>
-                <input type="color" value={form.primaryColor} onChange={field('primaryColor')} className="w-[60px] h-10 cursor-pointer" />
-            </div>
+            {/* No colour picker: a channel's colour only ever painted the letter circle of a
+                channel with no photo, and Avatar now draws every one of those in the brand's own
+                teal and gold. A picker that changes nothing visible is worse than none. */}
             <Button type="submit" disabled={saving} icon={<Save size={18} />}>
                 {saving ? t('common.saving') : t('common.save')}
             </Button>
         </form>
+
+        <ChannelImagesCard slug={slug} channel={channel} youtubeState={youtubeState} isOwner={isOwner} />
 
         {isAdmin && (
             <div className="bg-surface p-6 rounded-lg border border-border-light grid gap-3">
@@ -190,3 +192,106 @@ function DeleteChannelCard({ slug, channel }) {
         </div>
     );
 }
+
+/**
+ * The channel's logo and cover. Each saves the moment a file is chosen — there is no form to
+ * submit, because a picture is not a draft.
+ *
+ * <p>A channel linked to YouTube gets its logo and cover copied from there, held like its titles:
+ * refreshed from YouTube every month until the owner confirms they are theirs. The confirm step is
+ * here, above the two pictures it is about, and — like "use my YouTube logo and cover" — offered
+ * only to the channel's own owner once they have verified with Google. An admin who can manage the
+ * channel is not its owner.
+ */
+function ChannelImagesCard({ slug, channel, youtubeState, isOwner }) {
+    const { showToast } = useToast();
+    const logo = useChannelImage(slug, 'logo');
+    const banner = useChannelImage(slug, 'banner');
+    const copyFromYouTube = useCopyYouTubeImages(slug);
+    const confirmImages = useConfirmYouTubeImages(slug);
+    const canCopy = isOwner && youtubeState?.verifiedBy === 'OWNER';
+    const awaiting = youtubeState?.imagesAwaitingConfirmation ?? [];
+
+    const run = async (action, okKey) => {
+        try {
+            await action();
+            showToast(t(okKey), 'success');
+        } catch (err) {
+            showToast(t('ownerImage.failed', { reason: describeError(err) }), 'error');
+        }
+    };
+
+    const handleCopy = async () => {
+        try {
+            const result = await copyFromYouTube.mutateAsync();
+            const copied = [result?.logo, result?.banner].filter((o) => o === 'COPIED').length;
+            showToast(copied > 0 ? t('ownerImage.youtube.copied') : t('ownerImage.youtube.nothing'),
+                copied > 0 ? 'success' : 'info');
+        } catch (err) {
+            showToast(t('ownerImage.failed', { reason: describeError(err) }), 'error');
+        }
+    };
+
+    return (
+        <div className="bg-surface p-6 rounded-lg border border-border-light grid gap-5">
+            <h3 className="font-bold">{t('ownerImage.channelHeading')}</h3>
+
+            {/* Worded as the consequence, like the metadata notice: until confirmed, the monthly
+                refresh may replace these from YouTube — so it is about whether the pictures on
+                the owner's own channel are theirs. */}
+            {canCopy && awaiting.length > 0 && (
+                <div className="grid gap-2 rounded-md border border-gold/40 bg-gold/10 p-4">
+                    <p className="text-sm m-0">{t('ownerImage.confirm.explain')}</p>
+                    <Button
+                        className="w-fit"
+                        onClick={() => run(() => confirmImages.mutateAsync(), 'ownerImage.confirm.done')}
+                        disabled={confirmImages.isPending}
+                        icon={<BadgeCheck size={16} />}
+                    >
+                        {confirmImages.isPending ? t('common.saving') : t('ownerImage.confirm.action')}
+                    </Button>
+                </div>
+            )}
+
+            <ImageUploadField
+                label={t('ownerImage.logo')}
+                hint={t('ownerImage.logoHint')}
+                previewUrl={channel.logoUrl}
+                shape="round"
+                hasUpload={channel.hasUploadedLogo}
+                uploading={logo.uploading}
+                removing={logo.removing}
+                onPick={(file) => run(() => logo.upload(file), 'ownerImage.saved')}
+                onRemove={() => run(logo.remove, 'ownerImage.removed')}
+            />
+
+            <ImageUploadField
+                label={t('ownerImage.banner')}
+                hint={t('ownerImage.bannerHint')}
+                previewUrl={channel.bannerUrl}
+                shape="wide"
+                hasUpload={channel.hasUploadedBanner}
+                uploading={banner.uploading}
+                removing={banner.removing}
+                onPick={(file) => run(() => banner.upload(file), 'ownerImage.saved')}
+                onRemove={() => run(banner.remove, 'ownerImage.removed')}
+            />
+
+            {canCopy && (
+                <div className="grid gap-2 pt-4 border-t border-border-light">
+                    <p className="text-sm text-text-muted m-0">{t('ownerImage.youtube.explain')}</p>
+                    <Button
+                        variant="outline"
+                        className="w-fit"
+                        onClick={handleCopy}
+                        disabled={copyFromYouTube.isPending}
+                        icon={<ImageDown size={16} />}
+                    >
+                        {copyFromYouTube.isPending ? t('ownerImage.youtube.copying') : t('ownerImage.youtube.action')}
+                    </Button>
+                </div>
+            )}
+        </div>
+    );
+}
+

@@ -4,6 +4,8 @@ import { Home, Bell, History, Bookmark, Plus, Settings } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAllChannels, useSubscriptions, useMyChannels } from '../../hooks/useChannels';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { resolveMediaUrl } from '@/lib/media';
+import { Avatar } from '../ui';
 import { t } from '@/i18n';
 
 const navLinkClass = (active) =>
@@ -16,18 +18,23 @@ const channelLinkClass = (active) =>
         active ? 'text-primary bg-primary-light font-semibold' : 'text-text-secondary font-medium hover:bg-surface-hover'
     }`;
 
-function ChannelDot({ color, name }) {
+/**
+ * The channel's logo, or its initial when it has none (Avatar's brand fallback). It used to be the initial
+ * always — the rows never drew a logo, so an owner who uploaded one saw it on every card and page
+ * except the list of their own channels.
+ */
+function ChannelDot({ name, logoUrl }) {
     return (
-        <div
-            className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-            style={{ background: color || '#0D6B4D' }}
-        >
-            {name?.charAt(0)}
-        </div>
+        <Avatar
+            src={resolveMediaUrl(logoUrl)}
+            name={name}
+            size="sm"
+            className="!w-6 !h-6 !text-xs flex-shrink-0"
+        />
     );
 }
 
-function ChannelRow({ slug, name, color, currentChannel, onClose, manageLink }) {
+function ChannelRow({ slug, name, logoUrl, currentChannel, onClose, manageLink }) {
     return (
         <div className="flex items-center gap-1">
             <Link
@@ -35,7 +42,7 @@ function ChannelRow({ slug, name, color, currentChannel, onClose, manageLink }) 
                 onClick={onClose}
                 className={`flex-1 min-w-0 ${channelLinkClass(currentChannel === slug)}`}
             >
-                <ChannelDot color={color} name={name} />
+                <ChannelDot name={name} logoUrl={logoUrl} />
                 <span dir="auto" className="truncate">{name}</span>
             </Link>
             {manageLink && (
@@ -202,7 +209,7 @@ function SideBar({ currentChannel, open = false, onClose, drawerOnly = false }) 
                                 key={channel.id}
                                 slug={channel.slug}
                                 name={channel.name}
-                                color={channel.primaryColor}
+                                logoUrl={channel.logoUrl}
                                 currentChannel={currentChannel}
                                 onClose={onClose}
                                 manageLink
@@ -221,7 +228,7 @@ function SideBar({ currentChannel, open = false, onClose, drawerOnly = false }) 
                                 key={sub.subscriptionId}
                                 slug={sub.channelSlug}
                                 name={sub.channelName}
-                                color={sub.channelColor}
+                                logoUrl={sub.channelLogoUrl}
                                 currentChannel={currentChannel}
                                 onClose={onClose}
                             />
@@ -243,7 +250,7 @@ function SideBar({ currentChannel, open = false, onClose, drawerOnly = false }) 
                                 key={channel.id}
                                 slug={channel.slug}
                                 name={channel.name}
-                                color={channel.primaryColor}
+                                logoUrl={channel.logoUrl}
                                 currentChannel={currentChannel}
                                 onClose={onClose}
                             />
