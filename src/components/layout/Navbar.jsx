@@ -240,10 +240,13 @@ function Navbar({ onMenuClick, menuOpen = false }) {
                                     aria-label={attentionCount
                                         ? t('nav.adminPanelWaiting', { count: attentionCount })
                                         : t('nav.adminPanel')}
-                                    className={`${desktopIconButtonClass} relative bg-primary-dark text-white hover:bg-primary-dark/90`}
+                                    // The same plain face as its neighbours — a solid block between two
+                                    // outline icons read as out of place, and the badge is what does the
+                                    // job of drawing the eye now.
+                                    className={`${desktopIconButtonClass} relative`}
                                 >
                                     <Shield size={18} />
-                                    <span className="hidden sm:block text-[0.65rem] font-medium text-white">{t('nav.adminShort')}</span>
+                                    <span className={iconLabelClass}>{t('nav.adminShort')}</span>
                                     {badgeText(attentionCount) && (
                                         <span
                                             aria-hidden="true"

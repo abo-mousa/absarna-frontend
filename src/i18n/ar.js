@@ -1569,6 +1569,7 @@ export const ar = {
         // a bare <nav>, because a page can hold several and a screen reader lists them by name.
         nav: {
             label: 'أقسام لوحة التحكم',
+            waiting: '{label} — {count} بانتظارك',
         },
         // The music review queue. Platform-admin only, and the only way a held video ever
         // becomes visible again -- if nobody reads this screen, uploads sit in it forever, which

@@ -1196,6 +1196,7 @@ export const en = {
         // reader lists them by name.
         nav: {
             label: 'Admin panel sections',
+            waiting: '{label} — {count} waiting',
         },
         /**
          * The moderation queue across every detector. Platform-admin only, and the only way a

@@ -43,4 +43,13 @@ describe('AdminNav sections', () => {
         expect(destinations.length).toBeGreaterThan(0);
         expect(new Set(SECTIONS.map((s) => s.to))).toEqual(new Set(destinations));
     });
+
+    /** Every count a tab names is one the attention endpoint returns — a typo would badge nothing, silently. */
+    it('names only counts the attention endpoint returns', () => {
+        const returned = ['pendingChannels', 'reviewBacklog', 'openReports', 'total'];
+        for (const section of SECTIONS.filter((s) => s.countKey)) {
+            expect(returned).toContain(section.countKey);
+        }
+        expect(t('admin.nav.waiting', { label: 'x', count: 3 })).not.toBe('admin.nav.waiting');
+    });
 });

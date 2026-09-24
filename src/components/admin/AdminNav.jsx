@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { LayoutDashboard, ShieldCheck, Flag, Tv } from 'lucide-react';
+import { useAdminAttention, badgeText } from '@/hooks/useAdminAttention';
 import { t } from '@/i18n';
 
 /**
@@ -22,25 +23,33 @@ import { t } from '@/i18n';
  *
  * <p>`aria-current="page"` and not colour alone. The active item is also the only one that is
  * filled rather than outlined, so the state survives a monochrome rendering.
+ *
+ * <p><b>Each queue carries its own count</b> (`countKey`, a field of `/api/admin/attention`), so
+ * the navbar badge's total can be traced to where the work is: findings for a reviewer, open
+ * reports, channels waiting for review. The overview has none — its number is the navbar's.
  */
 export const SECTIONS = [
     { id: 'overview', to: '/admin', icon: LayoutDashboard, labelKey: 'admin.title' },
-    { id: 'review', to: '/admin/review', icon: ShieldCheck, labelKey: 'admin.review.title' },
-    { id: 'reports', to: '/admin/reports', icon: Flag, labelKey: 'adminReports.title' },
-    { id: 'channels', to: '/admin/channels', icon: Tv, labelKey: 'admin.manageChannels' },
+    { id: 'review', to: '/admin/review', icon: ShieldCheck, labelKey: 'admin.review.title', countKey: 'reviewBacklog' },
+    { id: 'reports', to: '/admin/reports', icon: Flag, labelKey: 'adminReports.title', countKey: 'openReports' },
+    { id: 'channels', to: '/admin/channels', icon: Tv, labelKey: 'admin.manageChannels', countKey: 'pendingChannels' },
 ];
 
 function AdminNav({ current }) {
+    const { data: attention } = useAdminAttention();
     return (
         <nav aria-label={t('admin.nav.label')} className="mb-6">
             <ul className="flex flex-wrap items-center gap-2">
-                {SECTIONS.map(({ id, to, icon: Icon, labelKey }) => {
+                {SECTIONS.map(({ id, to, icon: Icon, labelKey, countKey }) => {
                     const active = id === current;
+                    const count = countKey ? attention?.[countKey] : 0;
+                    const badge = badgeText(count);
                     return (
                         <li key={id}>
                             <Link
                                 to={to}
                                 aria-current={active ? 'page' : undefined}
+                                aria-label={badge ? t('admin.nav.waiting', { label: t(labelKey), count }) : undefined}
                                 className={`inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold border transition-colors ${
                                     active
                                         ? 'bg-primary text-white border-primary'
@@ -49,6 +58,16 @@ function AdminNav({ current }) {
                             >
                                 <Icon size={16} className="flex-shrink-0" />
                                 {t(labelKey)}
+                                {badge && (
+                                    <span
+                                        aria-hidden="true"
+                                        className={`min-w-[1.375rem] h-[1.375rem] px-1.5 rounded-full text-xs font-bold leading-[1.375rem] text-center ${
+                                            active ? 'bg-white text-primary' : 'bg-gold text-gray-900'
+                                        }`}
+                                    >
+                                        {badge}
+                                    </span>
+                                )}
                             </Link>
                         </li>
                     );
