@@ -161,6 +161,8 @@ export const ar = {
         // what a translated label would destroy.
         language: 'اللغة',
         languageSwitchedTo: 'اللغة: {name}',
+        // The back arrow on the phone's full-width search row.
+        closeSearch: 'إغلاق البحث',
     },
 
     sidebar: {

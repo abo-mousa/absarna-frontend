@@ -1,10 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useIsFetching, useIsMutating, useQueryClient } from '@tanstack/react-query';
-import { Upload, User, Shield, LogOut, Menu, Sun, Moon } from 'lucide-react';
+import { Upload, User, Shield, LogOut, Menu, Sun, Moon, Search, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { isPlatformAdmin } from '@/lib/user';
+import { canUpload, isPlatformAdmin, uploadPathFor } from '@/lib/user';
 import { useMyChannels } from '../../hooks/useChannels';
 import { reshuffleFeed } from '../../hooks/useVideos';
 import { IrisMark } from '../ui';
@@ -12,7 +12,19 @@ import SearchBar from './SearchBar';
 import LanguageToggle from './LanguageToggle';
 import { t } from '@/i18n';
 
-const iconButtonClass = 'flex flex-col items-center justify-center gap-0.5 min-w-[50px] px-2.5 py-1.5 rounded-md text-text-secondary hover:bg-surface-hover transition-colors';
+const iconButtonShape = 'flex-col items-center justify-center gap-0.5 min-w-[50px] px-2.5 py-1.5 rounded-md text-text-secondary hover:bg-surface-hover transition-colors';
+const iconButtonClass = `flex ${iconButtonShape}`;
+/**
+ * The controls a phone does not get in the bar: theme, language, upload, admin and sign-out.
+ *
+ * <p>One row with no wrapping, and only the search box allowed to shrink — so below `md` the
+ * fixed-width controls (five of them for a signed-in owner, 50px each) took every pixel and the
+ * search box was squeezed to nothing, or the row overflowed outright. They are occasional
+ * settings, not things a visit needs, so on a phone they live in the drawer instead
+ * (`SideBar`'s phone-only group, which is `md:hidden` for the same reason this is `md:flex`: at
+ * every width exactly one of the two shows them). From `md` up the bar is what it always was.
+ */
+const desktopIconButtonClass = `hidden md:flex ${iconButtonShape}`;
 const iconLabelClass = 'hidden sm:block text-[0.65rem] font-medium text-text-muted';
 
 function Navbar({ onMenuClick, menuOpen = false }) {
@@ -22,6 +34,33 @@ function Navbar({ onMenuClick, menuOpen = false }) {
     const location = useLocation();
     const queryClient = useQueryClient();
     const navRef = useRef(null);
+    const searchButtonRef = useRef(null);
+
+    /**
+     * The phone's search: an icon in the bar that opens a full-width search row over it.
+     *
+     * <p>There is no width at which a phone fits the logo, the menu, the account control AND a
+     * usable search box in one row, and the box is the one item that must not be cramped — so on
+     * a phone it gets the whole row, when asked for. Closed again by any navigation (a search or a
+     * suggestion lands on a new location), which is adjusted during render rather than in an
+     * effect for the reason `SearchBar` gives: an effect would paint the overlay over the page it
+     * just navigated to for one frame.
+     */
+    const [searchOpen, setSearchOpen] = useState(false);
+    const [searchOpenedAt, setSearchOpenedAt] = useState(location.key);
+    if (searchOpen && location.key !== searchOpenedAt) {
+        setSearchOpen(false);
+    }
+    const openSearch = () => {
+        setSearchOpenedAt(location.key);
+        setSearchOpen(true);
+    };
+    const closeSearch = () => {
+        setSearchOpen(false);
+        // Back to the control that opened it, so a keyboard or screen-reader user is not dropped
+        // at the top of the document.
+        searchButtonRef.current?.focus();
+    };
 
     /**
      * Publishes this bar's height as `--navbar-h`, which is where the sidebar sticks to.
@@ -82,7 +121,7 @@ function Navbar({ onMenuClick, menuOpen = false }) {
     const busy = useIsFetching() + useIsMutating() > 0;
 
     const { data: myChannels = [] } = useMyChannels(!!token);
-    const uploadLink = myChannels.length > 0 ? `/channel/${myChannels[0].slug}/manage` : '/create-channel';
+    const uploadLink = uploadPathFor(myChannels);
 
     return (
         <nav ref={navRef} className="sticky top-0 z-[1000] bg-bg/95 backdrop-blur-md border-b border-border-light">
@@ -152,16 +191,32 @@ function Navbar({ onMenuClick, menuOpen = false }) {
                     flex child may shrink below its content's width instead of pushing the account
                     controls off the right edge on a narrow screen — SearchBar carries its own
                     max-width, so nothing here needs to cap it. */}
+                {/* Below `md` the box is not in the row at all (the search icon below opens it
+                    as an overlay), and this div stays as the spacer that keeps the account
+                    controls at the far end. */}
                 <div className="flex-1 flex justify-center min-w-0">
-                    <SearchBar />
+                    <div className="hidden md:flex w-full justify-center">
+                        <SearchBar />
+                    </div>
                 </div>
 
                 <div className="flex items-center gap-1 flex-shrink-0">
                     <button
+                        ref={searchButtonRef}
+                        type="button"
+                        onClick={openSearch}
+                        aria-label={t('searchBar.label')}
+                        aria-expanded={searchOpen}
+                        className="md:hidden flex items-center justify-center w-11 h-11 rounded-md text-text-secondary hover:bg-surface-hover"
+                    >
+                        <Search size={20} />
+                    </button>
+
+                    <button
                         onClick={toggleTheme}
                         title={theme === 'dark' ? t('nav.lightMode') : t('nav.darkMode')}
                         aria-label={theme === 'dark' ? t('nav.lightMode') : t('nav.darkMode')}
-                        className={iconButtonClass}
+                        className={desktopIconButtonClass}
                     >
                         {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
                         <span className={iconLabelClass}>{theme === 'dark' ? t('nav.lightShort') : t('nav.darkShort')}</span>
@@ -170,12 +225,12 @@ function Navbar({ onMenuClick, menuOpen = false }) {
                     {/* Beside the theme toggle because it is the same kind of control: a
                         preference about this browser, stored here, that changes nothing about the
                         account or the content. */}
-                    <LanguageToggle className={iconButtonClass} labelClassName={iconLabelClass} />
+                    <LanguageToggle className={desktopIconButtonClass} labelClassName={iconLabelClass} />
 
                     {token ? (
                         <>
-                            {['CREATOR', 'CHANNEL_ADMIN', 'PLATFORM_ADMIN'].includes(user?.role) && (
-                                <Link to={uploadLink} title={t('nav.upload')} aria-label={t('nav.upload')} className={iconButtonClass}>
+                            {canUpload(user) && (
+                                <Link to={uploadLink} title={t('nav.upload')} aria-label={t('nav.upload')} className={desktopIconButtonClass}>
                                     <Upload size={18} />
                                     <span className={iconLabelClass}>{t('nav.uploadShort')}</span>
                                 </Link>
@@ -187,13 +242,13 @@ function Navbar({ onMenuClick, menuOpen = false }) {
                             </Link>
 
                             {isPlatformAdmin(user) && (
-                                <Link to="/admin" title={t('nav.adminPanel')} aria-label={t('nav.adminPanel')} className={`${iconButtonClass} bg-primary-dark text-white hover:bg-primary-dark/90`}>
+                                <Link to="/admin" title={t('nav.adminPanel')} aria-label={t('nav.adminPanel')} className={`${desktopIconButtonClass} bg-primary-dark text-white hover:bg-primary-dark/90`}>
                                     <Shield size={18} />
                                     <span className="hidden sm:block text-[0.65rem] font-medium text-white">{t('nav.adminShort')}</span>
                                 </Link>
                             )}
 
-                            <button onClick={logout} title={t('nav.logout')} aria-label={t('nav.logout')} className={`${iconButtonClass} bg-surface-hover border border-border`}>
+                            <button onClick={logout} title={t('nav.logout')} aria-label={t('nav.logout')} className={`${desktopIconButtonClass} bg-surface-hover border border-border`}>
                                 <LogOut size={18} />
                                 <span className={iconLabelClass}>{t('nav.logoutShort')}</span>
                             </button>
@@ -210,6 +265,30 @@ function Navbar({ onMenuClick, menuOpen = false }) {
                     )}
                 </div>
             </div>
+
+            {/* Over the bar rather than below it, so opening search costs no height and the page
+                under it does not jump. Mounted only while open — a second SearchBar sitting
+                hidden would keep its own copy of the text — and `md:hidden` so a phone rotated
+                into a wider layout falls back to the bar's own box. */}
+            {searchOpen && (
+                <div
+                    className="md:hidden absolute inset-0 flex items-center gap-2 px-3 bg-bg"
+                    onKeyDown={(e) => { if (e.key === 'Escape') closeSearch(); }}
+                >
+                    <button
+                        type="button"
+                        onClick={closeSearch}
+                        aria-label={t('nav.closeSearch')}
+                        className="flex items-center justify-center w-11 h-11 rounded-md text-text-secondary hover:bg-surface-hover flex-shrink-0"
+                    >
+                        {/* "Back" points at the reading start, which is the right in Arabic. */}
+                        <ArrowLeft size={22} className="rtl:rotate-180" />
+                    </button>
+                    <div className="flex-1 min-w-0">
+                        <SearchBar autoFocus />
+                    </div>
+                </div>
+            )}
         </nav>
     );
 }

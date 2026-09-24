@@ -159,6 +159,8 @@ export const en = {
         // what a translated label would destroy.
         language: 'Language',
         languageSwitchedTo: 'Language: {name}',
+        // The back arrow on the phone's full-width search row.
+        closeSearch: 'Close search',
     },
 
     sidebar: {

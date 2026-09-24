@@ -1,9 +1,12 @@
 import { useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Bell, History, Bookmark, Plus, Settings } from 'lucide-react';
+import { Home, Bell, History, Bookmark, Plus, Settings, Upload, Shield, LogOut, Sun, Moon, UserPlus } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { useAllChannels, useSubscriptions, useMyChannels } from '../../hooks/useChannels';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { canUpload, isPlatformAdmin, uploadPathFor } from '@/lib/user';
+import LanguageToggle from './LanguageToggle';
 import { t } from '@/i18n';
 
 const navLinkClass = (active) =>
@@ -54,6 +57,27 @@ function ChannelRow({ slug, name, color, currentChannel, onClose, manageLink }) 
 }
 
 /**
+ * What the drawer carries on a phone that the navbar carries from `md` up, in drawer order.
+ *
+ * <p>The phone's bar keeps the menu, the logo, search and the account control, and nothing else
+ * fits beside them — so everything `Navbar` marks `desktopIconButtonClass` has to be here, or it
+ * is simply unreachable on a phone. Exported so that pairing is tested rather than remembered.
+ *
+ * <p>`register` is the exception in width: the bar hides it below `sm`, not `md`, so its row here
+ * is `sm:hidden` rather than riding the group's `md:hidden`.
+ */
+export function phoneMenuActions(user, signedIn) {
+    if (!signedIn) return ['register', 'theme', 'language'];
+    return [
+        ...(canUpload(user) ? ['upload'] : []),
+        ...(isPlatformAdmin(user) ? ['admin'] : []),
+        'theme',
+        'language',
+        'logout',
+    ];
+}
+
+/**
  * The panel itself: a phone drawer and a desktop column, which want opposite stacking.
  *
  * <p>As a drawer it is over everything, the navbar included. As a column it sits <em>under</em> the
@@ -74,7 +98,8 @@ const surfaceClass = `w-[240px] bg-surface border-e border-border-light py-3 ove
  *        see the note there for why that must not mean "no menu on a phone".
  */
 function SideBar({ currentChannel, open = false, onClose, drawerOnly = false }) {
-    const { token } = useAuth();
+    const { token, user, logout } = useAuth();
+    const { theme, toggleTheme } = useTheme();
     const location = useLocation();
     const asideRef = useRef(null);
     // A drawer-only panel is mounted on every reading page, auth form and dashboard in the app,
@@ -228,6 +253,62 @@ function SideBar({ currentChannel, open = false, onClose, drawerOnly = false }) 
                         ))}
                     </div>
                 )}
+
+                {/* Phone only (`md:hidden`), because from `md` up these are in the navbar and
+                    showing them twice on a tablet's drawer is clutter. Above the channel lists
+                    rather than at the very end: discover is unbounded and loads twenty at a time,
+                    so the bottom of the drawer is somewhere a person may never scroll to. */}
+                <div className="md:hidden px-2 mb-4 pt-3 border-t border-border-light">
+                    {phoneMenuActions(user, !!token).map((action) => {
+                        switch (action) {
+                            case 'upload':
+                                return (
+                                    <Link key={action} to={uploadPathFor(myChannels)} onClick={onClose} className={navLinkClass(false)}>
+                                        <Upload size={18} />
+                                        {t('nav.upload')}
+                                    </Link>
+                                );
+                            case 'admin':
+                                return (
+                                    <Link key={action} to="/admin" onClick={onClose} className={navLinkClass(isActive('/admin'))}>
+                                        <Shield size={18} />
+                                        {t('nav.adminPanel')}
+                                    </Link>
+                                );
+                            case 'register':
+                                return (
+                                    <Link key={action} to="/register" onClick={onClose} className={`sm:hidden ${navLinkClass(isActive('/register'))}`}>
+                                        <UserPlus size={18} />
+                                        {t('nav.register')}
+                                    </Link>
+                                );
+                            case 'theme':
+                                return (
+                                    <button key={action} type="button" onClick={toggleTheme} className={`w-full ${navLinkClass(false)}`}>
+                                        {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                                        {theme === 'dark' ? t('nav.lightMode') : t('nav.darkMode')}
+                                    </button>
+                                );
+                            case 'language':
+                                // Labelled with the language it switches TO, as in the bar.
+                                return <LanguageToggle key={action} className={`w-full ${navLinkClass(false)}`} />;
+                            case 'logout':
+                                return (
+                                    <button
+                                        key={action}
+                                        type="button"
+                                        onClick={() => { onClose?.(); logout(); }}
+                                        className={`w-full ${navLinkClass(false)}`}
+                                    >
+                                        <LogOut size={18} />
+                                        {t('nav.logout')}
+                                    </button>
+                                );
+                            default:
+                                return null;
+                        }
+                    })}
+                </div>
 
                 <div className="px-2">
                     <h4 className="text-[0.7rem] text-text-muted uppercase tracking-wider mb-1.5 px-3">

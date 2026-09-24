@@ -38,7 +38,11 @@ export function searchTextForLocation(pathname, search) {
     return new URLSearchParams(search).get('q') || '';
 }
 
-function SearchBar() {
+/**
+ * @param autoFocus focus the box on mount. The phone's search overlay mounts it in response to a
+ *        tap, and a search row that opens without the keyboard is a second tap for nothing.
+ */
+function SearchBar({ autoFocus = false }) {
     const navigate = useNavigate();
     const { pathname, search } = useLocation();
     const containerRef = useRef(null);
@@ -119,6 +123,7 @@ function SearchBar() {
             >
                 <input
                     type="text"
+                    autoFocus={autoFocus}
                     placeholder={t('searchBar.placeholder')}
                     value={query}
                     onChange={(e) => {
