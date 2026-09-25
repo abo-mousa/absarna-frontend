@@ -119,9 +119,16 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
             // site before anything in it had been read. The thumbnail keeps a hairline so a pale
             // frame still has an edge; a hidden video's is dashed, which is the signal the card's
             // own border used to carry.
-            className="group cursor-pointer rounded-card focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 focus-visible:ring-offset-bg"
+            //
+            // The hairline turns gold, and thickens, under the pointer and under keyboard focus —
+            // and only then: gold marks the one thing being pointed at, so it is never on every
+            // card of a grid, where it would be decoration and could no longer point at anything.
+            className="group cursor-pointer rounded-card focus:outline-none"
         >
-            <div className={`relative aspect-video bg-surface-hover overflow-hidden rounded-card outline outline-1 -outline-offset-1 ${
+            <div className={`relative aspect-video bg-surface-hover overflow-hidden rounded-card outline outline-1 -outline-offset-1
+                transition-[outline-color] duration-150
+                group-hover:outline-2 group-hover:-outline-offset-2 group-hover:outline-gold
+                group-focus-visible:outline-2 group-focus-visible:-outline-offset-2 group-focus-visible:outline-gold ${
                 video.visible === false ? 'outline-dashed outline-text-muted' : 'outline-black/5 dark:outline-white/5'
             }`}>
                 {thumbnail ? (
