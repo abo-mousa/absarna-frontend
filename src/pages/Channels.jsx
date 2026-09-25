@@ -5,6 +5,7 @@ import PageShell from '../components/layout/PageShell';
 import { QueryState, Cartouche, Avatar, PageHeader } from '../components/ui';
 import { useChannelDirectory, useSubscriptions, useMyChannels } from '../hooks/useChannels';
 import { resolveMediaUrl } from '@/lib/media';
+import { formatChipLabel } from '@/lib/formats';
 import { t } from '@/i18n';
 
 /**
@@ -40,7 +41,7 @@ function Channels() {
                             )}
                         />
                         {myChannels.length > 0 && (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8">
                                 {myChannels.map((channel) => (
                                     <ChannelRow key={channel.id} slug={channel.slug} name={channel.name} logoUrl={channel.logoUrl} manage />
                                 ))}
@@ -84,22 +85,36 @@ function Channels() {
                         errorTitle={t('channelsPage.loadFailed')}
                         emptyTitle={t('channelsPage.empty')}
                     >
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {others.map((channel) => (
-                                <Link
-                                    key={channel.id}
-                                    to={`/channel/${channel.slug}`}
-                                    className="flex gap-3 p-4 bg-surface border border-border-light rounded-lg text-text-primary hover:no-underline hover:border-border transition-colors"
-                                >
-                                    <Avatar src={resolveMediaUrl(channel.logoUrl)} name={channel.name} size="lg" className="flex-shrink-0" />
-                                    <div className="min-w-0" dir="auto">
-                                        <div className="font-bold truncate">{channel.name}</div>
-                                        {channel.description && (
-                                            <p className="text-sm text-text-secondary line-clamp-2 mt-0.5">{channel.description}</p>
-                                        )}
-                                    </div>
-                                </Link>
-                            ))}
+                        {/* Rows, not boxes — the look's rule for cards, and on a phone a bordered box per
+                            channel spent a screen on five of them, mostly empty when a channel has no
+                            description. A hairline under each, and the pointer answered as a card is:
+                            the name in gold-ink, a gold ring on the logo. The kicker line is the
+                            channel's kind («محاضرات»), when it has declared one. */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8">
+                            {others.map((channel) => {
+                                const kind = formatChipLabel(channel.defaultFormat);
+                                return (
+                                    <Link
+                                        key={channel.id}
+                                        to={`/channel/${channel.slug}`}
+                                        className="group flex items-center gap-3 py-3.5 border-b border-border-light text-text-primary hover:no-underline"
+                                    >
+                                        <Avatar
+                                            src={resolveMediaUrl(channel.logoUrl)}
+                                            name={channel.name}
+                                            size="md"
+                                            className="flex-shrink-0 ring-1 ring-border-light group-hover:ring-gold transition-shadow"
+                                        />
+                                        <div className="min-w-0" dir="auto">
+                                            {kind && <div className="text-[0.7rem] font-bold text-gold-ink truncate">{kind}</div>}
+                                            <div className="font-bold truncate group-hover:text-gold-ink transition-colors">{channel.name}</div>
+                                            {channel.description && (
+                                                <p className="text-sm text-text-secondary line-clamp-1 mt-0.5">{channel.description}</p>
+                                            )}
+                                        </div>
+                                    </Link>
+                                );
+                            })}
                         </div>
                         {directory.hasNextPage && (
                             <div className="text-center mt-6">
@@ -123,10 +138,10 @@ function Channels() {
 /** One of the reader's own channels: its page, and the way into managing it. */
 function ChannelRow({ slug, name, logoUrl, manage }) {
     return (
-        <div className="flex items-center gap-2 p-3 bg-surface border border-border-light rounded-lg">
-            <Link to={`/channel/${slug}`} className="flex flex-1 min-w-0 items-center gap-3 text-text-primary font-semibold hover:text-primary hover:no-underline">
-                <Avatar src={resolveMediaUrl(logoUrl)} name={name} size="md" className="flex-shrink-0" />
-                <span dir="auto" className="truncate">{name}</span>
+        <div className="group flex items-center gap-2 py-3 border-b border-border-light">
+            <Link to={`/channel/${slug}`} className="flex flex-1 min-w-0 items-center gap-3 text-text-primary font-semibold hover:no-underline">
+                <Avatar src={resolveMediaUrl(logoUrl)} name={name} size="md" className="flex-shrink-0 ring-1 ring-border-light group-hover:ring-gold transition-shadow" />
+                <span dir="auto" className="truncate group-hover:text-gold-ink transition-colors">{name}</span>
             </Link>
             {manage && (
                 <Link

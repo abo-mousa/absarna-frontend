@@ -230,7 +230,10 @@ function WeekStrip({ week }) {
 function WelcomeHero({ signedIn }) {
     return (
         <section className="relative overflow-hidden border border-border-light rounded-lg bg-surface px-5 py-8 sm:px-8 sm:py-10">
-            <KhatamStar className="absolute -bottom-24 -end-20 w-80 h-80 text-gold/10 pointer-events-none" />
+            {/* Clear of the text, and not drawn on a phone, where there is no margin for it to sit in —
+                    behind a paragraph it read as a stain, not an ornament. A thin outline, not a
+                    fill: any faint fill over the night surface turned grey, a block rather than gold. */}
+            <KhatamStar filled={false} strokeWidth={1.2} className="hidden md:block absolute -bottom-28 -end-24 w-72 h-72 text-gold/40 dark:text-gold/25 pointer-events-none" />
             <div className="relative max-w-[640px]">
                 <h2 className="font-serif text-[2rem] sm:text-[2.4rem] font-semibold leading-tight">{t('today.welcome.title')}</h2>
                 <p className="font-reading text-text-secondary mt-3 leading-relaxed">{t('today.welcome.text')}</p>

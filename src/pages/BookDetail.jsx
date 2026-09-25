@@ -177,7 +177,7 @@ function BookDetail() {
                                         className="flex-1 min-w-[150px] flex items-center justify-center gap-2 py-3 bg-primary text-white rounded-md font-semibold"
                                     >
                                         <BookOpen size={18} />
-                                        {showPdf ? t('books.hideReader') : savedPage ? t('books.continueReading') : t('books.readOnline')}
+                                        {readerReady ? t('books.hideReader') : savedPage ? t('books.continueReading') : t('books.readOnline')}
                                     </button>
 
                                     <BookDownloadButton
