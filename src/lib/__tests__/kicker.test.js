@@ -16,6 +16,14 @@ describe('videoKicker', () => {
         expect(kicker.text).toContain('١٤٠');
     });
 
+    it('keeps the count apart from the title, so each is laid out in its own direction', () => {
+        // One dir="auto" run over «السيرة النبوية · 1 of 30» made the English count right-to-left.
+        const kicker = videoKicker(lecture);
+        expect(kicker.name).toBe('السيرة النبوية | 102');
+        expect(kicker.place).toBe('١٠٣ من ١٤٠');
+        expect(kicker.place).not.toContain(kicker.name);
+    });
+
     it('leaves the owner\'s own digits alone', () => {
         // «| 102» is part of a title someone typed; only the counted numbers are localised.
         expect(videoKicker(lecture).text).toContain('السيرة النبوية | 102');
@@ -28,11 +36,11 @@ describe('videoKicker', () => {
 
     it('gives an owner\'s hidden row its series but no number', () => {
         const hidden = { seriesId: 7, seriesTitle: 'الورقات', seriesPosition: null, seriesLength: null };
-        expect(videoKicker(hidden)).toEqual({ text: 'الورقات', seriesId: 7 });
+        expect(videoKicker(hidden)).toEqual({ text: 'الورقات', name: 'الورقات', place: null, seriesId: 7 });
     });
 
     it('falls back to the category, which links nowhere', () => {
-        expect(videoKicker({ category: 'سيرة' })).toEqual({ text: 'سيرة', seriesId: null });
+        expect(videoKicker({ category: 'سيرة' })).toEqual({ text: 'سيرة', name: 'سيرة', place: null, seriesId: null });
     });
 
     it('names the format before the topic outside a series', () => {

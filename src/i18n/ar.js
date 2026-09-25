@@ -976,8 +976,10 @@ export const ar = {
         // The gold line above a card's title. {position} and {total} are numbers, so t() gives them
         // the locale's digits; {series} is the owner's own words and passes through untouched —
         // «السيرة النبوية | 102» keeps its 102.
-        position: '{series} · {position}',
-        positionOf: '{series} · {position} من {total}',
+        // The app's half of a card's series line; the series title is the other half, laid out
+        // in its own direction (see lib/kicker).
+        place: '{position}',
+        placeOf: '{position} من {total}',
         notFound: 'السلسلة غير موجودة',
         backToChannel: 'العودة إلى قناة {name}',
         empty: 'لا توجد فيديوهات في هذه السلسلة بعد',

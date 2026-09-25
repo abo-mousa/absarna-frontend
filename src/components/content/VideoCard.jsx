@@ -55,6 +55,25 @@ function getWatchedPercent(video, watchedSeconds) {
     return percent > 1 ? Math.min(100, percent) : null;
 }
 
+/**
+ * A kicker's two halves side by side: the name in its own direction and allowed to truncate, the
+ * count in the interface's and never cut — «…السيرة النبوية · ١٠٣ من ١٤٠» loses the end of the
+ * title, not the number, which is the part a reader scanning a series needs.
+ */
+function KickerText({ kicker }) {
+    return (
+        <span className="flex items-center min-w-0 gap-1">
+            <span dir="auto" className="truncate">{kicker.name}</span>
+            {kicker.place && (
+                <>
+                    <span aria-hidden="true">·</span>
+                    <span className="flex-shrink-0 whitespace-nowrap">{kicker.place}</span>
+                </>
+            )}
+        </span>
+    );
+}
+
 function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watchedSeconds, showChannel = true }) {
     const navigate = useNavigate();
     const { youtubeAllowed } = useConsent();
@@ -263,14 +282,14 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                             className="flex items-center gap-1.5 max-w-full h-4 text-xs font-bold text-gold-ink hover:underline"
                         >
                             <KhatamStar className="w-2.5 h-2.5 flex-shrink-0" />
-                            <span dir="auto" className="truncate">{kicker.text}</span>
+                            <KickerText kicker={kicker} />
                         </button>
                     ) : (
                         // Brick red for testimony: a first-person account must never read as a produced
                     // report, wherever it appears.
                     <div className={`flex items-center gap-1.5 max-w-full h-4 text-xs font-bold ${video.format === 'TESTIMONY' ? 'text-voice' : 'text-gold-ink'}`}>
                             <KhatamStar className="w-2.5 h-2.5 flex-shrink-0" />
-                            <span dir="auto" className="truncate">{kicker.text}</span>
+                            <KickerText kicker={kicker} />
                         </div>
                     ))}
                 </div>
