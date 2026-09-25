@@ -248,7 +248,6 @@ export const useReadingHistory = (enabled = true) => {
     });
 };
 
-// bookId -> currentPage, for BookCard's read-progress bar.
 /**
  * The books being read now — the backend's one rule (`inProgress`), shared with the Today page,
  * so no client decides for itself what "in progress" means. Under the `reading-history` prefix,
