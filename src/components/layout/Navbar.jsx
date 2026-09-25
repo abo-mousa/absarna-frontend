@@ -13,6 +13,7 @@ import SearchBar from './SearchBar';
 import LanguageToggle from './LanguageToggle';
 import AccountMenu from './AccountMenu';
 import { t } from '@/i18n';
+import { formatHijriDate } from '@/lib/datetime';
 
 const iconButtonShape = 'flex-col items-center justify-center gap-0.5 min-w-[50px] px-2.5 py-1.5 rounded-md text-text-secondary hover:bg-surface-hover transition-colors';
 /**
@@ -126,6 +127,7 @@ function Navbar({ onMenuClick, menuOpen = false }) {
     const { data: attention } = useAdminAttention();
     const attentionCount = attention?.total ?? 0;
     const uploadLink = uploadPathFor(myChannels);
+    const [hijriDate] = useState(() => formatHijriDate());
 
     return (
         <nav ref={navRef} className="sticky top-0 z-[1000] bg-bg/95 backdrop-blur-md border-b border-border-light">
@@ -203,6 +205,18 @@ function Navbar({ onMenuClick, menuOpen = false }) {
                         <SearchBar />
                     </div>
                 </div>
+
+                {/* Today's Hijri date, where a video site puts nothing. Wide screens only: the
+                    bar's ends are anchored and the search box already gives way first, and a date
+                    is the one item here nobody needs in order to use the page. Read once per
+                    mount rather than per render (the bar re-renders on every fetch through
+                    `busy`); a tab left open across midnight shows yesterday's until the next
+                    load, which is the same staleness the day-stable feed already has. */}
+                {hijriDate && (
+                    <span className="hidden xl:block flex-shrink-0 text-xs font-semibold text-text-secondary whitespace-nowrap">
+                        {hijriDate}
+                    </span>
+                )}
 
                 <div className="flex items-center gap-1 flex-shrink-0">
                     <button

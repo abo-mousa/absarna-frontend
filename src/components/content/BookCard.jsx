@@ -76,53 +76,69 @@ function BookCard({ book, currentPage }) {
     // Preview images are not presigned; resolveMediaUrl returns null for an object key and the
     // caller falls back to its placeholder. It can also be an owner-supplied external URL that
     // is dead, moved, hotlink-blocked, or outside the SPA's `img-src` allowlist — hence the
-    // onError below, which routes to the same 📖 placeholder rather than a broken-image glyph.
+    // onError below, which routes to the same generated cover rather than a broken-image glyph.
     const [previewFailed, setPreviewFailed] = useState(false);
     const previewUrl = !previewFailed ? resolveMediaUrl(book.previewImageUrl) : null;
     const readPercent = getReadPercent(book, currentPage);
 
     return (
-        <div className="flex flex-col h-full bg-surface rounded-lg overflow-hidden border border-border-light shadow-sm hover:shadow-md transition-shadow">
+        // A ROW, NOT A TILE: a small cover at the start and the book beside it, the way a library
+        // lists books. The old card was a 200px landscape crop of a portrait page inside a boxed
+        // tile, which made a book look like a video; a portrait cover at full column width would
+        // have been ~450px tall on /books' three columns and taller on a phone. No box, as with
+        // VideoCard — a hairline under the row is the only separator.
+        <div className="flex gap-4 h-full pb-4 border-b border-border-light">
             <Link
                 to={`/books/${book.id}`}
-                className="relative h-[200px] bg-surface-hover overflow-hidden block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
+                aria-label={book.title}
+                // The spine: an inset shadow on the binding edge, which is the start side — the
+                // right in Arabic. A shadow's offset is physical with no logical form, so it takes
+                // `rtl:`/`ltr:`, like the sidebar drawer's transform.
+                className="relative w-24 flex-shrink-0 self-start aspect-[2/3] rounded-md overflow-hidden bg-surface-hover
+                    rtl:shadow-[inset_-5px_0_0_rgba(0,0,0,0.18),0_4px_10px_-4px_rgba(0,0,0,0.35)]
+                    ltr:shadow-[inset_5px_0_0_rgba(0,0,0,0.18),0_4px_10px_-4px_rgba(0,0,0,0.35)]
+                    focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
                 {previewUrl ? (
                     <img
                         src={previewUrl}
-                        alt={book.title}
+                        alt=""
                         onError={() => setPreviewFailed(true)}
                         className="w-full h-full object-cover"
                     />
                 ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary-dark to-primary text-5xl opacity-50">
-                        📖
+                    // No cover image: a generated one — the title in Markazi inside a gold frame
+                    // on the brand colour — where there used to be a book emoji. Decorative: the
+                    // link's own label and the heading beside it carry the title.
+                    <div aria-hidden="true" className="relative w-full h-full flex items-center justify-center p-3 bg-primary-dark text-white text-center">
+                        <span className="absolute inset-1.5 border border-gold/50" />
+                        <span dir="auto" className="font-serif text-base leading-tight line-clamp-4">{book.title}</span>
                     </div>
                 )}
 
                 {readPercent !== null && (
                     <div className="absolute bottom-0 inset-x-0 h-[3px] bg-black/70">
-                        {/* A fixed, muted turquoise, brighter in light mode — see VideoCard's
-                            identical bar for the full reasoning. */}
-                        <div className="h-full bg-[#45A296] dark:bg-[#337F77]" style={{ width: `${readPercent}%` }} />
+                        {/* Gold, like VideoCard's watched bar. */}
+                        <div className="h-full bg-gold" style={{ width: `${readPercent}%` }} />
                     </div>
                 )}
             </Link>
 
-            <div className="p-4 flex flex-col flex-1">
+            <div className="flex flex-col flex-1 min-w-0">
                 {book.category && (
-                    <span className="inline-block w-fit px-2.5 py-0.5 bg-primary-light text-primary rounded-full text-xs font-semibold mb-2">
+                    <span dir="auto" className="block truncate text-xs font-bold text-gold-ink mb-1">
                         {book.category}
                     </span>
                 )}
 
-                <h3 dir="auto" className="text-[0.95rem] font-semibold mb-2 leading-snug line-clamp-2">
-                    <Link to={`/books/${book.id}`} className="hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm">
+                {/* Markazi, the face the reading pages set a book's own title in. */}
+                <h3 dir="auto" className="font-serif text-[1.3rem] font-semibold mb-1 leading-tight line-clamp-2">
+                    <Link to={`/books/${book.id}`} className="text-text-primary hover:text-primary hover:no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm">
                         {book.title}
                     </Link>
                 </h3>
 
-                <div className="flex gap-3 text-xs text-text-muted mb-3">
+                <div className="flex flex-wrap gap-x-3 text-xs text-text-muted mb-3">
                     {book.pages && <span>{t('common.pageCount', { count: book.pages })}</span>}
                     {displayDate(book) && <span>{formatPublishDate(displayDate(book))}</span>}
                 </div>
@@ -130,7 +146,7 @@ function BookCard({ book, currentPage }) {
                 <div className="flex gap-2 mt-auto">
                     <button
                         onClick={() => navigate(`/books/${book.id}`)}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-primary text-white rounded-md font-semibold text-sm hover:bg-primary-dark transition-colors"
+                        className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-primary text-white rounded-md font-semibold text-sm hover:bg-primary-dark transition-colors"
                     >
                         <BookOpen size={15} /> {t('books.read')}
                     </button>
@@ -147,7 +163,7 @@ function BookCard({ book, currentPage }) {
                             onFocus={() => setDownloadIntent(true)}
                             onPointerDown={() => setDownloadIntent(true)}
                             onClick={handleDownloadClick}
-                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-primary-light text-primary rounded-md font-semibold text-sm"
+                            className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-primary-light text-primary rounded-md font-semibold text-sm hover:no-underline"
                         >
                             <Download size={15} /> {t('books.download')}
                         </a>

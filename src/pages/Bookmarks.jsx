@@ -82,7 +82,7 @@ function Bookmarks() {
                 emptyTitle={t('bookmarks.empty')}
                 emptyDescription={t('bookmarks.emptyDescription')}
             >
-                <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-8">
                     {activeTab === 'VIDEO' &&
                         itemsForTab
                             .filter((b) => b.content)

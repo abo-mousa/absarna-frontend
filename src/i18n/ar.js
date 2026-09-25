@@ -794,6 +794,11 @@ export const ar = {
         badge: 'سلسلة',
         // Shown on a card to say which series a video belongs to.
         partOf: 'من سلسلة: {title}',
+        // The gold line above a card's title. {position} and {total} are numbers, so t() gives them
+        // the locale's digits; {series} is the owner's own words and passes through untouched —
+        // «السيرة النبوية | 102» keeps its 102.
+        position: '{series} · {position}',
+        positionOf: '{series} · {position} من {total}',
         notFound: 'السلسلة غير موجودة',
         backToChannel: 'العودة إلى قناة {name}',
         empty: 'لا توجد فيديوهات في هذه السلسلة بعد',

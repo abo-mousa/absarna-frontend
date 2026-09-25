@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { displayDate, formatPublishDate, parseTimestamp } from '@/lib/datetime';
+import { displayDate, formatHijriDate, formatPublishDate, parseTimestamp } from '@/lib/datetime';
 
 /**
  * Both functions here exist because of a bug a reader saw on every card, and neither had a test.
@@ -156,5 +156,32 @@ describe('parseTimestamp', () => {
         expect(parseTimestamp(null).isValid()).toBe(false);
         expect(parseTimestamp('').isValid()).toBe(false);
         expect(parseTimestamp('not a date').isValid()).toBe(false);
+    });
+});
+
+/**
+ * The navbar's Hijri date. The property worth pinning is the one-script rule: a date the app
+ * formats reads entirely in the locale's digits, so the Arabic build must not print «14» inside
+ * «ربيع الآخر», and the English one must not print «١٤٤٨».
+ */
+describe('formatHijriDate', () => {
+    // Midday UTC, so the day is the same in every zone a CI runner or a laptop could be in.
+    const friday = new Date('2026-09-25T12:00:00Z');
+
+    it('reads the Umm al-Qura date in Arabic-Indic digits in the Arabic build', () => {
+        const text = formatHijriDate(friday, 'ar-EG');
+        expect(text).toContain('ربيع الآخر');
+        expect(text).toContain('١٤٤٨');
+        expect(text).not.toMatch(/[0-9]/);
+    });
+
+    it('and in Latin digits in the English one', () => {
+        const text = formatHijriDate(friday, 'en-US');
+        expect(text).toContain('1448');
+        expect(text).not.toMatch(/[٠-٩]/);
+    });
+
+    it('shows nothing rather than a wrong date when the runtime cannot format it', () => {
+        expect(formatHijriDate(friday, 'not a locale!')).toBe('');
     });
 });

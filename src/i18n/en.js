@@ -586,6 +586,8 @@ export const en = {
     series: {
         badge: 'Series',
         partOf: 'From the series: {title}',
+        position: '{series} · {position}',
+        positionOf: '{series} · {position} of {total}',
         notFound: 'That series does not exist',
         backToChannel: 'Back to the {name} channel',
         empty: 'No videos in this series yet',

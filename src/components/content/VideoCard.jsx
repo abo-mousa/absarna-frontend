@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Eye, EyeOff, Trash2, Tv, Calendar, Loader2, AlertTriangle } from 'lucide-react';
+import { Play, Eye, EyeOff, Trash2, Calendar, Clock, Loader2, AlertTriangle } from 'lucide-react';
 import { resolveMediaUrl, youtubeThumbnail, durationToSeconds } from '@/lib/media';
 import { useConsent } from '@/contexts/ConsentContext';
 import { formatPublishDate, displayDate } from '@/lib/datetime';
 import Avatar from '../ui/Avatar';
+import { KhatamStar } from '../ui/Khatam';
 import SourceBadge from './SourceBadge';
 import { formatDigits, t } from '@/i18n';
 import { ownerBadge } from '@/lib/review';
 import { formatCompactCount } from '@/lib/numbers';
+import { videoKicker } from '@/lib/kicker';
 
 /**
  * One metadata row in the card's left-hand column, and the box its leading glyph sits in.
@@ -73,6 +75,7 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
     // Zero is a real count and is left off on purpose — see the meta line below.
     const hasViews = Number(video.viewCount) > 0;
     const date = displayDate(video);
+    const kicker = videoKicker(video);
 
     // Nested icon buttons (visibility/delete/channel) already stopPropagation on click; for
     // keyboard, only treat Enter/Space as "activate the card" when the card itself is
@@ -92,12 +95,16 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
             role="button"
             tabIndex={0}
             aria-label={t('video.watchAria', { title: video.title })}
-            className={`group bg-surface rounded-lg overflow-hidden border shadow-sm
-                hover:shadow-md hover:-translate-y-1 transition-all cursor-pointer
-                focus:outline-none focus-visible:ring-2 focus-visible:ring-primary
-                ${video.visible === false ? 'border-dashed border-border' : 'border-border-light'}`}
+            // NO BOX. The card is the picture and the type under it, sitting on the page — a
+            // border, a fill and a shadow on every tile is what made the grid read as a video
+            // site before anything in it had been read. The thumbnail keeps a hairline so a pale
+            // frame still has an edge; a hidden video's is dashed, which is the signal the card's
+            // own border used to carry.
+            className="group cursor-pointer rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 focus-visible:ring-offset-bg"
         >
-            <div className="relative aspect-video bg-surface-hover overflow-hidden">
+            <div className={`relative aspect-video bg-surface-hover overflow-hidden rounded-md outline outline-1 -outline-offset-1 ${
+                video.visible === false ? 'outline-dashed outline-text-muted' : 'outline-black/5 dark:outline-white/5'
+            }`}>
                 {thumbnail ? (
                     <img
                         src={thumbnail}
@@ -106,8 +113,10 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                         onError={() => setThumbnailFailed(true)}
                     />
                 ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary-dark to-primary text-5xl opacity-50">
-                        🎬
+                    // Not yet a poster (an upload still transcoding, or no consent for YouTube's):
+                    // the star on the brand gradient, where there used to be a film emoji.
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary-dark to-primary">
+                        <KhatamStar filled={false} className="w-12 h-12 text-white/30" />
                     </div>
                 )}
 
@@ -116,15 +125,6 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                         <Play size={20} fill="white" />
                     </div>
                 </div>
-
-                {video.duration && (
-                    <div className="absolute bottom-2 end-2 bg-black/70 text-white text-xs font-semibold px-2 py-0.5 rounded">
-                        {/* A display string the backend sends verbatim ("45:30"), so it never
-                            passed through `formatCount` or a `t()` placeholder. Mapping its
-                            digits is the whole of what is safe to do to it. */}
-                        {formatDigits(video.duration)}
-                    </div>
-                )}
 
                 <SourceBadge
                     sourceType={video.sourceType}
@@ -206,18 +206,17 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
 
                 {watchedPercent !== null && (
                     <div className="absolute bottom-0 inset-x-0 h-[3px] bg-black/70">
-                        {/* A fixed, muted (not saturated/neon) turquoise, not the `primary` token —
-                            `primary` is deliberately deep/muted for button fills (see index.css)
-                            and read as barely-there here. Brighter in light mode via `dark:` —
-                            the deeper shade alone already read clearly in dark mode, but got lost
-                            against a lighter light-mode page even with the darkened track above. */}
-                        <div className="h-full bg-[#45A296] dark:bg-[#337F77]" style={{ width: `${watchedPercent}%` }} />
+                        {/* Gold, the redesign's colour for progress everywhere (the star's trace
+                            is the same), and the fill shade of it: on the darkened track it needs
+                            brightness, not the text shade's contrast against the page. */}
+                        <div className="h-full bg-gold" style={{ width: `${watchedPercent}%` }} />
                     </div>
                 )}
             </div>
 
-            {/* Title, then one column of what this video is: channel, series, and a last line
-                carrying its number and its date together — «١٫٢ ألف مشاهدات · ٣ مارس ٢٠٢٤».
+            {/* The kicker, the title, then one column of what this video is: channel, and a
+                last line carrying its length, its number and its date together —
+                «٤٥:٣٠ · ١٫٢ ألف مشاهدات · ٣ مارس ٢٠٢٤».
 
                 ONE COLUMN, NOT TWO, now that there is one number. The card used to split into
                 "what it is" at the start edge and "its numbers" (views, comments, likes) at the
@@ -237,13 +236,38 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                 published an hour ago. `min-w-0` — without it a flex item won't shrink below its
                 content's natural width, which silently breaks the title's `line-clamp-2` and the
                 rows' `truncate`. */}
-            <div className="p-4 min-w-0">
+            <div className="pt-3 min-w-0">
+                {/* What it belongs to, before what it is called — see lib/kicker. A link when it
+                    names a series, which is where someone who recognises the name wants to go;
+                    stopPropagation so it does not also open the video. The series used to be a
+                    grey row under the title with a TV glyph; it is the first thing read now.
+
+                    The line's height is reserved when there is no kicker, for the reason the
+                    title's two lines are: a row mixing a series lecture with a standalone video
+                    would otherwise start the two titles a line apart. */}
+                <div className="h-4 mb-1 min-w-0">
+                    {kicker && (kicker.seriesId ? (
+                        <button
+                            onClick={(e) => { e.stopPropagation(); navigate(`/series/${kicker.seriesId}`); }}
+                            title={t('series.partOf', { title: video.seriesTitle })}
+                            className="flex items-center gap-1.5 max-w-full h-4 text-xs font-bold text-gold-ink hover:underline"
+                        >
+                            <KhatamStar className="w-2.5 h-2.5 flex-shrink-0" />
+                            <span dir="auto" className="truncate">{kicker.text}</span>
+                        </button>
+                    ) : (
+                        <div className="flex items-center gap-1.5 max-w-full h-4 text-xs font-bold text-gold-ink">
+                            <KhatamStar className="w-2.5 h-2.5 flex-shrink-0" />
+                            <span dir="auto" className="truncate">{kicker.text}</span>
+                        </div>
+                    ))}
+                </div>
                 {/* Two lines reserved whether the title needs them or not. Cards in a grid row
                     stretch to the tallest, so a one-line title used to leave its card's rows a line
                     higher than its neighbours' and a blank band at the bottom: the "this card is
-                    missing something" look. With the slot fixed, channel, series and views sit on
+                    missing something" look. With the slot fixed, channel and views sit on
                     the same lines across a row. 2.75em is exactly two lines at leading-snug. */}
-                <h3 dir="auto" className="text-[0.95rem] font-semibold mb-1.5 leading-snug line-clamp-2 min-h-[2.75em]">
+                <h3 dir="auto" className="text-[0.95rem] font-bold mb-1.5 leading-snug line-clamp-2 min-h-[2.75em] group-hover:text-primary transition-colors">
                     {video.title}
                 </h3>
 
@@ -258,26 +282,23 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                             <span dir="auto" className="truncate">{video.channelName}</span>
                         </button>
                     )}
-                    {/* Which series this belongs to. A link, because the series page is where
-                        someone who recognises the name actually wants to go — and stopPropagation
-                        so it does not also trigger the card's own navigate-to-video. */}
-                    {video.seriesId && video.seriesTitle && (
-                        <button
-                            onClick={(e) => { e.stopPropagation(); navigate(`/series/${video.seriesId}`); }}
-                            title={t('series.partOf', { title: video.seriesTitle })}
-                            className={`${META_ROW} text-text-muted hover:text-primary transition-colors`}
-                        >
-                            <span className={META_GLYPH}><Tv size={12} /></span>
-                            <span dir="auto" className="truncate">{video.seriesTitle}</span>
-                        </button>
-                    )}
-                    {(hasViews || date) && (
+                    {(video.duration || hasViews || date) && (
                         <div className={`${META_ROW} text-text-muted`}>
-                            {/* The glyph names the line's first item: the eye when it opens with
-                                views, the calendar when the date stands alone. */}
+                            {/* The glyph names the line's first item: the clock when it opens with
+                                the length, the eye with views, the calendar when the date stands
+                                alone. */}
                             <span className={META_GLYPH}>
-                                {hasViews ? <Eye size={12} /> : <Calendar size={12} />}
+                                {video.duration ? <Clock size={12} /> : hasViews ? <Eye size={12} /> : <Calendar size={12} />}
                             </span>
+                            {/* The length moved here from a black badge over the picture — the
+                                most recognisable single mark of a YouTube thumbnail. A display
+                                string the backend sends verbatim ("45:30"), so it never passed
+                                through `formatCount` or a `t()` placeholder; mapping its digits
+                                is the whole of what is safe to do to it. */}
+                            {video.duration && (
+                                <span className="flex-shrink-0 whitespace-nowrap">{formatDigits(video.duration)}</span>
+                            )}
+                            {video.duration && (hasViews || date) && <span aria-hidden="true">·</span>}
                             {hasViews && (
                                 <span className="flex-shrink-0 whitespace-nowrap">
                                     {t('common.views', { count: formatCompactCount(video.viewCount) })}
@@ -292,11 +313,6 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                     )}
                 </div>
 
-                {video.category && (
-                    <span className="inline-block mt-2 px-2.5 py-0.5 bg-primary-light text-primary rounded-full text-xs font-semibold">
-                        {video.category}
-                    </span>
-                )}
             </div>
         </div>
     );

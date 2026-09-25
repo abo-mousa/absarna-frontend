@@ -20,6 +20,8 @@ export default {
         gold: {
           DEFAULT: 'rgb(var(--color-gold) / <alpha-value>)',
           light: 'rgb(var(--color-gold-light) / <alpha-value>)',
+          // Gold as text. DEFAULT is a fill colour and fails contrast as text; see index.css.
+          ink: 'rgb(var(--color-gold-ink) / <alpha-value>)',
         },
         surface: {
           DEFAULT: 'rgb(var(--color-surface) / <alpha-value>)',
@@ -55,11 +57,15 @@ export default {
         // so the two faces never meet inside one sentence, only across a page.
         reading: ['Noto Naskh Arabic', 'Amiri', 'serif'],
       },
+      // Near-square, like a page or a tile, not an app's rounded pill. The redesign's one
+      // ornament is the eight-pointed star, and 16px corners on every card read as a video site
+      // before anything else on the screen did. `rounded-full` is untouched: a pill still means
+      // a toggle (Subscribe) and a circle still means a person (Avatar).
       borderRadius: {
-        sm: '6px',
-        md: '10px',
-        lg: '16px',
-        xl: '24px',
+        sm: '2px',
+        md: '3px',
+        lg: '4px',
+        xl: '6px',
       },
       boxShadow: {
         sm: '0 1px 2px rgba(0,0,0,0.04)',

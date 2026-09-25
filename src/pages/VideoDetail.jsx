@@ -293,7 +293,7 @@ function VideoDetail() {
                 {related.length > 0 && (
                     <div className="mt-6">
                         <h2 className="text-lg font-bold mb-3">{t('video.related')}</h2>
-                        <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-x-5 gap-y-8">
                             {related.map((item) => (
                                 <VideoCard
                                     key={item.id}

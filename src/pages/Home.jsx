@@ -3,7 +3,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import PageShell from '../components/layout/PageShell';
-import { QueryState, Modal } from '../components/ui';
+import { QueryState, Modal, Cartouche } from '../components/ui';
 import { VideoCard } from '../components/content';
 import { useInfiniteVideos, useCategories, useFeed, useWatchProgressMap } from '../hooks/useVideos';
 import { useMyChannels, useToggleVideoVisibilityByChannelId, useDeleteVideoByChannelId } from '../hooks/useChannels';
@@ -15,8 +15,10 @@ import { fitFeedToRows } from '@/lib/gridRows';
 const FEED_SECTION_KEYS = ['subscribed', 'discover', 'featured'];
 
 // One chip, three callers — the class string was already duplicated twice before a third arrived.
+// Square-cornered (`rounded-md` is 3px now), not a pill: the rounded chip row above a grid was
+// one of the plainest YouTube marks on the page.
 const chipClass = (active) =>
-    `px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${
+    `px-4 py-1.5 rounded-md text-sm font-semibold transition-colors ${
         active
             ? 'bg-primary text-white border-2 border-primary'
             : 'bg-surface text-text-secondary border border-border'
@@ -231,8 +233,8 @@ function Home() {
                             if (items.length === 0) return null;
                             return (
                                 <div key={section.key}>
-                                    <h2 className="text-lg font-bold mb-3">{section.title}</h2>
-                                    <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                                    <Cartouche title={section.title} />
+                                    <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-8">
                                         {items.map((video) => (
                                             <VideoCard {...videoCardProps(video)} />
                                         ))}
@@ -244,8 +246,8 @@ function Home() {
 
                     {fitted.tail.length > 0 && (
                         <div className="mt-8">
-                            <h2 className="text-lg font-bold mb-3">{t('home.more')}</h2>
-                            <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                            <Cartouche title={t('home.more')} />
+                            <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-8">
                                 {fitted.tail.map((video) => (
                                     <VideoCard {...videoCardProps(video)} />
                                 ))}
@@ -277,7 +279,7 @@ function Home() {
                         emptyTitle={t('home.empty')}
                         emptyDescription={t('common.comingSoon')}
                     >
-                        <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-8">
                             {infiniteData?.pages.flatMap((page) => page.content).map((video) => (
                                 <VideoCard {...videoCardProps(video)} />
                             ))}

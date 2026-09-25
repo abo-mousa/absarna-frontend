@@ -86,7 +86,7 @@ function History() {
                 emptyTitle={isVideos ? t('history.emptyWatch') : t('history.emptyRead')}
                 emptyDescription={isVideos ? t('history.emptyWatchDescription') : t('history.emptyReadDescription')}
             >
-                <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-8">
                     {isVideos
                         ? history.map((entry) => (
                               <VideoCard

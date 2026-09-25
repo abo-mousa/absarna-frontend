@@ -146,6 +146,32 @@ export function formatPublishDate(dateStr) {
     return localised.format('D MMMM YYYY');
 }
 
+/**
+ * Today's date in the Hijri calendar — «١٤ ربيع الآخر ١٤٤٨ هـ», "Rabiʻ II 14, 1448 AH" — for the
+ * navbar.
+ *
+ * <p><b>`Intl`, not dayjs and not a library.</b> dayjs has no Islamic calendar, and every current
+ * browser's ICU ships `islamic-umalqura` (the Umm al-Qura tables Saudi Arabia publishes, and the
+ * calendar most readers' phones already show). The locale is the record's `numberFormat`, the one
+ * `formatCount` uses, so the digits are the interface's own: Arabic-Indic in the Arabic build and
+ * Latin in the English one, and the date never mixes two scripts in one phrase.
+ *
+ * <p>The reader's own clock and zone decide which day it is, which is the honest answer for a
+ * date shown to them — the Hijri day turns at the same local midnight the Gregorian one does here.
+ * Returns '' if the runtime cannot do it, so the navbar shows nothing rather than a wrong date.
+ */
+export function formatHijriDate(date = new Date(), locale = currentLocaleInfo().numberFormat) {
+    try {
+        return new Intl.DateTimeFormat(`${locale}-u-ca-islamic-umalqura`, {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+        }).format(date);
+    } catch {
+        return '';
+    }
+}
+
 export default dayjs;
 
 /**

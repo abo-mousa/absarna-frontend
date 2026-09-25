@@ -23,7 +23,7 @@ This repo's part is `lib/telemetry.js` (Grafana Faro RUM); don't restate the des
 src/
   components/
     ui/        Button, Card, Input, Modal, Badge, Grid, Spinner, EmptyState, QueryState, Avatar,
-               LinkifiedText, ExpandableText, SwapLabel
+               LinkifiedText, ExpandableText, SwapLabel, Khatam (KhatamStar, KhatamProgress), Cartouche
     layout/    Navbar, SideBar, PageShell, SearchBar
     content/   VideoCard, BookCard, ArticleCard, PostCard, VideoPlayer, VideoControlBar,
                PlayerSettingsMenu, PdfReader, CommentsSection, BookmarkButton, LikeButton,
@@ -111,6 +111,16 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   the theme, and is never in the URL. `AuthContext` pushes it to `users.locale` on boot when the two
   disagree — that column is read by **the account emails only**, and the boot is the trigger rather
   than the click because the click reloads the page out from under its own request.
+- **The look is near-square, boxless and gold-accented, and the star is its one ornament.** Radii
+  are 2/3/4/6px (`sm`–`xl`); `rounded-full` still means a toggle or a person. Cards have **no box**
+  — no border, fill or shadow; the picture keeps a hairline and a hidden video's is dashed. The
+  eight-pointed star (`ui/Khatam`, the logo's own outer ring) marks section headings
+  (`Cartouche`), kickers and progress — never a crescent, dome or lantern. **Gold has two tokens and
+  they are not interchangeable**: `gold` is a FILL (progress bars, badges) and is ~2:1 as text;
+  `gold-ink` is the TEXT shade (5.25:1 on the page). The kicker above a card's title comes from
+  `lib/kicker.js` and its line is reserved even when empty, like the title's two lines, so a grid row
+  stays aligned. The navbar shows today's Hijri date (`formatHijriDate`, `Intl` `islamic-umalqura`,
+  locale digits) at `xl` only.
 - **Tailwind only.** Brand colours are theme tokens resolving through CSS custom properties
   (`rgb(var(--color-x) / <alpha-value>)`), with light values on `:root` and dark under `.dark` in
   `index.css` — which is why dark mode is a two-file change and every existing `bg-surface` call site
@@ -425,6 +435,10 @@ What this app relies on; the mirror lives in the backend's `CLAUDE.md`.
   `placeholderData: keepPreviousData` or the element unmounts mid-switch.
 - **`audio` is a rung like any other and is never the default.** It sorts last (null height,
   `NULLS LAST`) and is the one rung with a catalog label.
+- **`seriesPosition` / `seriesLength` number a card within its series** («١٠٣ من ١٤٠»), counted
+  among the series' publicly playable videos in the series page's own order — the same answer
+  `/series/{id}/neighbours` gives. Never display `orderInSeries`: it is a sort key an owner may leave
+  null or space out. Both are null for a video with no public position (an owner's hidden row).
 - **`VideoDTO.sourceUrl` is null for an upload-backed video; `thumbnailUrl` is null until the worker
   produces a poster.** Treat null as "not yet", never as an error. Object keys never appear on a DTO.
 - **`thumbnailUrl` may be a poster the OWNER chose, and `hasCustomThumbnail` is how you tell.** The

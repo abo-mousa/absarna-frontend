@@ -99,7 +99,7 @@ function Books() {
                 emptyTitle={!filtering ? t('books.empty') : t('common.noResults')}
                 emptyDescription={!filtering ? t('books.emptyDescription') : t('common.tryAnotherSearch')}
             >
-                <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-x-5 gap-y-8">
                     {books.map((book) => (
                         <BookCard key={book.id} book={book} currentPage={readingProgress[book.id]} />
                     ))}

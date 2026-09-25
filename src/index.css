@@ -20,14 +20,21 @@
        logo's own #17A398 rather than all the way, so it still reads as the same teal. Large bold
        text, so 3:1 is the bar and this clears it on the parchment page. */
     --color-wordmark: 19 137 139; /* #13898B */
-    --color-gold: 242 174 48; /* #F2AE30 */
+    --color-gold: 242 174 48; /* #F2AE30 — FILLS only: the progress bar, a badge. As text it is
+      2:1 on the page and unreadable */
     --color-gold-light: 252 239 215; /* #FCEFD7 */
+    /* #86611A — gold as TEXT: the kicker above a card's title ("series · 103 of 140"). The
+       redesign's first pick, #B8862A, was 3.03:1 on the parchment page, which passes only for
+       large text, and a kicker is 12px bold. This is 5.25:1 on the page and 5.52:1 on a surface,
+       and still reads as the same gold beside the fill above. */
+    --color-gold-ink: 134 97 26;
     --color-surface: 254 253 249; /* #FEFDF9 — warm parchment surface */
     --color-surface-hover: 245 240 228; /* #F5F0E4 */
     --color-bg: 251 247 238; /* #FBF7EE — warm parchment page */
     --color-border: 229 223 211; /* #E5DFD3 */
     --color-border-light: 239 233 220; /* #EFE9DC */
-    --color-text-primary: 31 36 33; /* #1F2421 */
+    --color-text-primary: 29 42 48; /* #1D2A30 — ink with a little of the turquoise in it, rather
+      than the green-black #1F2421 it replaces; 13.8:1 on the page */
     --color-text-secondary: 107 100 89; /* #6B6459 */
     --color-text-muted: 154 147 132; /* #9A9384 */
 
@@ -64,6 +71,7 @@
     --color-wordmark: 38 169 156; /* #26A99C — the same step up from the dark primary */
     --color-gold: 245 193 90; /* #F5C15A */
     --color-gold-light: 58 46 19; /* #3A2E13 */
+    --color-gold-ink: 228 180 88; /* #E4B458 — 9.6:1 on the night page */
     --color-surface: 23 29 43; /* #171D2B — indigo-night surface */
     --color-surface-hover: 30 37 54; /* #1E2536 */
     --color-bg: 16 20 28; /* #10141C — indigo-night page, not pure black */
