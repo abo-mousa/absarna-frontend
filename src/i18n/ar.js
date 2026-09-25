@@ -171,6 +171,7 @@ export const ar = {
     sidebar: {
         manageChannel: 'إدارة القناة',
         home: 'الرئيسية',
+        discover: 'اكتشف',
         subscriptions: 'الاشتراكات',
         watchHistory: 'سجل المشاهدة',
         bookmarks: 'المحفوظات',

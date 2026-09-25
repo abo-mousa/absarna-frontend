@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Bell, History, Bookmark, Plus, Settings } from 'lucide-react';
+import { Home, Compass, Bell, History, Bookmark, Plus, Settings } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAllChannels, useSubscriptions, useMyChannels } from '../../hooks/useChannels';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
@@ -162,6 +162,11 @@ function SideBar({ currentChannel, open = false, onClose, drawerOnly = false }) 
                     <Link to="/" onClick={onClose} className={navLinkClass(isActive('/'))}>
                         <Home size={18} />
                         {t('sidebar.home')}
+                    </Link>
+
+                    <Link to="/discover" onClick={onClose} className={navLinkClass(isActive('/discover'))}>
+                        <Compass size={18} />
+                        {t('sidebar.discover')}
                     </Link>
 
                     {token && (

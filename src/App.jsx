@@ -14,7 +14,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { Spinner } from './components/ui';
 import { t } from '@/i18n';
 
-const Home = lazy(() => import('./pages/Home'));
+const Discover = lazy(() => import('./pages/Discover'));
 const ChannelPage = lazy(() => import('./pages/ChannelPage'));
 const Admin = lazy(() => import('./pages/Admin'));
 const Login = lazy(() => import('./pages/Login'));
@@ -202,7 +202,10 @@ function AppRoutes() {
         <Suspense fallback={<RouteFallback />}>
             <Routes>
                 {/* Public */}
-                <Route path="/" element={<Home />} />
+                {/* `/` becomes the Today dashboard; until it exists it shows Discover, so nothing
+                    disappears between the two steps. */}
+                <Route path="/" element={<Discover />} />
+                <Route path="/discover" element={<Discover />} />
                 <Route path="/search" element={<SearchPage />} />
                 <Route path="/channel/:slug" element={<ChannelPage />} />
                 <Route path="/video/:id" element={<VideoDetail />} />

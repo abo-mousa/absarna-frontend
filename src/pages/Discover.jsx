@@ -24,7 +24,14 @@ const chipClass = (active) =>
             : 'bg-surface text-text-secondary border border-border'
     }`;
 
-function Home() {
+/**
+ * Discover: the feed and everything after it — the YouTube-shaped tab, on purpose.
+ *
+ * <p>This was the home page. It moves one tab over because the home page is becoming the Today
+ * dashboard, which ends; this one keeps loading, and that is right here, because a reader who
+ * opens Discover has chosen to browse. Until Today lands, `/` renders this page too.
+ */
+function Discover() {
     const navigate = useNavigate();
     const { token } = useAuth();
     const { showToast } = useToast();
@@ -317,4 +324,4 @@ function Home() {
     );
 }
 
-export default Home;
+export default Discover;

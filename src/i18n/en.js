@@ -169,6 +169,7 @@ export const en = {
     sidebar: {
         manageChannel: 'Manage channel',
         home: 'Home',
+        discover: 'Discover',
         subscriptions: 'Subscriptions',
         watchHistory: 'Watch history',
         bookmarks: 'Saved',
