@@ -66,8 +66,8 @@ function ChannelRail() {
 function RailSection({ title, more, children }) {
     return (
         <section className="px-2 mb-5">
-            <h2 className="flex items-center gap-1.5 text-[0.7rem] font-bold text-text-muted tracking-wider mb-1.5 px-3">
-                <KhatamStar className="w-2 h-2 text-gold" />
+            <h2 className="flex items-center gap-2 text-xs font-bold text-text-muted tracking-wider mb-2 px-3">
+                <KhatamStar className="w-3 h-3 flex-shrink-0 text-gold" />
                 {title}
             </h2>
             <ul>{children}</ul>
