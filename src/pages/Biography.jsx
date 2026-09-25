@@ -15,7 +15,7 @@ function Biography() {
     usePageMeta({ title: t('biography.title'), description: bio?.shortBio, image: bio?.photoUrl });
 
     return (
-        <PageShell sidebar={false} contentClassName="max-w-reading mx-auto px-4 sm:px-6 py-10">
+        <PageShell contentClassName="max-w-reading mx-auto px-4 sm:px-6 py-10">
             <h1 className="text-2xl font-bold text-center mb-8">{t('biography.title')}</h1>
 
             <QueryState

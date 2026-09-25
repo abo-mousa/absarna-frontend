@@ -26,7 +26,7 @@ function TabPanel({ active, children }) {
 
 function ErrorScreen({ emoji, title, description, onBack }) {
     return (
-        <PageShell sidebar={false}>
+        <PageShell>
             <div className="max-w-[600px] mx-auto my-16 sm:my-20 p-8 sm:p-10 text-center bg-surface rounded-lg shadow-md border border-border-light">
                 <div className="text-5xl mb-4">{emoji}</div>
                 <h2 className="text-xl font-bold mb-2">{title}</h2>
@@ -91,7 +91,7 @@ function ChannelManage() {
 
     if (authLoading || channelLoading) {
         return (
-            <PageShell sidebar={false}>
+            <PageShell>
                 <QueryState isLoading />
             </PageShell>
         );
@@ -116,7 +116,7 @@ function ChannelManage() {
     }
 
     return (
-        <PageShell sidebar={false}>
+        <PageShell>
             {/* The menu against the screen's edge, and only the content centred beside it — see
                 ChannelManageNav. First in the row, which in RTL is the right. */}
             <div className="lg:flex lg:items-start">

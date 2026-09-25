@@ -138,6 +138,21 @@ export const ar = {
     nav: {
         brand: 'أَبْصَرْنا',
         brandAlt: 'أبصرنا',
+        // The six places (lib/tabs): a strip under the bar on a wide screen, a bar at the bottom
+        // on a phone, where Books and Articles are one «اقرأ» tab.
+        tabsLabel: 'الأقسام',
+        tabs: {
+            today: 'اليوم',
+            discover: 'اكتشف',
+            books: 'الكتب',
+            articles: 'المقالات',
+            posts: 'المنشورات',
+            channels: 'القنوات',
+            read: 'اقرأ',
+        },
+        // What the sidebar used to hold for an account, now in the account menu.
+        history: 'سجل المشاهدة',
+        bookmarks: 'المحفوظات',
         menu: 'القائمة',
         sideMenu: 'القائمة الجانبية',
         skipToContent: 'تخطي إلى المحتوى',
@@ -168,22 +183,6 @@ export const ar = {
         accountMenu: 'قائمة الحساب',
     },
 
-    sidebar: {
-        manageChannel: 'إدارة القناة',
-        home: 'الرئيسية',
-        discover: 'اكتشف',
-        posts: 'المنشورات',
-        subscriptions: 'الاشتراكات',
-        watchHistory: 'سجل المشاهدة',
-        bookmarks: 'المحفوظات',
-        createChannel: 'إنشاء قناة',
-        myChannels: 'قنواتي',
-        yourSubscriptions: 'اشتراكاتك',
-        discoverChannels: 'اكتشف قنوات أخرى',
-        // Under the sidebar's discover list, which loads twenty channels at a time.
-        moreChannels: 'عرض المزيد من القنوات',
-        noOtherChannels: 'لا توجد قنوات أخرى',
-    },
 
     searchBar: {
         placeholder: 'ابحث...',
@@ -793,6 +792,22 @@ export const ar = {
         loadFailed: 'فشل في تحميل المقال',
         backToArticles: 'العودة للمقالات',
         emptyOnChannel: 'لا توجد مقالات بعد',
+    },
+
+    // The Channels page (/channels): your own channels, the ones you follow, and the directory —
+    // what the sidebar's channel lists used to be.
+    channelsPage: {
+        title: 'القنوات',
+        subtitle: 'من يصنع ما تشاهده وتقرؤه',
+        mine: 'قنواتي',
+        manage: 'إدارة القناة',
+        create: 'إنشاء قناة',
+        following: 'قنواتك',
+        manageFollowing: 'إدارة المتابعات',
+        directory: 'اكتشف القنوات',
+        more: 'عرض المزيد من القنوات',
+        empty: 'لا توجد قنوات بعد',
+        loadFailed: 'تعذّر تحميل القنوات',
     },
 
     // The posts page (/posts): short notes channels write, from the channels a reader follows or

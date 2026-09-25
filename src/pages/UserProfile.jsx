@@ -347,7 +347,7 @@ function UserProfile() {
     };
 
     return (
-        <PageShell sidebar={false}>
+        <PageShell>
             <div className="max-w-[500px] mx-auto my-8 sm:my-10 px-4">
                 <div className="bg-surface p-6 sm:p-8 rounded-lg shadow-sm border border-border-light">
                     <h1 className="text-xl font-bold mb-6">{t('profile.title')}</h1>

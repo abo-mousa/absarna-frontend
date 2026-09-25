@@ -55,7 +55,7 @@ function ResetPassword() {
     const strengthInfo = getPasswordStrengthLabel(passwordRules);
 
     return (
-        <PageShell sidebar={false}>
+        <PageShell>
             <div className="max-w-[400px] mx-auto my-10 sm:my-16 p-6 sm:p-8 bg-surface rounded-lg shadow-md border border-border-light">
                 {status === 'success' && (
                     <div className="text-center">

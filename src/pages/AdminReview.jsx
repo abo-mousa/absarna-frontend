@@ -157,13 +157,13 @@ function AdminReview() {
         setConfirmingReject(null);
     };
 
-    // sidebar={false} and a centred column, like every other AdminNav screen. This page rendered
+    // and a centred column, like every other AdminNav screen. This page rendered
     // the browsing sidebar and had no max-width, so moving between admin tabs -- which is ONE
     // surface, with one nav -- swapped the whole page chrome: the sidebar appeared and the content
     // jumped from a centred column to full bleed. An admin screen is not a browsing surface; you
     // arrive from /admin and work a queue.
     return (
-        <PageShell sidebar={false}>
+        <PageShell>
             <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
                 <AdminNav current="review" />
 

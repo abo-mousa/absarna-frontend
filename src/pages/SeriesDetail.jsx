@@ -36,7 +36,7 @@ function SeriesDetail() {
 
     if (isLoading || isError || !series) {
         return (
-            <PageShell sidebar={false}>
+            <PageShell>
                 <QueryState
                     isLoading={isLoading}
                     isError={isError || !series}
@@ -49,7 +49,7 @@ function SeriesDetail() {
     }
 
     return (
-        <PageShell sidebar={false}>
+        <PageShell>
             <div className="max-w-[1100px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
                 <div className="mb-4">
                     <Link to={backTo} className="flex items-center gap-1.5 text-primary font-semibold w-fit">

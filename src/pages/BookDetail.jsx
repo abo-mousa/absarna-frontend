@@ -62,7 +62,7 @@ function BookDetail() {
 
     if (isLoading || isError || !book) {
         return (
-            <PageShell sidebar={false}>
+            <PageShell>
                 <QueryState
                     isLoading={isLoading}
                     isError={isError || !book}
@@ -82,7 +82,7 @@ function BookDetail() {
     const previewUrl = !previewFailed ? resolveMediaUrl(book.previewImageUrl) : null;
 
     return (
-        <PageShell sidebar={false}>
+        <PageShell>
             <div className="max-w-reading mx-auto px-4 sm:px-6 py-6 sm:py-8">
                 <div className="bg-surface rounded-lg overflow-hidden border border-border-light shadow-sm mb-6">
                     {previewUrl && !showPdf && (

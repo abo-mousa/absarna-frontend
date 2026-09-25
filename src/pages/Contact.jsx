@@ -44,7 +44,7 @@ function Contact() {
     });
 
     return (
-        <PageShell sidebar={false} contentClassName="max-w-reading mx-auto px-4 sm:px-6 py-10">
+        <PageShell contentClassName="max-w-reading mx-auto px-4 sm:px-6 py-10">
             <h1 className="text-3xl font-serif font-bold mb-6">{t('legal.contact.title')}</h1>
 
             {doc.intro.map((paragraph, index) => (

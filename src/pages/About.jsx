@@ -34,7 +34,7 @@ function About() {
     });
 
     return (
-        <PageShell sidebar={false} contentClassName="max-w-reading mx-auto px-4 sm:px-6 py-10">
+        <PageShell contentClassName="max-w-reading mx-auto px-4 sm:px-6 py-10">
             {/* `dir="auto"` and `font-reading`, matching LegalDocument: this is continuous prose in
                 whichever language the catalog is serving, and the browser lays it out from the
                 first strong character rather than from a hardcoded direction. */}

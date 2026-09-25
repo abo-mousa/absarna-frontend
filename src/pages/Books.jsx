@@ -55,7 +55,7 @@ function Books() {
 
 
     return (
-        <PageShell sidebar={false} contentClassName="max-w-[1100px] mx-auto px-4 sm:px-6 py-8">
+        <PageShell contentClassName="max-w-[1100px] mx-auto px-4 sm:px-6 py-8">
             <h1 className="text-2xl font-bold mb-6">{t('books.title')}</h1>
 
             {/* Shown whenever there is anything to narrow OR a narrowing is active: a search

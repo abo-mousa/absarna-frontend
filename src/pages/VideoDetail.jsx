@@ -60,7 +60,7 @@ function VideoDetail() {
 
     if (isLoading || isError || !video) {
         return (
-            <PageShell sidebar={false}>
+            <PageShell>
                 <QueryState
                     isLoading={isLoading}
                     isError={isError || !video}
@@ -130,7 +130,7 @@ function VideoDetail() {
     const notices = ownerNotices(video, canManageChannel(user, channel));
 
     return (
-        <PageShell sidebar={false}>
+        <PageShell>
             <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
                 {/* Above the player, because for a HELD or REJECTED video this is the answer to
                     the question the owner actually arrived with: their video is READY, visible,

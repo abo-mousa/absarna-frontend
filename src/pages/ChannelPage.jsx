@@ -190,7 +190,7 @@ function ChannelPage() {
     }
 
     return (
-        <PageShell currentChannel={slug} contentClassName="p-4 sm:p-6">
+        <PageShell contentClassName="p-4 sm:p-6">
             {/* The cover on its own, and the channel's identity BELOW it rather than on a coloured
                 band fused to it. They used to share one box — the cover, then a primaryColor panel
                 carrying the photo, name and subscriber count — which read as text laid over the

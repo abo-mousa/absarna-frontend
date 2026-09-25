@@ -136,6 +136,18 @@ export const en = {
         // unvocalised form the screen reader gets, exactly as in `ar.js`.
         brand: 'أَبْصَرْنا',
         brandAlt: 'أبصرنا',
+        tabsLabel: 'Sections',
+        tabs: {
+            today: 'Today',
+            discover: 'Discover',
+            books: 'Books',
+            articles: 'Articles',
+            posts: 'Posts',
+            channels: 'Channels',
+            read: 'Read',
+        },
+        history: 'Watch history',
+        bookmarks: 'Saved',
         menu: 'Menu',
         sideMenu: 'Side menu',
         skipToContent: 'Skip to content',
@@ -166,21 +178,6 @@ export const en = {
         accountMenu: 'Account menu',
     },
 
-    sidebar: {
-        manageChannel: 'Manage channel',
-        home: 'Home',
-        discover: 'Discover',
-        posts: 'Posts',
-        subscriptions: 'Subscriptions',
-        watchHistory: 'Watch history',
-        bookmarks: 'Saved',
-        createChannel: 'Create a channel',
-        myChannels: 'My channels',
-        yourSubscriptions: 'Your subscriptions',
-        discoverChannels: 'Discover other channels',
-        moreChannels: 'Show more channels',
-        noOtherChannels: 'No other channels',
-    },
 
     searchBar: {
         placeholder: 'Search...',
@@ -585,6 +582,20 @@ export const en = {
         loadFailed: 'Could not load the article',
         backToArticles: 'Back to articles',
         emptyOnChannel: 'No articles yet',
+    },
+
+    channelsPage: {
+        title: 'Channels',
+        subtitle: 'Who makes what you watch and read',
+        mine: 'My channels',
+        manage: 'Manage channel',
+        create: 'Create a channel',
+        following: 'Your channels',
+        manageFollowing: 'Manage subscriptions',
+        directory: 'Discover channels',
+        more: 'Show more channels',
+        empty: 'No channels yet',
+        loadFailed: 'Channels could not be loaded',
     },
 
     postsPage: {
@@ -2193,12 +2204,12 @@ export const en = {
  * question rather than a matter of clicking around.
  */
 export const TRANSLATED = [
-    'common', 'fields', 'meta', 'nav', 'sidebar', 'searchBar', 'errorBoundary', 'errors',
+    'common', 'fields', 'meta', 'nav', 'searchBar', 'errorBoundary', 'errors',
     'auth', 'validation', 'home', 'video', 'books', 'pdfReader', 'articles', 'series',
     'channel', 'consent', 'createChannel', 'comments', 'likes', 'bookmarks', 'history',
     'subscriptions', 'profile', 'search', 'biography', 'share', 'upload', 'notFound',
     'channelManage', 'youtube', 'youtubeOAuth', 'admin', 'adminReports', 'legal',
-    'pager', 'report', 'ownerImage', 'formats', 'today', 'postsPage',
+    'pager', 'report', 'ownerImage', 'formats', 'today', 'postsPage', 'channelsPage',
 ];
 
 export default en;

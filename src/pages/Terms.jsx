@@ -20,7 +20,7 @@ function Terms() {
     });
 
     return (
-        <PageShell sidebar={false} contentClassName="max-w-reading mx-auto px-4 sm:px-6 py-10">
+        <PageShell contentClassName="max-w-reading mx-auto px-4 sm:px-6 py-10">
             <LegalDocument doc={tData('legal.terms')} />
         </PageShell>
     );

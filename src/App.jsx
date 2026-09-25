@@ -17,6 +17,7 @@ import { t } from '@/i18n';
 const Today = lazy(() => import('./pages/Today'));
 const Discover = lazy(() => import('./pages/Discover'));
 const Posts = lazy(() => import('./pages/Posts'));
+const Channels = lazy(() => import('./pages/Channels'));
 const ChannelPage = lazy(() => import('./pages/ChannelPage'));
 const Admin = lazy(() => import('./pages/Admin'));
 const Login = lazy(() => import('./pages/Login'));
@@ -209,6 +210,7 @@ function AppRoutes() {
                 <Route path="/" element={<Today />} />
                 <Route path="/discover" element={<Discover />} />
                 <Route path="/posts" element={<Posts />} />
+                <Route path="/channels" element={<Channels />} />
                 <Route path="/search" element={<SearchPage />} />
                 <Route path="/channel/:slug" element={<ChannelPage />} />
                 <Route path="/video/:id" element={<VideoDetail />} />

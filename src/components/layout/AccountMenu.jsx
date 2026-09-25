@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { User, Upload, Shield, LogOut, Sun, Moon, LogIn, UserPlus } from 'lucide-react';
+import { User, Upload, Shield, LogOut, Sun, Moon, LogIn, UserPlus, History, Bookmark } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useMyChannels } from '../../hooks/useChannels';
@@ -24,6 +24,9 @@ export function accountMenuActions(user, signedIn = true) {
     if (!signedIn) return ['login', 'register', 'theme', 'language'];
     return [
         'profile',
+        // What the sidebar used to hold for an account, now that there is no sidebar.
+        'history',
+        'bookmarks',
         ...(canUpload(user) ? ['upload'] : []),
         ...(isPlatformAdmin(user) ? ['admin'] : []),
         'theme',
@@ -164,6 +167,20 @@ function AccountMenu({ attentionCount = 0 }) {
                                     <Link key={action} role="menuitem" to="/profile" className={itemClass}>
                                         <User size={18} />
                                         {t('nav.profile')}
+                                    </Link>
+                                );
+                            case 'history':
+                                return (
+                                    <Link key={action} role="menuitem" to="/history" className={itemClass}>
+                                        <History size={18} />
+                                        {t('nav.history')}
+                                    </Link>
+                                );
+                            case 'bookmarks':
+                                return (
+                                    <Link key={action} role="menuitem" to="/bookmarks" className={itemClass}>
+                                        <Bookmark size={18} />
+                                        {t('nav.bookmarks')}
                                     </Link>
                                 );
                             case 'upload':

@@ -97,12 +97,12 @@ function ImportDot({ indicator }) {
  * <p><b>Attached to the screen's edge, not placed in the page's column.</b> The first version sat
  * inside a centred 1200px container, so on a wide monitor it floated with an empty margin on its
  * right and read as a card that had drifted, not as the page's menu. It now runs the full height
- * under the navbar against the right edge — the same frame as the app's own `SideBar`, whose
- * desktop column this page suppresses (`sidebar={false}`, and see `PageShell` for why that leaves
- * its phone drawer in place) — and only the content beside it is centred.
+ * under the navbar against the start edge, and only the content beside it is centred. (It was
+ * the same frame as the app's own sidebar, which no longer exists: the app's places are tabs now,
+ * and this menu is the only column left, which is right for the one screen with many sections.)
  *
- * <p><b>A sidebar from `lg` up, a scrolling strip below it.</b> The breakpoint is the app shell's
- * own (`SideBar` becomes a drawer below `lg`), and it is also where it has to be: below it, a
+ * <p><b>A column from `lg` up, a scrolling strip below it.</b> The breakpoint is the app shell's
+ * own (the tab strip gives way to the bottom tab bar below `lg`), and it is also where it has to be: below it, a
  * 240px column beside an upload form leaves the form too narrow to use. A drawer was the other
  * option for small screens and was rejected — it hides which section is open and makes every
  * switch two taps, on the page an owner switches sections on most.

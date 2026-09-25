@@ -24,7 +24,7 @@ src/
   components/
     ui/        Button, Card, Input, Modal, Badge, Grid, Spinner, EmptyState, QueryState, Avatar,
                LinkifiedText, ExpandableText, SwapLabel, Khatam (KhatamStar, KhatamProgress), Cartouche
-    layout/    Navbar, SideBar, PageShell, SearchBar
+    layout/    Navbar, NavTabs, BottomTabBar, AccountMenu, PageShell, SearchBar
     content/   VideoCard, BookCard, ArticleCard, PostCard, VideoPlayer, VideoControlBar,
                PlayerSettingsMenu, PdfReader, CommentsSection, BookmarkButton, LikeButton,
                SubscribeButton, ShareButton
@@ -63,8 +63,8 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   lays out with and the catalog `t()` serves from cannot disagree. Layout is **logical utilities**
   (`ms-`/`me-`/`ps-`/`pe-`/`start-`/`end-`/`text-start`), which flip on their own — a physical
   `ml-`/`right-`/`text-right` in new code is almost always a bug. Four things genuinely cannot be
-  logical and each says so where it is: the sidebar drawer's closed transform (CSS `translate` is
-  not direction-aware, so `rtl:`/`ltr:` variants), the scrubber handle's half-width nudge, `Input`'s
+  logical and each says so where it is: a gradient's or an inset shadow's direction (`Cartouche`'s
+  fading rule, `BookCover`'s spine — `rtl:`/`ltr:` variants), the scrubber handle's half-width nudge, `Input`'s
   own padding (a logical property there resolves against the FIELD's `dir`, which describes its
   *value*, not the interface), and **arrows** — a left-pointing arrow is a different drawing, so
   `ui/DirectionalIcon` exports `ChevronBack`/`ChevronForward`/`ArrowBack`/`ArrowForward` and holds
@@ -170,12 +170,15 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   token in `sessionStorage` still dies with the tab, and a persisted one still expires. A refresh
   rotates **in place** (`storeRotatedTokens`) — it is not a new session and must not re-tier one.
 - **Anything that sticks under the navbar positions against `--navbar-h`**, which `Navbar`
-  measures into on mount and on every resize. The `60px` two sidebars used to hardcode was a pixel
-  short of the bar plus its border, so their top edge painted over it on scroll — and it cannot be
-  a constant anyway: the logo and wordmark change size at `sm`, and the Arabic webfont arrives
-  after first paint (`display=swap`) and re-lays the line box. The sidebar is also `z-[1100]` as a
-  phone drawer and `lg:z-[900]` as a desktop column — one element, opposite stacking, and at the
-  navbar's own 1000 the tie was broken by document order.
+  measures into on mount and on every resize — and it includes the `NavTabs` strip, which is inside
+  the `<nav>` for exactly that reason. The `60px` the old sidebars hardcoded was a pixel short of the
+  bar plus its border — and it cannot be a constant anyway: the logo and wordmark change size at
+  `sm`, and the Arabic webfont arrives after first paint (`display=swap`) and re-lays the line box.
+- **There is no sidebar, on purpose.** The places are six tabs (`lib/tabs`): a strip in the navbar
+  from `lg`, a five-tab bar fixed to the bottom below it (Books and Articles fold into «اقرأ»),
+  and `PageShell` gives every page bottom room for that bar plus the safe-area inset. History and
+  saved items are in the account menu; the channel lists are the Channels page. A column of links
+  and a hamburger drawer were the plainest YouTube marks the app had — don't bring either back.
 - **The navbar is full-bleed on purpose — do not put a `max-w`/`mx-auto` back on it.** It had
   `max-w-[1400px] mx-auto`, which is right for a column of prose and wrong for a bar whose content
   is two anchored ends: past 1400px the cap stopped moving the logo and the account controls
@@ -198,7 +201,7 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   invalidates in `onSettled` (`useToggleSubscription`, `useToggleContentVisibility`). Waiting for
   the server means the control ignores the press for a round trip and then jumps; cancel in-flight
   queries first or a refetch lands afterwards and puts the old answer back.
-- **`PageShell` + `QueryState`** are the shared shells: don't hand-roll `<Navbar/><SideBar/><main>` or
+- **`PageShell` + `QueryState`** are the shared shells: don't hand-roll `<Navbar/><main>` or
   another loading/error/empty ternary.
 - **Errors go through `lib/describeError.js`**, which prefers the backend's `reason` code (worded in
   `errors.reasons`), then the backend's own Arabic sentence, then a status-based fallback. It only

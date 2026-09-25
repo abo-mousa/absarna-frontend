@@ -17,7 +17,7 @@ function ArticleDetail() {
 
     if (isLoading || isError || !article) {
         return (
-            <PageShell sidebar={false}>
+            <PageShell>
                 <QueryState
                     isLoading={isLoading}
                     isError={isError || !article}
@@ -30,7 +30,7 @@ function ArticleDetail() {
     }
 
     return (
-        <PageShell sidebar={false}>
+        <PageShell>
             <div className="max-w-reading mx-auto px-4 sm:px-6 py-6 sm:py-8">
                 <div className="bg-surface p-6 sm:p-8 rounded-lg border border-border-light shadow-sm mb-6 print:p-0 print:shadow-none print:border-0">
                     {article.category && (

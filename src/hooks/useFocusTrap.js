@@ -4,7 +4,7 @@ const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), textarea, input, se
 
 // Traps Tab/Shift+Tab focus cycling within `containerRef` while `active`, moves focus into
 // the container on activation, restores it to whatever was focused before on deactivation,
-// locks body scroll, and closes on Escape via `onClose`. Shared by Modal and SideBar's mobile
+// locks body scroll, and closes on Escape via `onClose`. Shared by Modal and the former sidebar's mobile
 // drawer — both are overlay panels that need the same dialog behavior.
 export function useFocusTrap(active, containerRef, onClose) {
     const previousFocusRef = useRef(null);

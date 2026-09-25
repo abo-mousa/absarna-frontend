@@ -33,7 +33,7 @@ function Admin() {
     ];
 
     return (
-        <PageShell sidebar={false}>
+        <PageShell>
             <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-6">
                 {/* The same row on all four admin screens -- it used to live only here, so the
                     three pages it leads to had no navigation at all. See AdminNav. */}
