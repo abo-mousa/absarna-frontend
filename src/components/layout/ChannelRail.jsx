@@ -45,10 +45,29 @@ function ChannelRail() {
     return (
         <aside
             aria-label={t('channelRail.label')}
-            className="hidden lg:flex flex-col w-[248px] flex-shrink-0 bg-surface border-e border-border-light
-                sticky top-[var(--navbar-h)] h-[calc(100vh-var(--navbar-h))] overflow-y-auto"
+            className="hidden lg:flex flex-col relative w-[256px] flex-shrink-0 bg-surface
+                sticky top-[var(--navbar-h)] h-[calc(100vh-var(--navbar-h))] overflow-y-auto overflow-x-hidden"
         >
-            <div className="flex-1 px-3 pt-6 pb-4">
+            {/* THE MANUSCRIPT FRAME. The panel is framed the way a page of a manuscript is, which
+                is what it had been missing — it read as a plain list on a flat surface:
+                  - a gold double rule down the edge that meets the page, where a bare hairline was;
+                  - a band of small stars across the head, alternating filled and outlined, the
+                    interlace of the logo's two rings laid out in a line;
+                  - one thin-line star low in the far corner, the welcome panel's, as its seal.
+                All decorative and hidden from assistive technology; the rows are drawn over them. */}
+            <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 end-0 w-[5px] border-x border-gold/45" />
+            <div aria-hidden="true" className="flex items-center justify-between px-4 pt-4 pb-3 me-[5px] border-b border-gold/25">
+                {Array.from({ length: 11 }, (_, i) => (
+                    <KhatamStar key={i} filled={i % 2 === 0} strokeWidth={10} className={`w-2.5 h-2.5 ${i % 2 === 0 ? 'text-gold/70' : 'text-gold/50'}`} />
+                ))}
+            </div>
+            <KhatamStar
+                filled={false}
+                strokeWidth={1.5}
+                className="pointer-events-none absolute -bottom-10 -start-10 w-44 h-44 text-gold/25"
+            />
+
+            <div className="relative flex-1 ps-3 pe-4 pt-5 pb-4 me-[5px]">
                 {myChannels.length > 0 && (
                     <RailSection title={t('channelRail.mine')}>
                         {myChannels.map((channel) => (
@@ -88,12 +107,6 @@ function ChannelRail() {
                 )}
             </div>
 
-            {/* The panel's last line, like Today's colophon: a rule, the star, a rule. */}
-            <div className="flex items-center justify-center gap-2 pb-5" aria-hidden="true">
-                <span className="h-px w-10 bg-border" />
-                <KhatamStar className="w-3 h-3 text-gold/70" />
-                <span className="h-px w-10 bg-border" />
-            </div>
         </aside>
     );
 }

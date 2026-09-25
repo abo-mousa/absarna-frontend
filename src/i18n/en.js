@@ -1991,8 +1991,9 @@ export const en = {
                     heading: 'Cookies and local storage',
                     paragraphs: [
                         'The platform sets no cookies, for tracking or for anything else; there is nothing on the server that creates a cookie at all.',
-                        'It does use your browser’s local storage, for things that concern your browser alone and never reach us: your access token after signing in, your choice of light or dark mode, the playback speed and volume you set in the player, and the state of an unfinished upload until you resume it.',
-                        'An access token is valid for an hour and is renewed with a refresh token valid for seven days. Signing out erases both from your browser.',
+                        'It does use your browser’s local storage, for things that concern your browser alone and never reach us: your access token after signing in, your choice of light or dark mode, the interface language, your answer about showing YouTube videos, the playback speed and volume you set in the player, that you have seen the site guide so it does not open again, and the state of an unfinished upload until you resume it.',
+                        'The one exception is the interface language: if you are signed in, it is copied to your account, so that account emails reach you in it.',
+                        'An access token is valid for an hour and is renewed with a refresh token valid for seven days, or ninety if you choose “stay signed in”. If you do not, both are kept for the browser session alone and go when it closes. Signing out erases both from your browser.',
                         'The YouTube player, however — on pages of imported videos alone — may store things of its own in your browser, over which we have no control. That player is not loaded at all without your permission; see the "YouTube" section.',
                     ],
                 },
