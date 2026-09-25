@@ -97,7 +97,7 @@ function Bookmarks() {
                     {activeTab === 'BOOK' &&
                         itemsForTab
                             .filter((b) => b.book)
-                            .map((b) => <BookCard key={b.id} book={b.book} currentPage={readingProgress[b.book.id]} />)}
+                            .map((b) => <BookCard key={b.id} book={b.book} progress={readingProgress[b.book.id]} />)}
                     {activeTab === 'ARTICLE' &&
                         itemsForTab.filter((b) => b.article).map((b) => <ArticleCard key={b.id} article={b.article} />)}
                 </div>

@@ -226,17 +226,17 @@ function Discover() {
                 </button>
                 {/* Formats first — what kind of thing — then, after a rule, topics. Only formats
                     some video has (GET /api/formats), so no chip opens an empty page. */}
-                {formats.map((format) => (
+                {formats.filter((f) => f.inUse).map(({ name }) => (
                     <button
-                        key={format}
-                        onClick={() => toggleFormat(format)}
-                        aria-pressed={!isDefaultView && selectedFormat === format}
-                        className={chipClass(!isDefaultView && selectedFormat === format)}
+                        key={name}
+                        onClick={() => toggleFormat(name)}
+                        aria-pressed={!isDefaultView && selectedFormat === name}
+                        className={chipClass(!isDefaultView && selectedFormat === name)}
                     >
-                        {formatChipLabel(format)}
+                        {formatChipLabel(name)}
                     </button>
                 ))}
-                {formats.length > 0 && categories.length > 0 && (
+                {formats.some((f) => f.inUse) && categories.length > 0 && (
                     <span aria-hidden="true" className="w-px self-stretch my-1 mx-1 bg-border" />
                 )}
                 {categories.map((cat) => (

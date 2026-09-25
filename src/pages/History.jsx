@@ -97,7 +97,7 @@ function History() {
                               />
                           ))
                         : history.map((entry) => (
-                              <BookCard key={entry.id} book={entry.book} currentPage={entry.currentPage} />
+                              <BookCard key={entry.id} book={entry.book} progress={entry.progress} />
                           ))}
                 </div>
             </QueryState>

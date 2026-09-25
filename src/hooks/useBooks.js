@@ -36,6 +36,18 @@ export const useBookCategories = () => useQuery({
     staleTime: 5 * 60 * 1000,
 });
 
+/**
+ * The library as shelves (`GET /api/books/shelves`): every category that has books, each with its
+ * first books — one request, and the backend's choice of which categories and which books, where
+ * this page used to ask once per category.
+ */
+export const useBookShelves = (sort, enabled = true) => useQuery({
+    queryKey: ['books-shelves', { sort }],
+    queryFn: async () => (await api.get('/books/shelves', { params: { sort, size: 10 } })).data,
+    enabled,
+    staleTime: 5 * 60 * 1000,
+});
+
 // Fetch single book
 export const useBook = (id) => {
     return useQuery({

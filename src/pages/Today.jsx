@@ -4,7 +4,7 @@ import PageShell from '../components/layout/PageShell';
 import { QueryState, Cartouche, KhatamProgress, KhatamStar } from '../components/ui';
 import { VideoCard } from '../components/content';
 import { useToday } from '../hooks/useToday';
-import { useFeed, useWatchProgressMap } from '../hooks/useVideos';
+import { useWatchProgressMap } from '../hooks/useVideos';
 import { formatTimestamp } from '@/lib/spans';
 import { formatCount } from '@/lib/numbers';
 import { t } from '@/i18n';
@@ -28,7 +28,6 @@ function Today() {
     const navigate = useNavigate();
     const { token } = useAuth();
     const today = useToday();
-    const feed = useFeed();
     const watchProgress = useWatchProgressMap(!!token);
     const data = today.data;
 
@@ -40,11 +39,10 @@ function Today() {
         watchedSeconds: watchProgress[video.id],
     });
 
-    // One row from the feed, which is already daily-stable: the reader's own channels when they
-    // follow any, otherwise the fair cross-channel draw. Four, one row at the widest grid.
-    const fromChannels = feed.data?.subscribed?.length ? feed.data.subscribed : null;
-    const feedRow = (fromChannels || feed.data?.discover || []).slice(0, 4);
-    const feedRowTitle = fromChannels ? t('home.subscribed') : t('home.discover');
+    // One row from the feed, chosen by the backend (`fromFeed`): the reader's own channels when
+    // they follow any, otherwise suggestions. Its kind picks the heading; nothing else is decided here.
+    const feedRow = data?.fromFeed?.videos || [];
+    const feedRowTitle = data?.fromFeed?.kind === 'SUBSCRIBED' ? t('home.subscribed') : t('home.discover');
 
     const hasContinue = !!(data?.continueWatching?.length || data?.continueReading?.length);
 
@@ -113,8 +111,8 @@ function Today() {
 }
 
 /**
- * The week, counted. Rendered only when there is something to count — a new reader is not shown a
- * row of zeros, which would read as a verdict on a week that has not happened yet.
+ * The week, counted. The backend sends no week at all when there is nothing to count, so a new
+ * reader is not shown a row of zeros; this only draws what it is given.
  */
 function WeekStrip({ week }) {
     const counts = [
@@ -122,7 +120,6 @@ function WeekStrip({ week }) {
         { value: week.pagesRead, label: t('today.pagesRead') },
         { value: week.programmesCompleted, label: t('today.programmesCompleted') },
     ];
-    if (!week.closest && counts.every((c) => !c.value)) return null;
     return (
         <section className="grid grid-cols-2 md:grid-cols-5 gap-px bg-border-light border border-border-light rounded-lg overflow-hidden">
             <div className="bg-surface p-4">
@@ -159,7 +156,6 @@ function ContinueVideo({ item }) {
     const video = item.next;
     const position = video.seriesPosition;
     const total = video.seriesLength;
-    const done = position && total ? (position - 1) / total : 0;
     const href = `/video/${video.id}${item.resumeSeconds ? `?t=${item.resumeSeconds}` : ''}`;
     return (
         <Link
@@ -167,7 +163,7 @@ function ContinueVideo({ item }) {
             className="flex items-center gap-4 p-3.5 bg-surface border border-border-light rounded-lg text-text-primary hover:no-underline hover:border-border transition-colors"
         >
             <KhatamProgress
-                value={done}
+                value={item.progress || 0}
                 label={position ? formatCount(position) : null}
                 title={position && total ? t('today.progressAria', { title: video.seriesTitle || video.title, position, total }) : video.title}
                 className="w-16 h-16 flex-shrink-0"
@@ -187,14 +183,13 @@ function ContinueVideo({ item }) {
 
 /** A book in progress, traced in teal to tell it from a programme at a glance. */
 function ContinueBook({ entry }) {
-    const pages = entry.book?.pages;
     return (
         <Link
             to={`/books/${entry.bookId}`}
             className="flex items-center gap-4 p-3.5 bg-surface border border-border-light rounded-lg text-text-primary hover:no-underline hover:border-border transition-colors"
         >
             <KhatamProgress
-                value={pages ? entry.currentPage / pages : 0}
+                value={entry.progress || 0}
                 label={t('today.pageShort', { page: entry.currentPage })}
                 title={t('today.readingAria', { title: entry.book?.title, page: entry.currentPage })}
                 traceClassName="text-primary"

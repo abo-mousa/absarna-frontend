@@ -6,7 +6,7 @@ import { formatPublishDate, displayDate } from '@/lib/datetime';
 import { useBookReadUrl } from '@/hooks/useMediaUrl';
 import { t } from '@/i18n';
 
-function BookCard({ book, currentPage }) {
+function BookCard({ book, progress }) {
     const navigate = useNavigate();
     // The PDF is fetched through a presigned URL the backend mints after its visibility check —
     // so the URL is the access grant, and a caller who may not see this book simply never gets
@@ -72,7 +72,7 @@ function BookCard({ book, currentPage }) {
         // have been ~450px tall on /books' three columns and taller on a phone. No box, as with
         // VideoCard — a hairline under the row is the only separator.
         <div className="flex gap-4 h-full pb-4 border-b border-border-light">
-            <BookCover book={book} currentPage={currentPage} />
+            <BookCover book={book} progress={progress} />
 
             <div className="flex flex-col flex-1 min-w-0">
                 {book.category && (

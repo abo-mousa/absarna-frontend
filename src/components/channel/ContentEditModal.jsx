@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { Modal, Input, Button } from '@/components/ui';
 import VideoThumbnailPicker from './VideoThumbnailPicker';
 import { FieldLabel } from './ContentPublishForm';
-import { formatSelectOptions } from '@/lib/formats';
+import { formatLabel } from '@/lib/formats';
+import { useFormats } from '@/hooks/useVideos';
 import { t } from '@/i18n';
 
 /**
@@ -37,10 +38,11 @@ const LABELS = {
 function ContentEditModal({ open, type, item, onClose, onSave, saving, slug }) {
     const fields = FIELDS[type] || [];
     const [form, setForm] = useState({});
-    // A video's format is a select, not a text field, and it is the owner's EXPLICIT choice that is
-    // edited — `item.format` may be the channel's default filling in (`formatInherited`), which
-    // this form must not write back as though the owner had picked it. See formatSelectOptions.
-    const formatSelect = type === 'videos' && item ? formatSelectOptions(item) : null;
+    // A video's format is a select, and it edits the owner's OWN choice (`ownFormat`, from the
+    // backend), never the effective `format`, which may be the channel's default filling in. The
+    // empty option is "as the channel"; choosing it sends `inheritFormat`, which the backend added
+    // so that a choice can be un-made. The list of formats is the backend's too.
+    const { data: formats = [] } = useFormats();
     const [format, setFormat] = useState('');
     // The two things every reader is told about a video: booleans on the backend, so unticking
     // one really does take it off.
@@ -51,7 +53,7 @@ function ContentEditModal({ open, type, item, onClose, onSave, saving, slug }) {
     useEffect(() => {
         if (!item) return;
         setForm(Object.fromEntries(fields.map((f) => [f, item[f] ?? ''])));
-        setFormat(type === 'videos' ? formatSelectOptions(item).value : '');
+        setFormat(type === 'videos' ? item.ownFormat || '' : '');
         setFlags({ graphicContent: !!item.graphicContent, removedElsewhere: !!item.removedElsewhere });
         // Keyed on the item's IDENTITY, not the item: `item` is a fresh object on every refetch
         // of the list behind this dialog, and re-seeding then would silently discard whatever the
@@ -74,10 +76,9 @@ function ContentEditModal({ open, type, item, onClose, onSave, saving, slug }) {
                 changes[field] = after === '' ? null : after;
             }
         }
-        // Only a real choice is sent: the empty option means "as the channel", which is the state
-        // the video is already in whenever the option is offered at all.
-        if (formatSelect && format && format !== formatSelect.value) {
-            changes.format = format;
+        if (type === 'videos' && format !== (item.ownFormat || '')) {
+            if (format) changes.format = format;
+            else changes.inheritFormat = true;
         }
         if (type === 'videos') {
             for (const flag of ['graphicContent', 'removedElsewhere']) {
@@ -114,7 +115,7 @@ function ContentEditModal({ open, type, item, onClose, onSave, saving, slug }) {
                     />
                 ))}
 
-                {formatSelect && (
+                {type === 'videos' && (
                     <div>
                         <FieldLabel>{t('formats.label')}</FieldLabel>
                         <select
@@ -122,8 +123,9 @@ function ContentEditModal({ open, type, item, onClose, onSave, saving, slug }) {
                             onChange={(e) => setFormat(e.target.value)}
                             className="w-full px-3.5 py-2.5 rounded-md border border-border outline-none focus:border-primary transition-colors bg-surface"
                         >
-                            {formatSelect.options.map((option) => (
-                                <option key={option.value || 'inherit'} value={option.value}>{option.label}</option>
+                            <option value="">{t('formats.inheritPlain')}</option>
+                            {formats.map(({ name }) => (
+                                <option key={name} value={name}>{formatLabel(name)}</option>
                             ))}
                         </select>
                     </div>

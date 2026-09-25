@@ -898,6 +898,7 @@ export const ar = {
         label: 'النوع',
         // The option a video with no format of its own sits on: it reads as its channel's default.
         inherit: 'حسب القناة ({format})',
+        inheritPlain: 'حسب القناة',
         unset: 'بدون تحديد',
         channelDefaultLabel: 'ما تصنعه القناة غالبًا',
         channelDefaultHint: 'يُطبَّق على كل فيديو لم تحدّد نوعه، ومنها الفيديوهات المستوردة من يوتيوب. ويمكنك تغيير نوع أي فيديو على حدة.',

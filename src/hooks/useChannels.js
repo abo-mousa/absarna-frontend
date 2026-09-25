@@ -158,6 +158,8 @@ export const useToggleSubscription = (channelId) => {
             // prefix match reaches this viewer's copy without the hook needing the scope itself.
             queryClient.invalidateQueries({ queryKey: ['subscription-status', channelId] });
             queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
+            // The directory leaves out followed channels, so following one moves it out of there.
+            queryClient.invalidateQueries({ queryKey: ['channel-directory'] });
             // The feed's "من القنوات التي تتابعها" section is exactly this list.
             queryClient.invalidateQueries({ queryKey: ['feed'] });
         },
@@ -176,6 +178,21 @@ export const useToggleSubscription = (channelId) => {
  * page, heavier with every channel created, and past the hundredth channel the rest silently did
  * not exist. Now twenty, and the sidebar asks for more.
  */
+/**
+ * The Channels page's directory: active channels less the reader's own and followed ones, which
+ * the backend leaves out itself. Viewer-scoped, with the scope last, because the answer depends on
+ * who is asking.
+ */
+export const useChannelDirectory = (size = 24) => {
+    const scope = useUserScope();
+    return useInfiniteQuery({
+        queryKey: ['channel-directory', size, scope],
+        queryFn: async ({ pageParam = 0 }) => (await api.get('/channels/directory', { params: { page: pageParam, size } })).data,
+        initialPageParam: 0,
+        getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.currentPage + 1 : undefined),
+    });
+};
+
 export const useAllChannels = (enabled = true, size = 20) => {
     return useInfiniteQuery({
         queryKey: ['all-channels', size],
@@ -212,6 +229,7 @@ export const useUnsubscribe = () => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
+            queryClient.invalidateQueries({ queryKey: ['channel-directory'] });
         },
     });
 };

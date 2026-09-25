@@ -676,6 +676,7 @@ export const en = {
         },
         label: 'Format',
         inherit: 'Same as the channel ({format})',
+        inheritPlain: 'Same as the channel',
         unset: 'Not set',
         channelDefaultLabel: 'What this channel mostly makes',
         channelDefaultHint: 'Applies to every video whose format you have not set, imported YouTube videos included. You can still change any single video.',

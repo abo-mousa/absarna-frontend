@@ -550,6 +550,14 @@ What this app relies on; the mirror lives in the backend's `CLAUDE.md`.
   channel). Call it when the user declines a resume offer.
 - **`GET /api/search` and `/api/search/suggestions` answer the same question** — the dropdown is a
   preview of what Enter will show. If they diverge, it is a backend bug; don't paper over it here.
+- **Rules live on the backend; this app displays.** A mobile app is planned, and any rule written
+  here is one it would have to copy and could copy differently. So the SPA does not keep the list
+  of formats (`GET /api/formats`), decide what counts as "reading now" (`?inProgress=true`), group
+  books into shelves (`/api/books/shelves`), subtract followed channels from the directory
+  (`/api/channels/directory`), pick Today's feed row (`fromFeed`), or divide progress (every
+  `progress` field is a 0–1 fraction from the server). What stays here is presentation and
+  wording: the kicker's sentence, dates and digits, the Hijri date, which tab is active. When a
+  new feature needs a decision, add it to a response rather than to `lib/`.
 - **`/` is Today, a dashboard that ENDS; the feed that keeps loading is Discover (`/discover`).**
   `GET /api/today` sends the week (finished counts, never a streak), what to continue (the next
   episode in the series' public order, with a resume position), the news, and one "because you

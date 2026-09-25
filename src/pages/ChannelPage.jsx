@@ -386,7 +386,7 @@ function ChannelPage() {
                 <QueryState isEmpty={books.length === 0} emptyTitle={t('books.emptyOnChannel')}>
                     <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-x-5 gap-y-8">
                         {books.map((book) => (
-                            <BookCard key={book.id} book={book} currentPage={readingProgress[book.id]} />
+                            <BookCard key={book.id} book={book} progress={readingProgress[book.id]} />
                         ))}
                     </div>
 

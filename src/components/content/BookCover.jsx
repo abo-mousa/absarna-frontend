@@ -2,17 +2,12 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { resolveMediaUrl } from '@/lib/media';
 
-// Percent read, for the small progress bar on the cover — same idea as VideoCard's
-// watched-percent, hidden below 1% so a barely-opened book doesn't show a sliver.
-function readPercentOf(book, currentPage) {
-    if (!currentPage || !book?.pages) return null;
-    const percent = (currentPage / book.pages) * 100;
-    return percent > 1 ? Math.min(100, percent) : null;
-}
-
 /**
  * A book's cover as a link to the book — one drawing for BookCard's row and the Books page's
  * shelves, so the two can never disagree about what a book looks like.
+ *
+ * <p>`progress` is the backend's fraction read (`BookReadingHistoryDTO.progress`), never
+ * worked out here from pages.
  *
  * <p>The preview image when there is one and it loads. It is not presigned; resolveMediaUrl
  * returns null for an object key, and it can also be an owner-supplied external URL that is dead,
@@ -24,10 +19,11 @@ function readPercentOf(book, currentPage) {
  * Arabic. A shadow's offset is physical with no logical form, so it takes `rtl:`/`ltr:`, like the
  * sidebar drawer's transform.
  */
-function BookCover({ book, currentPage, className = 'w-24' }) {
+function BookCover({ book, progress, className = 'w-24' }) {
     const [previewFailed, setPreviewFailed] = useState(false);
     const previewUrl = !previewFailed ? resolveMediaUrl(book.previewImageUrl) : null;
-    const readPercent = readPercentOf(book, currentPage);
+    // The backend's fraction (0–1); below 1% it would draw a sliver that says nothing.
+    const readPercent = progress > 0.01 ? Math.min(1, progress) * 100 : null;
 
     return (
         <Link

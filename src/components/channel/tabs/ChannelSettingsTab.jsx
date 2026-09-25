@@ -11,7 +11,8 @@ import { isPlatformAdmin, isChannelOwner } from '@/lib/user';
 import { t } from '@/i18n';
 import { describeError } from '@/lib/describeError';
 import { FieldLabel } from '../ContentPublishForm';
-import { FORMATS, formatLabel } from '@/lib/formats';
+import { formatLabel } from '@/lib/formats';
+import { useFormats } from '@/hooks/useVideos';
 
 /**
  * The channel's own properties: name and description — and its two pictures.
@@ -23,6 +24,7 @@ export default function ChannelSettingsTab({ slug, channel, youtubeState, isOwne
     const { showToast } = useToast();
     const { user } = useAuth();
     const updateChannel = useUpdateChannel(slug, channel?.id);
+    const { data: formats = [] } = useFormats();
     const [saving, setSaving] = useState(false);
     // Platform admin only, and the request is only made for one — the same shape
     // YouTubeImportPanel's admin attestation uses. An owner reaching this tab never asks for it,
@@ -44,10 +46,12 @@ export default function ChannelSettingsTab({ slug, channel, youtubeState, isOwne
         e.preventDefault();
         setSaving(true);
         try {
-            // An empty default is left out rather than sent: '' is not a format, and the PATCH
-            // merges, so leaving the field out is how "no change" is said.
+            // '' is not a format: choosing "no default" sends clearDefaultFormat, which the backend
+            // added because its PATCH merges and cannot hear a null.
             const { defaultFormat, ...rest } = form;
-            await updateChannel.mutateAsync(defaultFormat ? { ...rest, defaultFormat } : rest);
+            await updateChannel.mutateAsync(defaultFormat
+                ? { ...rest, defaultFormat }
+                : { ...rest, clearDefaultFormat: !!channel.defaultFormat });
             showToast(t('channelManage.saved'), 'success');
         } catch (err) {
             showToast(describeError(err, t('channelManage.saveFailed')), 'error');
@@ -71,8 +75,7 @@ export default function ChannelSettingsTab({ slug, channel, youtubeState, isOwne
             <Input label={t('fields.description')} textarea rows={3} value={form.description} onChange={field('description')} />
             {/* "What this channel mostly makes": the format every video with none of its own
                 reads as, imports included — so an imported catalogue is sorted by one choice
-                here rather than an edit per video. "No default" is offered only while there is
-                none, because the PATCH cannot clear one (it merges, skipping nulls). */}
+                here rather than an edit per video. The list is the backend's. */}
             <div>
                 <FieldLabel>{t('formats.channelDefaultLabel')}</FieldLabel>
                 <p className="text-sm text-text-muted mb-2">{t('formats.channelDefaultHint')}</p>
@@ -81,9 +84,9 @@ export default function ChannelSettingsTab({ slug, channel, youtubeState, isOwne
                     onChange={field('defaultFormat')}
                     className="w-full px-3.5 py-2.5 rounded-md border border-border outline-none focus:border-primary transition-colors bg-surface"
                 >
-                    {!channel.defaultFormat && <option value="">{t('formats.channelDefaultNone')}</option>}
-                    {FORMATS.map((value) => (
-                        <option key={value} value={value}>{formatLabel(value)}</option>
+                    <option value="">{t('formats.channelDefaultNone')}</option>
+                    {formats.map(({ name }) => (
+                        <option key={name} value={name}>{formatLabel(name)}</option>
                     ))}
                 </select>
             </div>

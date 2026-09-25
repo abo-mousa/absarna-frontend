@@ -62,9 +62,9 @@ export const useCategories = () => {
 };
 
 /**
- * Discover's format chips: the formats some reachable video has, explicitly or through its
- * channel's default, so a chip never leads to an empty page. Static like the categories: a new
- * format appearing is not something a reader waits on.
+ * Every format as `{name, family, inUse}` (backend `VideoFormatInfo`): forms offer all of them,
+ * Discover's chips the ones `inUse`, so a chip never leads to an empty page. Static like the
+ * categories: a new format appearing is not something a reader waits on.
  */
 export const useFormats = () => {
     return useQuery({
@@ -249,10 +249,28 @@ export const useReadingHistory = (enabled = true) => {
 };
 
 // bookId -> currentPage, for BookCard's read-progress bar.
+/**
+ * The books being read now — the backend's one rule (`inProgress`), shared with the Today page,
+ * so no client decides for itself what "in progress" means. Under the `reading-history` prefix,
+ * so recording progress invalidates it with the rest of the history.
+ */
+export const useReadingNow = (enabled = true, limit = 3) => {
+    const scope = useUserScope();
+    return useQuery({
+        queryKey: ['reading-history', { inProgress: true, limit }, scope],
+        queryFn: async () => (await api.get('/user/reading-history', { params: { inProgress: true, limit } })).data,
+        enabled,
+    });
+};
+
+/**
+ * bookId → how far through it (0–1), as the backend computed it (`BookReadingHistoryDTO.progress`),
+ * for the thin bar on a book's cover. The division is the server's, not this client's.
+ */
 export const useReadingProgressMap = (enabled = true) => {
     const { data: history = [] } = useReadingHistory(enabled);
     return useMemo(
-        () => Object.fromEntries(history.map((entry) => [entry.bookId, entry.currentPage])),
+        () => Object.fromEntries(history.map((entry) => [entry.bookId, entry.progress])),
         [history]
     );
 };

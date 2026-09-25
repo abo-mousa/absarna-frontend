@@ -4,14 +4,12 @@ import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
 import { QueryState, Input, Cartouche } from '../components/ui';
 import { BookCard, BookCover } from '../components/content';
-import { useReadingProgressMap, useReadingHistory } from '../hooks/useVideos';
-import { useBooks, useBookCategories } from '../hooks/useBooks';
+import { useReadingProgressMap, useReadingNow } from '../hooks/useVideos';
+import { useBooks, useBookCategories, useBookShelves } from '../hooks/useBooks';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { t } from '@/i18n';
 
 const PAGE_SIZE = 12;
-/** Covers per shelf: enough to fill a wide row, and the shelf's own link opens the rest. */
-const SHELF_SIZE = 10;
 
 // The backend's names (`ListingSort`); the order itself is the server's, never this page's.
 const SORTS = [
@@ -45,12 +43,12 @@ function Books() {
     // SHELVES when nothing is narrowed and there is more than one kind of book: what the reader
     // has open, then one shelf of covers per category — a library walked along, where the same
     // books in one sorted grid read as a list. A search, a chosen category or a single-category
-    // catalogue keeps the grid below, which is how a particular book is FOUND.
+    // catalogue keeps the grid below, which is how a particular book is FOUND. Which categories,
+    // which books and what counts as "reading now" are all the backend's.
+    const shelvesQuery = useBookShelves(sortBy, !filtering && categories.length > 1);
+    const shelfList = shelvesQuery.data || [];
     const shelves = !filtering && categories.length > 1;
-    const { data: readingHistory = [] } = useReadingHistory(!!token && shelves);
-    const readingNow = readingHistory
-        .filter((entry) => entry.book && entry.currentPage > 1 && (!entry.book.pages || entry.currentPage < entry.book.pages))
-        .slice(0, 3);
+    const { data: readingNow = [] } = useReadingNow(!!token && shelves);
 
 
 
@@ -102,7 +100,7 @@ function Books() {
                     <Cartouche title={t('books.readingNow')} />
                     <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-x-5 gap-y-8">
                         {readingNow.map((entry) => (
-                            <BookCard key={entry.bookId} book={entry.book} currentPage={entry.currentPage} />
+                            <BookCard key={entry.bookId} book={entry.book} progress={entry.progress} />
                         ))}
                     </div>
                 </section>
@@ -113,15 +111,15 @@ function Books() {
                 // Shelf renders nothing when it has no books, so without this an outage read as an
                 // empty library rather than as an error with a retry.
                 <QueryState
-                    isLoading={isLoading}
-                    isError={isError}
-                    error={error}
-                    onRetry={refetch}
+                    isLoading={shelvesQuery.isLoading}
+                    isError={shelvesQuery.isError}
+                    error={shelvesQuery.error}
+                    onRetry={shelvesQuery.refetch}
                     errorTitle={t('books.loadFailed')}
                 >
                     <div className="flex flex-col gap-10">
-                        {categories.map((c) => (
-                            <Shelf key={c} category={c} sort={sortBy} progress={readingProgress} onOpen={() => setCategory(c)} />
+                        {shelfList.map((shelf) => (
+                            <Shelf key={shelf.category} shelf={shelf} progress={readingProgress} onOpen={() => setCategory(shelf.category)} />
                         ))}
                     </div>
                 </QueryState>
@@ -141,7 +139,7 @@ function Books() {
             >
                 <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-x-5 gap-y-8">
                     {books.map((book) => (
-                        <BookCard key={book.id} book={book} currentPage={readingProgress[book.id]} />
+                        <BookCard key={book.id} book={book} progress={readingProgress[book.id]} />
                     ))}
                 </div>
 
@@ -164,24 +162,20 @@ function Books() {
 
 /**
  * One category as a shelf of covers, scrolling sideways on a narrow screen rather than wrapping,
- * the way a shelf does. Each shelf is its own request, which is fine for a handful of categories;
- * a grouped endpoint would save the round trips if they grow. "See all" narrows the page to the
- * category, which is the grid view with its search and sort.
+ * the way a shelf does. Its books come with the page's one shelves request. "See all" narrows the
+ * page to the category, which is the grid view with its search and sort.
  */
-function Shelf({ category, sort, progress, onOpen }) {
-    const { data, isLoading } = useBooks(SHELF_SIZE, { sort, category, search: '' });
-    const books = data?.pages[0]?.content || [];
-    if (!isLoading && books.length === 0) return null;
+function Shelf({ shelf, progress, onOpen }) {
     return (
         <section>
             <Cartouche
-                title={category}
+                title={shelf.category}
                 action={<button type="button" onClick={onOpen} className="text-primary hover:underline">{t('books.shelfAll')}</button>}
             />
             <div className="flex gap-5 overflow-x-auto pb-3 border-b-4 border-border-light">
-                {books.map((book) => (
+                {shelf.books.map((book) => (
                     <div key={book.id} className="w-28 flex-shrink-0">
-                        <BookCover book={book} currentPage={progress[book.id]} className="w-28" />
+                        <BookCover book={book} progress={progress[book.id]} className="w-28" />
                         <p dir="auto" className="mt-2 text-xs font-semibold leading-snug line-clamp-2">{book.title}</p>
                     </div>
                 ))}

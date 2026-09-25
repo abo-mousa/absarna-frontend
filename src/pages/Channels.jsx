@@ -3,7 +3,7 @@ import { Plus, Settings } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
 import { QueryState, Cartouche, Avatar } from '../components/ui';
-import { useAllChannels, useSubscriptions, useMyChannels } from '../hooks/useChannels';
+import { useChannelDirectory, useSubscriptions, useMyChannels } from '../hooks/useChannels';
 import { resolveMediaUrl } from '@/lib/media';
 import { t } from '@/i18n';
 
@@ -12,21 +12,17 @@ import { t } from '@/i18n';
  * follow, and the directory of everyone else — what the sidebar's three channel lists were, given a
  * page of their own instead of a column on every page.
  *
- * <p>The directory leaves out channels already shown above it, as the sidebar did, so no channel
- * is listed twice. Directory cards carry no subscribe button: each one asks for its own status,
+ * <p>The directory is the backend's (`GET /api/channels/directory`): it leaves out the reader's own
+ * and followed channels itself, so no client subtracts them. Directory cards carry no subscribe button: each one asks for its own status,
  * and a page of them would be a request per channel — the channel's own page has the button.
  */
 function Channels() {
     const { token } = useAuth();
     const { data: myChannels = [] } = useMyChannels(!!token);
     const { data: subscriptions = [] } = useSubscriptions(!!token);
-    const directory = useAllChannels(true, 24);
-    const all = directory.data?.pages.flatMap((page) => page.content) ?? [];
-
-    const mine = new Set(myChannels.map((c) => c.slug));
-    const followed = subscriptions.filter((sub) => !mine.has(sub.channelSlug));
-    const followedSlugs = new Set(followed.map((sub) => sub.channelSlug));
-    const others = all.filter((c) => !mine.has(c.slug) && !followedSlugs.has(c.slug));
+    const directory = useChannelDirectory();
+    const others = directory.data?.pages.flatMap((page) => page.content) ?? [];
+    const followed = subscriptions;
 
     return (
         <PageShell contentClassName="max-w-[1100px] mx-auto w-full px-4 sm:px-6 py-8">
@@ -84,9 +80,9 @@ function Channels() {
                         isError={directory.isError}
                         error={directory.error}
                         onRetry={directory.refetch}
-                        // "No channels yet" only when there are none at all: a reader who follows
-                        // every channel has an empty directory, not an empty platform.
-                        isEmpty={all.length === 0 && !directory.hasNextPage}
+                        // A reader who follows every channel gets an empty directory; the message is
+                        // only for someone who owns and follows nothing either.
+                        isEmpty={others.length === 0 && myChannels.length === 0 && followed.length === 0}
                         errorTitle={t('channelsPage.loadFailed')}
                         emptyTitle={t('channelsPage.empty')}
                     >
@@ -107,8 +103,6 @@ function Channels() {
                                 </Link>
                             ))}
                         </div>
-                        {/* Offered even when this page filtered down to nothing (every channel on it
-                            is one the reader owns or follows), because the next page may not be. */}
                         {directory.hasNextPage && (
                             <div className="text-center mt-6">
                                 <button

@@ -17,7 +17,8 @@ import { useUploadOriginal } from '@/hooks/useChannelYouTube';
 import { describeError } from '@/lib/describeError';
 import { stripEmpty } from '@/lib/forms';
 import { t } from '@/i18n';
-import { formatSelectOptions } from '@/lib/formats';
+import { formatLabel } from '@/lib/formats';
+import { useFormats } from '@/hooks/useVideos';
 
 // Named so that "reset the form after publishing" is one reference rather than a second copy of
 // the field list that can silently fall out of step with the first.
@@ -59,6 +60,8 @@ export function videoPageHref(video) {
  * shows the progress, and reopening it shows the form as it was left.
  */
 export default function VideosTab({ slug, channel, youtubeState, isOwner, active }) {
+    // Every format, from the backend: the form offers the list the server keeps, not a copy.
+    const { data: formats = [] } = useFormats();
     const [view, setView] = useState('all');
     // A series object, 'none' for the videos in no series, or null for the series list.
     const [openSeries, setOpenSeries] = useState(null);
@@ -227,8 +230,13 @@ export default function VideosTab({ slug, channel, youtubeState, isOwner, active
                             onChange={field('format')}
                             className="w-full px-3.5 py-2.5 rounded-md border border-border outline-none focus:border-primary transition-colors bg-surface"
                         >
-                            {formatSelectOptions(null, channel?.defaultFormat).options.map((option) => (
-                                <option key={option.value || 'inherit'} value={option.value}>{option.label}</option>
+                            <option value="">
+                                {channel?.defaultFormat
+                                    ? t('formats.inherit', { format: formatLabel(channel.defaultFormat) })
+                                    : t('formats.unset')}
+                            </option>
+                            {formats.map(({ name }) => (
+                                <option key={name} value={name}>{formatLabel(name)}</option>
                             ))}
                         </select>
                     </div>
