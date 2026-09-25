@@ -166,6 +166,7 @@ export const useToggleSubscription = (channelId) => {
             queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
             // The directory leaves out followed channels, so following one moves it out of there.
             queryClient.invalidateQueries({ queryKey: ['channel-directory'] });
+            queryClient.invalidateQueries({ queryKey: ['channels-suggested'] });
             // The feed's "من القنوات التي تتابعها" section is exactly this list.
             queryClient.invalidateQueries({ queryKey: ['feed'] });
         },
@@ -196,6 +197,19 @@ export const useChannelDirectory = (size = 24) => {
         queryFn: async ({ pageParam = 0 }) => (await api.get('/channels/directory', { params: { page: pageParam, size } })).data,
         initialPageParam: 0,
         getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.currentPage + 1 : undefined),
+    });
+};
+
+/**
+ * Channels to suggest to this reader, ranked by the backend (`GET /api/channels/suggested`): the
+ * largest public catalogues, less their own and the ones they follow. User-scoped, because what
+ * is left out depends on who is asking; a subscribe toggle invalidates it.
+ */
+export const useSuggestedChannels = (size = 8) => {
+    const scope = useUserScope();
+    return useQuery({
+        queryKey: ['channels-suggested', size, scope],
+        queryFn: async () => (await api.get('/channels/suggested', { params: { size } })).data || [],
     });
 };
 

@@ -851,9 +851,12 @@ export const ar = {
     // Discover's channel column (layout/ChannelRail), wide screens only.
     channelRail: {
         label: 'القنوات',
-        following: 'قنوات تتابعها',
-        others: 'قنوات أخرى',
-        all: 'الكل',
+        mine: 'قنواتي',
+        manage: 'إدارة القناة',
+        following: 'اشتراكاتك',
+        manageFollowing: 'إدارة الاشتراكات',
+        suggested: 'قنوات مقترحة',
+        all: 'كل القنوات',
     },
 
     guide: {

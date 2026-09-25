@@ -26,7 +26,7 @@ import { t } from '@/i18n';
  */
 export const TAB_COLUMN = 'max-w-[1200px] mx-auto w-full px-4 sm:px-6 py-8';
 
-function PageShell({ children, contentClassName = '', tab = false }) {
+function PageShell({ children, contentClassName = '', tab = false, sidebar = null }) {
     const { user } = useAuth();
     const unverified = !!user && user.emailVerified === false;
 
@@ -51,7 +51,13 @@ function PageShell({ children, contentClassName = '', tab = false }) {
             )}
             {/* tabIndex=-1 lets route-change navigation (App.jsx) move focus here
                 programmatically without making it a normal tab stop. */}
-            <main id="main-content" tabIndex={-1} className={`flex-1 min-w-0 outline-none ${tab ? TAB_COLUMN : ''} ${contentClassName}`}>{children}</main>
+            {/* `sidebar` is Discover's channel column and nobody else's (see ChannelRail): it sits
+                against the reading-start edge of the window, and the page's own column centres in
+                what is left beside it. */}
+            <div className="flex flex-1 min-w-0">
+                {sidebar}
+                <main id="main-content" tabIndex={-1} className={`flex-1 min-w-0 outline-none ${tab ? TAB_COLUMN : ''} ${contentClassName}`}>{children}</main>
+            </div>
             <Footer />
             {/* Rendered from the shell rather than from App, so it sits inside the same document
                 flow as the footer and cannot end up above a route that renders its own chrome.

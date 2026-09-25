@@ -630,9 +630,12 @@ export const en = {
 
     channelRail: {
         label: 'Channels',
-        following: 'Channels you follow',
-        others: 'More channels',
-        all: 'See all',
+        mine: 'My channels',
+        manage: 'Manage channel',
+        following: 'Your subscriptions',
+        manageFollowing: 'Manage subscriptions',
+        suggested: 'Suggested channels',
+        all: 'All channels',
     },
 
     guide: {

@@ -194,10 +194,12 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   saved items are in the account menu; the channel lists are the Channels page. A column of links
   on every page and a hamburger drawer were the plainest YouTube marks the app had — don't bring
   either back. **The one exception is Discover's channel column** (`layout/ChannelRail`, product
-  owner's call, 2026-09-25): wide screens only, inside the tab column below the header, followed
-  channels then the backend's directory. Browsing is where it earns its room; Today stays without
-  it, and there is still no drawer. Beside it Discover's grid is three wide at most, and
-  `useGridColumns` counts the same, or `fitFeedToRows` leaves broken rows.
+  owner's call, 2026-09-25): the old sidebar's shape — 240px, against the window's reading-start
+  edge, sticky under the navbar, passed to `PageShell` as `sidebar` — holding the reader's own
+  channels, their subscriptions, and `GET /api/channels/suggested` (the backend's ranking, the same
+  one Today's welcome uses). Wide screens only; Today stays without it, and there is still no
+  drawer. Beside it Discover's grid is three wide below `2xl`, and `useGridColumns` counts the
+  same, or `fitFeedToRows` leaves broken rows.
 - **The navbar is full-bleed on purpose — do not put a `max-w`/`mx-auto` back on it.** It had
   `max-w-[1400px] mx-auto`, which is right for a column of prose and wrong for a bar whose content
   is two anchored ends: past 1400px the cap stopped moving the logo and the account controls

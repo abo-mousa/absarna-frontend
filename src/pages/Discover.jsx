@@ -209,13 +209,8 @@ function Discover() {
 
 
     return (
-        <PageShell tab>
+        <PageShell tab sidebar={<ChannelRail />}>
             <PageHeader title={t('nav.tabs.discover')} />
-            {/* The channel column (wide screens only) beside everything below the header — so the
-                title and its rule stay exactly where every other tab has them. */}
-            <div className="lg:grid lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-8">
-            <ChannelRail />
-            <div className="min-w-0">
             <div className="flex gap-2 flex-wrap mb-5">
                 <button
                     onClick={() => { setView('feed'); setSelectedCategory(''); setSelectedFormat(''); }}
@@ -275,7 +270,7 @@ function Discover() {
                             return (
                                 <div key={section.key}>
                                     <Cartouche title={section.title} />
-                                    <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-x-5 gap-y-8">
+                                    <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 2xl:grid-cols-4 gap-x-5 gap-y-8">
                                         {items.map((video) => (
                                             <VideoCard {...videoCardProps(video)} />
                                         ))}
@@ -288,7 +283,7 @@ function Discover() {
                     {fitted.tail.length > 0 && (
                         <div className="mt-8">
                             <Cartouche title={t('home.more')} />
-                            <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-x-5 gap-y-8">
+                            <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 2xl:grid-cols-4 gap-x-5 gap-y-8">
                                 {fitted.tail.map((video) => (
                                     <VideoCard {...videoCardProps(video)} />
                                 ))}
@@ -320,7 +315,7 @@ function Discover() {
                         emptyTitle={t('home.empty')}
                         emptyDescription={t('common.comingSoon')}
                     >
-                        <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-x-5 gap-y-8">
+                        <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 2xl:grid-cols-4 gap-x-5 gap-y-8">
                             {infiniteData?.pages.flatMap((page) => page.content).map((video) => (
                                 <VideoCard {...videoCardProps(video)} />
                             ))}
@@ -340,9 +335,6 @@ function Discover() {
                     </QueryState>
                 </div>
             )}
-
-            </div>
-            </div>
 
             <Modal open={!!deletingVideo} onClose={() => setDeletingVideo(null)} title={t('home.deleteVideoTitle')} maxWidth="400px">
                 <p className="text-text-secondary mb-5">
