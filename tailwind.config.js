@@ -68,6 +68,9 @@ export default {
         md: '3px',
         lg: '4px',
         xl: '6px',
+        // A video card's picture, and only that: softer than the near-square scale above, which
+        // read as sharp on a thumbnail, and still well short of a video site's 12px.
+        card: '8px',
       },
       boxShadow: {
         sm: '0 1px 2px rgba(0,0,0,0.04)',

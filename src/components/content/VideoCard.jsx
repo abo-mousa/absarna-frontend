@@ -119,9 +119,9 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
             // site before anything in it had been read. The thumbnail keeps a hairline so a pale
             // frame still has an edge; a hidden video's is dashed, which is the signal the card's
             // own border used to carry.
-            className="group cursor-pointer rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 focus-visible:ring-offset-bg"
+            className="group cursor-pointer rounded-card focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 focus-visible:ring-offset-bg"
         >
-            <div className={`relative aspect-video bg-surface-hover overflow-hidden rounded-md outline outline-1 -outline-offset-1 ${
+            <div className={`relative aspect-video bg-surface-hover overflow-hidden rounded-card outline outline-1 -outline-offset-1 ${
                 video.visible === false ? 'outline-dashed outline-text-muted' : 'outline-black/5 dark:outline-white/5'
             }`}>
                 {thumbnail ? (

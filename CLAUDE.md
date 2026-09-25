@@ -112,7 +112,7 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   disagree — that column is read by **the account emails only**, and the boot is the trigger rather
   than the click because the click reloads the page out from under its own request.
 - **The look is near-square, boxless and gold-accented, and the star is its one ornament.** Radii
-  are 2/3/4/6px (`sm`–`xl`); `rounded-full` still means a toggle or a person. Cards have **no box**
+  are 2/3/4/6px (`sm`–`xl`), plus `card` (8px) for a video card's picture alone; `rounded-full` still means a toggle or a person. Cards have **no box**
   — no border, fill or shadow; the picture keeps a hairline and a hidden video's is dashed. The
   eight-pointed star (`ui/Khatam`, the logo's own outer ring) marks section headings
   (`Cartouche`), kickers and progress — never a crescent, dome or lantern. **Gold has two tokens and
