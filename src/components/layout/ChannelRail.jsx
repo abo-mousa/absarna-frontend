@@ -3,7 +3,9 @@ import { Settings } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useMyChannels, useSubscriptions, useSuggestedChannels } from '../../hooks/useChannels';
 import { Avatar, KhatamStar } from '../ui';
+import { ArrowForward } from '../ui/DirectionalIcon';
 import { resolveMediaUrl } from '@/lib/media';
+import { formatChipLabel } from '@/lib/formats';
 import { t } from '@/i18n';
 
 /** Suggestions shown; the Channels tab has the rest. */
@@ -20,6 +22,13 @@ const SUGGESTED_SHOWN = 8;
  * nowhere else — not on Today, a page that ends, and never as a drawer: below `lg` the Channels
  * tab is this list.
  *
+ * <p><b>In the site's own hand, not a plain list of links.</b> Each section opens like the page's
+ * own headings — the star, a serif title, a rule fading out after it — at the column's scale. A
+ * row answers the pointer the way a card does: the name turns gold-ink and a gold hairline marks
+ * its reading-start edge. A suggested channel carries its kind in the kicker's gold, «محاضرات»,
+ * «وثائقيات» — the channel's default format, when it has one — so a suggestion says what it is
+ * and not only what it is called. The panel ends on the star, faintly, as Today's page does.
+ *
  * <p>The suggestions are the backend's (`GET /api/channels/suggested`, the same ranking as Today's
  * welcome), so nothing here decides which channel to put forward — or subtracts the followed ones.
  * Sticky at `--navbar-h` and scrolling on its own, so a long follow list never pushes the feed.
@@ -33,70 +42,105 @@ function ChannelRail() {
     return (
         <aside
             aria-label={t('channelRail.label')}
-            className="hidden lg:block w-[240px] flex-shrink-0 bg-surface border-e border-border-light py-4 overflow-y-auto
-                sticky top-[var(--navbar-h)] h-[calc(100vh-var(--navbar-h))]"
+            className="hidden lg:flex flex-col w-[248px] flex-shrink-0 bg-surface border-e border-border-light
+                sticky top-[var(--navbar-h)] h-[calc(100vh-var(--navbar-h))] overflow-y-auto"
         >
-            {myChannels.length > 0 && (
-                <RailSection title={t('channelRail.mine')}>
-                    {myChannels.map((channel) => (
-                        <RailChannel key={channel.id} slug={channel.slug} name={channel.name} logoUrl={channel.logoUrl} manage />
-                    ))}
-                </RailSection>
-            )}
+            <div className="flex-1 px-3 pt-6 pb-4">
+                {myChannels.length > 0 && (
+                    <RailSection title={t('channelRail.mine')}>
+                        {myChannels.map((channel) => (
+                            <RailChannel key={channel.id} slug={channel.slug} name={channel.name} logoUrl={channel.logoUrl} manage />
+                        ))}
+                    </RailSection>
+                )}
 
-            {subscriptions.length > 0 && (
-                <RailSection title={t('channelRail.following')} more={{ to: '/subscriptions', label: t('channelRail.manageFollowing') }}>
-                    {subscriptions.map((sub) => (
-                        <RailChannel key={sub.subscriptionId} slug={sub.channelSlug} name={sub.channelName} logoUrl={sub.channelLogoUrl} />
-                    ))}
-                </RailSection>
-            )}
+                {subscriptions.length > 0 && (
+                    <RailSection title={t('channelRail.following')} more={{ to: '/subscriptions', label: t('channelRail.manageFollowing') }}>
+                        {subscriptions.map((sub) => (
+                            <RailChannel key={sub.subscriptionId} slug={sub.channelSlug} name={sub.channelName} logoUrl={sub.channelLogoUrl} />
+                        ))}
+                    </RailSection>
+                )}
 
-            {suggested.length > 0 && (
-                <RailSection title={t('channelRail.suggested')} more={{ to: '/channels', label: t('channelRail.all') }}>
-                    {suggested.map((channel) => (
-                        <RailChannel key={channel.id} slug={channel.slug} name={channel.name} logoUrl={channel.logoUrl} />
-                    ))}
-                </RailSection>
-            )}
+                {suggested.length > 0 && (
+                    <RailSection title={t('channelRail.suggested')} more={{ to: '/channels', label: t('channelRail.all') }}>
+                        {suggested.map((channel) => (
+                            <RailChannel
+                                key={channel.id}
+                                slug={channel.slug}
+                                name={channel.name}
+                                logoUrl={channel.logoUrl}
+                                kicker={formatChipLabel(channel.defaultFormat)}
+                            />
+                        ))}
+                    </RailSection>
+                )}
+            </div>
+
+            {/* The panel's last line, like Today's colophon: a rule, the star, a rule. */}
+            <div className="flex items-center justify-center gap-2 pb-5" aria-hidden="true">
+                <span className="h-px w-10 bg-border" />
+                <KhatamStar className="w-3 h-3 text-gold/70" />
+                <span className="h-px w-10 bg-border" />
+            </div>
         </aside>
     );
 }
 
+/** The page's Cartouche at the column's scale: star, serif title, a rule fading out after it. */
 function RailSection({ title, more, children }) {
     return (
-        <section className="px-2 mb-5">
-            <h2 className="flex items-center gap-2 text-xs font-bold text-text-muted tracking-wider mb-2 px-3">
+        <section className="mb-7">
+            <div className="flex items-center gap-2 mb-2.5 px-2">
                 <KhatamStar className="w-3 h-3 flex-shrink-0 text-gold" />
-                {title}
-            </h2>
-            <ul>{children}</ul>
+                <h2 className="font-serif text-[1.2rem] font-semibold leading-none text-text-primary whitespace-nowrap">{title}</h2>
+                <span aria-hidden="true" className="flex-1 min-w-3 h-px from-border to-transparent rtl:bg-gradient-to-l ltr:bg-gradient-to-r" />
+            </div>
+            <ul className="flex flex-col gap-0.5">{children}</ul>
             {more && (
-                <Link to={more.to} className="block px-3 pt-1.5 text-xs font-semibold">
+                <Link
+                    to={more.to}
+                    className="inline-flex items-center gap-1 mt-2 px-2 text-xs font-bold text-gold-ink hover:underline"
+                >
                     {more.label}
+                    <ArrowForward size={12} />
                 </Link>
             )}
         </section>
     );
 }
 
-function RailChannel({ slug, name, logoUrl, manage = false }) {
+function RailChannel({ slug, name, logoUrl, kicker = null, manage = false }) {
     return (
-        <li className="flex items-center gap-1">
+        <li className="group/row relative flex items-center gap-1">
+            {/* The hover mark: a gold hairline on the reading-start edge, the rail's version of a
+                card's gold edge. */}
+            <span
+                aria-hidden="true"
+                className="absolute start-0 inset-y-1.5 w-0.5 rounded-full bg-gold opacity-0 group-hover/row:opacity-100 transition-opacity"
+            />
             <Link
                 to={`/channel/${slug}`}
-                className="flex flex-1 min-w-0 items-center gap-2.5 px-3 py-1.5 rounded-md text-[0.85rem] font-medium
-                    text-text-secondary hover:bg-surface-hover hover:text-text-primary hover:no-underline transition-colors"
+                className="flex flex-1 min-w-0 items-center gap-2.5 ps-3 pe-2 py-1.5 rounded-md text-text-secondary
+                    hover:bg-gold-light/60 hover:no-underline focus-visible:bg-gold-light/60 transition-colors"
             >
-                <Avatar src={resolveMediaUrl(logoUrl)} name={name} size="sm" className="!w-6 !h-6 !text-xs flex-shrink-0" />
-                <span dir="auto" className="truncate">{name}</span>
+                <Avatar
+                    src={resolveMediaUrl(logoUrl)}
+                    name={name}
+                    size="sm"
+                    className="!w-8 !h-8 !text-xs flex-shrink-0 ring-1 ring-border-light group-hover/row:ring-gold transition-shadow"
+                />
+                <span className="min-w-0" dir="auto">
+                    <span className="block truncate text-[0.88rem] font-semibold group-hover/row:text-gold-ink transition-colors">{name}</span>
+                    {kicker && <span className="block truncate text-[0.68rem] font-bold text-gold-ink/80">{kicker}</span>}
+                </span>
             </Link>
             {manage && (
                 <Link
                     to={`/channel/${slug}/manage`}
                     title={t('channelRail.manage')}
                     aria-label={t('channelRail.manage')}
-                    className="p-1.5 rounded-md text-text-muted hover:bg-surface-hover hover:text-text-secondary flex-shrink-0"
+                    className="p-1.5 rounded-md text-text-muted hover:bg-gold-light/60 hover:text-gold-ink flex-shrink-0"
                 >
                     <Settings size={14} />
                 </Link>
