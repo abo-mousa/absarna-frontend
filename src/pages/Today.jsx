@@ -1,12 +1,13 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
-import { QueryState, Cartouche, KhatamProgress, KhatamStar } from '../components/ui';
-import { VideoCard } from '../components/content';
+import { QueryState, Cartouche, KhatamProgress, KhatamStar, Avatar } from '../components/ui';
+import { VideoCard, BookCard } from '../components/content';
 import { useToday } from '../hooks/useToday';
 import { useWatchProgressMap } from '../hooks/useVideos';
 import { formatTimestamp } from '@/lib/spans';
 import { formatCount } from '@/lib/numbers';
+import { resolveMediaUrl } from '@/lib/media';
 import { t } from '@/i18n';
 
 const GRID = 'grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-8';
@@ -23,6 +24,11 @@ const GRID = 'grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-
  * <p>Everything personal comes from `GET /api/today` in one response; an anonymous reader gets the
  * news, one row of suggestions and an invitation to sign in. Sections with nothing honest to show
  * are left out rather than shown empty.
+ *
+ * <p>A first visit — anonymous, or signed in with nothing watched, read or followed — would leave
+ * almost every section out, so the backend sends a `welcome` instead: programmes to start from
+ * episode one, channels to follow and new books. Whether a reader is new is its decision; this
+ * page only draws the welcome when it arrives.
  */
 function Today() {
     const navigate = useNavigate();
@@ -45,6 +51,7 @@ function Today() {
     const feedRowTitle = data?.fromFeed?.kind === 'SUBSCRIBED' ? t('home.subscribed') : t('home.discover');
 
     const hasContinue = !!(data?.continueWatching?.length || data?.continueReading?.length);
+    const welcome = data?.welcome;
 
     return (
         <PageShell contentClassName="p-4 sm:p-6">
@@ -56,6 +63,8 @@ function Today() {
                 errorTitle={t('today.loadFailed')}
             >
                 <div className="flex flex-col gap-10">
+                    {welcome && <WelcomeHero signedIn={!!token} />}
+
                     {data?.week && <WeekStrip week={data.week} />}
 
                     {hasContinue && (
@@ -72,7 +81,19 @@ function Today() {
                         </section>
                     )}
 
-                    {!token && (
+                    {welcome?.programmes?.length > 0 && (
+                        <section>
+                            <Cartouche title={t('today.welcome.programmesTitle')} />
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                                {welcome.programmes.map((video) => (
+                                    <ContinueVideo key={video.id} item={{ next: video, progress: 0 }} starting />
+                                ))}
+                            </div>
+                        </section>
+                    )}
+
+                    {/* The hero already invites a new visitor to sign in. */}
+                    {!token && !welcome && (
                         <p className="text-sm text-text-secondary">
                             {t('today.signInPrompt')}{' '}
                             <Link to="/login" className="font-semibold">{t('nav.login')}</Link>
@@ -93,6 +114,39 @@ function Today() {
                         </section>
                     )}
 
+                    {welcome?.channels?.length > 0 && (
+                        <section>
+                            <Cartouche
+                                title={t('today.welcome.channelsTitle')}
+                                action={<Link to="/channels">{t('today.welcome.allChannels')}</Link>}
+                            />
+                            <div className="grid grid-cols-3 sm:grid-cols-6 gap-4">
+                                {welcome.channels.map((channel) => (
+                                    <Link
+                                        key={channel.id}
+                                        to={`/channel/${channel.slug}`}
+                                        className="flex flex-col items-center gap-2 text-center text-sm font-semibold text-text-primary hover:text-primary hover:no-underline"
+                                    >
+                                        <Avatar src={resolveMediaUrl(channel.logoUrl)} name={channel.name} size="lg" />
+                                        <span dir="auto" className="line-clamp-2">{channel.name}</span>
+                                    </Link>
+                                ))}
+                            </div>
+                        </section>
+                    )}
+
+                    {welcome?.books?.length > 0 && (
+                        <section>
+                            <Cartouche
+                                title={t('today.welcome.booksTitle')}
+                                action={<Link to="/books">{t('today.welcome.allBooks')}</Link>}
+                            />
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-5 gap-y-8">
+                                {welcome.books.map((book) => <BookCard key={book.id} book={book} />)}
+                            </div>
+                        </section>
+                    )}
+
                     {feedRow.length > 0 && (
                         <section>
                             <Cartouche
@@ -103,7 +157,7 @@ function Today() {
                         </section>
                     )}
 
-                    <Colophon />
+                    <Colophon newcomer={!!welcome} />
                 </div>
             </QueryState>
         </PageShell>
@@ -151,8 +205,46 @@ function WeekStrip({ week }) {
     );
 }
 
-/** A programme in progress: the star traced as far as the reader has come, and what is next. */
-function ContinueVideo({ item }) {
+/**
+ * The first thing a new reader sees: what this place is for, and — signed out — the way in.
+ * The three purposes are the platform's own: the news, something worth learning, and voices other
+ * platforms took down.
+ */
+function WelcomeHero({ signedIn }) {
+    return (
+        <section className="relative overflow-hidden border border-border-light rounded-lg bg-surface px-5 py-8 sm:px-8 sm:py-10">
+            <KhatamStar className="absolute -bottom-24 -end-20 w-80 h-80 text-gold/10 pointer-events-none" />
+            <div className="relative max-w-[640px]">
+                <h1 className="font-serif text-[2.2rem] sm:text-[2.6rem] font-semibold leading-tight">{t('today.welcome.title')}</h1>
+                <p className="font-reading text-text-secondary mt-3 leading-relaxed">{t('today.welcome.text')}</p>
+                <ul className="flex flex-wrap gap-x-5 gap-y-2 mt-4 text-sm font-semibold">
+                    <li className="flex items-center gap-2"><KhatamStar className="w-3.5 h-3.5 text-gold" />{t('today.welcome.news')}</li>
+                    <li className="flex items-center gap-2"><KhatamStar className="w-3.5 h-3.5 text-primary" />{t('today.welcome.learn')}</li>
+                    <li className="flex items-center gap-2"><KhatamStar className="w-3.5 h-3.5 text-voice" />{t('today.welcome.voice')}</li>
+                </ul>
+                <p className="text-sm text-text-muted mt-5">
+                    {signedIn ? t('today.welcome.howItFills') : t('today.welcome.signInWhy')}
+                </p>
+                {!signedIn && (
+                    <div className="flex flex-wrap gap-3 mt-4">
+                        <Link to="/register" className="px-5 py-2 bg-primary text-white rounded-md font-semibold hover:no-underline">
+                            {t('nav.register')}
+                        </Link>
+                        <Link to="/login" className="px-5 py-2 border border-border rounded-md bg-bg font-semibold hover:no-underline hover:border-primary">
+                            {t('nav.login')}
+                        </Link>
+                    </div>
+                )}
+            </div>
+        </section>
+    );
+}
+
+/**
+ * A programme in progress: the star traced as far as the reader has come, and what is next.
+ * `starting` is the welcome's case — a programme offered from its first episode, nothing traced.
+ */
+function ContinueVideo({ item, starting = false }) {
     const video = item.next;
     const position = video.seriesPosition;
     const total = video.seriesLength;
@@ -174,7 +266,8 @@ function ContinueVideo({ item }) {
                 <div className="text-xs font-bold text-gold-ink mt-1">
                     {item.resumeSeconds
                         ? t('today.resume', { time: formatTimestamp(item.resumeSeconds) })
-                        : position && total ? t('today.next', { position, total }) : null}
+                        : starting && total ? t('today.welcome.startProgramme', { total })
+                            : position && total ? t('today.next', { position, total }) : null}
                 </div>
             </div>
         </Link>
@@ -204,7 +297,7 @@ function ContinueBook({ entry }) {
 }
 
 /** The page's last line: it ends here, and Discover is the way on. */
-function Colophon() {
+function Colophon({ newcomer }) {
     return (
         <footer className="text-center pt-4 pb-2">
             <div className="flex items-center justify-center gap-3 mb-4" aria-hidden="true">
@@ -212,7 +305,9 @@ function Colophon() {
                 <KhatamStar className="w-5 h-5 text-gold" />
                 <span className="h-px w-24 bg-border" />
             </div>
-            <h2 className="font-serif text-[1.6rem] font-semibold">{t('today.colophonTitle')}</h2>
+            <h2 className="font-serif text-[1.6rem] font-semibold">
+                {newcomer ? t('today.welcome.colophonTitle') : t('today.colophonTitle')}
+            </h2>
             <p className="text-sm text-text-muted mt-1">{t('today.colophonText')}</p>
             <Link
                 to="/discover"

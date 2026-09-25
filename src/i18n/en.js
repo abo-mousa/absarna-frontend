@@ -649,6 +649,22 @@ export const en = {
         toDiscover: 'Discover',
         signInPrompt: 'Sign in to see what you started and what you finished this week here.',
         loadFailed: 'Today’s page could not be loaded',
+        welcome: {
+            title: 'Welcome to Absarna',
+            text: 'A place to know what is happening in the world, to learn something worth knowing, and to hear from those silenced on other platforms.',
+            news: 'News and reports',
+            learn: 'Programmes, lectures and books',
+            voice: 'Voices removed elsewhere',
+            howItFills: 'Follow a channel or start a programme, and this page fills with what you started and what you finished.',
+            signInWhy: 'Create an account to follow channels, and to find here what you started and what you finished each week.',
+            programmesTitle: 'Programmes to start',
+            startProgramme: 'Start from episode one of {total}',
+            channelsTitle: 'Channels to follow',
+            allChannels: 'All channels',
+            booksTitle: 'New in the library',
+            allBooks: 'All books',
+            colophonTitle: 'This is your start, and everything you begin will show up here',
+        },
     },
 
     formats: {

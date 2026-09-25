@@ -867,6 +867,23 @@ export const ar = {
         toDiscover: 'اكتشف',
         signInPrompt: 'سجّل الدخول لتظهر هنا تتمّة ما بدأت وما أنجزته هذا الأسبوع.',
         loadFailed: 'تعذّر تحميل صفحة اليوم',
+        // A first visit (the backend's `welcome`): what this place is for, and a way in.
+        welcome: {
+            title: 'أهلاً بك في أبصرنا',
+            text: 'منصّة لتعرف ما يجري في العالم، ولتتعلّم ما ينفعك، ولتسمع من أُسكِت في منصّات أخرى.',
+            news: 'أخبار وتقارير',
+            learn: 'برامج ومحاضرات وكتب',
+            voice: 'أصوات حُذفت في مكان آخر',
+            howItFills: 'تابِع قناة أو ابدأ برنامجًا، وستمتلئ هذه الصفحة بما بدأته وما أنجزته.',
+            signInWhy: 'أنشئ حسابًا لتتابع القنوات، ولتجد هنا تتمّة ما بدأت وما أنجزته كل أسبوع.',
+            programmesTitle: 'برامج تبدأ بها',
+            startProgramme: 'ابدأ من الحلقة الأولى من {total}',
+            channelsTitle: 'قنوات تتابعها',
+            allChannels: 'كل القنوات',
+            booksTitle: 'جديد المكتبة',
+            allBooks: 'كل الكتب',
+            colophonTitle: 'هذه بدايتك، وكل ما تبدؤه سيظهر هنا',
+        },
     },
 
     // What kind of thing a video is (backend VideoFormat). `one` is the singular a card's kicker
