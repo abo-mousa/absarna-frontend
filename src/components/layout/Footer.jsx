@@ -1,7 +1,5 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { SwapLabel } from '../ui';
-import { isViewerIdOff, setViewerIdOff } from '@/lib/viewerId';
 import { t } from '@/i18n';
 import { useConsent } from '@/contexts/ConsentContext';
 
@@ -41,12 +39,7 @@ const footerLinkClass = 'text-text-muted hover:text-text-secondary hover:underli
  * it is a claim about when a human last read the text, which no clock knows.
  */
 function Footer() {
-    const { reset: resetConsent } = useConsent();
-    const [viewerIdOff, setViewerIdOffState] = useState(() => isViewerIdOff());
-    const toggleViewerId = () => {
-        setViewerIdOff(!viewerIdOff);
-        setViewerIdOffState(!viewerIdOff);
-    };
+    const { reset: resetConsent, viewsAllowed, grantViews, denyViews } = useConsent();
     const year = new Date().getFullYear();
 
     return (
@@ -76,11 +69,19 @@ function Footer() {
                     <button type="button" onClick={resetConsent} className={footerLinkClass}>
                         {t('consent.footerLink')}
                     </button>
-                    {/* The view-counting id's off switch, beside the other choice and as easy to
-                        reach: one press, and it is deleted (lib/viewerId). Its words say what the
-                        press will do, and both wordings share one cell so the link does not move. */}
-                    <button type="button" onClick={toggleViewerId} className={footerLinkClass} aria-pressed={viewerIdOff}>
-                        <SwapLabel showing={viewerIdOff ? 'turnOn' : 'turnOff'} faces={{ turnOff: t('legal.footer.viewerIdOff'), turnOn: t('legal.footer.viewerIdOn') }} />
+                    {/* Counting my views: withdraw or allow, as easy as the banner's yes was. Withdrawing
+                        deletes the id at once (denyViews). The words say what a press will do, and
+                        both share one cell so the link does not move. */}
+                    <button
+                        type="button"
+                        onClick={viewsAllowed ? denyViews : grantViews}
+                        className={footerLinkClass}
+                        aria-pressed={viewsAllowed}
+                    >
+                        <SwapLabel
+                            showing={viewsAllowed ? 'withdraw' : 'allow'}
+                            faces={{ withdraw: t('legal.footer.viewsWithdraw'), allow: t('legal.footer.viewsAllow') }}
+                        />
                     </button>
                 </nav>
 

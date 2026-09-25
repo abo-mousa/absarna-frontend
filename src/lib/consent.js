@@ -58,6 +58,26 @@ export function readConsent(storage = safeStorage) {
     return value === GRANTED || value === DENIED ? value : null;
 }
 
+/**
+ * The second, separate choice: counting this visitor's views (a random id kept in the browser —
+ * lib/viewerId). Its own key and its own yes/no, never bundled with YouTube's: consent to one
+ * purpose is not consent to another. Unanswered behaves as refused — nothing is stored or counted.
+ */
+export const VIEWS_CONSENT_KEY = 'consent.views.v1';
+
+export function readViewsConsent(storage = safeStorage) {
+    const value = storage.getItem(VIEWS_CONSENT_KEY);
+    return value === GRANTED || value === DENIED ? value : null;
+}
+
+export function writeViewsConsent(value, storage = safeStorage) {
+    if (value === GRANTED || value === DENIED) {
+        storage.setItem(VIEWS_CONSENT_KEY, value);
+    } else {
+        storage.removeItem(VIEWS_CONSENT_KEY);
+    }
+}
+
 /** Records a decision. `null` clears it, which is what "ask me again" means. */
 export function writeConsent(value, storage = safeStorage) {
     if (value === GRANTED || value === DENIED) {

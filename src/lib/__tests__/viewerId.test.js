@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { viewerId, setViewerIdOff, isViewerIdOff, countsAView, VIEWER_ID_KEY, VIEWER_ID_LIFETIME_MS } from '@/lib/viewerId';
+import { viewerId, forgetViewerId, countsAView, VIEWER_ID_KEY, VIEWER_ID_LIFETIME_MS } from '@/lib/viewerId';
+import { VIEWS_CONSENT_KEY, GRANTED, DENIED } from '@/lib/consent';
 
-const memory = (persistent = true) => {
-    const map = new Map();
+const memory = (consent = GRANTED, persistent = true) => {
+    const map = new Map(consent ? [[VIEWS_CONSENT_KEY, consent]] : []);
     return {
         getItem: (k) => (map.has(k) ? map.get(k) : null),
         setItem: (k, v) => { map.set(k, v); return persistent; },
@@ -11,34 +12,37 @@ const memory = (persistent = true) => {
     };
 };
 
-/** The view-counting id: random, kept thirteen months, never sent while switched off. */
+/** The view-counting id: only with consent, random, kept thirteen months. */
 describe('viewerId', () => {
-    it('creates one id and keeps returning it', () => {
-        const storage = memory();
-        const first = viewerId(1000, storage, () => 'id-1');
-        expect(first).toBe('id-1');
+    it('creates one id after a yes, and keeps returning it', () => {
+        const storage = memory(GRANTED);
+        expect(viewerId(1000, storage, () => 'id-1')).toBe('id-1');
         expect(viewerId(2000, storage, () => 'id-2')).toBe('id-1');
     });
 
+    it('does not exist without consent, refused or unanswered — and a stale one is deleted', () => {
+        expect(viewerId(0, memory(null), () => 'id-1')).toBeNull();
+        const refused = memory(DENIED);
+        refused.map.set(VIEWER_ID_KEY, JSON.stringify({ id: 'old', created: 0 }));
+        expect(viewerId(1, refused, () => 'id-2')).toBeNull();
+        expect(refused.map.has(VIEWER_ID_KEY)).toBe(false);
+    });
+
     it('is replaced once its thirteen months are up', () => {
-        const storage = memory();
+        const storage = memory(GRANTED);
         viewerId(0, storage, () => 'old');
         expect(viewerId(VIEWER_ID_LIFETIME_MS + 1, storage, () => 'new')).toBe('new');
     });
 
-    it('is deleted and not sent while switched off, and comes back when switched on', () => {
-        const storage = memory();
+    it('is forgotten on withdrawal', () => {
+        const storage = memory(GRANTED);
         viewerId(0, storage, () => 'id-1');
-        setViewerIdOff(true, storage);
-        expect(isViewerIdOff(storage)).toBe(true);
+        forgetViewerId(storage);
         expect(storage.map.has(VIEWER_ID_KEY)).toBe(false);
-        expect(viewerId(1, storage, () => 'id-2')).toBeNull();
-        setViewerIdOff(false, storage);
-        expect(viewerId(2, storage, () => 'id-3')).toBe('id-3');
     });
 
     it('sends nothing when the browser will not keep it', () => {
-        expect(viewerId(0, memory(false), () => 'id-1')).toBeNull();
+        expect(viewerId(0, memory(GRANTED, false), () => 'id-1')).toBeNull();
     });
 });
 

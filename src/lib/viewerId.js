@@ -1,4 +1,5 @@
 import { safeStorage } from './safeStorage';
+import { GRANTED, readViewsConsent } from './consent';
 
 /**
  * A signed-out browser's view-counting id — a random UUID, and nothing else: not derived from the
@@ -7,13 +8,15 @@ import { safeStorage } from './safeStorage';
  * visitor once rather than once a day (the backend's ViewerKey keys it and never stores it raw).
  * The product owner's decision of 2026-09-25: «مشاهدات» means different people, for everyone.
  *
- * <p>Thirteen months, then replaced — the backend keeps its rows exactly as long. The reader can
- * switch it off from the footer (`setViewerIdOff`), which deletes it; counting then falls back to
- * the daily key, as it was before. Nothing is created or sent while switched off, and nothing is
- * sent when storage is not persistent, since an id that dies with the page counts nobody better.
+ * <p><b>Only with consent</b> — the visitor's own yes to counting their views, a separate choice in
+ * the consent banner (`consent.views.v1`). Without it no id exists and none is sent, and the
+ * backend does not count that visitor at all: the product owner's rule that a count shown as fact
+ * is never inflated, so a visitor we cannot tell from the next one is not counted. Withdrawing
+ * (the footer) deletes it. Thirteen months, then replaced — the backend keeps its rows as long.
+ * Nothing is sent when storage is not persistent, since an id that dies with the page counts
+ * nobody better.
  */
 export const VIEWER_ID_KEY = 'absarna.viewer.v1';
-export const VIEWER_ID_OFF_KEY = 'absarna.viewer.off';
 export const VIEWER_ID_LIFETIME_MS = 395 * 24 * 60 * 60 * 1000;
 
 const newId = () => (globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : null);
@@ -30,7 +33,11 @@ export function countsAView(method, url) {
 
 /** The id to send, creating or renewing it; null when switched off or unavailable. */
 export function viewerId(now = Date.now(), storage = safeStorage, makeId = newId) {
-    if (storage.getItem(VIEWER_ID_OFF_KEY) === '1') return null;
+    if (readViewsConsent(storage) !== GRANTED) {
+        // No consent, or withdrawn: nothing kept, nothing sent.
+        storage.removeItem(VIEWER_ID_KEY);
+        return null;
+    }
     try {
         const stored = JSON.parse(storage.getItem(VIEWER_ID_KEY) || 'null');
         if (stored && typeof stored.id === 'string' && now - Number(stored.created) < VIEWER_ID_LIFETIME_MS) {
@@ -44,16 +51,7 @@ export function viewerId(now = Date.now(), storage = safeStorage, makeId = newId
     return storage.setItem(VIEWER_ID_KEY, JSON.stringify({ id, created: now })) ? id : null;
 }
 
-export function isViewerIdOff(storage = safeStorage) {
-    return storage.getItem(VIEWER_ID_OFF_KEY) === '1';
-}
-
-/** Switch the id off (deleting it) or back on. */
-export function setViewerIdOff(off, storage = safeStorage) {
-    if (off) {
-        storage.removeItem(VIEWER_ID_KEY);
-        storage.setItem(VIEWER_ID_OFF_KEY, '1');
-    } else {
-        storage.removeItem(VIEWER_ID_OFF_KEY);
-    }
+/** Deletes the id — withdrawing consent does this at once rather than at the next request. */
+export function forgetViewerId(storage = safeStorage) {
+    storage.removeItem(VIEWER_ID_KEY);
 }

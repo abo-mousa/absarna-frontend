@@ -28,9 +28,9 @@ import { t } from '@/i18n';
  * reopens it. Withdrawal has to be as easy as consent was, and a link on every page is that.
  */
 function ConsentBanner() {
-    const { asking, grant, deny } = useConsent();
+    const { asking, grant, deny, askingViews, grantViews, denyViews } = useConsent();
 
-    if (!asking) return null;
+    if (!asking && !askingViews) return null;
 
     return (
         <div
@@ -44,6 +44,9 @@ function ConsentBanner() {
             className="fixed bottom-[calc(3.75rem+env(safe-area-inset-bottom,0px))] lg:bottom-0 inset-x-0 z-50 border-t border-border bg-surface/95 backdrop-blur
                        shadow-[0_-4px_24px_rgba(0,0,0,0.08)]"
         >
+            {/* Two questions, each asked only while it is open, each with its own yes and no —
+                consent to one purpose is never consent to the other. */}
+            {asking && (
             <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 grid gap-3 sm:flex sm:items-center sm:gap-6">
                 <div className="grid gap-1 flex-1">
                     <strong className="text-sm">{t('consent.title')}</strong>
@@ -70,6 +73,31 @@ function ConsentBanner() {
                     </Button>
                 </div>
             </div>
+            )}
+            {askingViews && (
+                // The second purpose: counting this visitor's views, which needs a random number
+                // kept in their browser (lib/viewerId). A no means they are not counted at all.
+            <div className={`max-w-5xl mx-auto px-4 sm:px-6 py-4 grid gap-3 sm:flex sm:items-center sm:gap-6 ${asking ? 'border-t border-border-light' : ''}`}>
+                <div className="grid gap-1 flex-1">
+                    <strong className="text-sm">{t('consent.viewsTitle')}</strong>
+                    <p className="text-sm text-text-secondary leading-loose" dir="auto">
+                        {t('consent.viewsBody')}{' '}
+                        <Link to="/privacy#view-counts" className="text-primary hover:underline">
+                            {t('consent.viewsMore')}
+                        </Link>
+                    </p>
+                </div>
+
+                <div className="flex gap-2 sm:flex-shrink-0">
+                    <Button variant="outline" onClick={denyViews} className="flex-1 sm:flex-none">
+                        {t('consent.deny')}
+                    </Button>
+                    <Button variant="outline" onClick={grantViews} className="flex-1 sm:flex-none">
+                        {t('consent.grant')}
+                    </Button>
+                </div>
+            </div>
+            )}
         </div>
     );
 }

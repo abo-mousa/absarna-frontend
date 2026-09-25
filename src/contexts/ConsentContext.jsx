@@ -4,9 +4,12 @@ import {
     GRANTED,
     allowsYouTube,
     readConsent,
+    readViewsConsent,
     shouldAskConsent,
     writeConsent,
+    writeViewsConsent,
 } from '@/lib/consent';
+import { forgetViewerId } from '@/lib/viewerId';
 
 const ConsentContext = createContext(null);
 
@@ -31,6 +34,7 @@ export function ConsentProvider({ children }) {
     // underneath, so a browser with site data blocked returns null — undecided, which holds
     // Google back. Failing closed is the correct direction for this particular question.
     const [consent, setConsent] = useState(() => readConsent());
+    const [viewsConsent, setViewsConsent] = useState(() => readViewsConsent());
 
     const value = useMemo(() => ({
         consent,
@@ -58,7 +62,24 @@ export function ConsentProvider({ children }) {
             writeConsent(null);
             setConsent(null);
         },
-    }), [consent]);
+
+        // The second, separate purpose: counting this visitor's views (lib/viewerId). Its own
+        // answer, never inferred from YouTube's.
+        viewsAllowed: viewsConsent === GRANTED,
+        askingViews: viewsConsent === null,
+        grantViews: () => {
+            writeViewsConsent(GRANTED);
+            setViewsConsent(GRANTED);
+        },
+        /** Refusing and withdrawing are one act: record the no, and delete the id at once. */
+        denyViews: () => {
+            writeViewsConsent(DENIED);
+            forgetViewerId();
+            setViewsConsent(DENIED);
+        },
+        /** Either question still open — what the first-visit guide waits on. */
+        askingAny: shouldAskConsent(consent) || viewsConsent === null,
+    }), [consent, viewsConsent]);
 
     return <ConsentContext.Provider value={value}>{children}</ConsentContext.Provider>;
 }
@@ -77,5 +98,10 @@ export function useConsent() {
         grant: () => {},
         deny: () => {},
         reset: () => {},
+        viewsAllowed: false,
+        askingViews: false,
+        grantViews: () => {},
+        denyViews: () => {},
+        askingAny: false,
     };
 }

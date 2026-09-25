@@ -64,7 +64,7 @@ function Today() {
     // Not while the consent banner is asking: on a phone the two together were a third of the
     // screen of banner under a dialog, on someone's first seconds here. One question at a time —
     // the guide opens the moment the banner is answered.
-    const { asking: consentAsking } = useConsent();
+    const { askingAny: consentAsking } = useConsent();
     const closeGuide = () => {
         safeStorage.setItem(GUIDE_SEEN_KEY, '1');
         setGuideSeen(true);
