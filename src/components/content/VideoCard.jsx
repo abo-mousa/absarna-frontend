@@ -305,7 +305,7 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                     higher than its neighbours' and a blank band at the bottom: the "this card is
                     missing something" look. With the slot fixed, channel and views sit on
                     the same lines across a row. 2.75em is exactly two lines at leading-snug. */}
-                <h3 dir="auto" className="text-[0.95rem] font-bold mb-1.5 leading-snug line-clamp-2 min-h-[2.75em] group-hover:text-primary transition-colors">
+                <h3 dir="auto" className="text-[0.95rem] font-bold mb-1.5 leading-snug line-clamp-2 min-h-[2.75em] group-hover:text-gold-ink group-focus-visible:text-gold-ink transition-colors">
                     {video.title}
                 </h3>
 
