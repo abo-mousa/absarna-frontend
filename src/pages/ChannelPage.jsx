@@ -1,3 +1,5 @@
+import { isGoogleHostedImage } from '@/lib/consent';
+import { useConsent } from '../contexts/ConsentContext';
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Video, BookOpen, FileText, MessageSquare, Settings, Tv, EyeOff } from 'lucide-react';
@@ -38,6 +40,8 @@ function ChannelPage() {
     const activeTab = resolveChannelTab(searchParams.get('tab'));
     const setActiveTab = (tab) => navigate(channelTabPath(slug, tab), { replace: true });
     const [bannerFailed, setBannerFailed] = useState(false);
+    // A Google-hosted cover waits for consent like every other request to Google (see Avatar).
+    const { youtubeAllowed } = useConsent();
     const watchProgress = useWatchProgressMap(!!token);
     const readingProgress = useReadingProgressMap(!!token);
 
@@ -93,7 +97,9 @@ function ChannelPage() {
     const postCount = postPages?.pages[0]?.totalItems ?? posts.length;
     // Still read here for the subscriber count in the header; the toggle itself moved into
     // SubscribeButton, which runs this same cached query.
-    const { data: subscriptionStatus } = useSubscriptionStatus(channel?.id, !!token && !!channel);
+    // For everyone, signed in or not: the backend answers a signed-out caller with the count and
+    // `subscribed: false`, and the count is what a visitor sizing up a channel reads first.
+    const { data: subscriptionStatus } = useSubscriptionStatus(channel?.id, !!channel);
     const {
         data: seriesPages,
         fetchNextPage: fetchNextSeriesPage,
@@ -193,7 +199,7 @@ function ChannelPage() {
 
                 Owner-supplied or copied from YouTube; on failure the cover is dropped and the page
                 simply starts at the identity row, which is what a channel with no cover looks like. */}
-            {channel.bannerUrl && !bannerFailed && (
+            {channel.bannerUrl && !bannerFailed && !(isGoogleHostedImage(channel.bannerUrl) && !youtubeAllowed) && (
                 <div className="rounded-lg overflow-hidden mb-4 aspect-[16/5] max-h-[260px] w-full bg-surface-hover">
                     <img
                         src={resolveMediaUrl(channel.bannerUrl)}
@@ -214,13 +220,13 @@ function ChannelPage() {
 
                 <div className="flex-1 min-w-[150px]">
                     <h1 className="m-0 text-xl sm:text-2xl font-bold text-text-primary">{channel.name}</h1>
-                    {/* Subscribers for a signed-in reader only (the count comes with their own
-                        subscription status), and the video count for everyone — the channel's
-                        whole public catalogue, the same frozen total the Videos tab badge shows,
-                        so a search on the page does not make it shrink. */}
+                    {/* Subscribers and videos, for everyone. The video count is the channel's whole
+                        public catalogue — the same frozen total the Videos tab badge shows, so a
+                        search on the page does not make it shrink. Each waits for its own answer
+                        rather than printing a zero it has not been told. */}
                     <p className="text-text-muted text-sm mt-1 flex flex-wrap items-center gap-x-2">
-                        {token && <span>{t('channel.subscriberCount', { count: subscriberCount })}</span>}
-                        {token && videoPages && <span aria-hidden="true">·</span>}
+                        {subscriptionStatus && <span>{t('channel.subscriberCount', { count: subscriberCount })}</span>}
+                        {subscriptionStatus && videoPages && <span aria-hidden="true">·</span>}
                         {videoPages && <span>{t('common.videoCount', { count: videoCount })}</span>}
                     </p>
                     {channel.description && (

@@ -186,21 +186,8 @@ export const groupByType = (rows) => {
 // platform's moderation and it belongs on the admin screen that set it.
 const QUIET = new Set([REVIEW_STATE.CLEAN, REVIEW_STATE.CLEARED, REVIEW_STATE.EXEMPT]);
 
-// Worst first. Hidden outranks published whatever the state -- "your video is hidden" is the
-// notice that gets read -- then within each the order below; a state not listed sorts after the
-// known ones.
-const SEVERITY = [
-    REVIEW_STATE.REJECTED,
-    REVIEW_STATE.HELD,
-    REVIEW_STATE.ADVISORY,
-    REVIEW_STATE.UNCHECKED,
-];
-const severityOf = (state) => {
-    const index = SEVERITY.indexOf(state);
-    return index === -1 ? SEVERITY.length : index;
-};
-const worstFirst = (a, b) =>
-    (Number(b.hidden) - Number(a.hidden)) || (severityOf(a.state) - severityOf(b.state));
+// No ordering here: the backend sends an owner's findings worst first (ReviewAttacher.WORST_FIRST)
+// and these notices keep that order — every order on this platform is the backend's.
 
 /**
  * Which of the three things a finding cost the video — the axis the copy is built on.
@@ -285,8 +272,7 @@ export const ownerNotices = (video, isOwner) => {
                 badge,
                 spans,
             };
-        })
-        .sort(worstFirst);
+        });
 };
 
 /**

@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
     NOTE_MAX_LENGTH,
     REPORT_DECISIONS,
-    REPORT_REASONS,
     REPORT_TARGET_TYPE,
     corroboration,
     reasonHint,
@@ -30,35 +29,25 @@ describe('targetTypeOf', () => {
     });
 });
 
-describe('REPORT_REASONS', () => {
-    /**
-     * MISATTRIBUTION first is the editorial decision this whole feature turns on: on a platform
-     * publishing religious teaching, content credited to a scholar who did not say it is the most
-     * consequential error there is, and it is the one reason on the list no detector will ever
-     * have an opinion about. A list copied from a general-purpose platform would not carry it at
-     * all; one that carried it eighth would bury it under the reasons automated review covers.
-     */
-    it('puts misattribution where it will be read, and OTHER last', () => {
-        expect(REPORT_REASONS[0]).toBe('MISATTRIBUTION');
-        expect(REPORT_REASONS[REPORT_REASONS.length - 1]).toBe('OTHER');
-    });
+/**
+ * The codes `GET /api/reports/reasons` serves — as a SET, for wording coverage only. The ORDER is
+ * the backend's alone (ReportReason's declaration order, pinned by ContentReportIT); this side
+ * renders whatever order arrives and has no list of its own to keep in step.
+ */
+const BACKEND_REASON_CODES = [
+    'MISATTRIBUTION', 'MUSIC', 'AGAINST_ISLAMIC_VALUES', 'MISINFORMATION', 'SEXUAL_CONTENT',
+    'PROFANITY', 'VIOLENCE', 'HATE_OR_ABUSE', 'COPYRIGHT', 'SPAM_OR_SCAM', 'OTHER',
+];
 
-    it('matches the backend enum exactly — no more, no fewer', () => {
-        // Sorted, because the ORDER is this side's decision and the SET is the backend's.
-        expect([...REPORT_REASONS].sort()).toEqual([
-            'COPYRIGHT', 'HATE_OR_ABUSE', 'MISATTRIBUTION', 'MISINFORMATION',
-            'OTHER', 'SEXUAL_CONTENT', 'SPAM_OR_SCAM', 'VIOLENCE',
-        ]);
-    });
-
-    it('has Arabic wording for every one of them', () => {
+describe('report reasons', () => {
+    it('has wording for every code the backend serves', () => {
         // The labels are looked up through a template literal, so the i18n test that walks the
         // source for literal catalog keys cannot see them — a template one is a runtime lookup
         // and is deliberately allowed to miss there. This is the coverage that replaces it.
         // (Written without an example key on purpose: that walker would match the example.)
-        const missing = REPORT_REASONS.filter((code) => reasonLabel(code) === code);
+        const missing = BACKEND_REASON_CODES.filter((code) => reasonLabel(code) === code);
         expect(missing).toEqual([]);
-        expect(REPORT_REASONS.every((code) => typeof reasonHint(code) === 'string')).toBe(true);
+        expect(BACKEND_REASON_CODES.every((code) => typeof reasonHint(code) === 'string')).toBe(true);
     });
 });
 

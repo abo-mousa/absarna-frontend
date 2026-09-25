@@ -1,22 +1,30 @@
 import { useMemo, useState } from 'react';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { Link } from 'react-router-dom';
 import { Type, Clock, Calendar } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
 import { QueryState, Input } from '../components/ui';
-import { useArticles } from '../hooks/useArticles';
+import { useArticles, useArticleCategories } from '../hooks/useArticles';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { formatPublishDate, displayDate } from '@/lib/datetime';
 import { t } from '@/i18n';
 
 const PAGE_SIZE = 15;
 
+// The backend's names (`ListingSort`); the order itself is the server's, never this page's.
 const SORTS = [
-    { id: 'newest', label: t('common.sortNewest') },
-    { id: 'title', label: t('common.sortTitle') },
+    { id: 'NEWEST', label: t('common.sortNewest') },
+    { id: 'TITLE', label: t('common.sortTitle') },
 ];
 
 function Articles() {
     usePageMeta({ title: t('articles.title'), description: t('articles.metaDescription') });
+    const [search, setSearch] = useState('');
+    const [category, setCategory] = useState('');
+    const [sortBy, setSortBy] = useState('NEWEST');
+    // Debounced so typing is one request per pause, not one per keystroke.
+    const searchTerm = useDebouncedValue(search.trim(), 300);
+    const filtering = !!(searchTerm || category);
     const {
         data,
         isLoading,
@@ -26,37 +34,19 @@ function Articles() {
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
-    } = useArticles(PAGE_SIZE);
+    } = useArticles(PAGE_SIZE, { sort: sortBy, category, search: searchTerm });
+    const { data: categories = [] } = useArticleCategories();
     const articles = useMemo(() => data?.pages.flatMap((page) => page.content) || [], [data]);
 
-    const [search, setSearch] = useState('');
-    const [category, setCategory] = useState('');
-    const [sortBy, setSortBy] = useState('newest');
 
-    const categories = useMemo(
-        () => [...new Set(articles.map((a) => a.category).filter(Boolean))],
-        [articles]
-    );
-
-    const filtered = useMemo(() => {
-        let result = articles;
-        if (category) result = result.filter((a) => a.category === category);
-        if (search.trim()) {
-            const q = search.trim().toLowerCase();
-            result = result.filter((a) => a.title?.toLowerCase().includes(q));
-        }
-        result = [...result].sort((a, b) => {
-            if (sortBy === 'title') return (a.title || '').localeCompare(b.title || '', 'ar');
-            return (b.publishDate || '').localeCompare(a.publishDate || '');
-        });
-        return result;
-    }, [articles, category, search, sortBy]);
 
     return (
         <PageShell sidebar={false} contentClassName="max-w-reading mx-auto px-4 sm:px-6 py-8">
             <h1 className="text-2xl font-bold mb-6">{t('articles.title')}</h1>
 
-            {!isLoading && articles.length > 0 && (
+            {/* Shown whenever there is anything to narrow OR a narrowing is active: a search
+                that matches nothing must still leave the box on screen to change it. */}
+            {!isLoading && (articles.length > 0 || filtering) && (
                 <div className="flex gap-3 flex-wrap mb-6">
                     <div className="flex-1 min-w-[200px]">
                         <Input
@@ -94,13 +84,13 @@ function Articles() {
                 error={error}
                 onRetry={refetch}
                 errorTitle={t('articles.loadFailed')}
-                isEmpty={articles.length === 0 || filtered.length === 0}
-                emptyIcon={articles.length === 0 ? '📝' : '🔍'}
-                emptyTitle={articles.length === 0 ? t('articles.empty') : t('common.noResults')}
-                emptyDescription={articles.length === 0 ? undefined : t('common.tryAnotherSearch')}
+                isEmpty={articles.length === 0}
+                emptyIcon={!filtering ? '📝' : '🔍'}
+                emptyTitle={!filtering ? t('articles.empty') : t('common.noResults')}
+                emptyDescription={!filtering ? undefined : t('common.tryAnotherSearch')}
             >
                 <div className="grid gap-4">
-                    {filtered.map((article) => (
+                    {articles.map((article) => (
                         <Link
                             key={article.id}
                             to={`/articles/${article.id}`}

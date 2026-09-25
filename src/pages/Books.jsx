@@ -1,24 +1,32 @@
 import { useMemo, useState } from 'react';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
 import { QueryState, Input } from '../components/ui';
 import { BookCard } from '../components/content';
 import { useReadingProgressMap } from '../hooks/useVideos';
-import { useBooks } from '../hooks/useBooks';
+import { useBooks, useBookCategories } from '../hooks/useBooks';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { t } from '@/i18n';
 
 const PAGE_SIZE = 12;
 
+// The backend's names (`ListingSort`); the order itself is the server's, never this page's.
 const SORTS = [
-    { id: 'newest', label: t('common.sortNewest') },
-    { id: 'title', label: t('common.sortTitle') },
+    { id: 'NEWEST', label: t('common.sortNewest') },
+    { id: 'TITLE', label: t('common.sortTitle') },
 ];
 
 function Books() {
     usePageMeta({ title: t('books.title'), description: t('books.metaDescription') });
     const { token } = useAuth();
     const readingProgress = useReadingProgressMap(!!token);
+    const [search, setSearch] = useState('');
+    const [category, setCategory] = useState('');
+    const [sortBy, setSortBy] = useState('NEWEST');
+    // Debounced so typing is one request per pause, not one per keystroke.
+    const searchTerm = useDebouncedValue(search.trim(), 300);
+    const filtering = !!(searchTerm || category);
     const {
         data,
         isLoading,
@@ -28,37 +36,19 @@ function Books() {
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
-    } = useBooks(PAGE_SIZE);
+    } = useBooks(PAGE_SIZE, { sort: sortBy, category, search: searchTerm });
+    const { data: categories = [] } = useBookCategories();
     const books = useMemo(() => data?.pages.flatMap((page) => page.content) || [], [data]);
 
-    const [search, setSearch] = useState('');
-    const [category, setCategory] = useState('');
-    const [sortBy, setSortBy] = useState('newest');
 
-    const categories = useMemo(
-        () => [...new Set(books.map((b) => b.category).filter(Boolean))],
-        [books]
-    );
-
-    const filtered = useMemo(() => {
-        let result = books;
-        if (category) result = result.filter((b) => b.category === category);
-        if (search.trim()) {
-            const q = search.trim().toLowerCase();
-            result = result.filter((b) => b.title?.toLowerCase().includes(q));
-        }
-        result = [...result].sort((a, b) => {
-            if (sortBy === 'title') return (a.title || '').localeCompare(b.title || '', 'ar');
-            return (b.publishDate || '').localeCompare(a.publishDate || '');
-        });
-        return result;
-    }, [books, category, search, sortBy]);
 
     return (
         <PageShell sidebar={false} contentClassName="max-w-[1100px] mx-auto px-4 sm:px-6 py-8">
             <h1 className="text-2xl font-bold mb-6">{t('books.title')}</h1>
 
-            {!isLoading && books.length > 0 && (
+            {/* Shown whenever there is anything to narrow OR a narrowing is active: a search
+                that matches nothing must still leave the box on screen to change it. */}
+            {!isLoading && (books.length > 0 || filtering) && (
                 <div className="flex gap-3 flex-wrap mb-6">
                     <div className="flex-1 min-w-[200px]">
                         <Input
@@ -98,13 +88,13 @@ function Books() {
                 error={error}
                 onRetry={refetch}
                 errorTitle={t('books.loadFailed')}
-                isEmpty={books.length === 0 || filtered.length === 0}
-                emptyIcon={books.length === 0 ? '📚' : '🔍'}
-                emptyTitle={books.length === 0 ? t('books.empty') : t('common.noResults')}
-                emptyDescription={books.length === 0 ? t('books.emptyDescription') : t('common.tryAnotherSearch')}
+                isEmpty={books.length === 0}
+                emptyIcon={!filtering ? '📚' : '🔍'}
+                emptyTitle={!filtering ? t('books.empty') : t('common.noResults')}
+                emptyDescription={!filtering ? t('books.emptyDescription') : t('common.tryAnotherSearch')}
             >
                 <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-5">
-                    {filtered.map((book) => (
+                    {books.map((book) => (
                         <BookCard key={book.id} book={book} currentPage={readingProgress[book.id]} />
                     ))}
                 </div>

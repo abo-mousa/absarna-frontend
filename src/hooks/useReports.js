@@ -27,6 +27,20 @@ import { useUserScope } from './useUserScope';
  * has no auth entry point, so the 403 would be noise in the console on every detail page a
  * logged-out reader opens.
  */
+/**
+ * The reasons a reporter may pick, in the order to show them — the backend's order
+ * (`ReportReason`'s declaration order, argued there), rendered as it comes. Codes only; each is
+ * worded from the catalogs. Asked when the dialog opens and kept for the session: the list changes
+ * only with a deploy.
+ */
+export const useReportReasons = (enabled = true) => useQuery({
+    queryKey: ['report-reasons'],
+    queryFn: async () => (await api.get('/reports/reasons')).data,
+    enabled,
+    staleTime: Infinity,
+    gcTime: Infinity,
+});
+
 export const useReportStatus = (type, id, enabled = true) => {
     const targetType = targetTypeOf(type);
     const scope = useUserScope();

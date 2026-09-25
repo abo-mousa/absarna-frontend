@@ -224,9 +224,16 @@ function ChannelImagesCard({ slug, channel, youtubeState, isOwner }) {
     const handleCopy = async () => {
         try {
             const result = await copyFromYouTube.mutateAsync();
-            const copied = [result?.logo, result?.banner].filter((o) => o === 'COPIED').length;
-            showToast(copied > 0 ? t('ownerImage.youtube.copied') : t('ownerImage.youtube.nothing'),
-                copied > 0 ? 'success' : 'info');
+            const outcomes = [result?.logo, result?.banner];
+            // A failed fetch is not "nothing to copy" — that would send the owner away from a
+            // button that is worth pressing again.
+            if (outcomes.includes('FAILED')) {
+                showToast(t('ownerImage.youtube.failed'), 'error');
+            } else if (outcomes.includes('COPIED')) {
+                showToast(t('ownerImage.youtube.copied'), 'success');
+            } else {
+                showToast(t('ownerImage.youtube.nothing'), 'info');
+            }
         } catch (err) {
             showToast(t('ownerImage.failed', { reason: describeError(err) }), 'error');
         }

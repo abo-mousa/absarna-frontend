@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { describeError, reasonMessage, serverMessage } from '@/lib/describeError';
+import { UserFacingError, describeError, reasonMessage, serverMessage } from '@/lib/describeError';
 import { setActiveLocale, t } from '@/i18n';
 
 /**
@@ -221,5 +221,18 @@ describe('the email-verification gate', () => {
 
         expect(describeError(refused)).toBe(t('auth.verificationNotice.defaultMessage'));
         expect(describeError(refused)).not.toBe(t('errors.forbidden'));
+    });
+});
+
+describe('an error the SPA has already worded', () => {
+    /**
+     * A file of the wrong format or over 5 MB is refused before any request is made, with a
+     * translated sentence. It has no `response`, so it used to fall into the no-answer branch and
+     * be shown as «حدث خطأ» — the one useful sentence, thrown away.
+     */
+    it('is shown as it is', async () => {
+        const { ThumbnailTooLargeError } = await import('@/hooks/useVideoThumbnail');
+        expect(describeError(new UserFacingError('اختر صورة أصغر من 5 ميغابايت.'))).toBe('اختر صورة أصغر من 5 ميغابايت.');
+        expect(describeError(new ThumbnailTooLargeError('too large'))).toBe('too large');
     });
 });

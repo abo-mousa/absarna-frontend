@@ -288,15 +288,16 @@ describe('what an owner is told', () => {
         expect(wording('MUSIC', false).body).toContain(ar.video.review.music.unchecked.body);
     });
 
-    it('colours and sorts a hidden unscanned video by the backend’s holds, not by its state', () => {
+    it('colours a hidden unscanned video by the backend’s holds, not by its state', () => {
         // The bug this closes: the sentence above said "hidden" while the chip beside it was in
         // the informational tone and the badge reported hidden: false, because both were derived
         // from the state alone -- and UNCHECKED, read without its type, publishes. On the wire the
         // backend says `holds: true` for this finding, and that is what decides the tone.
         const video = {
+            // In the backend's order — worst first, ReviewAttacher.WORST_FIRST.
             review: [
-                { type: 'MUSIC', state: REVIEW_STATE.ADVISORY, holds: false },
                 { type: 'NUDITY', state: REVIEW_STATE.UNCHECKED, holds: true },
+                { type: 'MUSIC', state: REVIEW_STATE.ADVISORY, holds: false },
             ],
         };
         const notices = ownerNotices(video, true);
@@ -341,13 +342,14 @@ describe('what an owner is told', () => {
             .toEqual({ hidden: true, label: ar.video.review.outcome.hidden.badge });
     });
 
-    it('reports one notice per detector, worst first', () => {
-        // The thing one column per video could not express. Order matters because the first
-        // notice is the one read: "your video is hidden" outranks "we have made a note".
+    it('reports one notice per detector, in the order the backend sent them', () => {
+        // The thing one column per video could not express. The backend sends findings worst
+        // first (ReviewAttacher.WORST_FIRST) — "your video is hidden" before "we have made a
+        // note" — and this keeps that order rather than deciding one of its own.
         const notices = ownerNotices({
             review: [
+                { type: 'NUDITY', state: REVIEW_STATE.HELD, holds: true },
                 { type: 'MUSIC', state: REVIEW_STATE.ADVISORY },
-                { type: 'NUDITY', state: REVIEW_STATE.HELD },
             ],
         }, true);
 
@@ -383,11 +385,12 @@ describe('the badge on a card', () => {
     });
 
     it('shows the most serious finding when there are two', () => {
-        // One badge, not two: two on a thumbnail is a layout problem and a reading problem.
+        // One badge, not two: two on a thumbnail is a layout problem and a reading problem. The
+        // most serious is the FIRST — the backend sends findings worst first.
         const badge = ownerBadge({
             review: [
+                { type: 'NUDITY', state: REVIEW_STATE.REJECTED, holds: true },
                 { type: 'MUSIC', state: REVIEW_STATE.ADVISORY },
-                { type: 'NUDITY', state: REVIEW_STATE.REJECTED },
             ],
         }, true);
 

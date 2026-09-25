@@ -7,6 +7,7 @@ import { useMyChannels } from '../../hooks/useChannels';
 import { useOutsideClick } from '@/hooks/useOutsideClick';
 import { canUpload, isPlatformAdmin, uploadPathFor } from '@/lib/user';
 import { Avatar } from '../ui';
+import { resolveMediaUrl } from '@/lib/media';
 import { badgeText } from '@/hooks/useAdminAttention';
 import LanguageToggle from './LanguageToggle';
 import { t } from '@/i18n';
@@ -104,7 +105,7 @@ function AccountMenu({ attentionCount = 0 }) {
                     md:px-2.5 md:py-1.5 rounded-full md:rounded-md text-text-secondary hover:bg-surface-hover"
             >
                 {user?.profilePictureUrl
-                    ? <Avatar src={user.profilePictureUrl} name={name} size="sm" className="md:w-[18px] md:h-[18px]" />
+                    ? <Avatar src={resolveMediaUrl(user.profilePictureUrl)} name={name} size="sm" className="md:w-[18px] md:h-[18px]" />
                     : <User size={20} className="md:w-[18px] md:h-[18px]" />}
                 <span className="hidden md:block text-[0.65rem] font-medium text-text-muted">{t('nav.profileShort')}</span>
             </button>

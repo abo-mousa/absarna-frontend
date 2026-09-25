@@ -674,9 +674,7 @@ export default function VideoControlBar({
     // as the rest of the controls are up — under a mouse that means while the pointer is on the
     // player, on a phone while the controls have been tapped up — and it goes with them.
     //
-    // This is the counterpart of the rule above rather than a contradiction of it: the objection
-    // to a disc over a paused frame is that the viewer paused in order to LOOK at that frame, and
-    // a playing video is not being looked at in that way. It also gives the picture a target the
+    // It gives the picture a target the
     // size of a thumb, which the 32px button in the corner of the bar is not, and it is what the
     // gesture layer leaves the middle of the picture free for (`lib/player/gestures.js`).
     const showCentrePause = playing && !buffering;

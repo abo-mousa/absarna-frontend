@@ -191,6 +191,7 @@ export const ar = {
 
     // صورة يضعها الشخص على قناته أو حسابه: شعار القناة وغلافها، أو الصورة الشخصية.
     ownerImage: {
+        storageFailed: 'رفض الخادم حفظ الصورة. حاول مرة أخرى بعد قليل.',
         channelHeading: 'الشعار وصورة الغلاف',
         logo: 'شعار القناة',
         logoHint: 'يظهر بجانب اسم القناة وعلى كل بطاقة فيديو. الأفضل أن يكون مربعاً.',
@@ -215,6 +216,7 @@ export const ar = {
             done: 'تم تأكيد صورك، وستبقى كما هي',
         },
         youtube: {
+            failed: 'تعذّر جلب صورك من يوتيوب. حاول مرة أخرى.',
             explain: 'يمكنك استخدام شعار قناتك وصورة غلافها على يوتيوب. سننسخهما إلى المنصة، ويمكنك تغييرهما من هنا في أي وقت.',
             action: 'استخدام شعار يوتيوب وصورة الغلاف',
             copying: 'جارٍ النسخ…',
@@ -1896,6 +1898,7 @@ export const ar = {
      * readers are the only people who can catch it. See `lib/reports.js` for the ordering.
      */
     report: {
+        reasonsFailed: 'تعذّر تحميل أسباب البلاغ.',
         action: 'إبلاغ',
         // A CONSTANT accessible name, like SubscribeButton's: what the control is FOR does not
         // change when its state does. The already-reported state has its own name below because
@@ -1927,7 +1930,7 @@ export const ar = {
          *
          * <p>The hints are not decoration: without them «معلومة غير صحيحة» and «نسبة خاطئة» are
          * picked interchangeably, and the code then routes nothing. Read in the order of
-         * REPORT_REASONS in `lib/reports.js`, which is where the ordering is argued.
+         * order `GET /api/reports/reasons` returns — the backend's, argued on `ReportReason`.
          */
         reasons: {
             MISATTRIBUTION: {
@@ -1958,6 +1961,18 @@ export const ar = {
                 label: 'إعلانات أو احتيال',
                 hint: 'دعاية مكرّرة أو محاولة نصب.',
             },
+            MUSIC: {
+                label: 'موسيقى',
+                hint: 'موسيقى أو معازف في المقطع.',
+            },
+            AGAINST_ISLAMIC_VALUES: {
+                label: 'مخالف للقيم الإسلامية',
+                hint: 'محتوى لا يليق بمنصة إسلامية، وإن لم يندرج تحت سبب آخر.',
+            },
+            PROFANITY: {
+                label: 'ألفاظ بذيئة',
+                hint: 'سبّ أو كلام فاحش.',
+            },
             OTHER: {
                 label: 'سبب آخر',
                 hint: 'اكتب ما تريد قوله في حقل التفاصيل أدناه.',
@@ -1975,6 +1990,10 @@ export const ar = {
      * page and again beside the buttons.
      */
     adminReports: {
+        priority: {
+            urgent: 'عاجل',
+            high: 'أولوية عالية',
+        },
         title: 'بلاغات الزوار',
         short: 'البلاغات',
         // The size of the whole backlog, which one page cannot answer. Beside the heading rather

@@ -1,6 +1,8 @@
 import { Image as ImageIcon, Trash2, Upload } from 'lucide-react';
 import { thumbnailAccept } from '@/hooks/useVideoThumbnail';
 import { resolveMediaUrl } from '@/lib/media';
+import { useConsent } from '@/contexts/ConsentContext';
+import { isGoogleHostedImage } from '@/lib/consent';
 import { t } from '@/i18n';
 
 /**
@@ -20,7 +22,11 @@ function ImageUploadField({ label, hint, previewUrl, shape = 'round', hasUpload,
     const busy = uploading || removing;
     // A `blob:` preview is a file picked but not uploaded yet (the create form holds its pictures
     // until the channel exists); resolveMediaUrl would drop it as "not a URL we serve".
-    const src = previewUrl?.startsWith('blob:') ? previewUrl : resolveMediaUrl(previewUrl);
+    const { youtubeAllowed } = useConsent();
+    const resolved = previewUrl?.startsWith('blob:') ? previewUrl : resolveMediaUrl(previewUrl);
+    // An old Google-hosted link waits for consent here as everywhere else (see Avatar); the frame
+    // shows its placeholder until then.
+    const src = isGoogleHostedImage(resolved) && !youtubeAllowed ? null : resolved;
 
     const handleChange = (e) => {
         const file = e.target.files?.[0];

@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api/client';
 import { queryKeys } from '@/lib/queryKeys';
 import { useUserScope } from './useUserScope';
@@ -6,18 +6,35 @@ import { useUserScope } from './useUserScope';
 // "Load more" pagination, same accumulating-pages shape as useInfiniteContents/
 // useChannelContents — GET /api/books used to return the whole table in one unpaginated
 // response.
-export const useBooks = (size = 12) => {
+//
+// Ordering, the category filter and search all happen on the server, over the whole catalogue: the
+// page used to do them to the rows it had loaded, which could only ever find what was on page one.
+// `sort` is a backend name (NEWEST / TITLE, `ListingSort`); this hook passes it and nothing more.
+export const useBooks = (size = 12, { sort = 'NEWEST', category = '', search = '' } = {}) => {
     return useInfiniteQuery({
-        queryKey: ['books', size],
+        queryKey: ['books', size, sort, category, search],
         queryFn: async ({ pageParam = 0 }) => {
-            const res = await api.get(`/books?page=${pageParam}&size=${size}`);
+            const params = new URLSearchParams({ page: pageParam, size, sort });
+            if (category) params.set('category', category);
+            if (search) params.set('search', search);
+            const res = await api.get(`/books?${params}`);
             return res.data;
         },
         initialPageParam: 0,
         getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.currentPage + 1 : undefined),
         staleTime: 5 * 60 * 1000,
+        // Keep the previous results on screen while a new sort, category or search loads, rather
+        // than flashing the spinner on every keystroke.
+        placeholderData: keepPreviousData,
     });
 };
+
+/** Every category the public listing has, A to Z — the backend's list, not page one's. */
+export const useBookCategories = () => useQuery({
+    queryKey: ['books-categories'],
+    queryFn: async () => (await api.get('/books/categories')).data,
+    staleTime: 5 * 60 * 1000,
+});
 
 // Fetch single book
 export const useBook = (id) => {

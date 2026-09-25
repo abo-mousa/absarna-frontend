@@ -116,7 +116,16 @@ const TRANSPORT_CODES = new Set([
  * @param error    an axios error, or anything thrown
  * @param fallback the caller's generic message; defaults to the catalog's
  */
+/**
+ * An error whose message is already the sentence to show, in the reader's language — a refusal
+ * the SPA itself makes before any request (a file of the wrong format, one too large). Without this
+ * such an error fell into the "no response" branch below and was shown as «حدث خطأ»: the one
+ * useful sentence, thrown away.
+ */
+export class UserFacingError extends Error {}
+
 export function describeError(error, fallback) {
+    if (error instanceof UserFacingError) return error.message;
     const status = error?.response?.status;
     const generic = fallback || t('errors.generic');
 

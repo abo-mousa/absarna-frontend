@@ -189,6 +189,7 @@ export const en = {
     // A picture a person puts on their own channel or account: a channel's logo and cover, or a
     // profile picture. The upload flow is the video poster's, so the wording is too.
     ownerImage: {
+        storageFailed: 'Storage refused the upload. Please try again in a moment.',
         channelHeading: 'Logo and cover',
         logo: 'Channel logo',
         logoHint: 'Shown beside the channel name and on every video card. Square works best.',
@@ -213,6 +214,7 @@ export const en = {
             done: 'Your pictures are confirmed and will stay as they are',
         },
         youtube: {
+            failed: 'We could not fetch your pictures from YouTube. Please try again.',
             explain: 'You can use the logo and cover from your YouTube channel. We copy them onto the platform, and you can change them here any time.',
             action: 'Use my YouTube logo and cover',
             copying: 'Copying…',
@@ -1493,6 +1495,10 @@ export const en = {
      * again beside the buttons.
      */
     adminReports: {
+        priority: {
+            urgent: 'Urgent',
+            high: 'High priority',
+        },
         title: 'Viewer reports',
         short: 'Reports',
         // The size of the whole backlog, which one page cannot answer. Beside the heading rather
@@ -1560,6 +1566,7 @@ export const en = {
     },
 
     report: {
+        reasonsFailed: 'The reasons did not load.',
         action: 'Report',
         aria: 'Report this content',
         reported: 'Reported',
@@ -1610,6 +1617,18 @@ export const en = {
             SPAM_OR_SCAM: {
                 label: 'Spam or a scam',
                 hint: 'Repeated advertising, or an attempt to defraud.',
+            },
+            MUSIC: {
+                label: 'Music',
+                hint: 'Music or instruments in the recording.',
+            },
+            AGAINST_ISLAMIC_VALUES: {
+                label: 'Against Islamic values',
+                hint: 'Content that does not belong on an Islamic platform, even if no other reason fits it.',
+            },
+            PROFANITY: {
+                label: 'Bad language',
+                hint: 'Swearing or obscene words.',
             },
             OTHER: {
                 label: 'Something else',

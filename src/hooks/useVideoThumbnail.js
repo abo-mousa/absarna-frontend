@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api/client';
 import { t } from '@/i18n';
+import { UserFacingError } from '@/lib/describeError';
 
 /**
  * Uploading the poster an owner picked for one of their videos.
@@ -34,10 +35,10 @@ export const THUMBNAIL_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
 export const thumbnailAccept = THUMBNAIL_EXTENSIONS.map((e) => `.${e}`).join(',');
 
 /** A file the backend would refuse, caught before an upload URL is spent on it. */
-export class UnsupportedThumbnailError extends Error {}
+export class UnsupportedThumbnailError extends UserFacingError {}
 
 /** A file over the ceiling, caught before it is uploaded rather than after. */
-export class ThumbnailTooLargeError extends Error {}
+export class ThumbnailTooLargeError extends UserFacingError {}
 
 export function useVideoThumbnail(slug) {
     const queryClient = useQueryClient();

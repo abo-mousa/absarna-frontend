@@ -286,6 +286,12 @@ function AdminReports() {
                                     <div className="flex items-start justify-between gap-3 flex-wrap mb-2">
                                         <div className="flex items-center gap-2 flex-wrap">
                                             <strong className="text-base">{reasonLabel(report.reason)}</strong>
+                                            {/* The level the backend ranked this at — the queue
+                                                is already in that order; the tag says why a newer
+                                                row sits above an older one. Levels 3 and 4 carry
+                                                none, so the urgent rows are the marked ones. */}
+                                            {report.priority === 1 && <Badge variant="danger">{t('adminReports.priority.urgent')}</Badge>}
+                                            {report.priority === 2 && <Badge variant="featured">{t('adminReports.priority.high')}</Badge>}
                                             <Badge variant={STATUS_VARIANT[report.status] ?? 'muted'}>
                                                 {statusLabel(report.status)}
                                             </Badge>

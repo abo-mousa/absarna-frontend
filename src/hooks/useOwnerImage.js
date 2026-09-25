@@ -4,6 +4,7 @@ import api from '@/lib/api/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { THUMBNAIL_EXTENSIONS, UnsupportedThumbnailError, ThumbnailTooLargeError } from './useVideoThumbnail';
 import { IMAGE_LIMITS, shrinkImage } from '@/lib/imageResize';
+import { UserFacingError } from '@/lib/describeError';
 import { t } from '@/i18n';
 
 /**
@@ -40,13 +41,20 @@ export async function uploadOwnerImage(base, picked, limits) {
     if (file.size > minted.maxBytes) {
         throw new ThumbnailTooLargeError(t('ownerImage.tooLarge'));
     }
-    const stored = await fetch(minted.uploadUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': minted.contentType },
-        body: file,
-    });
+    // A refusal by storage — a CORS rule missing on the bucket, most likely — is not the reader's
+    // network, and a bare fetch TypeError would be worded as "you are offline".
+    let stored;
+    try {
+        stored = await fetch(minted.uploadUrl, {
+            method: 'PUT',
+            headers: { 'Content-Type': minted.contentType },
+            body: file,
+        });
+    } catch {
+        throw new UserFacingError(t('ownerImage.storageFailed'));
+    }
     if (!stored.ok) {
-        throw new Error(`storage refused the upload (${stored.status})`);
+        throw new UserFacingError(t('ownerImage.storageFailed'));
     }
     await api.put(base, { objectKey: minted.objectKey });
 }
@@ -88,16 +96,20 @@ function useOwnerImage(base, onChanged, limits) {
  * a rename, for the same reason — the picture is a field inside those lists now.
  */
 function invalidateChannelPictures(queryClient) {
-    ['channel', 'channels', 'my-channels', 'videos', 'video', 'feed', 'channel-videos',
-        'channel-manage', 'search', 'search-infinite', 'bookmarks', 'watch-history',
-        'related-video', 'series'].forEach((key) =>
-        queryClient.invalidateQueries({ queryKey: [key] }));
+    ['channel', 'all-channels', 'my-channels', 'subscriptions', 'admin-all-channels',
+        'admin-pending-channels', 'videos', 'video', 'feed', 'channel-videos', 'channel-manage',
+        'search', 'search-infinite', 'bookmarks', 'watch-history', 'related-video', 'series']
+        .forEach((key) => queryClient.invalidateQueries({ queryKey: [key] }));
 }
 
 /** @param kind 'logo' or 'banner' */
 export function useChannelImage(slug, kind) {
     const queryClient = useQueryClient();
-    return useOwnerImage(channelImagePath(slug, kind), () => invalidateChannelPictures(queryClient),
+    return useOwnerImage(channelImagePath(slug, kind), () => {
+        invalidateChannelPictures(queryClient);
+        // An upload or a removal changes which pictures await the owner's confirmation.
+        queryClient.invalidateQueries({ queryKey: ['channel-youtube', slug] });
+    },
         IMAGE_LIMITS[kind]);
 }
 

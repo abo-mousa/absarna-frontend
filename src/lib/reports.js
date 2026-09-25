@@ -35,36 +35,11 @@ export const REPORT_TARGET_TYPE = {
 /** The wire value for one of this app's type words, or `null` for anything not reportable. */
 export const targetTypeOf = (type) => REPORT_TARGET_TYPE[type] ?? null;
 
-/**
- * The reasons a reader may pick, <b>in the order they are shown</b>.
- *
- * <p><b>MISATTRIBUTION is first, and that is the whole editorial argument for this feature.</b>
- * On a platform publishing religious teaching, a lecture or a text credited to a scholar who did
- * not say it is the most consequential error there is, and it is the one thing on this list that
- * no detector will ever have an opinion about — the readers are the only people who can catch it.
- * A list copied from a general-purpose platform would not carry it at all, and a list that
- * carried it in eighth place would bury it under the reasons our automated review already covers.
- *
- * <p>OTHER is last, for the opposite reason: it is the escape hatch, and a list with no escape
- * hatch does not stop people reporting — it makes them pick the nearest wrong code and corrupts
- * every count taken from the column. Last is where an escape hatch belongs, so nobody reaches for
- * it before reading the list it escapes.
- *
- * <p>Sexual content and violence sit in the middle rather than at the top even though they are
- * the gravest: the automated review queue already looks for the first of them, so a human report
- * there is a detector miss, while misattribution has no other route in at all.
+/*
+ * No list of reasons here. The dialog shows what `GET /api/reports/reasons` returns, in the order
+ * it returns them (useReportReasons) — every order on this platform is the backend's, and the
+ * argument for this one lives on `ReportReason` beside the codes it orders.
  */
-export const REPORT_REASONS = [
-    'MISATTRIBUTION',
-    'MISINFORMATION',
-    'SEXUAL_CONTENT',
-    'VIOLENCE',
-    'HATE_OR_ABUSE',
-    'COPYRIGHT',
-    'SPAM_OR_SCAM',
-    'OTHER',
-];
-
 /** Matches `ReportRequest.note`'s `@Size(max = 1000)`, which matches the column. */
 export const NOTE_MAX_LENGTH = 1000;
 

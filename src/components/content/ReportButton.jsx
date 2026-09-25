@@ -3,8 +3,8 @@ import { Flag } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { Button, Modal } from '../ui';
-import { useReportStatus, useSubmitReport } from '../../hooks/useReports';
-import { NOTE_MAX_LENGTH, REPORT_REASONS, reasonHint, reasonLabel } from '@/lib/reports';
+import { useReportReasons, useReportStatus, useSubmitReport } from '../../hooks/useReports';
+import { NOTE_MAX_LENGTH, reasonHint, reasonLabel } from '@/lib/reports';
 import { describeError } from '@/lib/describeError';
 import { t } from '@/i18n';
 
@@ -61,6 +61,9 @@ function ReportButton({ type, id, className = '', size = 16, labeled = false, tr
     const submitReport = useSubmitReport(type, id);
 
     const [open, setOpen] = useState(false);
+    // In the backend's order, asked for once the dialog is first opened.
+    const reasonsQuery = useReportReasons(open);
+    const reasons = reasonsQuery.data ?? [];
     const [reason, setReason] = useState('');
     const [note, setNote] = useState('');
     // Local, and kept even where the status query runs: it is what makes the control settle
@@ -125,12 +128,29 @@ function ReportButton({ type, id, className = '', size = 16, labeled = false, tr
                     </p>
 
                     {/* A real fieldset with a real legend, not a div with a bold line above it:
-                        this is one question with eight answers, and that is the only structure a
+                        this is one question with a list of answers, and that is the only structure a
                         screen reader can use to say so. */}
                     <fieldset className="mb-4">
                         <legend className="text-sm font-semibold mb-2">{t('report.reasonLegend')}</legend>
                         <div className="grid gap-1.5">
-                            {REPORT_REASONS.map((code) => {
+                            {/* The list is the backend's; say so while it loads, and offer a retry
+                                if it did not arrive, rather than a question with no answers. */}
+                            {reasonsQuery.isPending && (
+                                <p className="text-sm text-text-muted">{t('common.loading')}</p>
+                            )}
+                            {reasonsQuery.isError && (
+                                <div className="flex items-center gap-3 text-sm">
+                                    <span className="text-red-600 dark:text-red-400">{t('report.reasonsFailed')}</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => reasonsQuery.refetch()}
+                                        className="font-semibold text-primary underline underline-offset-4"
+                                    >
+                                        {t('common.retry')}
+                                    </button>
+                                </div>
+                            )}
+                            {reasons.map((code) => {
                                 const hint = reasonHint(code);
                                 return (
                                     <label
