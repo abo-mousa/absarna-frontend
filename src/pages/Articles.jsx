@@ -28,6 +28,7 @@ function Articles() {
     const {
         data,
         isLoading,
+        isPlaceholderData,
         isError,
         error,
         refetch,
@@ -46,7 +47,10 @@ function Articles() {
 
             {/* Shown whenever there is anything to narrow OR a narrowing is active: a search
                 that matches nothing must still leave the box on screen to change it. */}
-            {!isLoading && (articles.length > 0 || filtering) && (
+            {/* isPlaceholderData too: while a new sort or a cleared search loads, the rows on
+                screen are the previous query's, possibly an empty "no match" — and unmounting the
+                bar then took the search box away from under the reader's cursor. */}
+            {!isLoading && (articles.length > 0 || filtering || isPlaceholderData) && (
                 <div className="flex gap-3 flex-wrap mb-6">
                     <div className="flex-1 min-w-[200px]">
                         <Input
@@ -84,7 +88,9 @@ function Articles() {
                 error={error}
                 onRetry={refetch}
                 errorTitle={t('articles.loadFailed')}
-                isEmpty={articles.length === 0}
+                // Not while the previous query's rows stand in for the new one: an empty "no match"
+                // placeholder would flash the wrong empty message.
+                isEmpty={articles.length === 0 && !isPlaceholderData}
                 emptyIcon={!filtering ? '📝' : '🔍'}
                 emptyTitle={!filtering ? t('articles.empty') : t('common.noResults')}
                 emptyDescription={!filtering ? undefined : t('common.tryAnotherSearch')}

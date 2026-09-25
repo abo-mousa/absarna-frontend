@@ -214,6 +214,7 @@ export const en = {
             done: 'Your pictures are confirmed and will stay as they are',
         },
         youtube: {
+            partial: 'One picture was copied; the other could not be fetched from YouTube. Try again later for it.',
             failed: 'We could not fetch your pictures from YouTube. Please try again.',
             explain: 'You can use the logo and cover from your YouTube channel. We copy them onto the platform, and you can change them here any time.',
             action: 'Use my YouTube logo and cover',

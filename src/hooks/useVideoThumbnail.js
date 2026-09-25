@@ -73,13 +73,20 @@ export function useVideoThumbnail(slug) {
                     throw new ThumbnailTooLargeError(t('channelManage.thumbnail.tooLarge'));
                 }
 
-                const stored = await fetch(minted.uploadUrl, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': minted.contentType },
-                    body: file,
-                });
+                // A refusal by storage (a missing CORS rule on the media bucket, most likely) is not
+                // the reader's network — a bare fetch TypeError would be worded as "offline".
+                let stored;
+                try {
+                    stored = await fetch(minted.uploadUrl, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': minted.contentType },
+                        body: file,
+                    });
+                } catch {
+                    throw new UserFacingError(t('ownerImage.storageFailed'));
+                }
                 if (!stored.ok) {
-                    throw new Error(`storage refused the upload (${stored.status})`);
+                    throw new UserFacingError(t('ownerImage.storageFailed'));
                 }
 
                 await api.put(`/channels/${slug}/content/videos/${videoId}/thumbnail`, {
