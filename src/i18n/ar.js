@@ -172,6 +172,7 @@ export const ar = {
         manageChannel: 'إدارة القناة',
         home: 'الرئيسية',
         discover: 'اكتشف',
+        posts: 'المنشورات',
         subscriptions: 'الاشتراكات',
         watchHistory: 'سجل المشاهدة',
         bookmarks: 'المحفوظات',
@@ -789,6 +790,21 @@ export const ar = {
         loadFailed: 'فشل في تحميل المقال',
         backToArticles: 'العودة للمقالات',
         emptyOnChannel: 'لا توجد مقالات بعد',
+    },
+
+    // The posts page (/posts): short notes channels write, from the channels a reader follows or
+    // from all of them. It ends: «من قنواتك» has an end, said in the last line.
+    postsPage: {
+        title: 'المنشورات',
+        subtitle: 'ما تكتبه القنوات: إعلانات وتنبيهات وخواطر قصيرة',
+        followed: 'من قنواتك',
+        all: 'كل القنوات',
+        endFollowed: 'هذه كل منشورات قنواتك.',
+        endAll: 'هذه كل المنشورات.',
+        emptyFollowed: 'لا منشورات من القنوات التي تتابعها بعد',
+        emptyAll: 'لا توجد منشورات بعد',
+        loadMore: 'عرض المزيد',
+        loadFailed: 'تعذّر تحميل المنشورات',
     },
 
     // The Today page (/): a dashboard that ends. «أسبوعك» counts what was finished in the last

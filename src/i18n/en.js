@@ -170,6 +170,7 @@ export const en = {
         manageChannel: 'Manage channel',
         home: 'Home',
         discover: 'Discover',
+        posts: 'Posts',
         subscriptions: 'Subscriptions',
         watchHistory: 'Watch history',
         bookmarks: 'Saved',
@@ -582,6 +583,19 @@ export const en = {
         loadFailed: 'Could not load the article',
         backToArticles: 'Back to articles',
         emptyOnChannel: 'No articles yet',
+    },
+
+    postsPage: {
+        title: 'Posts',
+        subtitle: 'What channels write: announcements, notices and short thoughts',
+        followed: 'From your channels',
+        all: 'All channels',
+        endFollowed: 'That is every post from your channels.',
+        endAll: 'That is every post.',
+        emptyFollowed: 'No posts from the channels you follow yet',
+        emptyAll: 'No posts yet',
+        loadMore: 'Show more',
+        loadFailed: 'Posts could not be loaded',
     },
 
     today: {
@@ -2182,7 +2196,7 @@ export const TRANSLATED = [
     'channel', 'consent', 'createChannel', 'comments', 'likes', 'bookmarks', 'history',
     'subscriptions', 'profile', 'search', 'biography', 'share', 'upload', 'notFound',
     'channelManage', 'youtube', 'youtubeOAuth', 'admin', 'adminReports', 'legal',
-    'pager', 'report', 'ownerImage', 'formats', 'today',
+    'pager', 'report', 'ownerImage', 'formats', 'today', 'postsPage',
 ];
 
 export default en;
