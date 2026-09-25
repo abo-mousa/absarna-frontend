@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, lazy, Suspense } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { BookOpen, Download, X } from 'lucide-react';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { BookOpen, X } from 'lucide-react';
 import { ArrowBack } from '@/components/ui/DirectionalIcon';
 import { resolveMediaUrl } from '@/lib/media';
 import { formatPublishDate, displayDate } from '@/lib/datetime';
@@ -9,7 +9,7 @@ import { flushOnUnload } from '@/lib/api/beacon';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
 import { QueryState, ExpandableText } from '../components/ui';
-import { CommentsSection, BookmarkButton, LikeButton, ReportButton, ShareButton } from '../components/content';
+import { CommentsSection, BookmarkButton, LikeButton, ReportButton, ShareButton, BookDownloadButton } from '../components/content';
 import { useBook, useBookReadProgress, useSaveReadProgress } from '../hooks/useBooks';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { t } from '@/i18n';
@@ -24,11 +24,36 @@ function BookDetail() {
     // never what goes into a media URL — the reader's PDF URL arrives already signed from the
     // backend. See useBookReadUrl.
     const { token } = useAuth();
-    const [showPdf, setShowPdf] = useState(false);
+    // `?read=1` — a card's «قراءة» — opens the reader on arrival instead of behind a second press.
+    // Closing it drops the parameter, so a refresh does not reopen a reader the reader closed.
+    const [searchParams, setSearchParams] = useSearchParams();
+    const openedFromLink = useRef(searchParams.get('read') === '1');
+    const [showPdf, setShowPdfState] = useState(openedFromLink.current);
+    const setShowPdf = (open) => {
+        setShowPdfState(open);
+        if (!open && searchParams.has('read')) {
+            setSearchParams((params) => {
+                params.delete('read');
+                return params;
+            }, { replace: true });
+        }
+    };
+    const readerRef = useRef(null);
     const [previewFailed, setPreviewFailed] = useState(false);
     const { data: book, isLoading, isError, error } = useBook(id);
     const { data: pdfUrl } = useBookReadUrl(book?.id, Boolean(book?.id));
-    const { data: savedPage } = useBookReadProgress(id, !!token);
+    const { data: savedPage, isPending: savedPagePending } = useBookReadProgress(id, !!token);
+    // The reader takes its first page once, at mount — so it waits for the saved page, or a
+    // reader sent straight in would start on page 1 of a book they were halfway through.
+    const readerReady = showPdf && !!pdfUrl && (!token || !savedPagePending);
+
+    // Sent in by a card: bring the reader into view once it is there, once.
+    useEffect(() => {
+        if (readerReady && openedFromLink.current) {
+            openedFromLink.current = false;
+            readerRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+        }
+    }, [readerReady]);
     const saveReadProgress = useSaveReadProgress(id);
     const lastPageRef = useRef(null);
     usePageMeta({
@@ -155,22 +180,21 @@ function BookDetail() {
                                         {showPdf ? t('books.hideReader') : savedPage ? t('books.continueReading') : t('books.readOnline')}
                                     </button>
 
-                                    <a
-                                        href={pdfUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex-1 min-w-[150px] flex items-center justify-center gap-2 py-3 bg-primary-light text-primary rounded-md font-semibold"
+                                    <BookDownloadButton
+                                        bookId={book.id}
+                                        iconSize={18}
+                                        className="flex-1 min-w-[150px] gap-2 py-3 bg-primary-light text-primary rounded-md"
                                     >
-                                        <Download size={18} /> {t('books.downloadPdf')}
-                                    </a>
+                                        {t('books.downloadPdf')}
+                                    </BookDownloadButton>
                                 </div>
                             </>
                         )}
                     </div>
                 </div>
 
-                {showPdf && pdfUrl && (
-                    <div className="bg-surface rounded-lg overflow-hidden border border-border-light shadow-sm flex flex-col mb-6">
+                {readerReady && (
+                    <div ref={readerRef} className="scroll-mt-[var(--navbar-h)] bg-surface rounded-lg overflow-hidden border border-border-light shadow-sm flex flex-col mb-6">
                         <div className="flex justify-between items-center px-5 py-3 border-b border-border-light">
                             <h3 className="m-0 flex items-center gap-2"><BookOpen size={18} /> {book.title}</h3>
                             <button onClick={() => setShowPdf(false)} className="text-text-muted hover:text-text-primary">

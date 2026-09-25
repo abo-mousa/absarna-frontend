@@ -93,6 +93,26 @@ export const useVideoPlaybackUrl = (videoId, enabled = true, quality = null) =>
  * that happen to write and serve it today. Anything not absolute http(s) becomes null and the
  * callers already render their no-file state for that.
  */
+/**
+ * The same file as {@link useBookReadUrl}, signed to be SAVED: `{url, attachment}`. `attachment`
+ * is the backend's answer to whether following `url` downloads the file (our own, signed as an
+ * attachment — follow it in place and the page stays) or opens it (an external URL, which nothing
+ * can re-sign — it needs a tab of its own). A separate key: it is a different URL.
+ */
+export const useBookDownloadUrl = (bookId, enabled = true) =>
+    useQuery({
+        queryKey: ['bookDownloadUrl', bookId],
+        queryFn: async () => {
+            const { data } = await api.get(`/books/${bookId}/read-url`, { params: { download: true } });
+            const url = safeExternalUrl(data.url);
+            return url ? { url, attachment: data.attachment === true } : null;
+        },
+        enabled: Boolean(bookId) && enabled,
+        staleTime: STALE_MS,
+        gcTime: STALE_MS,
+        retry: false,
+    });
+
 export const useBookReadUrl = (bookId, enabled = true) =>
     useQuery({
         queryKey: ['bookReadUrl', bookId],

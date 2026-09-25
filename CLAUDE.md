@@ -379,6 +379,12 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   Resume is server-driven: only the session id is persisted locally, and name + size must match.
 - **`useMediaUrl`** — presigned playback/read URLs. **Mint on intent, not per rendered card**: a
   presigned URL is a bearer credential, so `BookCard` enables the query on pointer-enter/focus.
+- **A book's two buttons do what they say.** «قراءة» goes to `/books/:id?read=1`, which opens the
+  reader on arrival at the saved page (it waits for that page — the reader takes its first page
+  once, at mount). «تحميل» is `BookDownloadButton`: `read-url?download=true` is signed as an
+  attachment named after the book, so it SAVES and the page stays; a cross-origin `download`
+  attribute is ignored, which is why it cannot be done here. The response's `attachment` says
+  whether that happened — an external `pdfUrl` cannot be re-signed and gets a tab of its own.
 - **`YouTubeImportPanel`** — three states in one panel (not linked → linked → verified), polls only
   while `RUNNING`, and must treat `PARTIAL` as *paused, press resume* rather than an error.
   **"Verify with Google" is the whole of verification**, and appears only when the status says
