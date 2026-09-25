@@ -46,7 +46,7 @@ function Today() {
         key: video.id,
         video,
         onClick: openVideo,
-        watchedSeconds: watchProgress[video.id],
+        watch: watchProgress[video.id],
     });
 
     // One row from the feed, chosen by the backend (`fromFeed`): the reader's own channels when

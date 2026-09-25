@@ -93,7 +93,7 @@ function History() {
                                   key={entry.id}
                                   video={entry.video}
                                   onClick={() => navigate(`/video/${entry.videoId}`)}
-                                  watchedSeconds={entry.progressSeconds}
+                                  watch={{ progress: entry.progress, finished: entry.finished }}
                               />
                           ))
                         : history.map((entry) => (

@@ -225,7 +225,8 @@ export const useWatchHistory = (enabled = true) => {
 export const useWatchProgressMap = (enabled = true) => {
     const { data: history = [] } = useWatchHistory(enabled);
     return useMemo(
-        () => Object.fromEntries(history.map((entry) => [entry.videoId, entry.progressSeconds])),
+        // videoId -> the backend's reading of the position: `{progress, finished}` (WatchProgress).
+        () => Object.fromEntries(history.map((entry) => [entry.videoId, { progress: entry.progress, finished: entry.finished }])),
         [history]
     );
 };

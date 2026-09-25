@@ -52,6 +52,13 @@ function BookCover({ book, progress, className = 'w-24', onOpen = null }) {
                 </div>
             )}
 
+            {/* Released today or yesterday — the backend's NewRelease. */}
+            {book.newRelease && (
+                <span className="absolute top-1.5 start-1.5 bg-gold text-gray-900 text-[0.62rem] font-bold px-1.5 py-px rounded-sm shadow-sm">
+                    {t('common.newRelease')}
+                </span>
+            )}
+
             {readPercent !== null && (
                 <div className="absolute bottom-0 inset-x-0 h-[3px] bg-black/70">
                     {/* Gold, like VideoCard's watched bar. */}

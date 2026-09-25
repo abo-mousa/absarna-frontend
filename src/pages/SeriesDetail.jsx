@@ -98,7 +98,7 @@ function SeriesDetail() {
                                 key={item.id}
                                 video={item}
                                 onClick={() => navigate(`/video/${item.id}`)}
-                                watchedSeconds={watchProgress[item.id]}
+                                watch={watchProgress[item.id]}
                             />
                         ))}
                     </div>

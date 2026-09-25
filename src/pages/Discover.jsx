@@ -204,7 +204,7 @@ function Discover() {
         isOwner: !!mySlugByChannelId[video.channelId],
         onToggleVisibility: handleToggleVisibility,
         onDelete: setDeletingVideo,
-        watchedSeconds: watchProgress[video.id],
+        watch: watchProgress[video.id],
     });
 
 

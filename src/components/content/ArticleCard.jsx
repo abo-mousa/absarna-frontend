@@ -19,9 +19,17 @@ function ArticleCard({ article }) {
             to={`/articles/${article.id}`}
             className="group block h-full pt-4 border-t border-border text-text-primary no-underline hover:no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 focus-visible:ring-offset-bg rounded-sm"
         >
-            {article.category && (
-                <span dir="auto" className="block truncate text-xs font-bold text-gold-ink mb-1">
-                    {article.category}
+            {(article.category || article.newRelease) && (
+                <span className="flex items-center gap-2 mb-1 min-w-0">
+                    {/* Released today or yesterday — the backend's NewRelease, never a date sum here. */}
+                    {article.newRelease && (
+                        <span className="flex-shrink-0 bg-gold text-gray-900 text-[0.65rem] font-bold px-1.5 py-px rounded-sm">
+                            {t('common.newRelease')}
+                        </span>
+                    )}
+                    {article.category && (
+                        <span dir="auto" className="truncate text-xs font-bold text-gold-ink">{article.category}</span>
+                    )}
                 </span>
             )}
             <h3 dir="auto" className="font-serif text-[1.45rem] font-semibold mb-2 leading-tight line-clamp-2 group-hover:text-primary transition-colors">

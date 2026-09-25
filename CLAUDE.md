@@ -588,6 +588,12 @@ What this app relies on; the mirror lives in the backend's `CLAUDE.md`.
   `progress` field is a 0–1 fraction from the server). What stays here is presentation and
   wording: the kicker's sentence, dates and digits, the Hijri date, which tab is active. When a
   new feature needs a decision, add it to a response rather than to `lib/`.
+- **A card's watched bar and finished star, and every «جديد», are the backend's.** `VideoCard`
+  takes `watch={progress, finished}` from the watch history (`WatchProgress`: position over length,
+  finished at 90%) and draws the bar from `progress` and the star from `finished` — the star on a
+  card means finished and nothing else, so it stays rare. «جديد» is `newRelease` on videos, books and
+  articles (`NewRelease`: today or yesterday, by the original release date first); it is left off a
+  video the viewer has finished. No date arithmetic or division for either lives here.
 - **Rights come from the API, never from `role` or `ownerUserId`.** The profile (and the
   login/register response) carry `platformAdmin`, `canUpload` and `uploadChannelSlug`; a channel's
   detail carries the CALLER's `viewerIsOwner` and `viewerCanManage`. `lib/user.js` is gone. The

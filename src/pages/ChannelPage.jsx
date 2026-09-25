@@ -360,7 +360,7 @@ function ChannelPage() {
                                 key={video.id}
                                 video={video}
                                 onClick={() => navigate(`/video/${video.id}`)}
-                                watchedSeconds={watchProgress[video.id]}
+                                watch={watchProgress[video.id]}
                                 showChannel={false}
                             />
                         ))}

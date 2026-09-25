@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Play, Eye, EyeOff, Trash2, Calendar, Clock, Loader2, AlertTriangle } from 'lucide-react';
-import { resolveMediaUrl, youtubeThumbnail, durationToSeconds } from '@/lib/media';
+import { resolveMediaUrl, youtubeThumbnail } from '@/lib/media';
 import { useConsent } from '@/contexts/ConsentContext';
 import { formatPublishDate, displayDate } from '@/lib/datetime';
 import Avatar from '../ui/Avatar';
@@ -45,14 +45,12 @@ function getThumbnail(video, youtubeAllowed) {
     return null;
 }
 
-// Percent watched, for the small YouTube-style progress bar on the thumbnail. Hidden below 1%
-// so a barely-started video doesn't show a distracting sliver.
-function getWatchedPercent(video, watchedSeconds) {
-    if (!watchedSeconds) return null;
-    const totalSeconds = durationToSeconds(video.duration);
-    if (!totalSeconds) return null;
-    const percent = (watchedSeconds / totalSeconds) * 100;
-    return percent > 1 ? Math.min(100, percent) : null;
+// Percent watched, for the bar on the picture — the backend's fraction (the watch history's
+// `progress`), never a position divided by a length here. Hidden below 1% so a barely-started
+// video does not show a distracting sliver.
+function watchedPercentOf(watch) {
+    const progress = Number(watch?.progress);
+    return progress > 0.01 ? Math.min(1, progress) * 100 : null;
 }
 
 /**
@@ -74,12 +72,17 @@ function KickerText({ kicker }) {
     );
 }
 
-function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watchedSeconds, showChannel = true }) {
+/**
+ * @param watch the viewer's own `{progress, finished}` for this video, from the watch history —
+ *        both the backend's (WatchProgress): the bar is `progress`, the star is `finished`.
+ */
+function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watch, showChannel = true }) {
     const navigate = useNavigate();
     const { youtubeAllowed } = useConsent();
     const [thumbnailFailed, setThumbnailFailed] = useState(false);
     const thumbnail = thumbnailFailed ? null : getThumbnail(video, youtubeAllowed);
-    const watchedPercent = getWatchedPercent(video, watchedSeconds);
+    const watchedPercent = watchedPercentOf(watch);
+    const finished = watch?.finished === true;
     // Null for everyone but the owner, and null for the owner too unless there is a verdict worth
     // showing. The backend does not send `review` to a stranger at all, so this is the second lock
     // on that door rather than the only one. One badge -- the most serious -- because two on a
@@ -170,6 +173,14 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                 {/* Both badges stack in one corner so a hidden, still-transcoding video shows
                     both rather than one covering the other. */}
                 <div className="absolute top-2 start-2 flex flex-col items-end gap-1">
+                    {/* «جديد»: released today or yesterday, as the backend decides (NewRelease).
+                        A fill, so gold's fill shade with dark ink. Not on a video this viewer has
+                        already finished — news of it is no longer news to them. */}
+                    {video.newRelease && !finished && (
+                        <div className="bg-gold text-gray-900 text-[0.7rem] font-bold px-2 py-0.5 rounded-sm">
+                            {t('common.newRelease')}
+                        </div>
+                    )}
                     {video.visible === false && (
                         <div className="bg-black/70 text-white text-xs font-semibold px-2 py-0.5 rounded">
                             {t('common.hidden')}
@@ -238,6 +249,20 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                             <Trash2 size={14} />
                         </button>
                     </div>
+                )}
+
+                {/* Finished — the backend's rule (90%). The star, and only here: on the few cards a
+                    viewer has actually finished, a quiet «done», the Today page's idea of
+                    accomplishment carried to the grid. */}
+                {finished && (
+                    <span
+                        role="img"
+                        aria-label={t('video.finished')}
+                        title={t('video.finished')}
+                        className="absolute bottom-2 end-2 flex items-center justify-center w-6 h-6 rounded-full bg-black/65"
+                    >
+                        <KhatamStar className="w-3.5 h-3.5 text-gold" />
+                    </span>
                 )}
 
                 {watchedPercent !== null && (

@@ -17,6 +17,8 @@ export const ar = {
 
     /** Words that genuinely mean the same thing everywhere they appear. */
     common: {
+        // A card released today or yesterday (backend NewRelease).
+        newRelease: 'جديد',
         // The two days a date-only value can name without inventing a time of day. A backend
         // `LocalDate` carries no hour, so «منذ 15 ساعة» on it was never the upload time — it was
         // the time of day, counted backwards from midnight (see lib/datetime.js).
@@ -508,6 +510,8 @@ export const ar = {
     },
 
     video: {
+        // The finished star on a card (backend WatchProgress, 90%).
+        finished: 'شاهدته كاملًا',
         watchAria: 'مشاهدة فيديو: {title}',
         // Shown only to the channel's owner, on a video whose transcode has not finished. See
         // VideoCard — nobody else can see such a video at all.

@@ -91,7 +91,7 @@ function Bookmarks() {
                                     key={b.id}
                                     video={b.content}
                                     onClick={() => navigate(`/video/${b.content.id}`)}
-                                    watchedSeconds={watchProgress[b.content.id]}
+                                    watch={watchProgress[b.content.id]}
                                 />
                             ))}
                     {activeTab === 'BOOK' &&

@@ -32,6 +32,8 @@ export const en = {
 
     /** Words that genuinely mean the same thing everywhere they appear. */
     common: {
+        // A card released today or yesterday (backend NewRelease).
+        newRelease: 'New',
         loginRequired: 'Sign in to do this',
         today: 'Today',
         yesterday: 'Yesterday',
@@ -417,6 +419,8 @@ export const en = {
     },
 
     video: {
+        // The finished star on a card (backend WatchProgress, 90%).
+        finished: 'Watched',
         watchAria: 'Watch video: {title}',
         processing: 'Processing',
         transcodeFailed: 'Processing failed',
