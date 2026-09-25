@@ -131,10 +131,14 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   new) and until `absarna.guideSeen` is set — and the full page, linked from the welcome and the
   account menu. A new tab means a new step in `GUIDE_STEPS`.
 - **Every tab is laid out the same**: `<PageShell tab>` (one column, `TAB_COLUMN`, 1200px) and
-  `ui/PageHeader` titled with the tab's own name (`nav.tabs.*`) — serif title, hairline, optional
-  control at the far end, no subtitle. The six had four widths and three header styles, so the
-  title and its rule jumped on every tab change. Narrower content (a reading column) goes inside
-  the column, never in place of it.
+  `ui/PageHeader`, which shows **no visible title** — the lit tab already names the page, and a
+  large «الكتب» under a lit «الكتب» said it twice. The title stays as a visually hidden `<h1>` for
+  screen readers. The header line exists only for a page's own control: Today's dateline, and the
+  view switches of Discover and Posts, which are `ui/ViewTabs` (words with the navbar's gold
+  underline, on the header's hairline — never filled buttons). Discover's format/topic toggles are
+  hairline pills that take gold when on, one sideways-scrolling row on a phone, and its section
+  headings show only when there is more than one section to tell apart. Narrower content goes
+  inside the column, never in place of it.
 - **Tailwind only.** Brand colours are theme tokens resolving through CSS custom properties
   (`rgb(var(--color-x) / <alpha-value>)`), with light values on `:root` and dark under `.dark` in
   `index.css` — which is why dark mode is a two-file change and every existing `bg-surface` call site

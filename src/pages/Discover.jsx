@@ -3,7 +3,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import PageShell from '../components/layout/PageShell';
-import { QueryState, Modal, Cartouche, PageHeader } from '../components/ui';
+import { QueryState, Modal, Cartouche, PageHeader, ViewTabs } from '../components/ui';
 import { VideoCard } from '../components/content';
 import { useInfiniteVideos, useCategories, useFormats, useFeed, useWatchProgressMap } from '../hooks/useVideos';
 import { formatChipLabel } from '@/lib/formats';
@@ -19,11 +19,17 @@ const FEED_SECTION_KEYS = ['subscribed', 'discover', 'featured'];
 // One chip, three callers — the class string was already duplicated twice before a third arrived.
 // Square-cornered (`rounded-md` is 3px now), not a pill: the rounded chip row above a grid was
 // one of the plainest YouTube marks on the page.
+/**
+ * A format or topic toggle, in the site's hand rather than a button's: a hairline outline and no
+ * fill, and gold — the colour for the thing currently chosen, as the tabs' underline is — when it
+ * is on. Full-round, because that is what a toggle is in this look. It used to be a filled teal
+ * block beside bordered grey ones: the one control on the page drawn like a form.
+ */
 const chipClass = (active) =>
-    `px-4 py-1.5 rounded-md text-sm font-semibold transition-colors ${
+    `flex-shrink-0 px-3.5 py-1 rounded-full text-sm font-semibold whitespace-nowrap border transition-colors ${
         active
-            ? 'bg-primary text-white border-2 border-primary'
-            : 'bg-surface text-text-secondary border border-border'
+            ? 'border-gold bg-gold-light text-gold-ink'
+            : 'border-border-light text-text-secondary hover:border-gold/60 hover:text-gold-ink'
     }`;
 
 /**
@@ -165,6 +171,7 @@ function Discover() {
         tailComplete: !hasNextPage,
     });
     const fittedItems = Object.fromEntries(fitted.sections.map((section) => [section.key, section.items]));
+    const shownSections = feedSections.filter((section) => (fittedItems[section.key] || []).length > 0).length;
 
     // A tail that fits in less than one row has nothing to show until the next page arrives, and a
     // heading over an empty grid with a "load more" under it reads as broken. Fetch it instead.
@@ -210,22 +217,29 @@ function Discover() {
 
     return (
         <PageShell tab sidebar={<ChannelRail />}>
-            <PageHeader title={t('nav.tabs.discover')} />
-            <div className="flex gap-2 flex-wrap mb-5">
-                <button
-                    onClick={() => { setView('feed'); setSelectedCategory(''); setSelectedFormat(''); }}
-                    className={chipClass(isDefaultView)}
-                >
-                    {t('home.forYou')}
-                </button>
-                {/* The route to the whole catalogue, which used to exist only if a category
-                    happened to be set. It lets go of both narrowings. */}
-                <button
-                    onClick={() => { showBrowse(''); setSelectedFormat(''); }}
-                    className={chipClass(!isDefaultView && selectedCategory === '' && selectedFormat === '')}
-                >
-                    {t('home.browseAll')}
-                </button>
+            {/* The view switch sits on the header's own line, so the page opens with one line of
+                words instead of three stacked («اكتشف», then «المقترح لك | كل الفيديوهات», then a
+                section heading saying nearly the same thing). */}
+            <PageHeader
+                title={t('nav.tabs.discover')}
+                tabs
+                action={(
+                    <ViewTabs
+                        label={t('nav.tabs.discover')}
+                        items={[
+                            { key: 'feed', label: t('home.forYou'), active: isDefaultView,
+                                onClick: () => { setView('feed'); setSelectedCategory(''); setSelectedFormat(''); } },
+                            // The route to the whole catalogue; it lets go of both narrowings.
+                            { key: 'all', label: t('home.browseAll'), active: !isDefaultView,
+                                onClick: () => { showBrowse(''); setSelectedFormat(''); } },
+                        ]}
+                    />
+                )}
+            />
+            {/* One row of toggles; on a phone it scrolls sideways rather than wrapping into a wall
+                of them above the first video. */}
+            {(formats.some((f) => f.inUse) || categories.length > 0) && (
+            <div className="flex gap-2 overflow-x-auto sm:flex-wrap mb-6 -mx-4 px-4 sm:mx-0 sm:px-0 pb-1 [scrollbar-width:none]">
                 {/* Formats first — what kind of thing — then, after a rule, topics. Only formats
                     some video has (GET /api/formats), so no chip opens an empty page. */}
                 {formats.filter((f) => f.inUse).map(({ name }) => (
@@ -251,6 +265,7 @@ function Discover() {
                     </button>
                 ))}
             </div>
+            )}
 
             {isDefaultView ? (
                 <QueryState
@@ -269,7 +284,9 @@ function Discover() {
                             if (items.length === 0) return null;
                             return (
                                 <div key={section.key}>
-                                    <Cartouche title={section.title} />
+                                    {/* A heading only when there is more than one section to tell
+                                        apart: alone, «اقتراحات لك» just repeated «المقترح لك». */}
+                                    {shownSections > 1 && <Cartouche title={section.title} />}
                                     <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 2xl:grid-cols-4 gap-x-5 gap-y-8">
                                         {items.map((video) => (
                                             <VideoCard {...videoCardProps(video)} />

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { MessageSquareText } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
-import { QueryState, KhatamStar, PageHeader } from '../components/ui';
+import { QueryState, KhatamStar, PageHeader, ViewTabs } from '../components/ui';
 import { PostCard } from '../components/content';
 import { usePostsFeed } from '../hooks/usePosts';
 import { t } from '@/i18n';
@@ -22,23 +22,20 @@ function Posts() {
     const posts = usePostsFeed(followed && !!token);
     const items = posts.data?.pages.flatMap((page) => page.content) || [];
 
-    const tabClass = (active) =>
-        `px-4 py-1.5 text-sm font-semibold transition-colors ${active ? 'bg-primary text-white' : 'bg-surface text-text-secondary hover:text-text-primary'}`;
-
     return (
         <PageShell tab>
             <div>
                 <PageHeader
                     title={t('nav.tabs.posts')}
+                    tabs
                     action={token && (
-                        <div className="inline-flex border border-border rounded-md overflow-hidden" role="group">
-                            <button type="button" aria-pressed={followed} onClick={() => setFollowed(true)} className={tabClass(followed)}>
-                                {t('postsPage.followed')}
-                            </button>
-                            <button type="button" aria-pressed={!followed} onClick={() => setFollowed(false)} className={tabClass(!followed)}>
-                                {t('postsPage.all')}
-                            </button>
-                        </div>
+                        <ViewTabs
+                            label={t('nav.tabs.posts')}
+                            items={[
+                                { key: 'followed', label: t('postsPage.followed'), active: followed, onClick: () => setFollowed(true) },
+                                { key: 'all', label: t('postsPage.all'), active: !followed, onClick: () => setFollowed(false) },
+                            ]}
+                        />
                     )}
                 />
 
