@@ -109,6 +109,15 @@
     @apply font-bold leading-tight;
   }
 
+  /* A hidden password's dots. The browser draws one mask glyph per character in the FIELD'S font,
+     and Cairo's is a small square — the field looked like a row of blocks. Inter's is the round
+     dot everyone reads as "hidden". Inter first for the dots, Cairo behind it so an Arabic
+     placeholder («كلمة المرور») still sets in Cairo (fallback is per character, and Inter has no
+     Arabic). Only while hidden: the eye makes it type="text", and this no longer applies. */
+  input[type='password'] {
+    font-family: 'Inter', 'Cairo', system-ui, sans-serif;
+  }
+
   a {
     @apply text-primary no-underline hover:underline;
   }
