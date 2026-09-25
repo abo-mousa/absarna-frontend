@@ -226,7 +226,11 @@ export const useWatchProgressMap = (enabled = true) => {
     const { data: history = [] } = useWatchHistory(enabled);
     return useMemo(
         // videoId -> the backend's reading of the position: `{progress, finished}` (WatchProgress).
-        () => Object.fromEntries(history.map((entry) => [entry.videoId, { progress: entry.progress, finished: entry.finished }])),
+        // `seconds` too: the player's resume point (lib/watch resumeFrom) — the video page read
+        // this map as a number of seconds, and the object would have started it at NaN.
+        () => Object.fromEntries(history.map((entry) => [entry.videoId, {
+            seconds: entry.progressSeconds, progress: entry.progress, finished: entry.finished,
+        }])),
         [history]
     );
 };

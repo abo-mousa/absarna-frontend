@@ -14,6 +14,7 @@ import { usePageMeta } from '../hooks/usePageMeta';
 import { resolveMediaUrl, youtubeThumbnail } from '@/lib/media';
 import { useConsent } from '@/contexts/ConsentContext';
 import { formatPublishDate, displayDate } from '@/lib/datetime';
+import { resumeFrom } from '@/lib/watch';
 import { t } from '@/i18n';
 import { formatCount, formatCompactCount } from '@/lib/numbers';
 
@@ -41,7 +42,8 @@ function VideoDetail() {
     // own saved watch progress — the same `watchProgress` map already used below for the
     // related-videos row's progress bars, just never consulted for the player's own start
     // point before, so a video always restarted from 0 regardless of watch history.
-    const startTime = sharedTime || Math.floor(watchProgress[video?.id] || 0);
+    // A finished video starts from the beginning (resumeFrom).
+    const startTime = sharedTime || resumeFrom(watchProgress[video?.id]);
 
     const { youtubeAllowed } = useConsent();
 

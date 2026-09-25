@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { viewerId, setViewerIdOff, isViewerIdOff, VIEWER_ID_KEY, VIEWER_ID_LIFETIME_MS } from '@/lib/viewerId';
+import { viewerId, setViewerIdOff, isViewerIdOff, countsAView, VIEWER_ID_KEY, VIEWER_ID_LIFETIME_MS } from '@/lib/viewerId';
 
 const memory = (persistent = true) => {
     const map = new Map();
@@ -39,5 +39,22 @@ describe('viewerId', () => {
 
     it('sends nothing when the browser will not keep it', () => {
         expect(viewerId(0, memory(false), () => 'id-1')).toBeNull();
+    });
+});
+
+/** The id goes only with the three requests a view is counted on. */
+describe('countsAView', () => {
+    it('is the three detail GETs', () => {
+        expect(countsAView('get', '/videos/12')).toBe(true);
+        expect(countsAView('GET', '/books/3')).toBe(true);
+        expect(countsAView(undefined, '/articles/9?x=1')).toBe(true);
+    });
+
+    it('is nothing else', () => {
+        expect(countsAView('get', '/videos')).toBe(false);
+        expect(countsAView('get', '/videos/12/related')).toBe(false);
+        expect(countsAView('get', '/books/3/read-url')).toBe(false);
+        expect(countsAView('post', '/videos/12')).toBe(false);
+        expect(countsAView('get', '/feed')).toBe(false);
     });
 });

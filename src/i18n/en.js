@@ -1964,7 +1964,7 @@ export const en = {
                     ],
                     bullets: [
                         'If you are signed in, the key is your account number, so one view is counted for the item even if you return to it a year later.',
-                        'If you are a visitor with no account, your browser keeps a random number created there the first time, not derived from you or your device; it lasts thirteen months and is then replaced. It is sent with the platform’s own requests only, so one view is counted for the item even if you return on another day. The number itself is never stored with us, only a hash of it that cannot be turned back into it.',
+                        'If you are a visitor with no account, your browser keeps a random number created there the first time, not derived from you or your device; it lasts thirteen months and is then replaced. It is sent only with the request that opens a video, book or article, so one view is counted for the item even if you return on another day. The number itself is never stored with us, only a hash of it that cannot be turned back into it.',
                         'Alongside it is a daily key: a hash of today’s date, your IP address and your browser type, which changes every day. A view counts only if both keys are new, so changing the number alone is not enough to inflate the counter.',
                         'You can turn the number off at any time with “Turn off the view-counting id” at the foot of the page; it is erased from your browser and you are counted by the daily key alone. Clearing the site’s data in your browser erases it too.',
                         'The IP address is not stored at all; what is stored is the hash alone, and it cannot be reversed.',

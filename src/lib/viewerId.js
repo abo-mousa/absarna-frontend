@@ -18,6 +18,16 @@ export const VIEWER_ID_LIFETIME_MS = 395 * 24 * 60 * 60 * 1000;
 
 const newId = () => (globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : null);
 
+/**
+ * Whether a request is one the backend counts a view on — opening a video, a book or an article
+ * (their three detail GETs). The id goes with those and nothing else: its one purpose is the
+ * count, so it has no business on a search, a feed or a list.
+ */
+export function countsAView(method, url) {
+    return (method || 'get').toLowerCase() === 'get'
+        && /^\/?(videos|books|articles)\/\d+\/?(\?.*)?$/.test(String(url || ''));
+}
+
 /** The id to send, creating or renewing it; null when switched off or unavailable. */
 export function viewerId(now = Date.now(), storage = safeStorage, makeId = newId) {
     if (storage.getItem(VIEWER_ID_OFF_KEY) === '1') return null;

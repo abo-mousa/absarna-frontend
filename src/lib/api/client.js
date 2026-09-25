@@ -1,4 +1,4 @@
-import { viewerId } from '../viewerId';
+import { viewerId, countsAView } from '../viewerId';
 import axios from 'axios';
 import { API_BASE_URL } from '../env';
 import { clearSession, readRefreshToken, readToken, storeRotatedTokens } from '../authStorage';
@@ -31,9 +31,10 @@ api.interceptors.request.use(
         const token = readToken();
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
-        } else {
-            // Signed out: the browser's view-counting id (lib/viewerId), so a returning visitor is
-            // counted once. Our own API only — this client never talks to another host.
+        } else if (countsAView(config.method, config.url)) {
+            // Signed out, and one of the three requests a view is counted on: the browser's
+            // view-counting id (lib/viewerId), so a returning visitor is counted once. Nowhere
+            // else — its one purpose is the count. Our own API only; this client talks to no other.
             const id = viewerId();
             if (id) config.headers['X-Absarna-Viewer'] = id;
         }
