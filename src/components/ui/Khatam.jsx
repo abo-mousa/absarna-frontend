@@ -1,4 +1,5 @@
-import { KHATAM_POINTS, khatamDash } from '@/lib/khatam';
+import { useId } from 'react';
+import { KHATAM_POINTS, khatamDash, khatamSweep } from '@/lib/khatam';
 
 /**
  * The eight-pointed star (khatam) — the redesign's one ornament.
@@ -6,7 +7,7 @@ import { KHATAM_POINTS, khatamDash } from '@/lib/khatam';
  * <p>It is the outline of the logo's own outer ring (`IrisMark`), so every star in the interface
  * is literally a piece of the mark rather than a lookalike. It marks a section heading
  * (`Cartouche`), a kicker, the end of a page — and, as `KhatamProgress`, how far through a series
- * or a book someone is, traced along its outline.
+ * or a book someone is, revealed clockwise from the top tip (see `khatamSweep`).
  *
  * <p>Deliberately not a crescent, a dome or a lantern: those place a platform in one region's
  * style. The eight-fold star is shared across the Muslim world and is already the logo.
@@ -60,21 +61,32 @@ export function KhatamEmblem({ icon: Icon, tone = 'default', size = 'md', classN
 }
 
 /**
- * How far through something the reader is, traced along the star's outline over a faint copy of
- * it. `label` sits in the middle («١٠٣», «ص ٢١٤»); `title` is the sentence a screen reader gets,
+ * How far through something the reader is: the star's outline revealed clockwise from the top
+ * tip, over a faint copy of it. `value` is what is BEHIND the reader, 0–1, always the backend's
+ * (episodes before the next one, pages before the current one). `label` sits in the middle («١٠٣», «ص ٢١٤»); `title` is the sentence a screen reader gets,
  * since a shape alone says nothing to one.
  */
 export function KhatamProgress({ value, label, title, className = '', trackClassName = 'text-border', traceClassName = 'text-gold' }) {
+    // Scoped, so two stars on one page cannot share a mask.
+    const maskId = `${useId()}-sweep`;
     const dash = khatamDash(value);
+    const sweep = khatamSweep(value);
+    const outline = { points: KHATAM_POINTS, fill: 'none', stroke: 'currentColor', strokeWidth: 9, strokeLinejoin: 'miter' };
     return (
         <div className={`relative ${className}`} role="img" aria-label={title}>
             <svg viewBox="0 0 100 100" className="w-full h-full" aria-hidden="true" focusable="false">
-                <polygon points={KHATAM_POINTS} fill="none" stroke="currentColor" strokeWidth="9"
-                         strokeLinejoin="miter" className={trackClassName} />
+                {sweep && (
+                    <defs>
+                        <mask id={maskId} maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100">
+                            <path d={sweep} fill="white" />
+                        </mask>
+                    </defs>
+                )}
+                <polygon {...outline} className={trackClassName} />
+                {/* The whole closed outline, revealed by the wedge (see khatamSweep) — or unmasked
+                    when complete, so a finished star is exactly the track's shape in gold. */}
                 {dash > 0 && (
-                    <polygon points={KHATAM_POINTS} fill="none" stroke="currentColor" strokeWidth="9"
-                             strokeLinejoin="miter" pathLength="100" strokeDasharray={`${dash} 100`}
-                             className={traceClassName} />
+                    <polygon {...outline} className={traceClassName} mask={sweep ? `url(#${maskId})` : undefined} />
                 )}
             </svg>
             {label != null && (
