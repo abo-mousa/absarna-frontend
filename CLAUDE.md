@@ -119,8 +119,9 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   they are not interchangeable**: `gold` is a FILL (progress bars, badges) and is ~2:1 as text;
   `gold-ink` is the TEXT shade (5.25:1 on the page). The kicker above a card's title comes from
   `lib/kicker.js` and its line is reserved even when empty, like the title's two lines, so a grid row
-  stays aligned. The navbar shows today's Hijri date (`formatHijriDate`, `Intl` `islamic-umalqura`,
-  locale digits) at `xl` only.
+  stays aligned. The navbar (at `xl`) and Today's header show today's date as `ui/DatePair`: the Hijri date
+  (`formatHijriDate`, `Intl` `islamic-umalqura`) as the main one, the Gregorian
+  (`formatGregorianDate`) smaller beneath it, both in the locale's digits.
 - **Empty and failed states draw the star, never an emoji.** `EmptyState` (and so `QueryState`)
   renders `KhatamEmblem` — the star twice, interlaced, around one thin lucide glyph — and takes a
   lucide COMPONENT as `icon`/`emptyIcon`; a string falls back to `Inbox`, so an emoji cannot come
@@ -200,7 +201,9 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   `max-w-[500px]` rather than the bar carrying one for it, and its wrapper is `min-w-0` so it may
   shrink instead of pushing the account controls off a phone screen.
 - **The navbar logo is `IrisMark`, and it turns for exactly as long as something is loading** —
-  `useIsFetching() + useIsMutating() > 0`. It is the one piece of chrome on every screen, so it can
+  `useAppBusy()` (`useIsFetching() + useIsMutating() > 0`). **That is the rule for every mark
+  already on screen, the guide's included: it moves only while the app is loading, and is `still`
+  otherwise.** A logo animating over an idle page says "loading" and lies. It is the one piece of chrome on every screen, so it can
   report "still working" for the whole app including a background refetch, which no per-section
   spinner covers because those only render where content is absent. **`state="turn"`, never
   `"draw"`**: redrawing a logo the visitor has been looking at reads as the page falling apart and

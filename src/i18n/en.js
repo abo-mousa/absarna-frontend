@@ -666,7 +666,7 @@ export const en = {
             },
             voice: {
                 title: 'A voice for the silenced',
-                text: 'A channel can mark a video “removed elsewhere”, and what is uploaded here stays here. Hard footage sits behind a cover, and opens only when you choose.',
+                text: 'A channel can mark a video “removed elsewhere”, and what is uploaded here stays here. When a channel warns that a video has hard footage, it sits behind a cover and opens only when you choose.',
             },
         },
     },

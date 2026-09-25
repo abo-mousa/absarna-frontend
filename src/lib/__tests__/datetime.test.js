@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { displayDate, formatHijriDate, formatPublishDate, parseTimestamp } from '@/lib/datetime';
+import { displayDate, formatGregorianDate, formatHijriDate, formatPublishDate, parseTimestamp } from '@/lib/datetime';
 
 /**
  * Both functions here exist because of a bug a reader saw on every card, and neither had a test.
@@ -194,5 +194,28 @@ describe('formatHijriDate', () => {
 
     it('shows nothing rather than a wrong date when the runtime cannot format it', () => {
         expect(formatHijriDate(friday, 'not a locale!')).toBe('');
+    });
+});
+
+/** The civil date under the Hijri one: the same one-script rule, and the calendar pinned. */
+describe('formatGregorianDate', () => {
+    const friday = new Date('2026-09-25T12:00:00Z');
+
+    it('reads the Gregorian date in Arabic-Indic digits in the Arabic build', () => {
+        const text = formatGregorianDate(friday, 'ar-EG');
+        expect(text).toContain('سبتمبر');
+        expect(text).toContain('٢٠٢٦');
+        expect(text).not.toMatch(/[0-9]/);
+    });
+
+    it('and in Latin digits in the English one', () => {
+        const text = formatGregorianDate(friday, 'en-US');
+        expect(text).toContain('September');
+        expect(text).toContain('2026');
+        expect(text).not.toMatch(/[٠-٩]/);
+    });
+
+    it('shows nothing when the runtime cannot format it', () => {
+        expect(formatGregorianDate(friday, 'not a locale!')).toBe('');
     });
 });

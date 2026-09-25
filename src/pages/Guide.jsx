@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import PageShell from '../components/layout/PageShell';
 import { KhatamEmblem, KhatamStar, IrisMark } from '../components/ui';
 import { GUIDE_STEPS } from '../components/guide';
+import { useAppBusy } from '@/hooks/useAppBusy';
 import { t } from '@/i18n';
 
 /**
@@ -9,10 +10,11 @@ import { t } from '@/i18n';
  * whoever skipped it or wants it again (the account menu and Today's welcome link here).
  */
 function Guide() {
+    const busy = useAppBusy();
     return (
         <PageShell contentClassName="max-w-[820px] mx-auto w-full px-4 sm:px-6 py-10">
             <header className="text-center mb-10">
-                <IrisMark size="100%" state="draw" className="w-20 h-20 mx-auto mb-4" />
+                <IrisMark size="100%" state={busy ? 'turn' : 'still'} className="w-20 h-20 mx-auto mb-4" />
                 <h1 className="font-serif text-[2.6rem] font-semibold leading-none">{t('guide.title')}</h1>
                 <p className="text-text-secondary mt-3">{t('guide.subtitle')}</p>
             </header>

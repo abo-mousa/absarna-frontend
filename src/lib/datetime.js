@@ -176,6 +176,25 @@ export function formatHijriDate(date = new Date(), locale = currentLocaleInfo().
     }
 }
 
+/**
+ * Today's Gregorian date — «٢٥ سبتمبر ٢٠٢٦», "September 25, 2026" — shown UNDER the Hijri one,
+ * smaller: the Hijri date is the platform's own and leads, the civil one is there because it is
+ * the one appointments and news are dated by. Same `Intl` route and the same locale as
+ * {@link formatHijriDate}, with the calendar pinned so a reader whose system default is another
+ * calendar still gets the Gregorian here; '' if the runtime cannot do it.
+ */
+export function formatGregorianDate(date = new Date(), locale = currentLocaleInfo().numberFormat) {
+    try {
+        return new Intl.DateTimeFormat(`${locale}-u-ca-gregory`, {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+        }).format(date);
+    } catch {
+        return '';
+    }
+}
+
 export default dayjs;
 
 /**

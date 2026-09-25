@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
-import { QueryState, Cartouche, KhatamProgress, KhatamStar, Avatar, PageHeader } from '../components/ui';
+import { QueryState, Cartouche, KhatamProgress, KhatamStar, Avatar, PageHeader, DatePair } from '../components/ui';
 import { VideoCard, BookCard } from '../components/content';
 import { GuideDialog, GUIDE_SEEN_KEY } from '../components/guide';
 import { useToday } from '../hooks/useToday';
@@ -10,7 +10,6 @@ import { safeStorage } from '@/lib/safeStorage';
 import { useWatchProgressMap } from '../hooks/useVideos';
 import { formatTimestamp } from '@/lib/spans';
 import { formatCount } from '@/lib/numbers';
-import { formatHijriDate } from '@/lib/datetime';
 import { resolveMediaUrl } from '@/lib/media';
 import { t } from '@/i18n';
 
@@ -54,9 +53,6 @@ function Today() {
     const feedRow = data?.fromFeed?.videos || [];
     const feedRowTitle = data?.fromFeed?.kind === 'SUBSCRIBED' ? t('home.subscribed') : t('home.discover');
 
-    // Read once per mount, like the navbar's: a page left open past midnight keeps yesterday's.
-    const [hijriDate] = useState(() => formatHijriDate());
-
     const hasContinue = !!(data?.continueWatching?.length || data?.continueReading?.length);
     const welcome = data?.welcome;
 
@@ -73,7 +69,7 @@ function Today() {
         <PageShell tab>
             <PageHeader
                 title={t('nav.tabs.today')}
-                action={hijriDate && <span className="text-sm font-semibold text-gold-ink">{hijriDate}</span>}
+                action={<DatePair />}
             />
             <QueryState
                 isLoading={today.isLoading}

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Modal, KhatamEmblem, KhatamStar, IrisMark } from '../ui';
 import { GUIDE_STEPS } from './guideSteps';
+import { useAppBusy } from '@/hooks/useAppBusy';
 import { t } from '@/i18n';
 
 /**
@@ -10,6 +11,7 @@ import { t } from '@/i18n';
  * "Skip" is always there; nothing here is required reading.
  */
 function GuideDialog({ open, onClose }) {
+    const busy = useAppBusy();
     const [index, setIndex] = useState(0);
     const step = GUIDE_STEPS[index];
     const last = index === GUIDE_STEPS.length - 1;
@@ -25,7 +27,7 @@ function GuideDialog({ open, onClose }) {
                 {step.icon ? (
                     <KhatamEmblem icon={step.icon} className="mb-5" />
                 ) : (
-                    <IrisMark size="100%" state="draw" className="w-24 h-24 mb-5" />
+                    <IrisMark size="100%" state={busy ? 'turn' : 'still'} className="w-24 h-24 mb-5" />
                 )}
                 <h2 className="font-serif text-[1.8rem] font-semibold leading-tight">{t(`guide.steps.${step.key}.title`)}</h2>
                 <p className="font-reading text-text-secondary mt-3 leading-relaxed max-w-[42ch]">

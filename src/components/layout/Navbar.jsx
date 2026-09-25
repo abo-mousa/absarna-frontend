@@ -1,19 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useIsFetching, useIsMutating, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
+import { useAppBusy } from '@/hooks/useAppBusy';
 import { Upload, Sun, Moon, Search, ArrowLeft, Shield } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { uploadPathFor } from '@/lib/navigation';
 import { useAdminAttention, badgeText } from '@/hooks/useAdminAttention';
 import { reshuffleFeed } from '../../hooks/useVideos';
-import { IrisMark } from '../ui';
+import { IrisMark, DatePair } from '../ui';
 import SearchBar from './SearchBar';
 import LanguageToggle from './LanguageToggle';
 import AccountMenu from './AccountMenu';
 import NavTabs from './NavTabs';
 import { t } from '@/i18n';
-import { formatHijriDate } from '@/lib/datetime';
 
 const iconButtonShape = 'flex-col items-center justify-center gap-0.5 min-w-[50px] px-2.5 py-1.5 rounded-md text-text-secondary hover:bg-surface-hover transition-colors';
 /**
@@ -121,12 +121,11 @@ function Navbar() {
     };
     // Anything in flight anywhere in the app. `useIsFetching` counts queries, `useIsMutating`
     // counts writes; both re-render this bar when the count crosses zero and at no other time.
-    const busy = useIsFetching() + useIsMutating() > 0;
+    const busy = useAppBusy();
 
     const { data: attention } = useAdminAttention();
     const attentionCount = attention?.total ?? 0;
     const uploadLink = uploadPathFor(user);
-    const [hijriDate] = useState(() => formatHijriDate());
 
     return (
         <nav ref={navRef} className="sticky top-0 z-[1000] bg-bg/95 backdrop-blur-md border-b border-border-light">
@@ -194,11 +193,7 @@ function Navbar() {
                     mount rather than per render (the bar re-renders on every fetch through
                     `busy`); a tab left open across midnight shows yesterday's until the next
                     load, which is the same staleness the day-stable feed already has. */}
-                {hijriDate && (
-                    <span className="hidden xl:block flex-shrink-0 text-xs font-semibold text-text-secondary whitespace-nowrap">
-                        {hijriDate}
-                    </span>
-                )}
+                <DatePair size="bar" className="hidden xl:flex flex-shrink-0" />
 
                 <div className="flex items-center gap-1 flex-shrink-0">
                     <button
