@@ -1829,6 +1829,8 @@ export const en = {
             privacy: 'Privacy Policy',
             terms: 'Terms of Use',
             contact: 'Contact us',
+            viewerIdOff: 'Turn off the view-counting id',
+            viewerIdOn: 'Turn on the view-counting id',
             rights: '© {year} أَبْصَرْنا',
         },
 
@@ -1957,14 +1959,16 @@ export const en = {
                     heading: 'How the view counter is calculated',
                     paragraphs: [
                         'The counter under each video, book or article counts once per viewer per item, not once per page load. To tell viewers apart without tracking them, a "key" is built as follows.',
-                        'No cookie, advertising identifier or device fingerprint is involved in any of this. That is the substantive difference between this and an ordinary view counter.',
+                        'No cookie, advertising identifier or device fingerprint is involved in any of this. The one thing kept in your browser for it is a random number whose only purpose is that your view is not counted twice; it holds nothing about you or your device, and is used for nothing but the count.',
                         'A channel owner’s own views of their own content are not counted, and neither are the views of platform moderators.',
                     ],
                     bullets: [
                         'If you are signed in, the key is your account number, so one view is counted for the item even if you return to it a year later.',
-                        'If you are a visitor with no account, the key is a hash of three things together: today’s date, your IP address and your browser type. Because the date is part of the hash, your key changes every day, so today’s visit cannot be linked to yesterday’s.',
+                        'If you are a visitor with no account, your browser keeps a random number created there the first time, not derived from you or your device; it lasts thirteen months and is then replaced. It is sent with the platform’s own requests only, so one view is counted for the item even if you return on another day. The number itself is never stored with us, only a hash of it that cannot be turned back into it.',
+                        'Alongside it is a daily key: a hash of today’s date, your IP address and your browser type, which changes every day. A view counts only if both keys are new, so changing the number alone is not enough to inflate the counter.',
+                        'You can turn the number off at any time with “Turn off the view-counting id” at the foot of the page; it is erased from your browser and you are counted by the daily key alone. Clearing the site’s data in your browser erases it too.',
                         'The IP address is not stored at all; what is stored is the hash alone, and it cannot be reversed.',
-                        'Rows for visitors without an account are deleted every night, so none survives more than two days.',
+                        'Daily-key rows are deleted every night, so none survives more than two days; random-number rows are deleted after thirteen months, the time it stays in your browser.',
                     ],
                 },
                 {
@@ -1991,8 +1995,8 @@ export const en = {
                     heading: 'Cookies and local storage',
                     paragraphs: [
                         'The platform sets no cookies, for tracking or for anything else; there is nothing on the server that creates a cookie at all.',
-                        'It does use your browser’s local storage, for things that concern your browser alone and never reach us: your access token after signing in, your choice of light or dark mode, the interface language, your answer about showing YouTube videos, the playback speed and volume you set in the player, that you have seen the site guide so it does not open again, and the state of an unfinished upload until you resume it.',
-                        'The one exception is the interface language: if you are signed in, it is copied to your account, so that account emails reach you in it.',
+                        'It does use your browser’s local storage, for things that concern your browser alone and never reach us: your access token after signing in, your choice of light or dark mode, the interface language, your answer about showing YouTube videos, the playback speed and volume you set in the player, that you have seen the site guide so it does not open again, a random number for counting views if you are not signed in (see “How the view counter is calculated”), and the state of an unfinished upload until you resume it.',
+                        'Two things are exceptions to “never reach us”: the interface language, which is copied to your account if you are signed in so that account emails reach you in it; and the view-counting number, which is sent to be counted with and stored only as a hash.',
                         'An access token is valid for an hour and is renewed with a refresh token valid for seven days, or ninety if you choose “stay signed in”. If you do not, both are kept for the browser session alone and go when it closes. Signing out erases both from your browser.',
                         'The YouTube player, however — on pages of imported videos alone — may store things of its own in your browser, over which we have no control. That player is not loaded at all without your permission; see the "YouTube" section.',
                     ],

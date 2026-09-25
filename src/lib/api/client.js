@@ -1,3 +1,4 @@
+import { viewerId } from '../viewerId';
 import axios from 'axios';
 import { API_BASE_URL } from '../env';
 import { clearSession, readRefreshToken, readToken, storeRotatedTokens } from '../authStorage';
@@ -30,6 +31,11 @@ api.interceptors.request.use(
         const token = readToken();
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
+        } else {
+            // Signed out: the browser's view-counting id (lib/viewerId), so a returning visitor is
+            // counted once. Our own API only — this client never talks to another host.
+            const id = viewerId();
+            if (id) config.headers['X-Absarna-Viewer'] = id;
         }
         return config;
     },

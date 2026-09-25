@@ -178,6 +178,12 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   every existing prefix invalidation keeps working. The scope comes from the token, not from `user`
   (which is null while the profile fetch is in flight). Public catalogue keys are deliberately *not*
   scoped. `AuthContext` also clears the whole cache on logout.
+- **«مشاهدات» counts different people, signed in or not** (product owner, 2026-09-25). Signed in,
+  the account is the key. Signed out, `lib/viewerId` keeps a random UUID (13 months, nothing about
+  the person or device) that `client.js` sends as `X-Absarna-Viewer` on our own API only; the
+  backend counts a view only when that id AND the day's address key are both new, so rotating ids
+  cannot inflate a count. The footer's switch deletes the id and stops sending it, and the privacy
+  policy's «كيف يُحسب عدّاد المشاهدات» says so — keep the two in step if either changes.
 - **All `localStorage` goes through `lib/safeStorage.js`** — unguarded access *throws* when a browser
   blocks site data, and at module scope that renders a blank page.
 - **The session's tokens go through `lib/authStorage.js`, never either storage directly** — and

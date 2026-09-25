@@ -1,4 +1,7 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { SwapLabel } from '../ui';
+import { isViewerIdOff, setViewerIdOff } from '@/lib/viewerId';
 import { t } from '@/i18n';
 import { useConsent } from '@/contexts/ConsentContext';
 
@@ -39,6 +42,11 @@ const footerLinkClass = 'text-text-muted hover:text-text-secondary hover:underli
  */
 function Footer() {
     const { reset: resetConsent } = useConsent();
+    const [viewerIdOff, setViewerIdOffState] = useState(() => isViewerIdOff());
+    const toggleViewerId = () => {
+        setViewerIdOff(!viewerIdOff);
+        setViewerIdOffState(!viewerIdOff);
+    };
     const year = new Date().getFullYear();
 
     return (
@@ -67,6 +75,12 @@ function Footer() {
                         the rule is about. */}
                     <button type="button" onClick={resetConsent} className={footerLinkClass}>
                         {t('consent.footerLink')}
+                    </button>
+                    {/* The view-counting id's off switch, beside the other choice and as easy to
+                        reach: one press, and it is deleted (lib/viewerId). Its words say what the
+                        press will do, and both wordings share one cell so the link does not move. */}
+                    <button type="button" onClick={toggleViewerId} className={footerLinkClass} aria-pressed={viewerIdOff}>
+                        <SwapLabel showing={viewerIdOff ? 'turnOn' : 'turnOff'} faces={{ turnOff: t('legal.footer.viewerIdOff'), turnOn: t('legal.footer.viewerIdOn') }} />
                     </button>
                 </nav>
 
