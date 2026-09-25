@@ -701,7 +701,7 @@ export const en = {
             voice: 'Voices removed elsewhere',
             howItFills: 'When you follow a channel or start a programme, this page shows what you started and what you finished.',
             signInWhy: 'With an account you can follow channels, and find here what you started and what you finished each week.',
-            programmesTitle: 'Programmes you might like to start',
+            programmesTitle: 'Programmes you could start with',
             startProgramme: 'Episode one of {total}',
             channelsTitle: 'Channels you might like',
             allChannels: 'All channels',
