@@ -539,6 +539,13 @@ What this app relies on; the mirror lives in the backend's `CLAUDE.md`.
   channel). Call it when the user declines a resume offer.
 - **`GET /api/search` and `/api/search/suggestions` answer the same question** — the dropdown is a
   preview of what Enter will show. If they diverge, it is a backend bug; don't paper over it here.
+- **`/` is Today, a dashboard that ENDS; the feed that keeps loading is Discover (`/discover`).**
+  `GET /api/today` sends the week (finished counts, never a streak), what to continue (the next
+  episode in the series' public order, with a resume position), the news, and one "because you
+  finished" row that names the video it is based on. "Finished" is 90% of the measured length and
+  is the backend's rule — never re-derive it here. `useToday` is user-scoped and NO_CACHE, so
+  coming back from an episode shows the next one. This page reads watch history as a signal on
+  purpose (a product decision of 2026-09-25); the feed still only subtracts.
 - **`GET /api/feed` is stable for a viewer for a whole day**, so a refresh is not a way to reshuffle
   it. The backend guarantees the response for a given (viewer, day, `shuffle`) is identical every
   time it is asked for, which is what makes `refetchOnMount: 'always'` safe here: Back from a video

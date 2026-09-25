@@ -791,6 +791,31 @@ export const ar = {
         emptyOnChannel: 'لا توجد مقالات بعد',
     },
 
+    // The Today page (/): a dashboard that ends. «أسبوعك» counts what was finished in the last
+    // seven days — never a streak, nothing lost for a missed day.
+    today: {
+        weekTitle: 'أسبوعك',
+        weekSpan: 'آخر سبعة أيام',
+        episodesFinished: 'حلقات أنهيتها',
+        booksRead: 'كتب قرأت فيها',
+        programmesCompleted: 'برامج أتممتها',
+        closest: 'بقي {remaining} وتُتمّ «{title}»',
+        continueTitle: 'تتمّة ما بدأت',
+        next: 'التالي: {position} من {total}',
+        resume: 'تابع من {time}',
+        pageShort: 'ص {page}',
+        readFrom: 'تابع من ص {page}',
+        progressAria: '{title}: {position} من {total}',
+        readingAria: '{title}: صفحة {page}',
+        newsTitle: 'آخر الأخبار',
+        because: 'لأنك أنهيت «{title}»',
+        colophonTitle: 'أنت على اطّلاع، وما بدأته في انتظارك',
+        colophonText: 'هذه صفحة اليوم. وكل ما سواها في «اكتشف».',
+        toDiscover: 'اكتشف',
+        signInPrompt: 'سجّل الدخول لتظهر هنا تتمّة ما بدأت وما أنجزته هذا الأسبوع.',
+        loadFailed: 'تعذّر تحميل صفحة اليوم',
+    },
+
     // What kind of thing a video is (backend VideoFormat). `one` is the singular a card's kicker
     // uses («وثائقي · تاريخ»), `many` the plural a chip uses («وثائقيات»). Keys are the backend's
     // enum names, which is why they are read through lib/formats rather than written literally.

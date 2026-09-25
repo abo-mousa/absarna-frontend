@@ -50,6 +50,7 @@ export const userScopeOf = (token) => {
 export const queryKeys = {
     // ---- the viewer's own lists ----
     feed: (scope) => ['feed', scope],
+    today: (scope) => ['today', scope],
     watchHistory: (scope) => ['watch-history', scope],
     readingHistory: (scope) => ['reading-history', scope],
     bookmarks: (scope) => ['bookmarks', scope],

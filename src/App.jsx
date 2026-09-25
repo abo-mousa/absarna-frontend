@@ -14,6 +14,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { Spinner } from './components/ui';
 import { t } from '@/i18n';
 
+const Today = lazy(() => import('./pages/Today'));
 const Discover = lazy(() => import('./pages/Discover'));
 const ChannelPage = lazy(() => import('./pages/ChannelPage'));
 const Admin = lazy(() => import('./pages/Admin'));
@@ -202,9 +203,9 @@ function AppRoutes() {
         <Suspense fallback={<RouteFallback />}>
             <Routes>
                 {/* Public */}
-                {/* `/` becomes the Today dashboard; until it exists it shows Discover, so nothing
-                    disappears between the two steps. */}
-                <Route path="/" element={<Discover />} />
+                {/* Today, the dashboard that ends, is the home page; the feed that keeps loading
+                    is Discover, one tab over. */}
+                <Route path="/" element={<Today />} />
                 <Route path="/discover" element={<Discover />} />
                 <Route path="/search" element={<SearchPage />} />
                 <Route path="/channel/:slug" element={<ChannelPage />} />

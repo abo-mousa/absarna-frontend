@@ -584,6 +584,29 @@ export const en = {
         emptyOnChannel: 'No articles yet',
     },
 
+    today: {
+        weekTitle: 'Your week',
+        weekSpan: 'The last seven days',
+        episodesFinished: 'episodes finished',
+        booksRead: 'books read in',
+        programmesCompleted: 'programmes completed',
+        closest: '{remaining} to go and you have finished “{title}”',
+        continueTitle: 'Continue what you started',
+        next: 'Next: {position} of {total}',
+        resume: 'Resume at {time}',
+        pageShort: 'p. {page}',
+        readFrom: 'Continue from page {page}',
+        progressAria: '{title}: {position} of {total}',
+        readingAria: '{title}: page {page}',
+        newsTitle: 'Latest news',
+        because: 'Because you finished “{title}”',
+        colophonTitle: 'You are up to date, and what you started is waiting',
+        colophonText: 'That is today’s page. Everything else is in Discover.',
+        toDiscover: 'Discover',
+        signInPrompt: 'Sign in to see what you started and what you finished this week here.',
+        loadFailed: 'Today’s page could not be loaded',
+    },
+
     formats: {
         one: {
             REPORT: 'Report',
@@ -2158,7 +2181,7 @@ export const TRANSLATED = [
     'channel', 'consent', 'createChannel', 'comments', 'likes', 'bookmarks', 'history',
     'subscriptions', 'profile', 'search', 'biography', 'share', 'upload', 'notFound',
     'channelManage', 'youtube', 'youtubeOAuth', 'admin', 'adminReports', 'legal',
-    'pager', 'report', 'ownerImage', 'formats',
+    'pager', 'report', 'ownerImage', 'formats', 'today',
 ];
 
 export default en;
