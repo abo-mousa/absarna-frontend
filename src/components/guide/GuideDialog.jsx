@@ -35,7 +35,7 @@ function GuideDialog({ open, onClose }) {
                 </p>
             </div>
 
-            <div className="flex items-center justify-center gap-2 mt-4" aria-label={t('guide.progress', { step: index + 1, total: GUIDE_STEPS.length })}>
+            <div className="flex items-center justify-center gap-2 mt-4" role="img" aria-label={t('guide.progress', { step: index + 1, total: GUIDE_STEPS.length })}>
                 {GUIDE_STEPS.map((s, i) => (
                     <KhatamStar
                         key={s.key}

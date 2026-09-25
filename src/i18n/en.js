@@ -1885,7 +1885,7 @@ export const en = {
                         'Today there is no advertising and no ad network, no charge to watch and no paid subscription: nowhere on the platform does money change hands.',
                         'No advertising tracker and no third-party measurement. Performance and error measurements go to a server we run ourselves, not to an analytics company.',
                         'No cookies set by the platform.',
-                        'No recommendation engine measuring how long you stay in order to lengthen it: the Today page ends, and nothing autoplays one video after another. A video you finish may lead to suggestions like it, and you are told so plainly; one you opened and left is never the basis of a suggestion.',
+                        'No recommendation engine measuring how long you stay in order to lengthen it: the Today page ends, and nothing autoplays one video after another. A video you finish may lead to suggestions like it, and you are told so plainly; one you opened and left never leads to a suggestion later.',
                     ],
                 },
             ],
@@ -1930,7 +1930,7 @@ export const en = {
                     heading: 'Your activity on the platform',
                     paragraphs: [
                         'If you are signed in, the following is stored against your account. Your watch and reading histories are lists for your own convenience, not tracking logs: each is capped at two hundred entries with the oldest dropped automatically, and each is cleared in full with one press.',
-                        'They are also what the Today page is built from: the next episode of a programme you started, your place in a book, what you finished this week, and suggestions like the last video you finished, which is named beside them. No suggestion is ever based on a video you opened and did not finish, and none of it orders the Discover page, which only leaves out what you have already watched.',
+                        'They are also what the Today page is built from: the next episode of a programme you started, your place in a book, what you finished this week, and suggestions like the last video you finished, which is named beside them. A video you opened and did not finish never leads to a suggestion later, and none of it orders the Discover page, which only leaves out what you have already watched.',
                     ],
                     bullets: [
                         'Watch history — the last two hundred videos you watched and where you stopped in each, so that "continue watching" works.',
