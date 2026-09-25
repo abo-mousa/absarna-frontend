@@ -848,6 +848,14 @@ export const ar = {
     // seven days — never a streak, nothing lost for a missed day.
     // The first-visit guide (components/guide) and its full page, /guide. One step per place in
     // the tab bar, between what the site is for and the marks a video can carry.
+    // Discover's channel column (layout/ChannelRail), wide screens only.
+    channelRail: {
+        label: 'القنوات',
+        following: 'قنوات تتابعها',
+        others: 'قنوات أخرى',
+        all: 'الكل',
+    },
+
     guide: {
         title: 'دليل أبصرنا',
         subtitle: 'جولة في أرجاء الموقع، في دقيقة.',

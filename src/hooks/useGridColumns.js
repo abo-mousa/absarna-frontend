@@ -1,13 +1,16 @@
 import { useSyncExternalStore } from 'react';
 
 /**
- * How many columns `grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4` is rendering right
- * now — the one grid the home page uses. Read from the same breakpoints Tailwind compiles
- * (tailwind.config.js `xs`, and the defaults `md` 768px / `xl` 1280px), so a change there has to be
- * made here too; `fitFeedToRows` is only as right as this number.
+ * How many columns `grid-cols-1 xs:grid-cols-2 md:grid-cols-3` is rendering right now — Discover's
+ * grid, the one `fitFeedToRows` fills. Read from the same breakpoints Tailwind compiles
+ * (tailwind.config.js `xs`, and the default `md` 768px), so a change there has to be made here
+ * too; `fitFeedToRows` is only as right as this number.
+ *
+ * <p>Three at most since Discover gained its channel column (from `lg`): four cards beside it came
+ * out around 215px wide, thumbnails rather than pictures. Below `lg` there is no column, and three
+ * was already the count there.
  */
 const QUERIES = [
-    ['(min-width: 1280px)', 4],
     ['(min-width: 768px)', 3],
     ['(min-width: 480px)', 2],
 ];
@@ -25,8 +28,8 @@ const subscribe = (onChange) => {
 };
 
 export function useGridColumns() {
-    // 4 on the server/in tests with no matchMedia: the widest layout, which trims least.
-    return useSyncExternalStore(subscribe, read, () => 4);
+    // 3 on the server/in tests with no matchMedia: the widest layout, which trims least.
+    return useSyncExternalStore(subscribe, read, () => 3);
 }
 
 export default useGridColumns;

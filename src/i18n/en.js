@@ -628,6 +628,13 @@ export const en = {
         loadFailed: 'Posts could not be loaded',
     },
 
+    channelRail: {
+        label: 'Channels',
+        following: 'Channels you follow',
+        others: 'More channels',
+        all: 'See all',
+    },
+
     guide: {
         title: 'The Absarna guide',
         subtitle: 'A tour of the site, in a minute.',
@@ -2289,7 +2296,7 @@ export const TRANSLATED = [
     'channel', 'consent', 'createChannel', 'comments', 'likes', 'bookmarks', 'history',
     'subscriptions', 'profile', 'search', 'biography', 'share', 'upload', 'notFound',
     'channelManage', 'youtube', 'youtubeOAuth', 'admin', 'adminReports', 'legal',
-    'pager', 'report', 'ownerImage', 'formats', 'guide', 'today', 'postsPage', 'channelsPage', 'voice',
+    'pager', 'report', 'ownerImage', 'formats', 'channelRail', 'guide', 'today', 'postsPage', 'channelsPage', 'voice',
 ];
 
 export default en;
