@@ -798,6 +798,7 @@ export const ar = {
         weekSpan: 'آخر سبعة أيام',
         episodesFinished: 'حلقات أنهيتها',
         booksRead: 'كتب قرأت فيها',
+        pagesRead: 'صفحة قرأتها',
         programmesCompleted: 'برامج أتممتها',
         closest: 'بقي {remaining} وتُتمّ «{title}»',
         continueTitle: 'تتمّة ما بدأت',

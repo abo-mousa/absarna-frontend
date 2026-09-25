@@ -119,7 +119,7 @@ function Today() {
 function WeekStrip({ week }) {
     const counts = [
         { value: week.episodesFinished, label: t('today.episodesFinished') },
-        { value: week.booksRead, label: t('today.booksRead') },
+        { value: week.pagesRead, label: t('today.pagesRead') },
         { value: week.programmesCompleted, label: t('today.programmesCompleted') },
     ];
     if (!week.closest && counts.every((c) => !c.value)) return null;

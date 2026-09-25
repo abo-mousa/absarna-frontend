@@ -33,6 +33,12 @@ describe('formatPublishDate', () => {
         expect(formatPublishDate('2026-09-08')).not.toMatch(/ساع/);
     });
 
+    it('says how many minutes ago for a publication moment, read as UTC', () => {
+        // 20 minutes before the fake clock's 12:00Z, sent zoneless as the backend writes it.
+        // Read as local time this would be hours off anywhere but UTC.
+        expect(formatPublishDate('2026-09-08T11:40:00')).toBe('منذ ٢٠ دقائق');
+    });
+
     it('says yesterday rather than counting hours across one midnight', () => {
         // 30 hours and 20 hours are both "أمس" to a reader, and a date cannot tell them apart
         // anyway.
@@ -107,6 +113,11 @@ describe('displayDate', () => {
         expect(displayDate({ publishDate: '2026-09-07', originalPublishDate: null }))
             .toBe('2026-09-07');
         expect(displayDate({ publishDate: '2026-09-07' })).toBe('2026-09-07');
+    });
+
+    it('prefers the publication moment, which carries the time of day', () => {
+        expect(displayDate({ publishedAt: '2026-09-19T08:14:03', originalPublishDate: '2026-09-19', publishDate: '2026-09-25' }))
+            .toBe('2026-09-19T08:14:03');
     });
 
     it('is null when there is no date at all, not undefined', () => {

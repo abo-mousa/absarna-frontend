@@ -122,11 +122,15 @@ export function parseTimestamp(value) {
  */
 export function formatPublishDate(dateStr) {
     if (!dateStr) return '';
-    const date = dayjs(dateStr);
+    const dateOnly = DATE_ONLY.test(String(dateStr).trim());
+    // A timestamp (a video's `publishedAt`) names no zone and is UTC, like every LocalDateTime the
+    // backend sends — read through parseTimestamp, or a video published a minute ago would read
+    // as hours old or in the future depending on where the reader lives.
+    const date = dateOnly ? dayjs(dateStr) : parseTimestamp(dateStr);
     if (!date.isValid()) return '';
     const localised = date.locale(dateLocale());
 
-    if (DATE_ONLY.test(String(dateStr).trim())) {
+    if (dateOnly) {
         // Whole days between two midnights, rather than hours between two instants.
         const today = dayjs().startOf('day');
         const days = today.diff(date.startOf('day'), 'day');
@@ -187,5 +191,8 @@ export default dayjs;
  * is the answer.
  */
 export function displayDate(item) {
-    return item?.originalPublishDate || item?.publishDate || null;
+    // `publishedAt` first: the same moment as the original date where there is one, but with its
+    // time of day, which is what lets a report say «منذ ٢٠ دقيقة». Only videos have it, and older
+    // rows do not, so everything else falls through to the dates exactly as before.
+    return item?.publishedAt || item?.originalPublishDate || item?.publishDate || null;
 }

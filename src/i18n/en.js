@@ -589,6 +589,7 @@ export const en = {
         weekSpan: 'The last seven days',
         episodesFinished: 'episodes finished',
         booksRead: 'books read in',
+        pagesRead: 'pages read',
         programmesCompleted: 'programmes completed',
         closest: '{remaining} to go and you have finished “{title}”',
         continueTitle: 'Continue what you started',
