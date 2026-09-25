@@ -584,6 +584,22 @@ export const en = {
         emptyOnChannel: 'No articles yet',
     },
 
+    voice: {
+        graphicTitle: 'Graphic scenes',
+        graphicText: 'This video documents something that may be hard to watch.',
+        tapToView: 'Tap to view',
+        reveal: 'Show the video',
+        removedElsewhere: 'Removed from another platform',
+        perChannel: '(according to the channel)',
+        formGraphic: 'Contains graphic scenes',
+        formGraphicHint: 'Published behind a cover that warns the viewer, never removed for it.',
+        formRemoved: 'Removed from another platform',
+        formRemovedHint: 'Shown to viewers as the channel’s own statement, since we cannot verify it.',
+        keptTitle: 'What is uploaded to Absarna is kept here',
+        keptHosted: '{count} uploaded to Absarna directly, kept whatever another platform does',
+        keptEmbedded: '{count} shown from YouTube, gone if YouTube removes them',
+    },
+
     channelsPage: {
         title: 'Channels',
         subtitle: 'Who makes what you watch and read',
@@ -2209,7 +2225,7 @@ export const TRANSLATED = [
     'channel', 'consent', 'createChannel', 'comments', 'likes', 'bookmarks', 'history',
     'subscriptions', 'profile', 'search', 'biography', 'share', 'upload', 'notFound',
     'channelManage', 'youtube', 'youtubeOAuth', 'admin', 'adminReports', 'legal',
-    'pager', 'report', 'ownerImage', 'formats', 'today', 'postsPage', 'channelsPage',
+    'pager', 'report', 'ownerImage', 'formats', 'today', 'postsPage', 'channelsPage', 'voice',
 ];
 
 export default en;

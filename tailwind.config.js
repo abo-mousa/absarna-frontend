@@ -23,6 +23,8 @@ export default {
           // Gold as text. DEFAULT is a fill colour and fails contrast as text; see index.css.
           ink: 'rgb(var(--color-gold-ink) / <alpha-value>)',
         },
+        // Testimony and the graphic-content warning. See index.css.
+        voice: 'rgb(var(--color-voice) / <alpha-value>)',
         surface: {
           DEFAULT: 'rgb(var(--color-surface) / <alpha-value>)',
           hover: 'rgb(var(--color-surface-hover) / <alpha-value>)',

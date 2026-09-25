@@ -450,6 +450,14 @@ What this app relies on; the mirror lives in the backend's `CLAUDE.md`.
   video has), never from `lib/formats`' full list; `?format=` combines with `?category=`. Labels are
   `formats.one.*` (kicker) and `formats.many.*` (chip), read with `tOptional` — a format this
   catalog does not know yet renders nothing.
+- **`graphicContent` and `removedElsewhere` are public, and are not the review list.** A graphic
+  video is published behind a cover (blurred card, and on its page the player is NOT MOUNTED until
+  the viewer asks — an embed or hls.js starts fetching the moment it mounts); `removedElsewhere` is
+  always shown as the channel's own claim («بحسب القناة»). Both are booleans so a mistaken warning
+  can be taken off. The channel detail's `hostedVideoCount` / `embeddedVideoCount` back the "kept
+  here" promise, which is made about uploads only: an embed goes when YouTube removes it. Testimony
+  and the warning use `voice` (brick red), never the error red; as a fill in dark mode it takes the
+  page's ink, not white.
 - **`VideoDTO.sourceUrl` is null for an upload-backed video; `thumbnailUrl` is null until the worker
   produces a poster.** Treat null as "not yet", never as an error. Object keys never appear on a DTO.
 - **`thumbnailUrl` may be a poster the OWNER chose, and `hasCustomThumbnail` is how you tell.** The

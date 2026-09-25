@@ -42,6 +42,9 @@ function ContentEditModal({ open, type, item, onClose, onSave, saving, slug }) {
     // this form must not write back as though the owner had picked it. See formatSelectOptions.
     const formatSelect = type === 'videos' && item ? formatSelectOptions(item) : null;
     const [format, setFormat] = useState('');
+    // The two things every reader is told about a video: booleans on the backend, so unticking
+    // one really does take it off.
+    const [flags, setFlags] = useState({ graphicContent: false, removedElsewhere: false });
 
     // Re-seeded whenever a different item is opened. Without this the dialog would show the
     // previous item's values for a moment, and a quick save would write them onto the new one.
@@ -49,6 +52,7 @@ function ContentEditModal({ open, type, item, onClose, onSave, saving, slug }) {
         if (!item) return;
         setForm(Object.fromEntries(fields.map((f) => [f, item[f] ?? ''])));
         setFormat(type === 'videos' ? formatSelectOptions(item).value : '');
+        setFlags({ graphicContent: !!item.graphicContent, removedElsewhere: !!item.removedElsewhere });
         // Keyed on the item's IDENTITY, not the item: `item` is a fresh object on every refetch
         // of the list behind this dialog, and re-seeding then would silently discard whatever the
         // owner has typed. `fields` is derived from `type` (a new array each render), so `type`
@@ -74,6 +78,11 @@ function ContentEditModal({ open, type, item, onClose, onSave, saving, slug }) {
         // the video is already in whenever the option is offered at all.
         if (formatSelect && format && format !== formatSelect.value) {
             changes.format = format;
+        }
+        if (type === 'videos') {
+            for (const flag of ['graphicContent', 'removedElsewhere']) {
+                if (flags[flag] !== !!item[flag]) changes[flag] = flags[flag];
+            }
         }
         if (Object.keys(changes).length === 0) {
             onClose();
@@ -117,6 +126,28 @@ function ContentEditModal({ open, type, item, onClose, onSave, saving, slug }) {
                                 <option key={option.value || 'inherit'} value={option.value}>{option.label}</option>
                             ))}
                         </select>
+                    </div>
+                )}
+
+                {type === 'videos' && (
+                    <div className="grid gap-3">
+                        {[
+                            ['graphicContent', 'voice.formGraphic', 'voice.formGraphicHint'],
+                            ['removedElsewhere', 'voice.formRemoved', 'voice.formRemovedHint'],
+                        ].map(([flag, label, hint]) => (
+                            <label key={flag} className="flex items-start gap-3 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={flags[flag]}
+                                    onChange={(e) => setFlags({ ...flags, [flag]: e.target.checked })}
+                                    className="mt-1 accent-[rgb(var(--color-voice))]"
+                                />
+                                <span>
+                                    <span className="block text-sm font-semibold">{t(label)}</span>
+                                    <span className="block text-xs text-text-muted">{t(hint)}</span>
+                                </span>
+                            </label>
+                        ))}
                     </div>
                 )}
 

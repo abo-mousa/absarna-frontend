@@ -28,6 +28,7 @@ import { formatSelectOptions } from '@/lib/formats';
 const EMPTY_FORM = {
     title: '', description: '', sourceType: '', sourceUrl: '', uploadSessionId: '',
     category: '', format: '', seriesId: '', orderInSeries: '', originalPublishDate: '',
+    graphicContent: false, removedElsewhere: false,
 };
 
 /**
@@ -257,6 +258,23 @@ export default function VideosTab({ slug, channel, youtubeState, isOwner, active
                         )}
                     </div>
                     <Input label={t('fields.originalPublishDateOptional')} type="date" value={form.originalPublishDate} onChange={field('originalPublishDate')} />
+                    {[
+                        ['graphicContent', 'voice.formGraphic', 'voice.formGraphicHint'],
+                        ['removedElsewhere', 'voice.formRemoved', 'voice.formRemovedHint'],
+                    ].map(([flag, label, hint]) => (
+                        <label key={flag} className="flex items-start gap-3 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={form[flag]}
+                                onChange={(e) => setForm({ ...form, [flag]: e.target.checked })}
+                                className="mt-1 accent-[rgb(var(--color-voice))]"
+                            />
+                            <span>
+                                <span className="block text-sm font-semibold">{t(label)}</span>
+                                <span className="block text-xs text-text-muted">{t(hint)}</span>
+                            </span>
+                        </label>
+                    ))}
                 </ContentPublishForm>
             </Modal>
 

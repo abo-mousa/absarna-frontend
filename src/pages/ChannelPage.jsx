@@ -5,7 +5,7 @@ import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { Video, BookOpen, FileText, MessageSquare, Settings, Tv, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
-import { QueryState, Avatar, SearchField } from '../components/ui';
+import { QueryState, Avatar, SearchField, KhatamStar } from '../components/ui';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { VideoCard, BookCard, ArticleCard, PostCard, SubscribeButton } from '../components/content';
 import { useWatchProgressMap, useReadingProgressMap } from '../hooks/useVideos';
@@ -245,6 +245,24 @@ function ChannelPage() {
 
                 <SubscribeButton channelId={channel.id} />
             </div>
+
+            {/* WHAT THIS CHANNEL KEEPS HERE, stated exactly. An upload is a file this platform
+                holds and it stays whatever another platform does; a YouTube import is YouTube's
+                player and goes when YouTube removes it. The promise is made about the first
+                number only, and the second is said beside it so the promise is not overheard as
+                covering both. */}
+            {channel.hostedVideoCount > 0 && (
+                <div className="flex items-start gap-3 p-4 mb-6 rounded-lg bg-gold-light border border-border-light">
+                    <KhatamStar className="w-6 h-6 flex-shrink-0 text-gold mt-0.5" />
+                    <div className="text-sm">
+                        <p className="font-serif text-[1.3rem] font-semibold leading-tight">{t('voice.keptTitle')}</p>
+                        <p className="text-text-secondary mt-1">{t('voice.keptHosted', { count: channel.hostedVideoCount })}</p>
+                        {channel.embeddedVideoCount > 0 && (
+                            <p className="text-text-muted">{t('voice.keptEmbedded', { count: channel.embeddedVideoCount })}</p>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* TWO AUDIENCES, ONE BANNER, AND THEY GET DIFFERENT WEIGHTS.
                 The channel URL is the invitation we email, so this renders to every visitor, not

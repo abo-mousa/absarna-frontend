@@ -109,7 +109,9 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                     <img
                         src={thumbnail}
                         alt={video.title}
-                        className="w-full h-full object-cover"
+                        // Blurred past recognition under a graphic-content warning: the cover below
+                        // says what the picture holds, and the video page asks before it plays.
+                        className={`w-full h-full object-cover ${video.graphicContent ? 'blur-xl scale-110' : ''}`}
                         onError={() => setThumbnailFailed(true)}
                     />
                 ) : (
@@ -117,6 +119,14 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                     // the star on the brand gradient, where there used to be a film emoji.
                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary-dark to-primary">
                         <KhatamStar filled={false} className="w-12 h-12 text-white/30" />
+                    </div>
+                )}
+
+                {video.graphicContent && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/55 text-white text-center p-3">
+                        <AlertTriangle size={22} aria-hidden="true" />
+                        <span className="text-sm font-bold">{t('voice.graphicTitle')}</span>
+                        <span className="text-[0.7rem] border border-white/50 rounded-full px-2.5 py-0.5 mt-1">{t('voice.tapToView')}</span>
                     </div>
                 )}
 
@@ -256,7 +266,9 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                             <span dir="auto" className="truncate">{kicker.text}</span>
                         </button>
                     ) : (
-                        <div className="flex items-center gap-1.5 max-w-full h-4 text-xs font-bold text-gold-ink">
+                        // Brick red for testimony: a first-person account must never read as a produced
+                    // report, wherever it appears.
+                    <div className={`flex items-center gap-1.5 max-w-full h-4 text-xs font-bold ${video.format === 'TESTIMONY' ? 'text-voice' : 'text-gold-ink'}`}>
                             <KhatamStar className="w-2.5 h-2.5 flex-shrink-0" />
                             <span dir="auto" className="truncate">{kicker.text}</span>
                         </div>
@@ -311,8 +323,13 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                             {date && <span className="truncate">{formatPublishDate(date)}</span>}
                         </div>
                     )}
+                    {video.removedElsewhere && (
+                        <div className={`${META_ROW} text-voice`}>
+                            <span className={META_GLYPH}><AlertTriangle size={12} /></span>
+                            <span className="truncate">{t('voice.removedElsewhere')} <span className="opacity-75">{t('voice.perChannel')}</span></span>
+                        </div>
+                    )}
                 </div>
-
             </div>
         </div>
     );

@@ -794,6 +794,24 @@ export const ar = {
         emptyOnChannel: 'لا توجد مقالات بعد',
     },
 
+    // Giving voice: the cover over graphic footage, the owner's "removed elsewhere" note, and what
+    // a channel keeps here. Brick red, never the error red: it marks a voice, not a fault.
+    voice: {
+        graphicTitle: 'مشاهد قاسية',
+        graphicText: 'يوثّق هذا المقطع ما قد يصعب مشاهدته.',
+        tapToView: 'اضغط للمشاهدة',
+        reveal: 'اعرض المقطع',
+        removedElsewhere: 'حُذف من منصة أخرى',
+        perChannel: '(بحسب القناة)',
+        formGraphic: 'يحتوي على مشاهد قاسية',
+        formGraphicHint: 'يُنشر خلف غطاء يُنبّه المشاهد، ولا يُحذف بسبب ذلك.',
+        formRemoved: 'حُذف من منصة أخرى',
+        formRemovedHint: 'يظهر للمشاهدين على أنه قول القناة، لأننا لا نستطيع التحقّق منه.',
+        keptTitle: 'ما رُفع إلى أبصرنا محفوظ هنا',
+        keptHosted: '{count} مرفوعة إلى أبصرنا مباشرةً، وتبقى ولو حُذفت من أي منصة أخرى',
+        keptEmbedded: '{count} معروضة من يوتيوب، وتذهب إن حذفها يوتيوب',
+    },
+
     // The Channels page (/channels): your own channels, the ones you follow, and the directory —
     // what the sidebar's channel lists used to be.
     channelsPage: {

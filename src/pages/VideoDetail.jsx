@@ -1,6 +1,6 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { Clock, Folder, Tv, User } from 'lucide-react';
+import { Clock, Folder, Tv, User, AlertTriangle } from 'lucide-react';
 import { ArrowBack, ChevronBack, ChevronForward } from '@/components/ui/DirectionalIcon';
 import PageShell from '../components/layout/PageShell';
 import { QueryState, Avatar, Spinner, LinkifiedText, ExpandableText } from '../components/ui';
@@ -24,6 +24,9 @@ function VideoDetail() {
     const [searchParams] = useSearchParams();
     const sharedTime = Number(searchParams.get('t')) || 0;
     const playerRef = useRef(null);
+    // Which video the viewer has chosen to see past its graphic-content cover: an id, not a flag,
+    // so navigating to the next video asks again.
+    const [revealedId, setRevealedId] = useState(null);
     const { data: video, isLoading, isError, error } = useVideo(id);
     const { data: related = [] } = useRelatedVideo(id);
     const { data: channel } = useChannel(video?.channelId, !!video?.channelId);
@@ -157,7 +160,24 @@ function VideoDetail() {
                     </div>
                 ))}
                 <div className="bg-surface rounded-lg overflow-hidden border border-border-light shadow-sm mb-6">
-                    {historyLoading ? (
+                    {video.graphicContent && revealedId !== video.id ? (
+                        // THE COVER, BEFORE THE PLAYER EXISTS. Not an overlay on a mounted player:
+                        // the YouTube embed and hls.js both start fetching (and YouTube shows its
+                        // own poster) the moment they mount, so "hidden until asked" has to mean
+                        // not mounted. Per video, so the next one asks again.
+                        <div className="aspect-video flex flex-col items-center justify-center gap-2 bg-black text-white text-center p-6">
+                            <AlertTriangle size={32} aria-hidden="true" />
+                            <p className="text-lg font-bold">{t('voice.graphicTitle')}</p>
+                            <p className="text-sm text-white/80 max-w-md">{t('voice.graphicText')}</p>
+                            <button
+                                type="button"
+                                onClick={() => setRevealedId(video.id)}
+                                className="mt-3 px-5 py-2 rounded-md bg-voice text-white dark:text-bg font-semibold hover:opacity-90"
+                            >
+                                {t('voice.reveal')}
+                            </button>
+                        </div>
+                    ) : historyLoading ? (
                         // Holds the player back until we know the real resume point — the
                         // YouTube branch below only ever seeks once, at player-creation time,
                         // so starting it with `startTime` still 0 (history not loaded yet) would
@@ -191,6 +211,14 @@ function VideoDetail() {
                 </div>
 
                 <div className="bg-surface p-5 sm:p-6 rounded-lg border border-border-light mb-6">
+                    {/* The owner's own statement, and said to be theirs: nothing here can verify
+                        what another platform did. */}
+                    {video.removedElsewhere && (
+                        <p className="flex items-center gap-1.5 text-sm font-semibold text-voice mb-2">
+                            <AlertTriangle size={14} aria-hidden="true" />
+                            {t('voice.removedElsewhere')} <span className="font-normal opacity-75">{t('voice.perChannel')}</span>
+                        </p>
+                    )}
                     <div className="flex items-start justify-between gap-3 mb-3">
                         <h1 className="text-xl sm:text-2xl font-bold">{video.title}</h1>
                         <div className="flex items-center gap-3 flex-shrink-0 mt-1">

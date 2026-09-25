@@ -28,6 +28,9 @@
        large text, and a kicker is 12px bold. This is 5.25:1 on the page and 5.52:1 on a surface,
        and still reads as the same gold beside the fill above. */
     --color-gold-ink: 134 97 26;
+    /* #8A3B2E — brick red: testimony, and the warning over graphic footage. 7.15:1 on the page,
+       and white on it is 7.65:1. Never an error colour: it marks a voice, not a fault. */
+    --color-voice: 138 59 46;
     --color-surface: 254 253 249; /* #FEFDF9 — warm parchment surface */
     --color-surface-hover: 245 240 228; /* #F5F0E4 */
     --color-bg: 251 247 238; /* #FBF7EE — warm parchment page */
@@ -72,6 +75,8 @@
     --color-gold: 245 193 90; /* #F5C15A */
     --color-gold-light: 58 46 19; /* #3A2E13 */
     --color-gold-ink: 228 180 88; /* #E4B458 — 9.6:1 on the night page */
+    --color-voice: 228 140 119; /* #E48C77 — 7.3:1 on the night page. As a FILL it takes the
+      page's dark ink, not white (white on it is 2.6:1) — see VideoDetail's reveal button. */
     --color-surface: 23 29 43; /* #171D2B — indigo-night surface */
     --color-surface-hover: 30 37 54; /* #1E2536 */
     --color-bg: 16 20 28; /* #10141C — indigo-night page, not pure black */
