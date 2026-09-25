@@ -3,9 +3,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { User, Upload, Shield, LogOut, Sun, Moon, LogIn, UserPlus, History, Bookmark } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { useMyChannels } from '../../hooks/useChannels';
 import { useOutsideClick } from '@/hooks/useOutsideClick';
-import { canUpload, isPlatformAdmin, uploadPathFor } from '@/lib/user';
+import { uploadPathFor } from '@/lib/navigation';
 import { Avatar } from '../ui';
 import { resolveMediaUrl } from '@/lib/media';
 import { badgeText } from '@/hooks/useAdminAttention';
@@ -27,8 +26,9 @@ export function accountMenuActions(user, signedIn = true) {
         // What the sidebar used to hold for an account, now that there is no sidebar.
         'history',
         'bookmarks',
-        ...(canUpload(user) ? ['upload'] : []),
-        ...(isPlatformAdmin(user) ? ['admin'] : []),
+        // The backend's answers (profile), never a role compared here.
+        ...(user?.canUpload ? ['upload'] : []),
+        ...(user?.platformAdmin ? ['admin'] : []),
         'theme',
         'language',
         'logout',
@@ -68,7 +68,6 @@ function AccountMenu({ attentionCount = 0 }) {
     const [open, setOpen] = useState(false);
     // Only asked for once the menu is open, and a cache hit after that — the upload row is the
     // only thing that needs it.
-    const { data: myChannels = [] } = useMyChannels(open && signedIn);
 
     // Any navigation closes it, including one made from inside it. During render rather than in
     // an effect, for the reason SearchBar gives: an effect paints the open menu over the new
@@ -185,7 +184,7 @@ function AccountMenu({ attentionCount = 0 }) {
                                 );
                             case 'upload':
                                 return (
-                                    <Link key={action} role="menuitem" to={uploadPathFor(myChannels)} className={`md:hidden ${itemClass}`}>
+                                    <Link key={action} role="menuitem" to={uploadPathFor(user)} className={`md:hidden ${itemClass}`}>
                                         <Upload size={18} />
                                         {t('nav.upload')}
                                     </Link>

@@ -4,7 +4,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePageMeta } from '@/hooks/usePageMeta';
 import PageShell from '@/components/layout/PageShell';
 import { QueryState, Button } from '@/components/ui';
-import { canManageChannel, isChannelOwner } from '@/lib/user';
 import { useChannel } from '@/hooks/useChannels';
 import { useChannelYouTube } from '@/hooks/useChannelYouTube';
 import ChannelManageNav, { resolveTab } from '@/components/channel/ChannelManageNav';
@@ -68,7 +67,8 @@ function ChannelManage() {
     // Google sign-in would verify the admin's account, not the owner's. So every "you still have
     // to…" surface is gated on ownership, not on managing. What an admin keeps is everything that
     // is a platform decision or a plain fact: status, exemptions, attestation, the content itself.
-    const isOwner = isChannelOwner(user, channel);
+    // The backend's answers about THIS caller (channel detail), not an owner id compared here.
+    const isOwner = !!channel?.viewerIsOwner;
 
     // The same query key AdoptionNotice uses, so react-query serves both from one request. Read
     // here only for the menu's dot, which has to be visible from whichever tab the owner is on.
@@ -104,7 +104,7 @@ function ChannelManage() {
         return <ErrorScreen emoji="🔍" title={t('channelManage.notFound')} description={description} onBack={() => navigate('/')} />;
     }
 
-    if (!canManageChannel(user, channel)) {
+    if (!channel?.viewerCanManage) {
         return (
             <ErrorScreen
                 emoji="⛔"

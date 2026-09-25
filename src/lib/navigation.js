@@ -57,3 +57,12 @@ export const channelTabPath = (slug, tab) =>
     resolveChannelTab(tab) === CHANNEL_TABS[0]
         ? `/channel/${slug}`
         : `/channel/${slug}?tab=${resolveChannelTab(tab)}`;
+
+/**
+ * Where the upload shortcut leads, as a route: the dashboard of the channel the backend names
+ * (`uploadChannelSlug` on the profile), or channel creation when it names none. Only the route is
+ * this app's; which channel it is, and whether the shortcut is offered at all (`canUpload`), are
+ * the backend's.
+ */
+export const uploadPathFor = (user) =>
+    user?.uploadChannelSlug ? `/channel/${user.uploadChannelSlug}/manage` : '/create-channel';

@@ -15,9 +15,15 @@ const PUBLIC_LIST_KEY = {
 
 // ============ Public channel page ============
 
+/**
+ * A channel's detail, with the CALLER's rights on it (`viewerIsOwner`, `viewerCanManage`) — the
+ * backend's answer, so nothing here derives them from an owner id and a role. Scoped to the
+ * viewer for that reason; prefix invalidations of `['channel']` / `['channel', slug]` still reach it.
+ */
 export const useChannel = (slug, enabled = true) => {
+    const scope = useUserScope();
     return useQuery({
-        queryKey: ['channel', slug],
+        queryKey: queryKeys.channel(slug, scope),
         queryFn: async () => {
             const res = await api.get(`/channels/${slug}`);
             return res.data;
@@ -290,8 +296,11 @@ export const useUpdateChannel = (slug, channelId) => {
             const res = await api.patch(`/channels/${channelId}`, form);
             return res.data;
         },
-        onSuccess: (data) => {
-            queryClient.setQueryData(['channel', slug], data);
+        onSuccess: () => {
+            // No setQueryData from the PATCH response: it is the plain mapping, without the
+            // caller's rights or the archive counts the detail carries, and writing it over the
+            // detail made the dashboard's owner look like someone who may not manage it. The
+            // invalidation below refetches the whole detail instead.
             // `VideoDTO` now carries `channelName`/`channelSlug`/`channelLogoUrl`, batch-filled by
             // the backend's ChannelCardAttacher, so a VideoCard no longer runs a `useChannel(...)`
             // of its own and a rename does not have to chase one. What it has to chase instead is

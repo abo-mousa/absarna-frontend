@@ -9,7 +9,6 @@ import { useVideo, useRelatedVideo, useWatchProgressMap, useWatchHistory } from 
 import { useChannel } from '../hooks/useChannels';
 import { useSeriesDetail, useSeriesNeighbours } from '../hooks/useSeries';
 import { useAuth } from '../contexts/AuthContext';
-import { canManageChannel } from '@/lib/user';
 import { ownerNotices } from '@/lib/review';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { resolveMediaUrl, youtubeThumbnail } from '@/lib/media';
@@ -32,7 +31,7 @@ function VideoDetail() {
     const { data: channel } = useChannel(video?.channelId, !!video?.channelId);
     const { data: seriesData } = useSeriesDetail(video?.seriesId, 1, !!video?.seriesId);
     const { data: neighbours } = useSeriesNeighbours(video?.seriesId, video?.id, !!video?.seriesId);
-    const { token, user } = useAuth();
+    const { token } = useAuth();
     const watchProgress = useWatchProgressMap(!!token);
     // Same cached `['watch-history']` query `useWatchProgressMap` reads internally — called
     // again here only for its `isLoading`, to gate mounting the player below (React Query
@@ -130,7 +129,7 @@ function VideoDetail() {
     // A LIST, worst first. A video can be held for music and noted for explicit content at once,
     // and those are two different things to do something about; the old single music notice could
     // not express the question.
-    const notices = ownerNotices(video, canManageChannel(user, channel));
+    const notices = ownerNotices(video, !!channel?.viewerCanManage);
 
     return (
         <PageShell>

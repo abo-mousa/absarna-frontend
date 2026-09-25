@@ -28,15 +28,18 @@ describe('shouldOfferClaim', () => {
         expect(shouldOfferClaim(invited, { id: 42 }, seeded)).toBe(true);
     });
 
+    // Whether the caller manages the channel is the backend's answer on the detail
+    // (`viewerCanManage`: the owner, or a platform admin) — no longer worked out here.
+    const managed = { ...seeded, viewerCanManage: true };
+
     it('never offers it to the channel owner', () => {
-        expect(shouldOfferClaim(invited, { id: 1 }, seeded)).toBe(false);
+        expect(shouldOfferClaim(invited, { id: 1 }, managed)).toBe(false);
     });
 
     it('never offers it to a platform admin', () => {
         // The admin looking at a channel they seeded is not the person being invited to prove
         // anything, and the transfer they need is the one on the admin screen.
-        const admin = { id: 99, role: 'PLATFORM_ADMIN' };
-        expect(shouldOfferClaim(invited, admin, seeded)).toBe(false);
+        expect(shouldOfferClaim(invited, { id: 99 }, managed)).toBe(false);
     });
 
     it('does not offer an ordinary channel', () => {
@@ -70,8 +73,9 @@ describe('shouldOfferClaim', () => {
     });
 
     it('shows the owner neither notice nor offer', () => {
-        expect(shouldShowClaimNotice(invited, { id: 1 }, seeded)).toBe(false);
-        expect(shouldOfferClaim(invited, { id: 1 }, seeded)).toBe(false);
+        const managed = { ...seeded, viewerCanManage: true };
+        expect(shouldShowClaimNotice(invited, { id: 1 }, managed)).toBe(false);
+        expect(shouldOfferClaim(invited, { id: 1 }, managed)).toBe(false);
     });
 
     /**

@@ -1,4 +1,3 @@
-import { canManageChannel } from '@/lib/user';
 import { safeSessionStorage } from '@/lib/safeStorage';
 
 /**
@@ -27,7 +26,7 @@ import { safeSessionStorage } from '@/lib/safeStorage';
 export function shouldShowClaimNotice(claim, user, channel) {
     if (!claim?.unclaimed) return false;
     // An owner has nothing to be told, and an admin looking at a channel they seeded knows.
-    return !canManageChannel(user, channel);
+    return !channel?.viewerCanManage;
 }
 
 /**
@@ -44,7 +43,7 @@ export function shouldShowClaimNotice(claim, user, channel) {
  */
 export function shouldOfferClaim(claim, user, channel) {
     if (!claim?.claimable) return false;
-    return !canManageChannel(user, channel);
+    return !channel?.viewerCanManage;
 }
 
 export default shouldOfferClaim;

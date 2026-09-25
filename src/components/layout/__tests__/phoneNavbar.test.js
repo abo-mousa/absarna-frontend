@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { accountMenuActions } from '@/components/layout/AccountMenu';
-import { canUpload, uploadPathFor } from '@/lib/user';
+import { uploadPathFor } from '@/lib/navigation';
 import { t } from '@/i18n';
 
 /**
@@ -15,9 +15,10 @@ import { t } from '@/i18n';
  * would show it.
  */
 
-const admin = { role: 'PLATFORM_ADMIN' };
-const creator = { role: 'CREATOR' };
-const viewer = { role: 'USER' };
+// As the profile now describes them: the rights are the backend's (Capabilities), sent as flags.
+const admin = { role: 'PLATFORM_ADMIN', platformAdmin: true, canUpload: true };
+const creator = { role: 'CREATOR', platformAdmin: false, canUpload: true };
+const viewer = { role: 'USER', platformAdmin: false, canUpload: false };
 
 describe('accountMenuActions', () => {
     it('gives a platform admin every account control', () => {
@@ -68,18 +69,17 @@ describe('strings', () => {
 });
 
 describe('upload shortcut', () => {
-    it('is for accounts that can publish', () => {
-        expect(canUpload(creator)).toBe(true);
-        expect(canUpload({ role: 'CHANNEL_ADMIN' })).toBe(true);
-        expect(canUpload(admin)).toBe(true);
-        expect(canUpload(viewer)).toBe(false);
-        expect(canUpload(null)).toBe(false);
+    // Who is offered it is the backend's (CapabilitiesTest); only the route is this app's.
+    it('leads to the channel the backend names, or to creating one', () => {
+        expect(uploadPathFor({ uploadChannelSlug: 'tafsir' })).toBe('/channel/tafsir/manage');
+        expect(uploadPathFor({ uploadChannelSlug: '' })).toBe('/create-channel');
+        expect(uploadPathFor(null)).toBe('/create-channel');
     });
 
-    it('leads to the first owned channel, or to creating one', () => {
-        expect(uploadPathFor([{ slug: 'tafsir' }, { slug: 'fiqh' }])).toBe('/channel/tafsir/manage');
-        expect(uploadPathFor([])).toBe('/create-channel');
-        expect(uploadPathFor(undefined)).toBe('/create-channel');
+    it('follows the flags, not the role', () => {
+        // A role the backend has not granted upload to is not offered it, whatever its name.
+        expect(accountMenuActions({ role: 'CREATOR', canUpload: false })).not.toContain('upload');
+        expect(accountMenuActions({ role: 'USER', platformAdmin: true, canUpload: true })).toContain('admin');
     });
 });
 

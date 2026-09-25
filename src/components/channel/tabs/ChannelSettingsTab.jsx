@@ -7,7 +7,6 @@ import { Input, Button, Modal, ImageUploadField } from '@/components/ui';
 import ReviewExemptionDialog, { ReviewExemptionSummary } from '../ReviewExemptionDialog';
 import { useUpdateChannel, useChannelReviewExemptions, useDeleteOwnChannel } from '@/hooks/useChannels';
 import { useChannelImage, useCopyYouTubeImages, useConfirmYouTubeImages } from '@/hooks/useOwnerImage';
-import { isPlatformAdmin, isChannelOwner } from '@/lib/user';
 import { t } from '@/i18n';
 import { describeError } from '@/lib/describeError';
 import { FieldLabel } from '../ContentPublishForm';
@@ -29,7 +28,7 @@ export default function ChannelSettingsTab({ slug, channel, youtubeState, isOwne
     // Platform admin only, and the request is only made for one — the same shape
     // YouTubeImportPanel's admin attestation uses. An owner reaching this tab never asks for it,
     // so nothing here can disclose which detectors skip their channel.
-    const isAdmin = isPlatformAdmin(user);
+    const isAdmin = !!user?.platformAdmin;
     const [exempting, setExempting] = useState(false);
     const { data: exemptions } = useChannelReviewExemptions(channel?.id, isAdmin);
     const [form, setForm] = useState({
@@ -133,7 +132,7 @@ export default function ChannelSettingsTab({ slug, channel, youtubeState, isOwne
         {/* The OWNER's, not a manager's: an admin already deletes from the admin screen, and the
             backend refuses this route to anyone but the owner. Last on the tab, under everything
             an owner comes here to change. */}
-        {isChannelOwner(user, channel) && <DeleteChannelCard slug={slug} channel={channel} />}
+        {channel.viewerIsOwner && <DeleteChannelCard slug={slug} channel={channel} />}
         </div>
     );
 }

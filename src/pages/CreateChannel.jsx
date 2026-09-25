@@ -8,7 +8,6 @@ import { useToast } from '../contexts/ToastContext';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { useResolveYouTubeChannel } from '@/hooks/useChannelYouTube';
 import { useAuth } from '../contexts/AuthContext';
-import { isPlatformAdmin } from '@/lib/user';
 import { describeError } from '@/lib/describeError';
 import { uploadOwnerImage, channelImagePath } from '@/hooks/useOwnerImage';
 import { IMAGE_LIMITS } from '@/lib/imageResize';
@@ -165,7 +164,7 @@ function CreateChannel() {
              * opens on the step that actually needs them.
              */
             try {
-                const endpoint = isPlatformAdmin(user)
+                const endpoint = user?.platformAdmin
                     ? `/channels/${form.slug}/youtube/attest`
                     : `/channels/${form.slug}/youtube/verification`;
                 await api.post(endpoint, { source });

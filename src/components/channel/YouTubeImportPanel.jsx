@@ -3,7 +3,6 @@ import { Link2, Check, RefreshCw, ShieldCheck } from 'lucide-react';
 import { Input, Button, Spinner } from '@/components/ui';
 import { useToast } from '@/contexts/ToastContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { isPlatformAdmin } from '@/lib/user';
 import { useAdoptionProgress } from '@/hooks/useChannelAdoption';
 import { adoptionRemainingLine, adoptionState } from './MetadataAdoptionView';
 import {
@@ -223,7 +222,7 @@ function YouTubeImportPanel({ slug, isOwner, onOpenAdoption }) {
     const { user } = useAuth();
     // Hidden rather than shown-and-rejected: the backend 403s anyone else, and offering an action
     // that cannot succeed is worse than not offering it.
-    const isAdmin = isPlatformAdmin(user);
+    const isAdmin = !!user?.platformAdmin;
 
     const { data: state, isLoading } = useChannelYouTube(slug);
     const link = useLinkYouTubeChannel(slug);

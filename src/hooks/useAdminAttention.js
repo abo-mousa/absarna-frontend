@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { isPlatformAdmin } from '@/lib/user';
 import { formatCount } from '@/lib/numbers';
 
 /** Cache key, shared with the admin mutations that change a count so the badge moves at once. */
@@ -18,7 +17,7 @@ export function useAdminAttention() {
     return useQuery({
         queryKey: ADMIN_ATTENTION_KEY,
         queryFn: async () => (await api.get('/admin/attention')).data,
-        enabled: isPlatformAdmin(user),
+        enabled: !!user?.platformAdmin,
         refetchInterval: 2 * 60 * 1000,
         refetchOnWindowFocus: true,
         staleTime: 60 * 1000,

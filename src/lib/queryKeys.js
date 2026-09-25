@@ -17,7 +17,11 @@
  * matching every viewer's copy. Only the sites that read or write one exact entry
  * (`setQueryData`, `getQueryData`) need the scope, and they are the ones that have it.
  *
- * <p>Public catalogue keys (`['video', id]`, `['channel', slug]`, `['books', size]` …) are
+ * <p>A channel's detail (`channel(slug, scope)`) IS scoped: it carries the caller's rights on it
+ * (`viewerIsOwner`, `viewerCanManage`), so a copy cached while signed out would hide the manage
+ * link after signing in.
+ *
+ * <p>Public catalogue keys (`['video', id]`, `['books', size]` …) are
  * deliberately not here: they are the same for everyone and are what a persisted cache would
  * keep across sessions.
  */
@@ -50,6 +54,7 @@ export const userScopeOf = (token) => {
 export const queryKeys = {
     // ---- the viewer's own lists ----
     feed: (scope) => ['feed', scope],
+    channel: (slug, scope) => ['channel', slug, scope],
     today: (scope) => ['today', scope],
     watchHistory: (scope) => ['watch-history', scope],
     readingHistory: (scope) => ['reading-history', scope],

@@ -11,7 +11,6 @@ import { VideoCard, BookCard, ArticleCard, PostCard, SubscribeButton } from '../
 import { useWatchProgressMap, useReadingProgressMap } from '../hooks/useVideos';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { resolveMediaUrl } from '@/lib/media';
-import { canManageChannel } from '@/lib/user';
 import { channelTabPath, resolveChannelTab } from '@/lib/navigation';
 import {
     useChannel,
@@ -121,7 +120,7 @@ function ChannelPage() {
     // canManageChannel(userId, id, isAdmin) has always applied, and the same one ChannelManage
     // gates itself on. A platform admin could already open that page; nothing offered them the
     // link, so managing a channel they do not own meant building the URL from the slug by hand.
-    const canManage = canManageChannel(user, channel);
+    const canManage = !!channel?.viewerCanManage;
 
     /**
      * Whether this channel is still waiting for the scholar it was built for.

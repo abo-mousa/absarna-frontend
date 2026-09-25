@@ -4,9 +4,8 @@ import { useIsFetching, useIsMutating, useQueryClient } from '@tanstack/react-qu
 import { Upload, Sun, Moon, Search, ArrowLeft, Shield } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { canUpload, isPlatformAdmin, uploadPathFor } from '@/lib/user';
+import { uploadPathFor } from '@/lib/navigation';
 import { useAdminAttention, badgeText } from '@/hooks/useAdminAttention';
-import { useMyChannels } from '../../hooks/useChannels';
 import { reshuffleFeed } from '../../hooks/useVideos';
 import { IrisMark } from '../ui';
 import SearchBar from './SearchBar';
@@ -124,10 +123,9 @@ function Navbar() {
     // counts writes; both re-render this bar when the count crosses zero and at no other time.
     const busy = useIsFetching() + useIsMutating() > 0;
 
-    const { data: myChannels = [] } = useMyChannels(!!token);
     const { data: attention } = useAdminAttention();
     const attentionCount = attention?.total ?? 0;
-    const uploadLink = uploadPathFor(myChannels);
+    const uploadLink = uploadPathFor(user);
     const [hijriDate] = useState(() => formatHijriDate());
 
     return (
@@ -219,7 +217,7 @@ function Navbar() {
                             {/* The one account control that stays a button of its own on a wide
                                 screen: it is what a creator comes back to do. On a phone there is
                                 no room, and it is in the avatar's menu instead. */}
-                            {canUpload(user) && (
+                            {user?.canUpload && (
                                 <Link to={uploadLink} title={t('nav.upload')} aria-label={t('nav.upload')} className={desktopIconButtonClass}>
                                     <Upload size={18} />
                                     <span className={iconLabelClass}>{t('nav.uploadShort')}</span>
@@ -231,7 +229,7 @@ function Navbar() {
                                 most. The badge is what is waiting on them — channels to review,
                                 findings for a reviewer, open reports — which until now nothing
                                 announced. On a phone it stays in the account menu, badge included. */}
-                            {isPlatformAdmin(user) && (
+                            {user?.platformAdmin && (
                                 <Link
                                     to="/admin"
                                     title={t('nav.adminPanel')}

@@ -558,6 +558,12 @@ What this app relies on; the mirror lives in the backend's `CLAUDE.md`.
   `progress` field is a 0–1 fraction from the server). What stays here is presentation and
   wording: the kicker's sentence, dates and digits, the Hijri date, which tab is active. When a
   new feature needs a decision, add it to a response rather than to `lib/`.
+- **Rights come from the API, never from `role` or `ownerUserId`.** The profile (and the
+  login/register response) carry `platformAdmin`, `canUpload` and `uploadChannelSlug`; a channel's
+  detail carries the CALLER's `viewerIsOwner` and `viewerCanManage`. `lib/user.js` is gone. The
+  channel detail's query key is viewer-scoped for that reason (`queryKeys.channel`), and nothing
+  may `setQueryData` a PATCH response over it — that response is the plain mapping, without the
+  caller's rights, and it made a dashboard's own owner look like someone who may not manage it.
 - **`/` is Today, a dashboard that ENDS; the feed that keeps loading is Discover (`/discover`).**
   `GET /api/today` sends the week (finished counts, never a streak), what to continue (the next
   episode in the series' public order, with a resume position), the news, and one "because you

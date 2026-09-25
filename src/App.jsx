@@ -6,7 +6,6 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ConsentProvider } from './contexts/ConsentContext';
-import { isPlatformAdmin } from '@/lib/user';
 import { safeSessionStorage } from '@/lib/safeStorage';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import { PRELOAD_RELOAD_FLAG, mayReloadAfterPreloadError } from '@/lib/preloadReload';
@@ -115,7 +114,8 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
     if (!token) {
         return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
     }
-    if (adminOnly && !isPlatformAdmin(user)) return <Navigate to="/" replace />;
+    // The backend's answer (`platformAdmin` on the profile), never a role compared here.
+    if (adminOnly && !user?.platformAdmin) return <Navigate to="/" replace />;
     return children;
 };
 
