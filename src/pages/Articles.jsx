@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { Clock, FileText, Search } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
 import { ArticleCard } from '../components/content';
-import { QueryState, Input } from '../components/ui';
+import { QueryState, Input, PageHeader } from '../components/ui';
 import { useArticles, useArticleCategories } from '../hooks/useArticles';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { formatPublishDate, displayDate } from '@/lib/datetime';
@@ -43,8 +43,8 @@ function Articles() {
 
 
     return (
-        <PageShell contentClassName="max-w-reading mx-auto px-4 sm:px-6 py-8">
-            <h1 className="text-2xl font-bold mb-6">{t('articles.title')}</h1>
+        <PageShell tab>
+            <PageHeader title={t('nav.tabs.articles')} />
 
             {/* Shown whenever there is anything to narrow OR a narrowing is active: a search
                 that matches nothing must still leave the box on screen to change it. */}

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Plus, Settings, Users } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
-import { QueryState, Cartouche, Avatar } from '../components/ui';
+import { QueryState, Cartouche, Avatar, PageHeader } from '../components/ui';
 import { useChannelDirectory, useSubscriptions, useMyChannels } from '../hooks/useChannels';
 import { resolveMediaUrl } from '@/lib/media';
 import { t } from '@/i18n';
@@ -25,11 +25,8 @@ function Channels() {
     const followed = subscriptions;
 
     return (
-        <PageShell contentClassName="max-w-[1100px] mx-auto w-full px-4 sm:px-6 py-8">
-            <header className="pb-4 mb-8 border-b border-border">
-                <h1 className="font-serif text-[2.4rem] font-semibold leading-none">{t('channelsPage.title')}</h1>
-                <p className="text-sm text-text-muted mt-2">{t('channelsPage.subtitle')}</p>
-            </header>
+        <PageShell tab>
+            <PageHeader title={t('nav.tabs.channels')} />
 
             <div className="flex flex-col gap-10">
                 {token && (

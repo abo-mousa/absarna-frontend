@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { MessageSquareText } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
-import { QueryState, KhatamStar } from '../components/ui';
+import { QueryState, KhatamStar, PageHeader } from '../components/ui';
 import { PostCard } from '../components/content';
 import { usePostsFeed } from '../hooks/usePosts';
 import { t } from '@/i18n';
@@ -26,14 +26,11 @@ function Posts() {
         `px-4 py-1.5 text-sm font-semibold transition-colors ${active ? 'bg-primary text-white' : 'bg-surface text-text-secondary hover:text-text-primary'}`;
 
     return (
-        <PageShell contentClassName="p-4 sm:p-6">
-            <div className="max-w-2xl mx-auto">
-                <header className="flex flex-wrap items-end justify-between gap-4 pb-4 mb-6 border-b border-border">
-                    <div>
-                        <h1 className="font-serif text-[2.4rem] font-semibold leading-none">{t('postsPage.title')}</h1>
-                        <p className="text-sm text-text-muted mt-2">{t('postsPage.subtitle')}</p>
-                    </div>
-                    {token && (
+        <PageShell tab>
+            <div>
+                <PageHeader
+                    title={t('nav.tabs.posts')}
+                    action={token && (
                         <div className="inline-flex border border-border rounded-md overflow-hidden" role="group">
                             <button type="button" aria-pressed={followed} onClick={() => setFollowed(true)} className={tabClass(followed)}>
                                 {t('postsPage.followed')}
@@ -43,7 +40,7 @@ function Posts() {
                             </button>
                         </div>
                     )}
-                </header>
+                />
 
                 <QueryState
                     isLoading={posts.isLoading}
@@ -56,7 +53,7 @@ function Posts() {
                     emptyDescription={t('postsPage.emptyHint')}
                     emptyTitle={followed && token ? t('postsPage.emptyFollowed') : t('postsPage.emptyAll')}
                 >
-                    <div className="grid gap-4">
+                    <div className="grid lg:grid-cols-2 gap-4 items-start">
                         {items.map((post) => <PostCard key={post.id} post={post} />)}
                     </div>
 

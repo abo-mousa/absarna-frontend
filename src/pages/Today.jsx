@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
-import { QueryState, Cartouche, KhatamProgress, KhatamStar, Avatar } from '../components/ui';
+import { QueryState, Cartouche, KhatamProgress, KhatamStar, Avatar, PageHeader } from '../components/ui';
 import { VideoCard, BookCard } from '../components/content';
 import { GuideDialog, GUIDE_SEEN_KEY } from '../components/guide';
 import { useToday } from '../hooks/useToday';
@@ -10,6 +10,7 @@ import { safeStorage } from '@/lib/safeStorage';
 import { useWatchProgressMap } from '../hooks/useVideos';
 import { formatTimestamp } from '@/lib/spans';
 import { formatCount } from '@/lib/numbers';
+import { formatHijriDate } from '@/lib/datetime';
 import { resolveMediaUrl } from '@/lib/media';
 import { t } from '@/i18n';
 
@@ -53,6 +54,9 @@ function Today() {
     const feedRow = data?.fromFeed?.videos || [];
     const feedRowTitle = data?.fromFeed?.kind === 'SUBSCRIBED' ? t('home.subscribed') : t('home.discover');
 
+    // Read once per mount, like the navbar's: a page left open past midnight keeps yesterday's.
+    const [hijriDate] = useState(() => formatHijriDate());
+
     const hasContinue = !!(data?.continueWatching?.length || data?.continueReading?.length);
     const welcome = data?.welcome;
 
@@ -66,7 +70,11 @@ function Today() {
     };
 
     return (
-        <PageShell contentClassName="p-4 sm:p-6">
+        <PageShell tab>
+            <PageHeader
+                title={t('nav.tabs.today')}
+                action={hijriDate && <span className="text-sm font-semibold text-gold-ink">{hijriDate}</span>}
+            />
             <QueryState
                 isLoading={today.isLoading}
                 isError={today.isError}
@@ -228,7 +236,7 @@ function WelcomeHero({ signedIn }) {
         <section className="relative overflow-hidden border border-border-light rounded-lg bg-surface px-5 py-8 sm:px-8 sm:py-10">
             <KhatamStar className="absolute -bottom-24 -end-20 w-80 h-80 text-gold/10 pointer-events-none" />
             <div className="relative max-w-[640px]">
-                <h1 className="font-serif text-[2.2rem] sm:text-[2.6rem] font-semibold leading-tight">{t('today.welcome.title')}</h1>
+                <h2 className="font-serif text-[2rem] sm:text-[2.4rem] font-semibold leading-tight">{t('today.welcome.title')}</h2>
                 <p className="font-reading text-text-secondary mt-3 leading-relaxed">{t('today.welcome.text')}</p>
                 <ul className="flex flex-wrap gap-x-5 gap-y-2 mt-4 text-sm font-semibold">
                     <li className="flex items-center gap-2"><KhatamStar className="w-3.5 h-3.5 text-gold" />{t('today.welcome.news')}</li>

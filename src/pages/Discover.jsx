@@ -3,7 +3,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import PageShell from '../components/layout/PageShell';
-import { QueryState, Modal, Cartouche } from '../components/ui';
+import { QueryState, Modal, Cartouche, PageHeader } from '../components/ui';
 import { VideoCard } from '../components/content';
 import { useInfiniteVideos, useCategories, useFormats, useFeed, useWatchProgressMap } from '../hooks/useVideos';
 import { formatChipLabel } from '@/lib/formats';
@@ -208,7 +208,8 @@ function Discover() {
 
 
     return (
-        <PageShell contentClassName="p-4 sm:p-6">
+        <PageShell tab>
+            <PageHeader title={t('nav.tabs.discover')} />
             <div className="flex gap-2 flex-wrap mb-5">
                 <button
                     onClick={() => { setView('feed'); setSelectedCategory(''); setSelectedFormat(''); }}

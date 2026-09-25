@@ -604,7 +604,6 @@ export const en = {
 
     channelsPage: {
         title: 'Channels',
-        subtitle: 'Who makes what you watch and read',
         mine: 'My channels',
         manage: 'Manage channel',
         create: 'Create a channel',
@@ -618,7 +617,6 @@ export const en = {
 
     postsPage: {
         title: 'Posts',
-        subtitle: 'What channels write: announcements, notices and short thoughts',
         followed: 'From your channels',
         all: 'All channels',
         endFollowed: 'That is every post from your channels.',

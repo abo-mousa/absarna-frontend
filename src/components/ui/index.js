@@ -9,6 +9,7 @@ export { default as Spinner } from './Spinner';
 export { default as IrisMark } from './IrisMark';
 export { KhatamStar, KhatamProgress, KhatamEmblem } from './Khatam';
 export { default as Cartouche } from './Cartouche';
+export { default as PageHeader } from './PageHeader';
 export { default as EmptyState } from './EmptyState';
 export { default as Avatar } from './Avatar';
 export { default as QueryState } from './QueryState';

@@ -818,7 +818,6 @@ export const ar = {
     // what the sidebar's channel lists used to be.
     channelsPage: {
         title: 'القنوات',
-        subtitle: 'من يصنع ما تشاهده وتقرؤه',
         mine: 'قنواتي',
         manage: 'إدارة القناة',
         create: 'إنشاء قناة',
@@ -834,7 +833,6 @@ export const ar = {
     // from all of them. It ends: «من قنواتك» has an end, said in the last line.
     postsPage: {
         title: 'المنشورات',
-        subtitle: 'ما تكتبه القنوات: إعلانات وتنبيهات وخواطر قصيرة',
         followed: 'من قنواتك',
         all: 'كل القنوات',
         endFollowed: 'هذه كل منشورات قنواتك.',

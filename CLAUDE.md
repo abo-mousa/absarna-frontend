@@ -129,6 +129,11 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   that opens by itself on Today once — only when the backend sent a `welcome` (it decides who is
   new) and until `absarna.guideSeen` is set — and the full page, linked from the welcome and the
   account menu. A new tab means a new step in `GUIDE_STEPS`.
+- **Every tab is laid out the same**: `<PageShell tab>` (one column, `TAB_COLUMN`, 1200px) and
+  `ui/PageHeader` titled with the tab's own name (`nav.tabs.*`) — serif title, hairline, optional
+  control at the far end, no subtitle. The six had four widths and three header styles, so the
+  title and its rule jumped on every tab change. Narrower content (a reading column) goes inside
+  the column, never in place of it.
 - **Tailwind only.** Brand colours are theme tokens resolving through CSS custom properties
   (`rgb(var(--color-x) / <alpha-value>)`), with light values on `:root` and dark under `.dark` in
   `index.css` — which is why dark mode is a two-file change and every existing `bg-surface` call site

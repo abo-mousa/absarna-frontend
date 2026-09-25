@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
-import { QueryState, Input, Cartouche } from '../components/ui';
+import { QueryState, Input, Cartouche, PageHeader } from '../components/ui';
 import { BookCard, BookCover } from '../components/content';
 import { useReadingProgressMap, useReadingNow } from '../hooks/useVideos';
 import { useBooks, useBookCategories, useBookShelves } from '../hooks/useBooks';
@@ -54,8 +54,8 @@ function Books() {
 
 
     return (
-        <PageShell contentClassName="max-w-[1100px] mx-auto px-4 sm:px-6 py-8">
-            <h1 className="text-2xl font-bold mb-6">{t('books.title')}</h1>
+        <PageShell tab>
+            <PageHeader title={t('nav.tabs.books')} />
 
             {/* Shown whenever there is anything to narrow OR a narrowing is active: a search
                 that matches nothing must still leave the box on screen to change it. */}

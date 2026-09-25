@@ -18,7 +18,15 @@ import { t } from '@/i18n';
  * <p>The page gets bottom room below `lg` equal to the tab bar plus the safe-area inset, so the
  * last line of every page — the Today page's colophon included — is never under the bar.
  */
-function PageShell({ children, contentClassName = '' }) {
+/**
+ * The column every tab's page is laid out in — Today, Discover, Books, Articles, Posts, Channels.
+ * One width, one gutter, one top margin, so moving between tabs moves nothing but the contents:
+ * they each had their own (700px, 672px, 1100px, full width), and the title and the rule under it
+ * jumped sideways on every tab change.
+ */
+export const TAB_COLUMN = 'max-w-[1200px] mx-auto w-full px-4 sm:px-6 py-8';
+
+function PageShell({ children, contentClassName = '', tab = false }) {
     const { user } = useAuth();
     const unverified = !!user && user.emailVerified === false;
 
@@ -43,7 +51,7 @@ function PageShell({ children, contentClassName = '' }) {
             )}
             {/* tabIndex=-1 lets route-change navigation (App.jsx) move focus here
                 programmatically without making it a normal tab stop. */}
-            <main id="main-content" tabIndex={-1} className={`flex-1 min-w-0 outline-none ${contentClassName}`}>{children}</main>
+            <main id="main-content" tabIndex={-1} className={`flex-1 min-w-0 outline-none ${tab ? TAB_COLUMN : ''} ${contentClassName}`}>{children}</main>
             <Footer />
             {/* Rendered from the shell rather than from App, so it sits inside the same document
                 flow as the footer and cannot end up above a route that renders its own chrome.
