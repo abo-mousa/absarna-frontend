@@ -35,6 +35,15 @@ describe('videoKicker', () => {
         expect(videoKicker({ category: 'سيرة' })).toEqual({ text: 'سيرة', seriesId: null });
     });
 
+    it('names the format before the topic outside a series', () => {
+        expect(videoKicker({ format: 'DOCUMENTARY', category: 'تاريخ' }).text).toBe('وثائقي · تاريخ');
+        expect(videoKicker({ format: 'REPORT' }).text).toBe('تقرير');
+    });
+
+    it('says nothing for a format this catalog does not know yet, rather than a key', () => {
+        expect(videoKicker({ format: 'HOLOGRAM', category: 'علوم' }).text).toBe('علوم');
+    });
+
     it('draws no line for a video with neither', () => {
         expect(videoKicker({})).toBeNull();
     });

@@ -439,6 +439,14 @@ What this app relies on; the mirror lives in the backend's `CLAUDE.md`.
   among the series' publicly playable videos in the series page's own order — the same answer
   `/series/{id}/neighbours` gives. Never display `orderInSeries`: it is a sort key an owner may leave
   null or space out. Both are null for a video with no public position (an owner's hidden row).
+- **`format` is what kind of video it is (backend `VideoFormat`), `category` what it is about.**
+  `VideoDTO.format` is already the EFFECTIVE value — the owner's own, or the channel's
+  `defaultFormat` filling in, flagged by `formatInherited` — so never re-derive it here. The owner's
+  edit form edits only an explicit choice, and offers "as the channel" only while there is none:
+  the PATCH merges and cannot clear one. Discover's chips come from `GET /api/formats` (formats some
+  video has), never from `lib/formats`' full list; `?format=` combines with `?category=`. Labels are
+  `formats.one.*` (kicker) and `formats.many.*` (chip), read with `tOptional` — a format this
+  catalog does not know yet renders nothing.
 - **`VideoDTO.sourceUrl` is null for an upload-backed video; `thumbnailUrl` is null until the worker
   produces a poster.** Treat null as "not yet", never as an error. Object keys never appear on a DTO.
 - **`thumbnailUrl` may be a poster the OWNER chose, and `hasCustomThumbnail` is how you tell.** The

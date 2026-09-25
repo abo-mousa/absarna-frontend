@@ -5,7 +5,8 @@ import { useToast } from '../contexts/ToastContext';
 import PageShell from '../components/layout/PageShell';
 import { QueryState, Modal, Cartouche } from '../components/ui';
 import { VideoCard } from '../components/content';
-import { useInfiniteVideos, useCategories, useFeed, useWatchProgressMap } from '../hooks/useVideos';
+import { useInfiniteVideos, useCategories, useFormats, useFeed, useWatchProgressMap } from '../hooks/useVideos';
+import { formatChipLabel } from '@/lib/formats';
 import { useMyChannels, useToggleVideoVisibilityByChannelId, useDeleteVideoByChannelId } from '../hooks/useChannels';
 import { t } from '@/i18n';
 import { useGridColumns } from '../hooks/useGridColumns';
@@ -36,6 +37,9 @@ function Discover() {
     const { token } = useAuth();
     const { showToast } = useToast();
     const [selectedCategory, setSelectedCategory] = useState('');
+    // What kind of video (a format chip), independent of the topic (a category chip): the two
+    // combine, «وثائقيات» and «تاريخ» at once.
+    const [selectedFormat, setSelectedFormat] = useState('');
     /**
      * Which of the two home views is showing.
      *
@@ -64,10 +68,18 @@ function Discover() {
     const isDefaultView = view === 'feed';
 
     const { data: categories = [] } = useCategories();
+    const { data: formats = [] } = useFormats();
 
     const showBrowse = (category) => {
         setView('browse');
         setSelectedCategory(category);
+    };
+
+    // A second press on the active format chip lets go of it, and the topic stays: the two are
+    // separate questions, so dropping one does not reset the other.
+    const toggleFormat = (format) => {
+        setView('browse');
+        setSelectedFormat((current) => (current === format ? '' : format));
     };
 
     const feedQuery = useFeed(isDefaultView);
@@ -111,8 +123,8 @@ function Discover() {
         // Browse keeps strict recency on purpose. "كل الفيديوهات" is the one place left to see
         // what was genuinely published most recently, and a reader who picked a category has
         // already said what they want.
-    } = useInfiniteVideos('', selectedCategory, 12, !isDefaultView || feedQuery.isSuccess || feedQuery.isError,
-        isDefaultView, isDefaultView ? feedShownIdList : undefined);
+    } = useInfiniteVideos('', isDefaultView ? '' : selectedCategory, 12, !isDefaultView || feedQuery.isSuccess || feedQuery.isError,
+        isDefaultView, isDefaultView ? feedShownIdList : undefined, isDefaultView ? '' : selectedFormat);
 
     /**
      * The feed's tail: everything the curated sections did not show, paginated.
@@ -199,19 +211,34 @@ function Discover() {
         <PageShell contentClassName="p-4 sm:p-6">
             <div className="flex gap-2 flex-wrap mb-5">
                 <button
-                    onClick={() => { setView('feed'); setSelectedCategory(''); }}
+                    onClick={() => { setView('feed'); setSelectedCategory(''); setSelectedFormat(''); }}
                     className={chipClass(isDefaultView)}
                 >
                     {t('home.forYou')}
                 </button>
                 {/* The route to the whole catalogue, which used to exist only if a category
-                    happened to be set. */}
+                    happened to be set. It lets go of both narrowings. */}
                 <button
-                    onClick={() => showBrowse('')}
-                    className={chipClass(!isDefaultView && selectedCategory === '')}
+                    onClick={() => { showBrowse(''); setSelectedFormat(''); }}
+                    className={chipClass(!isDefaultView && selectedCategory === '' && selectedFormat === '')}
                 >
                     {t('home.browseAll')}
                 </button>
+                {/* Formats first — what kind of thing — then, after a rule, topics. Only formats
+                    some video has (GET /api/formats), so no chip opens an empty page. */}
+                {formats.map((format) => (
+                    <button
+                        key={format}
+                        onClick={() => toggleFormat(format)}
+                        aria-pressed={!isDefaultView && selectedFormat === format}
+                        className={chipClass(!isDefaultView && selectedFormat === format)}
+                    >
+                        {formatChipLabel(format)}
+                    </button>
+                ))}
+                {formats.length > 0 && categories.length > 0 && (
+                    <span aria-hidden="true" className="w-px self-stretch my-1 mx-1 bg-border" />
+                )}
                 {categories.map((cat) => (
                     <button
                         key={cat}

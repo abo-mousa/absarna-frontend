@@ -10,6 +10,8 @@ import { useChannelImage, useCopyYouTubeImages, useConfirmYouTubeImages } from '
 import { isPlatformAdmin, isChannelOwner } from '@/lib/user';
 import { t } from '@/i18n';
 import { describeError } from '@/lib/describeError';
+import { FieldLabel } from '../ContentPublishForm';
+import { FORMATS, formatLabel } from '@/lib/formats';
 
 /**
  * The channel's own properties: name and description — and its two pictures.
@@ -31,6 +33,7 @@ export default function ChannelSettingsTab({ slug, channel, youtubeState, isOwne
     const [form, setForm] = useState({
         name: channel.name || '',
         description: channel.description || '',
+        defaultFormat: channel.defaultFormat || '',
         // No logoUrl/bannerUrl here. They were carried through a form with no field for either,
         // so every save re-sent whatever the DTO held — and since an uploaded logo's DTO value is
         // its media address, saving the name would have written that address into the URL column.
@@ -41,7 +44,10 @@ export default function ChannelSettingsTab({ slug, channel, youtubeState, isOwne
         e.preventDefault();
         setSaving(true);
         try {
-            await updateChannel.mutateAsync(form);
+            // An empty default is left out rather than sent: '' is not a format, and the PATCH
+            // merges, so leaving the field out is how "no change" is said.
+            const { defaultFormat, ...rest } = form;
+            await updateChannel.mutateAsync(defaultFormat ? { ...rest, defaultFormat } : rest);
             showToast(t('channelManage.saved'), 'success');
         } catch (err) {
             showToast(describeError(err, t('channelManage.saveFailed')), 'error');
@@ -63,6 +69,24 @@ export default function ChannelSettingsTab({ slug, channel, youtubeState, isOwne
         <form onSubmit={handleSave} className="grid gap-4 bg-surface p-6 rounded-lg border border-border-light">
             <Input label={t('channelManage.channelName')} value={form.name} onChange={field('name')} />
             <Input label={t('fields.description')} textarea rows={3} value={form.description} onChange={field('description')} />
+            {/* "What this channel mostly makes": the format every video with none of its own
+                reads as, imports included — so an imported catalogue is sorted by one choice
+                here rather than an edit per video. "No default" is offered only while there is
+                none, because the PATCH cannot clear one (it merges, skipping nulls). */}
+            <div>
+                <FieldLabel>{t('formats.channelDefaultLabel')}</FieldLabel>
+                <p className="text-sm text-text-muted mb-2">{t('formats.channelDefaultHint')}</p>
+                <select
+                    value={form.defaultFormat}
+                    onChange={field('defaultFormat')}
+                    className="w-full px-3.5 py-2.5 rounded-md border border-border outline-none focus:border-primary transition-colors bg-surface"
+                >
+                    {!channel.defaultFormat && <option value="">{t('formats.channelDefaultNone')}</option>}
+                    {FORMATS.map((value) => (
+                        <option key={value} value={value}>{formatLabel(value)}</option>
+                    ))}
+                </select>
+            </div>
             {/* No colour picker: a channel's colour only ever painted the letter circle of a
                 channel with no photo, and Avatar now draws every one of those in the brand's own
                 teal and gold. A picker that changes nothing visible is worse than none. */}

@@ -584,6 +584,37 @@ export const en = {
         emptyOnChannel: 'No articles yet',
     },
 
+    formats: {
+        one: {
+            REPORT: 'Report',
+            ANALYSIS: 'Analysis',
+            INTERVIEW: 'Interview',
+            TESTIMONY: 'Testimony',
+            DOCUMENTARY: 'Documentary',
+            PROGRAMME: 'Programme',
+            LECTURE: 'Lecture',
+            TALK: 'Talk',
+            SHORT_FILM: 'Short film',
+        },
+        many: {
+            REPORT: 'Reports',
+            ANALYSIS: 'Analysis',
+            INTERVIEW: 'Interviews',
+            TESTIMONY: 'Testimony',
+            DOCUMENTARY: 'Documentaries',
+            PROGRAMME: 'Programmes',
+            LECTURE: 'Lectures',
+            TALK: 'Talks',
+            SHORT_FILM: 'Short films',
+        },
+        label: 'Format',
+        inherit: 'Same as the channel ({format})',
+        unset: 'Not set',
+        channelDefaultLabel: 'What this channel mostly makes',
+        channelDefaultHint: 'Applies to every video whose format you have not set, imported YouTube videos included. You can still change any single video.',
+        channelDefaultNone: 'No default',
+    },
+
     series: {
         badge: 'Series',
         partOf: 'From the series: {title}',
@@ -2127,7 +2158,7 @@ export const TRANSLATED = [
     'channel', 'consent', 'createChannel', 'comments', 'likes', 'bookmarks', 'history',
     'subscriptions', 'profile', 'search', 'biography', 'share', 'upload', 'notFound',
     'channelManage', 'youtube', 'youtubeOAuth', 'admin', 'adminReports', 'legal',
-    'pager', 'report', 'ownerImage',
+    'pager', 'report', 'ownerImage', 'formats',
 ];
 
 export default en;

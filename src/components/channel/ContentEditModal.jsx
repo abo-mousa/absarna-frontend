@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Modal, Input, Button } from '@/components/ui';
 import VideoThumbnailPicker from './VideoThumbnailPicker';
+import { FieldLabel } from './ContentPublishForm';
+import { formatSelectOptions } from '@/lib/formats';
 import { t } from '@/i18n';
 
 /**
@@ -35,12 +37,18 @@ const LABELS = {
 function ContentEditModal({ open, type, item, onClose, onSave, saving, slug }) {
     const fields = FIELDS[type] || [];
     const [form, setForm] = useState({});
+    // A video's format is a select, not a text field, and it is the owner's EXPLICIT choice that is
+    // edited — `item.format` may be the channel's default filling in (`formatInherited`), which
+    // this form must not write back as though the owner had picked it. See formatSelectOptions.
+    const formatSelect = type === 'videos' && item ? formatSelectOptions(item) : null;
+    const [format, setFormat] = useState('');
 
     // Re-seeded whenever a different item is opened. Without this the dialog would show the
     // previous item's values for a moment, and a quick save would write them onto the new one.
     useEffect(() => {
         if (!item) return;
         setForm(Object.fromEntries(fields.map((f) => [f, item[f] ?? ''])));
+        setFormat(type === 'videos' ? formatSelectOptions(item).value : '');
         // Keyed on the item's IDENTITY, not the item: `item` is a fresh object on every refetch
         // of the list behind this dialog, and re-seeding then would silently discard whatever the
         // owner has typed. `fields` is derived from `type` (a new array each render), so `type`
@@ -61,6 +69,11 @@ function ContentEditModal({ open, type, item, onClose, onSave, saving, slug }) {
             if (String(before) !== String(after)) {
                 changes[field] = after === '' ? null : after;
             }
+        }
+        // Only a real choice is sent: the empty option means "as the channel", which is the state
+        // the video is already in whenever the option is offered at all.
+        if (formatSelect && format && format !== formatSelect.value) {
+            changes.format = format;
         }
         if (Object.keys(changes).length === 0) {
             onClose();
@@ -91,6 +104,21 @@ function ContentEditModal({ open, type, item, onClose, onSave, saving, slug }) {
                         required={field === 'title'}
                     />
                 ))}
+
+                {formatSelect && (
+                    <div>
+                        <FieldLabel>{t('formats.label')}</FieldLabel>
+                        <select
+                            value={format}
+                            onChange={(e) => setFormat(e.target.value)}
+                            className="w-full px-3.5 py-2.5 rounded-md border border-border outline-none focus:border-primary transition-colors bg-surface"
+                        >
+                            {formatSelect.options.map((option) => (
+                                <option key={option.value || 'inherit'} value={option.value}>{option.label}</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
 
                 {/* Outside the diffing form above on purpose: the poster is saved the moment it
                     is chosen, through its own endpoints, because it is an object in storage

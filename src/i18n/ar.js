@@ -791,6 +791,41 @@ export const ar = {
         emptyOnChannel: 'لا توجد مقالات بعد',
     },
 
+    // What kind of thing a video is (backend VideoFormat). `one` is the singular a card's kicker
+    // uses («وثائقي · تاريخ»), `many` the plural a chip uses («وثائقيات»). Keys are the backend's
+    // enum names, which is why they are read through lib/formats rather than written literally.
+    formats: {
+        one: {
+            REPORT: 'تقرير',
+            ANALYSIS: 'تحليل',
+            INTERVIEW: 'مقابلة',
+            TESTIMONY: 'شهادة',
+            DOCUMENTARY: 'وثائقي',
+            PROGRAMME: 'برنامج',
+            LECTURE: 'محاضرة',
+            TALK: 'حوار',
+            SHORT_FILM: 'فيلم قصير',
+        },
+        many: {
+            REPORT: 'تقارير',
+            ANALYSIS: 'تحليلات',
+            INTERVIEW: 'مقابلات',
+            TESTIMONY: 'شهادات',
+            DOCUMENTARY: 'وثائقيات',
+            PROGRAMME: 'برامج',
+            LECTURE: 'محاضرات',
+            TALK: 'حوارات',
+            SHORT_FILM: 'أفلام قصيرة',
+        },
+        label: 'النوع',
+        // The option a video with no format of its own sits on: it reads as its channel's default.
+        inherit: 'حسب القناة ({format})',
+        unset: 'بدون تحديد',
+        channelDefaultLabel: 'ما تصنعه القناة غالبًا',
+        channelDefaultHint: 'يُطبَّق على كل فيديو لم تحدّد نوعه، ومنها الفيديوهات المستوردة من يوتيوب. ويمكنك تغيير نوع أي فيديو على حدة.',
+        channelDefaultNone: 'بدون نوع افتراضي',
+    },
+
     series: {
         badge: 'سلسلة',
         // Shown on a card to say which series a video belongs to.

@@ -17,6 +17,7 @@ import { useUploadOriginal } from '@/hooks/useChannelYouTube';
 import { describeError } from '@/lib/describeError';
 import { stripEmpty } from '@/lib/forms';
 import { t } from '@/i18n';
+import { formatSelectOptions } from '@/lib/formats';
 
 // Named so that "reset the form after publishing" is one reference rather than a second copy of
 // the field list that can silently fall out of step with the first.
@@ -26,7 +27,7 @@ import { t } from '@/i18n';
 // is why neither is pre-filled.
 const EMPTY_FORM = {
     title: '', description: '', sourceType: '', sourceUrl: '', uploadSessionId: '',
-    category: '', seriesId: '', orderInSeries: '', originalPublishDate: '',
+    category: '', format: '', seriesId: '', orderInSeries: '', originalPublishDate: '',
 };
 
 /**
@@ -215,6 +216,21 @@ export default function VideosTab({ slug, channel, youtubeState, isOwner, active
                     <Input label={t('fields.title')} value={form.title} onChange={field('title')} required />
                     <Input label={t('fields.description')} textarea rows={3} value={form.description} onChange={field('description')} />
                     <Input label={t('fields.category')} value={form.category} onChange={field('category')} />
+                    {/* Starts on "as the channel": an upload with no format of its own reads as the
+                        channel's default, so an owner who set one never has to touch this. The
+                        empty value is stripped before sending, which is what leaves it unset. */}
+                    <div>
+                        <FieldLabel>{t('formats.label')}</FieldLabel>
+                        <select
+                            value={form.format}
+                            onChange={field('format')}
+                            className="w-full px-3.5 py-2.5 rounded-md border border-border outline-none focus:border-primary transition-colors bg-surface"
+                        >
+                            {formatSelectOptions(null, channel?.defaultFormat).options.map((option) => (
+                                <option key={option.value || 'inherit'} value={option.value}>{option.label}</option>
+                            ))}
+                        </select>
+                    </div>
 
                     <div className="grid grid-cols-1 xs:grid-cols-2 gap-4">
                         <div>

@@ -7,11 +7,14 @@ import { useUserScope } from './useUserScope';
 import { useDebouncedValue } from './useDebouncedValue';
 
 export const fetchVideos = async ({ pageParam = 0, queryKey }) => {
-    const [, { search, category, size, diversify, exclude }] = queryKey;
+    const [, { search, category, format, size, diversify, exclude }] = queryKey;
 
     let url = `/videos?page=${pageParam}&size=${size || 12}`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
     if (category) url += `&category=${encodeURIComponent(category)}`;
+    // What kind of video (backend VideoFormat), matched against each video's own format or its
+    // channel's default. Combines with category.
+    if (format) url += `&format=${encodeURIComponent(format)}`;
     // Caps how many videos one channel contributes before the listing moves on to the others,
     // while keeping the order newest-first within each round. The backend ignores it unless the
     // request is the unnarrowed one, so it is only ever meaningful for the home page's tail.
@@ -31,11 +34,11 @@ export const fetchVideos = async ({ pageParam = 0, queryKey }) => {
  *   It is part of the query key because the two produce different pages from the same URL path,
  *   and sharing a cache entry would serve one view the other's rows.
  */
-export const useInfiniteVideos = (search = '', category = '', size = 12, enabled = true, diversify = false, exclude = undefined) => {
+export const useInfiniteVideos = (search = '', category = '', size = 12, enabled = true, diversify = false, exclude = undefined, format = '') => {
     return useInfiniteQuery({
         // `exclude` is in the key: it changes the pages, and a reshuffled feed must not reuse the
         // tail built against the previous one. Sorted by the caller, so the same set is one entry.
-        queryKey: ['videos', { search, category, size, diversify, exclude }],
+        queryKey: ['videos', { search, category, format, size, diversify, exclude }],
         queryFn: fetchVideos,
         initialPageParam: 0,
         getNextPageParam: (lastPage) => {
@@ -52,6 +55,22 @@ export const useCategories = () => {
         queryKey: ['categories'],
         queryFn: async () => {
             const res = await api.get('/categories');
+            return res.data;
+        },
+        ...STATIC,
+    });
+};
+
+/**
+ * Discover's format chips: the formats some reachable video has, explicitly or through its
+ * channel's default, so a chip never leads to an empty page. Static like the categories: a new
+ * format appearing is not something a reader waits on.
+ */
+export const useFormats = () => {
+    return useQuery({
+        queryKey: ['formats'],
+        queryFn: async () => {
+            const res = await api.get('/formats');
             return res.data;
         },
         ...STATIC,
