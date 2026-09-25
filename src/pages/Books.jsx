@@ -109,11 +109,22 @@ function Books() {
             )}
 
             {shelves ? (
-                <div className="flex flex-col gap-10">
-                    {categories.map((c) => (
-                        <Shelf key={c} category={c} sort={sortBy} progress={readingProgress} onOpen={() => setCategory(c)} />
-                    ))}
-                </div>
+                // The shelves report failure through the page's own query, which still runs: each
+                // Shelf renders nothing when it has no books, so without this an outage read as an
+                // empty library rather than as an error with a retry.
+                <QueryState
+                    isLoading={isLoading}
+                    isError={isError}
+                    error={error}
+                    onRetry={refetch}
+                    errorTitle={t('books.loadFailed')}
+                >
+                    <div className="flex flex-col gap-10">
+                        {categories.map((c) => (
+                            <Shelf key={c} category={c} sort={sortBy} progress={readingProgress} onOpen={() => setCategory(c)} />
+                        ))}
+                    </div>
+                </QueryState>
             ) : (
             <QueryState
                 isLoading={isLoading}

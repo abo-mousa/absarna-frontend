@@ -84,7 +84,9 @@ function Channels() {
                         isError={directory.isError}
                         error={directory.error}
                         onRetry={directory.refetch}
-                        isEmpty={others.length === 0 && !directory.hasNextPage}
+                        // "No channels yet" only when there are none at all: a reader who follows
+                        // every channel has an empty directory, not an empty platform.
+                        isEmpty={all.length === 0 && !directory.hasNextPage}
                         errorTitle={t('channelsPage.loadFailed')}
                         emptyTitle={t('channelsPage.empty')}
                     >

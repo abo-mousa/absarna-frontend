@@ -39,7 +39,9 @@ function ConsentBanner() {
             // reader than announcing nothing.
             role="region"
             aria-label={t('consent.label')}
-            className="fixed bottom-0 inset-x-0 z-50 border-t border-border bg-surface/95 backdrop-blur
+            // Above the phone's bottom tab bar, not under it: at bottom-0 the bar (z-1000) covered
+            // the Accept/Decline row, so on a phone the question could not be answered at all.
+            className="fixed bottom-[calc(3.75rem+env(safe-area-inset-bottom,0px))] lg:bottom-0 inset-x-0 z-50 border-t border-border bg-surface/95 backdrop-blur
                        shadow-[0_-4px_24px_rgba(0,0,0,0.08)]"
         >
             <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 grid gap-3 sm:flex sm:items-center sm:gap-6">

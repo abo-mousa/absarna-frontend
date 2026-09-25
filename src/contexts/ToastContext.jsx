@@ -66,7 +66,7 @@ export function ToastProvider({ children }) {
     return (
         <ToastContext.Provider value={{ showToast }}>
             {children}
-            <div className="fixed bottom-5 inset-x-0 z-[3000] flex flex-col items-center gap-2 pointer-events-none px-4">
+            <div className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:bottom-5 inset-x-0 z-[3000] flex flex-col items-center gap-2 pointer-events-none px-4">
                 {toasts.map((toast) => (
                     <ToastItem key={toast.id} toast={toast} onDismiss={startDismiss} />
                 ))}
