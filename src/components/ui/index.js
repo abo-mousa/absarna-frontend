@@ -7,7 +7,7 @@ export { default as Badge } from './Badge';
 export { default as Grid } from './Grid';
 export { default as Spinner } from './Spinner';
 export { default as IrisMark } from './IrisMark';
-export { KhatamStar, KhatamProgress } from './Khatam';
+export { KhatamStar, KhatamProgress, KhatamEmblem } from './Khatam';
 export { default as Cartouche } from './Cartouche';
 export { default as EmptyState } from './EmptyState';
 export { default as Avatar } from './Avatar';

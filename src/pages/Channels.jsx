@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Plus, Settings } from 'lucide-react';
+import { Plus, Settings, Users } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
 import { QueryState, Cartouche, Avatar } from '../components/ui';
@@ -83,6 +83,7 @@ function Channels() {
                         // A reader who follows every channel gets an empty directory; the message is
                         // only for someone who owns and follows nothing either.
                         isEmpty={others.length === 0 && myChannels.length === 0 && followed.length === 0}
+                        emptyIcon={Users}
                         errorTitle={t('channelsPage.loadFailed')}
                         emptyTitle={t('channelsPage.empty')}
                     >

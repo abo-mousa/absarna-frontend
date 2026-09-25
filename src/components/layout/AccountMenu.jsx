@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { User, Upload, Shield, LogOut, Sun, Moon, LogIn, UserPlus, History, Bookmark } from 'lucide-react';
+import { User, Upload, Shield, LogOut, Sun, Moon, LogIn, UserPlus, History, Bookmark, Compass } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useOutsideClick } from '@/hooks/useOutsideClick';
@@ -20,7 +20,7 @@ import { t } from '@/i18n';
  * offered is tested rather than remembered.
  */
 export function accountMenuActions(user, signedIn = true) {
-    if (!signedIn) return ['login', 'register', 'theme', 'language'];
+    if (!signedIn) return ['login', 'register', 'guide', 'theme', 'language'];
     return [
         'profile',
         // What the sidebar used to hold for an account, now that there is no sidebar.
@@ -29,6 +29,7 @@ export function accountMenuActions(user, signedIn = true) {
         // The backend's answers (profile), never a role compared here.
         ...(user?.canUpload ? ['upload'] : []),
         ...(user?.platformAdmin ? ['admin'] : []),
+        'guide',
         'theme',
         'language',
         'logout',
@@ -173,6 +174,13 @@ function AccountMenu({ attentionCount = 0 }) {
                                     <Link key={action} role="menuitem" to="/history" className={itemClass}>
                                         <History size={18} />
                                         {t('nav.history')}
+                                    </Link>
+                                );
+                            case 'guide':
+                                return (
+                                    <Link key={action} role="menuitem" to="/guide" className={itemClass}>
+                                        <Compass size={18} />
+                                        {t('nav.guide')}
                                     </Link>
                                 );
                             case 'bookmarks':

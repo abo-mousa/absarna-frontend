@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, ExternalLink, Play, X } from 'lucide-react';
+import { Check, ExternalLink, Play, X, Music, ShieldAlert } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
 import AdminNav from '../components/admin/AdminNav';
 import { VideoPlayer } from '../components/content';
@@ -38,8 +38,8 @@ const tabLabel = (type) =>
 
 // Per tab: a music note on the explicit-content queue described the wrong thing entirely.
 const EMPTY_ICON = {
-    [REVIEW_TYPE.MUSIC]: '🎵',
-    [REVIEW_TYPE.NUDITY]: '🛡️',
+    [REVIEW_TYPE.MUSIC]: Music,
+    [REVIEW_TYPE.NUDITY]: ShieldAlert,
 };
 
 // The wire enum is English and the UI is Arabic. tOptional, not t: t() returns the KEY when a
@@ -218,7 +218,7 @@ function AdminReview() {
                     error={error}
                     onRetry={refetch}
                     isEmpty={rows.length === 0}
-                    emptyIcon={EMPTY_ICON[tab] ?? '📭'}
+                    emptyIcon={EMPTY_ICON[tab]}
                     emptyTitle={emptyElsewhere
                         ? t('admin.review.emptyOnThisPage')
                         : t('admin.review.empty')}

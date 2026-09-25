@@ -1,3 +1,4 @@
+import { AlertTriangle } from 'lucide-react';
 import Spinner from './Spinner';
 import EmptyState from './EmptyState';
 import { describeError } from '@/lib/describeError';
@@ -31,7 +32,7 @@ function QueryState({
                         errorTitle = t('common.errorTitle'),
                         errorDescription,
                         errorAction,
-                        emptyIcon = '📭',
+                        emptyIcon,
                         emptyTitle = t('common.noData'),
                         emptyDescription,
                         emptyAction,
@@ -52,7 +53,7 @@ function QueryState({
                 {t('common.retry')}
             </button>
         ) : undefined);
-        return <EmptyState icon="⚠️" title={errorTitle} description={description} action={action} />;
+        return <EmptyState icon={AlertTriangle} tone="error" title={errorTitle} description={description} action={action} />;
     }
     if (isEmpty) {
         return (

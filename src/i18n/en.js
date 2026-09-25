@@ -148,6 +148,7 @@ export const en = {
         },
         history: 'Watch history',
         bookmarks: 'Saved',
+        guide: 'How Absarna works',
         menu: 'Menu',
         sideMenu: 'Side menu',
         skipToContent: 'Skip to content',
@@ -579,6 +580,7 @@ export const en = {
         metaDescription: 'Islamic articles on أَبْصَرْنا',
         searchPlaceholder: 'Search for an article...',
         empty: 'No articles',
+        emptyHint: 'When channels write articles you will find them here, to read on a quiet page. You can write one too, from your own channel.',
         loadFailed: 'Could not load the article',
         backToArticles: 'Back to articles',
         emptyOnChannel: 'No articles yet',
@@ -623,8 +625,52 @@ export const en = {
         endAll: 'That is every post.',
         emptyFollowed: 'No posts from the channels you follow yet',
         emptyAll: 'No posts yet',
+        emptyHint: 'This is where channels say something short: an announcement, a comment on the news, a heads-up about a new episode. Follow channels to hear from them first.',
         loadMore: 'Show more',
         loadFailed: 'Posts could not be loaded',
+    },
+
+    guide: {
+        title: 'The Absarna guide',
+        subtitle: 'Everything you need to get started, in a minute.',
+        progress: 'Step {step} of {total}',
+        skip: 'Skip',
+        back: 'Back',
+        next: 'Next',
+        done: 'Let’s start',
+        start: 'Start with Today',
+        fullPage: 'Read the full guide',
+        open: 'Open {place}',
+        steps: {
+            welcome: {
+                title: 'Welcome to Absarna',
+                text: 'A place to know what is happening in the world, to learn something worth knowing, and to hear from those silenced on other platforms. Here is a short tour.',
+            },
+            today: {
+                title: 'Today',
+                text: 'Your first page, and it ends: what you started — programmes and books — what you finished this week, and the latest news. You are done when you reach the bottom; it never pulls you into endless scrolling.',
+            },
+            discover: {
+                title: 'Discover',
+                text: 'For browsing: what is new from the channels you follow, and suggestions from channels you have not met yet. Pick a format — reports, documentaries, lectures — to narrow it down.',
+            },
+            read: {
+                title: 'Books and articles',
+                text: 'A library you read right here. Your place is kept, and Today takes you back to it.',
+            },
+            posts: {
+                title: 'Posts',
+                text: 'Short words from channels: an announcement, a comment on the news, a heads-up about a new episode.',
+            },
+            channels: {
+                title: 'Channels',
+                text: 'Follow the channels you trust, and what they publish comes to Today and Discover. You can also create a channel of your own and publish in it.',
+            },
+            voice: {
+                title: 'A voice for the silenced',
+                text: 'A channel can mark a video “removed elsewhere”, and what is uploaded here stays here. Hard footage sits behind a cover, and opens only when you choose.',
+            },
+        },
     },
 
     today: {
@@ -664,6 +710,7 @@ export const en = {
             booksTitle: 'New in the library',
             allBooks: 'All books',
             colophonTitle: 'This is your start, and everything you begin will show up here',
+            guide: 'How does Absarna work?',
         },
     },
 
@@ -2242,7 +2289,7 @@ export const TRANSLATED = [
     'channel', 'consent', 'createChannel', 'comments', 'likes', 'bookmarks', 'history',
     'subscriptions', 'profile', 'search', 'biography', 'share', 'upload', 'notFound',
     'channelManage', 'youtube', 'youtubeOAuth', 'admin', 'adminReports', 'legal',
-    'pager', 'report', 'ownerImage', 'formats', 'today', 'postsPage', 'channelsPage', 'voice',
+    'pager', 'report', 'ownerImage', 'formats', 'guide', 'today', 'postsPage', 'channelsPage', 'voice',
 ];
 
 export default en;

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, Check, ExternalLink, Users, X } from 'lucide-react';
+import { AlertTriangle, Check, ExternalLink, Users, X, Flag } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
 import AdminNav from '../components/admin/AdminNav';
 import { Badge, Button, Pager, QueryState } from '../components/ui';
@@ -269,7 +269,7 @@ function AdminReports() {
                     onRetry={refetch}
                     errorTitle={t('adminReports.loadFailed')}
                     isEmpty={reports.length === 0}
-                    emptyIcon="🚩"
+                    emptyIcon={Flag}
                     emptyTitle={t('adminReports.empty')}
                     emptyDescription={t('adminReports.emptyDescription')}
                 >

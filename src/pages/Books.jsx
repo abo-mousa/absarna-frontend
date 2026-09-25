@@ -1,3 +1,4 @@
+import { BookOpen, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useAuth } from '../contexts/AuthContext';
@@ -133,7 +134,7 @@ function Books() {
                 // Not while the previous query's rows stand in for the new one: an empty "no match"
                 // placeholder would flash the wrong empty message.
                 isEmpty={books.length === 0 && !isPlaceholderData}
-                emptyIcon={!filtering ? '📚' : '🔍'}
+                emptyIcon={!filtering ? BookOpen : Search}
                 emptyTitle={!filtering ? t('books.empty') : t('common.noResults')}
                 emptyDescription={!filtering ? t('books.emptyDescription') : t('common.tryAnotherSearch')}
             >

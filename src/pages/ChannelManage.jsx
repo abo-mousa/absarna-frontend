@@ -3,7 +3,8 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePageMeta } from '@/hooks/usePageMeta';
 import PageShell from '@/components/layout/PageShell';
-import { QueryState, Button } from '@/components/ui';
+import { Search, Lock } from 'lucide-react';
+import { QueryState, Button, KhatamEmblem } from '@/components/ui';
 import { useChannel } from '@/hooks/useChannels';
 import { useChannelYouTube } from '@/hooks/useChannelYouTube';
 import ChannelManageNav, { resolveTab } from '@/components/channel/ChannelManageNav';
@@ -23,12 +24,12 @@ function TabPanel({ active, children }) {
     return <div hidden={!active}>{children}</div>;
 }
 
-function ErrorScreen({ emoji, title, description, onBack }) {
+function ErrorScreen({ icon, title, description, onBack }) {
     return (
         <PageShell>
             <div className="max-w-[600px] mx-auto my-16 sm:my-20 p-8 sm:p-10 text-center bg-surface rounded-lg shadow-md border border-border-light">
-                <div className="text-5xl mb-4">{emoji}</div>
-                <h2 className="text-xl font-bold mb-2">{title}</h2>
+                <KhatamEmblem icon={icon} tone="error" className="mb-5" />
+                <h2 className="font-serif text-[1.6rem] font-semibold mb-2">{title}</h2>
                 <p className="text-text-muted">{description}</p>
                 <Button className="mt-5" onClick={onBack}>{t('common.backHome')}</Button>
             </div>
@@ -101,13 +102,13 @@ function ChannelManage() {
         const description = channelFetchError?.response?.status === 404
             ? t('channelManage.notFound')
             : t('channelManage.notFoundDescription');
-        return <ErrorScreen emoji="🔍" title={t('channelManage.notFound')} description={description} onBack={() => navigate('/')} />;
+        return <ErrorScreen icon={Search} title={t('channelManage.notFound')} description={description} onBack={() => navigate('/')} />;
     }
 
     if (!channel?.viewerCanManage) {
         return (
             <ErrorScreen
-                emoji="⛔"
+                icon={Lock}
                 title={t('channelManage.forbidden')}
                 description={t('channelManage.forbiddenDescription')}
                 onBack={() => navigate('/')}

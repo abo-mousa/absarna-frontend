@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
 import { QueryState, Cartouche, KhatamProgress, KhatamStar, Avatar } from '../components/ui';
 import { VideoCard, BookCard } from '../components/content';
+import { GuideDialog, GUIDE_SEEN_KEY } from '../components/guide';
 import { useToday } from '../hooks/useToday';
+import { safeStorage } from '@/lib/safeStorage';
 import { useWatchProgressMap } from '../hooks/useVideos';
 import { formatTimestamp } from '@/lib/spans';
 import { formatCount } from '@/lib/numbers';
@@ -52,6 +55,15 @@ function Today() {
 
     const hasContinue = !!(data?.continueWatching?.length || data?.continueReading?.length);
     const welcome = data?.welcome;
+
+    // The guide opens by itself once: for a reader the backend calls new (it sent a welcome), and
+    // never again after it is closed. Remembered per browser — which dialog someone has seen is a
+    // convenience, not a record.
+    const [guideSeen, setGuideSeen] = useState(() => safeStorage.getItem(GUIDE_SEEN_KEY) === '1');
+    const closeGuide = () => {
+        safeStorage.setItem(GUIDE_SEEN_KEY, '1');
+        setGuideSeen(true);
+    };
 
     return (
         <PageShell contentClassName="p-4 sm:p-6">
@@ -159,6 +171,7 @@ function Today() {
 
                     <Colophon newcomer={!!welcome} />
                 </div>
+                <GuideDialog open={!!welcome && !guideSeen} onClose={closeGuide} />
             </QueryState>
         </PageShell>
     );
@@ -225,16 +238,19 @@ function WelcomeHero({ signedIn }) {
                 <p className="text-sm text-text-muted mt-5">
                     {signedIn ? t('today.welcome.howItFills') : t('today.welcome.signInWhy')}
                 </p>
-                {!signedIn && (
-                    <div className="flex flex-wrap gap-3 mt-4">
+                <div className="flex flex-wrap items-center gap-3 mt-4">
+                    {!signedIn && (
+                        <>
                         <Link to="/register" className="px-5 py-2 bg-primary text-white rounded-md font-semibold hover:no-underline">
                             {t('nav.register')}
                         </Link>
                         <Link to="/login" className="px-5 py-2 border border-border rounded-md bg-bg font-semibold hover:no-underline hover:border-primary">
                             {t('nav.login')}
                         </Link>
-                    </div>
-                )}
+                        </>
+                    )}
+                    <Link to="/guide" className="text-sm font-semibold">{t('today.welcome.guide')}</Link>
+                </div>
             </div>
         </section>
     );

@@ -1,5 +1,5 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Tv } from 'lucide-react';
+import { Tv, Clapperboard } from 'lucide-react';
 import { ArrowBack } from '@/components/ui/DirectionalIcon';
 import PageShell from '../components/layout/PageShell';
 import { QueryState } from '../components/ui';
@@ -89,7 +89,7 @@ function SeriesDetail() {
 
                 <QueryState
                     isEmpty={content.length === 0}
-                    emptyIcon="🎬"
+                    emptyIcon={Clapperboard}
                     emptyTitle={t('series.empty')}
                 >
                     <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-x-5 gap-y-8">

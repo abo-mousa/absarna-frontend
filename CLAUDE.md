@@ -121,6 +121,14 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   `lib/kicker.js` and its line is reserved even when empty, like the title's two lines, so a grid row
   stays aligned. The navbar shows today's Hijri date (`formatHijriDate`, `Intl` `islamic-umalqura`,
   locale digits) at `xl` only.
+- **Empty and failed states draw the star, never an emoji.** `EmptyState` (and so `QueryState`)
+  renders `KhatamEmblem` — the star twice, interlaced, around one thin lucide glyph — and takes a
+  lucide COMPONENT as `icon`/`emptyIcon`; a string falls back to `Inbox`, so an emoji cannot come
+  back through a prop. Emoji are drawn by the operating system and looked different on every phone.
+- **The guide** (`components/guide`, `/guide`) is one list of steps shown two ways: a paged dialog
+  that opens by itself on Today once — only when the backend sent a `welcome` (it decides who is
+  new) and until `absarna.guideSeen` is set — and the full page, linked from the welcome and the
+  account menu. A new tab means a new step in `GUIDE_STEPS`.
 - **Tailwind only.** Brand colours are theme tokens resolving through CSS custom properties
   (`rgb(var(--color-x) / <alpha-value>)`), with light values on `:root` and dark under `.dark` in
   `index.css` — which is why dark mode is a two-file change and every existing `bg-surface` call site

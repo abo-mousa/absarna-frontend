@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { MessageSquareText } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
 import { QueryState, KhatamStar } from '../components/ui';
@@ -51,6 +52,8 @@ function Posts() {
                     onRetry={posts.refetch}
                     isEmpty={items.length === 0}
                     errorTitle={t('postsPage.loadFailed')}
+                    emptyIcon={MessageSquareText}
+                    emptyDescription={t('postsPage.emptyHint')}
                     emptyTitle={followed && token ? t('postsPage.emptyFollowed') : t('postsPage.emptyAll')}
                 >
                     <div className="grid gap-4">

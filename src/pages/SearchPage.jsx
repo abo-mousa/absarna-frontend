@@ -1,3 +1,4 @@
+import { Search } from 'lucide-react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
@@ -43,7 +44,7 @@ function SearchPage() {
                 onRetry={refetch}
                 isEmpty={results.length === 0}
                 errorTitle={t('search.failed')}
-                emptyIcon="🔍"
+                emptyIcon={Search}
                 emptyTitle={t('common.noResults')}
                 emptyDescription={t('search.emptyDescription', { query })}
             >

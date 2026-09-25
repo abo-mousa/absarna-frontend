@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { Link } from 'react-router-dom';
-import { Clock } from 'lucide-react';
+import { Clock, FileText, Search } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
 import { ArticleCard } from '../components/content';
 import { QueryState, Input } from '../components/ui';
@@ -92,9 +92,9 @@ function Articles() {
                 // Not while the previous query's rows stand in for the new one: an empty "no match"
                 // placeholder would flash the wrong empty message.
                 isEmpty={articles.length === 0 && !isPlaceholderData}
-                emptyIcon={!filtering ? '📝' : '🔍'}
+                emptyIcon={!filtering ? FileText : Search}
                 emptyTitle={!filtering ? t('articles.empty') : t('common.noResults')}
-                emptyDescription={!filtering ? undefined : t('common.tryAnotherSearch')}
+                emptyDescription={!filtering ? t('articles.emptyHint') : t('common.tryAnotherSearch')}
             >
                 {/* A MAGAZINE PAGE, not a list of boxes. Unnarrowed, the newest article leads —
                     headline in Markazi, its opening in Naskh, the faces the article page itself

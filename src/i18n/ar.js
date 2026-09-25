@@ -153,6 +153,7 @@ export const ar = {
         // What the sidebar used to hold for an account, now in the account menu.
         history: 'سجل المشاهدة',
         bookmarks: 'المحفوظات',
+        guide: 'دليل الموقع',
         menu: 'القائمة',
         sideMenu: 'القائمة الجانبية',
         skipToContent: 'تخطي إلى المحتوى',
@@ -789,6 +790,7 @@ export const ar = {
         metaDescription: 'مقالات إسلامية على أَبْصَرْنا',
         searchPlaceholder: 'ابحث عن مقال...',
         empty: 'لا توجد مقالات',
+        emptyHint: 'حين تكتب القنوات مقالاتها تجدها هنا، تقرؤها في صفحة هادئة بلا إعلانات. ولك أن تكتب أنت أيضًا من قناتك.',
         loadFailed: 'فشل في تحميل المقال',
         backToArticles: 'العودة للمقالات',
         emptyOnChannel: 'لا توجد مقالات بعد',
@@ -839,12 +841,58 @@ export const ar = {
         endAll: 'هذه كل المنشورات.',
         emptyFollowed: 'لا منشورات من القنوات التي تتابعها بعد',
         emptyAll: 'لا توجد منشورات بعد',
+        emptyHint: 'هنا تكتب القنوات كلماتها القصيرة: إعلان، أو تعليق على خبر، أو تنبيه إلى حلقة جديدة. تابِع قنواتك لتصلك أولًا بأول.',
         loadMore: 'عرض المزيد',
         loadFailed: 'تعذّر تحميل المنشورات',
     },
 
     // The Today page (/): a dashboard that ends. «أسبوعك» counts what was finished in the last
     // seven days — never a streak, nothing lost for a missed day.
+    // The first-visit guide (components/guide) and its full page, /guide. One step per place in
+    // the tab bar, between what the site is for and the marks a video can carry.
+    guide: {
+        title: 'دليل أبصرنا',
+        subtitle: 'كل ما تحتاجه لتبدأ، في دقيقة.',
+        progress: 'الخطوة {step} من {total}',
+        skip: 'تخطَّ',
+        back: 'السابق',
+        next: 'التالي',
+        done: 'لنبدأ',
+        start: 'ابدأ من «اليوم»',
+        fullPage: 'اقرأ الدليل كاملًا',
+        open: 'افتح «{place}»',
+        steps: {
+            welcome: {
+                title: 'أهلاً بك في أبصرنا',
+                text: 'منصّة لتعرف ما يجري في العالم، ولتتعلّم ما ينفعك، ولتسمع من أُسكِت في منصّات أخرى. هذه جولة قصيرة في أرجائها.',
+            },
+            today: {
+                title: 'اليوم',
+                text: 'صفحتك الأولى، ولها نهاية: تتمّة ما بدأت من برامج وكتب، وما أنجزته هذا الأسبوع، وآخر الأخبار. تنتهي حين تنتهي منها، ولا تجرّك إلى التمرير بلا آخر.',
+            },
+            discover: {
+                title: 'اكتشف',
+                text: 'للتصفّح: جديد القنوات التي تتابعها، واقتراحات من قنوات لم تعرفها بعد. اختر نوعًا — تقارير، وثائقيات، محاضرات — لترى ما يناسبك.',
+            },
+            read: {
+                title: 'الكتب والمقالات',
+                text: 'مكتبة تقرأ فيها داخل الموقع، ويُحفظ لك موضع توقّفك فتعود إليه من صفحة «اليوم».',
+            },
+            posts: {
+                title: 'المنشورات',
+                text: 'كلمات قصيرة من القنوات: إعلان، أو تعليق على خبر، أو تنبيه إلى حلقة جديدة.',
+            },
+            channels: {
+                title: 'القنوات',
+                text: 'تابِع القنوات التي تثق بها، فيصلك جديدها في «اليوم» و«اكتشف». ويمكنك أن تُنشئ قناتك وتنشر فيها.',
+            },
+            voice: {
+                title: 'صوت لمن أُسكِت',
+                text: 'قد تُعلّم القناة فيديو بأنه «حُذف في مكان آخر»، وما يُرفع هنا يبقى هنا. والمشاهد القاسية تظهر خلف غطاء، ولا تُفتح إلا حين تختار أنت.',
+            },
+        },
+    },
+
     today: {
         weekTitle: 'أسبوعك',
         weekSpan: 'آخر سبعة أيام',
@@ -883,6 +931,7 @@ export const ar = {
             booksTitle: 'جديد المكتبة',
             allBooks: 'كل الكتب',
             colophonTitle: 'هذه بدايتك، وكل ما تبدؤه سيظهر هنا',
+            guide: 'كيف تستخدم أبصرنا؟',
         },
     },
 

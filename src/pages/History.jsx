@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { Trash2, Video, BookOpen } from 'lucide-react';
+import { Trash2, Video, BookOpen, History as HistoryIcon } from 'lucide-react';
 import api from '@/lib/api/client';
 import PageShell from '../components/layout/PageShell';
 import { QueryState } from '../components/ui';
@@ -82,7 +82,7 @@ function History() {
                 onRetry={refetch}
                 isEmpty={history.length === 0}
                 errorTitle={t('history.loadFailed')}
-                emptyIcon="🕘"
+                emptyIcon={HistoryIcon}
                 emptyTitle={isVideos ? t('history.emptyWatch') : t('history.emptyRead')}
                 emptyDescription={isVideos ? t('history.emptyWatchDescription') : t('history.emptyReadDescription')}
             >

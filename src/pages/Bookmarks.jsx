@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trash2, Video, BookOpen, FileText } from 'lucide-react';
+import { Trash2, Video, BookOpen, FileText, Bookmark } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
 import { QueryState } from '../components/ui';
@@ -78,7 +78,7 @@ function Bookmarks() {
                 onRetry={refetch}
                 isEmpty={itemsForTab.length === 0}
                 errorTitle={t('bookmarks.loadFailed')}
-                emptyIcon="🔖"
+                emptyIcon={Bookmark}
                 emptyTitle={t('bookmarks.empty')}
                 emptyDescription={t('bookmarks.emptyDescription')}
             >

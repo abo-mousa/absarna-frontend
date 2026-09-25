@@ -1,3 +1,4 @@
+import { Bell } from 'lucide-react';
 import { resolveMediaUrl } from '@/lib/media';
 import { Link } from 'react-router-dom';
 import PageShell from '../components/layout/PageShell';
@@ -29,7 +30,7 @@ function Subscriptions() {
                 onRetry={refetch}
                 isEmpty={subscriptions.length === 0}
                 errorTitle={t('subscriptions.loadFailed')}
-                emptyIcon="🔔"
+                emptyIcon={Bell}
                 emptyTitle={t('subscriptions.empty')}
                 emptyDescription={t('subscriptions.emptyDescription')}
             >

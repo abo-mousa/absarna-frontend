@@ -17,17 +17,45 @@ import { KHATAM_POINTS, khatamDash } from '@/lib/khatam';
  * colours text. Decorative, and hidden from assistive technology: wherever it appears, the words
  * beside it are what carry the meaning.
  */
-export function KhatamStar({ filled = true, className = '' }) {
+export function KhatamStar({ filled = true, strokeWidth = 9, className = '' }) {
     return (
         <svg viewBox="0 0 100 100" className={className} aria-hidden="true" focusable="false">
             <polygon
                 points={KHATAM_POINTS}
                 fill={filled ? 'currentColor' : 'none'}
                 stroke={filled ? 'none' : 'currentColor'}
-                strokeWidth={filled ? undefined : 9}
+                strokeWidth={filled ? undefined : strokeWidth}
                 strokeLinejoin="miter"
             />
         </svg>
+    );
+}
+
+/**
+ * The picture for a place with nothing in it yet: the logo's star, drawn twice and turned against
+ * itself the way the mark's rings interlace, around one thin line icon saying what is missing.
+ * Replaced the emoji (📝, 📭, 📚…) the empty states used, which were the one thing on those pages
+ * drawn by the operating system rather than by us, and looked different on every phone.
+ * `tone="error"` is for a failed load: the star goes quiet and the glyph takes the voice colour.
+ */
+export function KhatamEmblem({ icon: Icon, tone = 'default', size = 'md', className = '' }) {
+    const error = tone === 'error';
+    const small = size === 'sm';
+    return (
+        <span className={`relative inline-block ${small ? 'w-16 h-16' : 'w-24 h-24'} ${className}`} aria-hidden="true">
+            <KhatamStar className={`absolute inset-0 w-full h-full ${error ? 'text-border-light' : 'text-gold/10'}`} />
+            <KhatamStar filled={false} strokeWidth={2.5} className={`absolute inset-0 w-full h-full ${error ? 'text-border' : 'text-gold'}`} />
+            <KhatamStar
+                filled={false}
+                strokeWidth={3}
+                className={`absolute inset-[14%] w-[72%] h-[72%] rotate-[22.5deg] ${error ? 'text-border' : 'text-gold/50'}`}
+            />
+            {Icon && (
+                <span className="absolute inset-0 flex items-center justify-center">
+                    <Icon size={small ? 22 : 30} strokeWidth={1.5} className={error ? 'text-voice' : 'text-primary'} />
+                </span>
+            )}
+        </span>
     );
 }
 
