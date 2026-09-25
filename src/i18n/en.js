@@ -546,6 +546,8 @@ export const en = {
         empty: 'No books',
         emptyDescription: 'Books are on their way',
         read: 'Read',
+        readingNow: 'Reading now',
+        shelfAll: 'See all',
         download: 'Download',
         notFound: 'That book does not exist',
         backToLibrary: 'Back to the library',

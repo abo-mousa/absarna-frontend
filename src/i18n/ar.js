@@ -751,6 +751,9 @@ export const ar = {
         empty: 'لا توجد كتب',
         emptyDescription: 'سيتم إضافة الكتب قريباً',
         read: 'قراءة',
+        // The shelves view: what a reader has open, then one shelf of covers per category.
+        readingNow: 'تقرأ الآن',
+        shelfAll: 'عرض الكل',
         download: 'تحميل',
         notFound: 'الكتاب غير موجود',
         backToLibrary: 'العودة للمكتبة',

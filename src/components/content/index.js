@@ -1,5 +1,6 @@
 export { default as VideoCard } from './VideoCard';
 export { default as BookCard } from './BookCard';
+export { default as BookCover } from './BookCover';
 export { default as ArticleCard } from './ArticleCard';
 export { default as PostCard } from './PostCard';
 export { default as VideoPlayer } from './VideoPlayer';

@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { Link } from 'react-router-dom';
-import { Type, Clock, Calendar } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
+import { ArticleCard } from '../components/content';
 import { QueryState, Input } from '../components/ui';
 import { useArticles, useArticleCategories } from '../hooks/useArticles';
 import { usePageMeta } from '../hooks/usePageMeta';
@@ -95,31 +96,14 @@ function Articles() {
                 emptyTitle={!filtering ? t('articles.empty') : t('common.noResults')}
                 emptyDescription={!filtering ? undefined : t('common.tryAnotherSearch')}
             >
-                <div className="grid gap-4">
-                    {articles.map((article) => (
-                        <Link
-                            key={article.id}
-                            to={`/articles/${article.id}`}
-                            className="block bg-surface p-5 rounded-lg border border-border-light shadow-sm hover:shadow-md transition-shadow text-text-primary no-underline"
-                        >
-                            <h3 className="text-lg font-semibold mb-2">{article.title}</h3>
-                            <div className="flex gap-4 flex-wrap text-sm text-text-muted">
-                                {article.wordCount > 0 && (
-                                    <span className="flex items-center gap-1"><Type size={13} /> {t('common.wordCount', { count: article.wordCount })}</span>
-                                )}
-                                {article.readingTimeMinutes > 0 && (
-                                    <span className="flex items-center gap-1"><Clock size={13} /> {t('common.readingMinutes', { count: article.readingTimeMinutes })}</span>
-                                )}
-                                {article.publishDate && (
-                                    <span className="flex items-center gap-1"><Calendar size={13} /> {formatPublishDate(displayDate(article))}</span>
-                                )}
-                            </div>
-                            {article.content && (
-                                <p className="mt-2 text-text-secondary text-sm leading-relaxed">
-                                    {article.content.substring(0, 150)}...
-                                </p>
-                            )}
-                        </Link>
+                {/* A MAGAZINE PAGE, not a list of boxes. Unnarrowed, the newest article leads —
+                    headline in Markazi, its opening in Naskh, the faces the article page itself
+                    uses — and the rest follow as text in three columns. A search or a category is
+                    a hunt for one article, so it gets the plain grid with no lead. */}
+                {!filtering && articles[0] && <LeadArticle article={articles[0]} />}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-7 gap-y-6">
+                    {(filtering ? articles : articles.slice(1)).map((article) => (
+                        <ArticleCard key={article.id} article={article} />
                     ))}
                 </div>
 
@@ -136,6 +120,34 @@ function Articles() {
                 )}
             </QueryState>
         </PageShell>
+    );
+}
+
+/** The newest article, set large: the one piece the page chooses to put first. */
+function LeadArticle({ article }) {
+    return (
+        <Link
+            to={`/articles/${article.id}`}
+            className="group block pb-8 mb-8 border-b border-border text-text-primary no-underline hover:no-underline"
+        >
+            {article.category && (
+                <span dir="auto" className="block text-xs font-bold text-gold-ink mb-2">{article.category}</span>
+            )}
+            <h2 dir="auto" className="font-serif text-[2.6rem] font-semibold leading-[1.05] mb-3 group-hover:text-primary transition-colors">
+                {article.title}
+            </h2>
+            {article.content && (
+                <p dir="auto" className="font-reading text-lg leading-loose text-text-secondary max-w-reading line-clamp-3">
+                    {article.content.substring(0, 320)}…
+                </p>
+            )}
+            <div className="flex gap-4 flex-wrap text-sm text-text-muted mt-3">
+                {article.readingTimeMinutes > 0 && (
+                    <span className="flex items-center gap-1"><Clock size={13} /> {t('common.readingMinutes', { count: article.readingTimeMinutes })}</span>
+                )}
+                {displayDate(article) && <span>{formatPublishDate(displayDate(article))}</span>}
+            </div>
+        </Link>
     );
 }
 

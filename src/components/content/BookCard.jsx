@@ -1,18 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BookOpen, Download } from 'lucide-react';
-import { resolveMediaUrl } from '@/lib/media';
+import BookCover from './BookCover';
 import { formatPublishDate, displayDate } from '@/lib/datetime';
 import { useBookReadUrl } from '@/hooks/useMediaUrl';
 import { t } from '@/i18n';
-
-// Percent read, for the small progress bar on the cover — same idea as VideoCard's
-// watched-percent, hidden below 1% so a barely-opened book doesn't show a sliver.
-function getReadPercent(book, currentPage) {
-    if (!currentPage || !book.pages) return null;
-    const percent = (currentPage / book.pages) * 100;
-    return percent > 1 ? Math.min(100, percent) : null;
-}
 
 function BookCard({ book, currentPage }) {
     const navigate = useNavigate();
@@ -73,14 +65,6 @@ function BookCard({ book, currentPage }) {
         pendingTabRef.current = window.open('', '_blank');
     };
 
-    // Preview images are not presigned; resolveMediaUrl returns null for an object key and the
-    // caller falls back to its placeholder. It can also be an owner-supplied external URL that
-    // is dead, moved, hotlink-blocked, or outside the SPA's `img-src` allowlist — hence the
-    // onError below, which routes to the same generated cover rather than a broken-image glyph.
-    const [previewFailed, setPreviewFailed] = useState(false);
-    const previewUrl = !previewFailed ? resolveMediaUrl(book.previewImageUrl) : null;
-    const readPercent = getReadPercent(book, currentPage);
-
     return (
         // A ROW, NOT A TILE: a small cover at the start and the book beside it, the way a library
         // lists books. The old card was a 200px landscape crop of a portrait page inside a boxed
@@ -88,41 +72,7 @@ function BookCard({ book, currentPage }) {
         // have been ~450px tall on /books' three columns and taller on a phone. No box, as with
         // VideoCard — a hairline under the row is the only separator.
         <div className="flex gap-4 h-full pb-4 border-b border-border-light">
-            <Link
-                to={`/books/${book.id}`}
-                aria-label={book.title}
-                // The spine: an inset shadow on the binding edge, which is the start side — the
-                // right in Arabic. A shadow's offset is physical with no logical form, so it takes
-                // `rtl:`/`ltr:`, like the sidebar drawer's transform.
-                className="relative w-24 flex-shrink-0 self-start aspect-[2/3] rounded-md overflow-hidden bg-surface-hover
-                    rtl:shadow-[inset_-5px_0_0_rgba(0,0,0,0.18),0_4px_10px_-4px_rgba(0,0,0,0.35)]
-                    ltr:shadow-[inset_5px_0_0_rgba(0,0,0,0.18),0_4px_10px_-4px_rgba(0,0,0,0.35)]
-                    focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            >
-                {previewUrl ? (
-                    <img
-                        src={previewUrl}
-                        alt=""
-                        onError={() => setPreviewFailed(true)}
-                        className="w-full h-full object-cover"
-                    />
-                ) : (
-                    // No cover image: a generated one — the title in Markazi inside a gold frame
-                    // on the brand colour — where there used to be a book emoji. Decorative: the
-                    // link's own label and the heading beside it carry the title.
-                    <div aria-hidden="true" className="relative w-full h-full flex items-center justify-center p-3 bg-primary-dark text-white text-center">
-                        <span className="absolute inset-1.5 border border-gold/50" />
-                        <span dir="auto" className="font-serif text-base leading-tight line-clamp-4">{book.title}</span>
-                    </div>
-                )}
-
-                {readPercent !== null && (
-                    <div className="absolute bottom-0 inset-x-0 h-[3px] bg-black/70">
-                        {/* Gold, like VideoCard's watched bar. */}
-                        <div className="h-full bg-gold" style={{ width: `${readPercent}%` }} />
-                    </div>
-                )}
-            </Link>
+            <BookCover book={book} currentPage={currentPage} />
 
             <div className="flex flex-col flex-1 min-w-0">
                 {book.category && (
