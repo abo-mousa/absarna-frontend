@@ -1808,7 +1808,7 @@ export const en = {
      */
     legal: {
         lastUpdated: 'Last updated: {date}',
-        lastUpdatedDate: '22 September 2026',
+        lastUpdatedDate: '25 September 2026',
         contentsHeading: 'On this page',
         sourceNotice: 'These pages were written in Arabic. This English text is provided for convenience; where the two differ, the Arabic version is the one that governs.',
 
@@ -1879,13 +1879,13 @@ export const en = {
                     id: 'about-not',
                     heading: 'And what it does not do',
                     paragraphs: [
-                        'These are not general promises but a description of what is absent from the software itself — the privacy policy sets out the detail:',
+                        'This describes the platform as it is today, not a pledge about what it will always be. If any of it changes — advertising, say, or something paid — it will be said here and in the privacy policy before it begins; the privacy policy sets out the detail:',
                     ],
                     bullets: [
-                        'No advertising and no ad network, no charge to watch and no paid subscription: there is nowhere on the platform where money changes hands.',
+                        'Today there is no advertising and no ad network, no charge to watch and no paid subscription: nowhere on the platform does money change hands.',
                         'No advertising tracker and no third-party measurement. Performance and error measurements go to a server we run ourselves, not to an analytics company.',
                         'No cookies set by the platform.',
-                        'No recommendation engine measuring how long you stay in order to lengthen it: the home page shows a bounded amount, fixed for the day; nothing autoplays one video after another; and what you have watched is not used to rank what you are shown.',
+                        'No recommendation engine measuring how long you stay in order to lengthen it: the Today page ends, and nothing autoplays one video after another. A video you finish may lead to suggestions like it, and you are told so plainly; one you opened and left is never the basis of a suggestion.',
                     ],
                 },
             ],
@@ -1930,10 +1930,12 @@ export const en = {
                     heading: 'Your activity on the platform',
                     paragraphs: [
                         'If you are signed in, the following is stored against your account. Your watch and reading histories are lists for your own convenience, not tracking logs: each is capped at two hundred entries with the oldest dropped automatically, and each is cleared in full with one press.',
+                        'They are also what the Today page is built from: the next episode of a programme you started, your place in a book, what you finished this week, and suggestions like the last video you finished, which is named beside them. No suggestion is ever based on a video you opened and did not finish, and none of it orders the Discover page, which only leaves out what you have already watched.',
                     ],
                     bullets: [
                         'Watch history — the last two hundred videos you watched and where you stopped in each, so that "continue watching" works.',
                         'Reading history — the same for books: the last two hundred, and the last page you reached.',
+                        'Reading days — how far you got in each book on each day, so that what you read this week can be counted. Kept for thirty days, then deleted automatically, and cleared together with the reading history.',
                         'Saved items — what you saved to read or watch later.',
                         'Likes, and your channel subscriptions.',
                         'Your comments: their text, your display name and their date. Your email address at the time of writing is stored with the comment for administrative purposes; it is shown to no reader and does not leave with the comment’s data.',
@@ -2021,7 +2023,7 @@ export const en = {
                     id: 'third-parties',
                     heading: 'Parties that receive data',
                     paragraphs: [
-                        'These are the categories of outside party the system deals with, and they are all there is. Among them there is no ad network, no payment gateway and no external analytics tool.',
+                        'These are the categories of outside party the system deals with today, and they are all there is. Among them there is no ad network, no payment gateway and no external analytics tool. If one is ever added — an ad network or a payment gateway, for instance — it will be listed here before anything reaches it.',
                         'We name them by category rather than by name. Anyone who wants the name of a particular provider, and the extent of what reaches it, may ask at the contact address and will be told.',
                     ],
                     bullets: [
