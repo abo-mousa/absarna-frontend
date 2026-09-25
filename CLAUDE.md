@@ -196,8 +196,9 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   either back. **The one exception is Discover's channel column** (`layout/ChannelRail`, product
   owner's call, 2026-09-25): the old sidebar's shape — 240px, against the window's reading-start
   edge, sticky under the navbar, passed to `PageShell` as `sidebar` — holding the reader's own
-  channels, their subscriptions, and `GET /api/channels/suggested` (the backend's ranking, the same
-  one Today's welcome uses). Wide screens only; Today stays without it, and there is still no
+  channels, their subscriptions (`GET /api/user/subscriptions/page`, by name) and
+  `GET /api/channels/suggested` (the backend's ranking, the same one Today's welcome uses), both a
+  page at a time with «تحميل المزيد» — never every follow of a reader who has hundreds. Wide screens only; Today stays without it, and there is still no
   drawer. Beside it Discover's grid is three wide below `2xl`, and `useGridColumns` counts the
   same, or `fitFeedToRows` leaves broken rows.
 - **The navbar is full-bleed on purpose — do not put a `max-w`/`mx-auto` back on it.** It had

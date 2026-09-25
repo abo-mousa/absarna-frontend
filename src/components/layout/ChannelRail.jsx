@@ -1,15 +1,16 @@
 import { Link } from 'react-router-dom';
 import { Settings } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useMyChannels, useSubscriptions, useSuggestedChannels } from '../../hooks/useChannels';
+import { useMyChannels, useSubscriptionsPage, useSuggestedChannels } from '../../hooks/useChannels';
 import { Avatar, KhatamStar } from '../ui';
 import { ArrowForward } from '../ui/DirectionalIcon';
 import { resolveMediaUrl } from '@/lib/media';
 import { formatChipLabel } from '@/lib/formats';
 import { t } from '@/i18n';
 
-/** Suggestions shown; the Channels tab has the rest. */
-const SUGGESTED_SHOWN = 8;
+/** A page of each list; «تحميل المزيد» fetches the next. */
+const FOLLOWED_PAGE = 10;
+const SUGGESTED_PAGE = 8;
 
 /**
  * Discover's channel column: the old sidebar's shape — a full-height panel against the
@@ -36,8 +37,10 @@ const SUGGESTED_SHOWN = 8;
 function ChannelRail() {
     const { token } = useAuth();
     const { data: myChannels = [] } = useMyChannels(!!token);
-    const { data: subscriptions = [] } = useSubscriptions(!!token);
-    const { data: suggested = [] } = useSuggestedChannels(SUGGESTED_SHOWN);
+    const followed = useSubscriptionsPage(!!token, FOLLOWED_PAGE);
+    const suggestions = useSuggestedChannels(SUGGESTED_PAGE);
+    const subscriptions = followed.data?.pages.flatMap((page) => page.content) ?? [];
+    const suggested = suggestions.data?.pages.flatMap((page) => page.content) ?? [];
 
     return (
         <aside
@@ -55,7 +58,11 @@ function ChannelRail() {
                 )}
 
                 {subscriptions.length > 0 && (
-                    <RailSection title={t('channelRail.following')} more={{ to: '/subscriptions', label: t('channelRail.manageFollowing') }}>
+                    <RailSection
+                        title={t('channelRail.following')}
+                        more={{ to: '/subscriptions', label: t('channelRail.manageFollowing') }}
+                        pages={followed}
+                    >
                         {subscriptions.map((sub) => (
                             <RailChannel key={sub.subscriptionId} slug={sub.channelSlug} name={sub.channelName} logoUrl={sub.channelLogoUrl} />
                         ))}
@@ -63,7 +70,11 @@ function ChannelRail() {
                 )}
 
                 {suggested.length > 0 && (
-                    <RailSection title={t('channelRail.suggested')} more={{ to: '/channels', label: t('channelRail.all') }}>
+                    <RailSection
+                        title={t('channelRail.suggested')}
+                        more={{ to: '/channels', label: t('channelRail.all') }}
+                        pages={suggestions}
+                    >
                         {suggested.map((channel) => (
                             <RailChannel
                                 key={channel.id}
@@ -87,8 +98,11 @@ function ChannelRail() {
     );
 }
 
-/** The page's Cartouche at the column's scale: star, serif title, a rule fading out after it. */
-function RailSection({ title, more, children }) {
+/**
+ * The page's Cartouche at the column's scale: star, serif title, a rule fading out after it.
+ * `pages` is the section's infinite query, when it has further pages to offer.
+ */
+function RailSection({ title, more, pages = null, children }) {
     return (
         <section className="mb-7">
             <div className="flex items-center gap-2 mb-2.5 px-2">
@@ -97,6 +111,17 @@ function RailSection({ title, more, children }) {
                 <span aria-hidden="true" className="flex-1 min-w-3 h-px from-border to-transparent rtl:bg-gradient-to-l ltr:bg-gradient-to-r" />
             </div>
             <ul className="flex flex-col gap-0.5">{children}</ul>
+            {pages?.hasNextPage && (
+                <button
+                    type="button"
+                    onClick={() => pages.fetchNextPage()}
+                    disabled={pages.isFetchingNextPage}
+                    className="block w-full mt-1 ps-3 pe-2 py-1.5 rounded-md text-start text-xs font-semibold text-text-secondary
+                        hover:bg-gold-light/60 hover:text-gold-ink disabled:opacity-60 transition-colors"
+                >
+                    {pages.isFetchingNextPage ? t('common.loading') : t('common.loadMore')}
+                </button>
+            )}
             {more && (
                 <Link
                     to={more.to}

@@ -207,9 +207,27 @@ export const useChannelDirectory = (size = 24) => {
  */
 export const useSuggestedChannels = (size = 8) => {
     const scope = useUserScope();
-    return useQuery({
+    return useInfiniteQuery({
         queryKey: ['channels-suggested', size, scope],
-        queryFn: async () => (await api.get('/channels/suggested', { params: { size } })).data || [],
+        queryFn: async ({ pageParam = 0 }) => (await api.get('/channels/suggested', { params: { page: pageParam, size } })).data,
+        initialPageParam: 0,
+        getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.currentPage + 1 : undefined),
+    });
+};
+
+/**
+ * The reader's follows a page at a time, by channel name (`GET /api/user/subscriptions/page`) —
+ * for Discover's column, which must not fetch every follow of someone with hundreds. Under the
+ * `subscriptions` prefix, so a subscribe toggle's invalidation refreshes it with the full list.
+ */
+export const useSubscriptionsPage = (enabled = true, size = 10) => {
+    const scope = useUserScope();
+    return useInfiniteQuery({
+        queryKey: ['subscriptions', 'page', size, scope],
+        queryFn: async ({ pageParam = 0 }) => (await api.get('/user/subscriptions/page', { params: { page: pageParam, size } })).data,
+        initialPageParam: 0,
+        getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.currentPage + 1 : undefined),
+        enabled,
     });
 };
 
