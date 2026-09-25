@@ -757,12 +757,9 @@ export const ar = {
         download: 'تحميل',
         notFound: 'الكتاب غير موجود',
         backToLibrary: 'العودة للمكتبة',
-        tapToRead: 'اضغط للقراءة',
         stoppedAtPage: 'توقفت عند صفحة {page}',
         hideReader: 'إخفاء القراءة',
         continueReading: 'متابعة القراءة',
-        readOnline: 'قراءة أونلاين',
-        downloadPdf: 'تحميل PDF',
         emptyOnChannel: 'لا توجد كتب بعد',
         loadFailed: 'تعذر تحميل الكتب',
         // The read-url answered, but with nothing the browser may open (no file, or a stored link

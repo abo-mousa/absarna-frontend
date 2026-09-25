@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { Clock, Folder, Tv, User, AlertTriangle } from 'lucide-react';
+import { Clock, Folder, User, AlertTriangle } from 'lucide-react';
 import { ArrowBack, ChevronBack, ChevronForward } from '@/components/ui/DirectionalIcon';
 import PageShell from '../components/layout/PageShell';
-import { QueryState, Avatar, Spinner, LinkifiedText, ExpandableText } from '../components/ui';
+import { QueryState, Avatar, Spinner, LinkifiedText, ExpandableText, KhatamStar } from '../components/ui';
 import { VideoPlayer, CommentsSection, VideoCard, BookmarkButton, LikeButton, ReportButton, ShareButton, SourceBadge, SubscribeButton } from '../components/content';
 import { useVideo, useRelatedVideo, useWatchProgressMap, useWatchHistory } from '../hooks/useVideos';
 import { useChannel } from '../hooks/useChannels';
@@ -209,7 +209,9 @@ function VideoDetail() {
                     )}
                 </div>
 
-                <div className="bg-surface p-5 sm:p-6 rounded-lg border border-border-light mb-6">
+                {/* The video's details as the book page draws its own: no panel, a serif title, a
+                    hairline under the block. */}
+                <div className="pb-6 mb-6 border-b border-border">
                     {/* The owner's own statement, and said to be theirs: nothing here can verify
                         what another platform did. */}
                     {video.removedElsewhere && (
@@ -219,7 +221,7 @@ function VideoDetail() {
                         </p>
                     )}
                     <div className="flex items-start justify-between gap-3 mb-3">
-                        <h1 className="text-xl sm:text-2xl font-bold">{video.title}</h1>
+                        <h1 dir="auto" className="font-serif text-[1.6rem] sm:text-[2.1rem] font-semibold leading-tight">{video.title}</h1>
                         <div className="flex items-center gap-3 flex-shrink-0 mt-1">
                             <ShareButton
                                 title={video.title}
@@ -279,13 +281,14 @@ function VideoDetail() {
                 </div>
 
                 {seriesData?.pages?.[0]?.series && (
-                    <div className="bg-surface p-4 sm:p-5 rounded-lg border border-border-light mb-6">
+                    <div className="pb-6 mb-6 border-b border-border">
                         <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
                             <Link
                                 to={`/series/${seriesData.pages[0].series.id}`}
-                                className="flex items-center gap-1.5 text-sm text-primary font-semibold hover:underline"
+                                className="flex items-center gap-1.5 min-w-0 text-sm text-gold-ink font-bold hover:underline"
                             >
-                                <Tv size={14} /> {seriesData.pages[0].series.title}
+                                <KhatamStar className="w-3 h-3 flex-shrink-0" />
+                                <span dir="auto" className="truncate">{seriesData.pages[0].series.title}</span>
                             </Link>
                             {seriesIndex >= 0 && (
                                 <span className="text-xs text-text-muted">

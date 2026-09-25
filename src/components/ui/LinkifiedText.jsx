@@ -32,7 +32,10 @@ function LinkifiedText({ text, className = '' }) {
     const pieces = String(text).split(URL_PATTERN);
 
     return (
-        <p className={`whitespace-pre-wrap ${className}`}>
+        // dir="auto": this is always someone's own words (a YouTube description), and CLAUDE.md's
+        // rule for those holds here too — on the English screen an Arabic description was laid out
+        // left to right, lines against the wrong edge and each leading «-» on the wrong side.
+        <p dir="auto" className={`whitespace-pre-wrap ${className}`}>
             {pieces.map((piece, index) => {
                 // split() with one capture group alternates text, match, text, match…
                 if (index % 2 === 0) return piece;

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { resolveMediaUrl } from '@/lib/media';
+import { t } from '@/i18n';
 
 /**
  * A book's cover as a link to the book — one drawing for BookCard's row and the Books page's
@@ -19,16 +20,21 @@ import { resolveMediaUrl } from '@/lib/media';
  * Arabic. A shadow's offset is physical with no logical form, so it takes `rtl:`/`ltr:`, like the
  * sidebar drawer's transform.
  */
-function BookCover({ book, progress, className = 'w-24' }) {
+/**
+ * @param onOpen when given, the cover is a button that calls it instead of a link to the book —
+ *        the book's own page, where the cover opens the reader rather than linking to itself.
+ */
+function BookCover({ book, progress, className = 'w-24', onOpen = null }) {
     const [previewFailed, setPreviewFailed] = useState(false);
     const previewUrl = !previewFailed ? resolveMediaUrl(book.previewImageUrl) : null;
     // The backend's fraction (0–1); below 1% it would draw a sliver that says nothing.
     const readPercent = progress > 0.01 ? Math.min(1, progress) * 100 : null;
+    const Wrapper = onOpen ? 'button' : Link;
 
     return (
-        <Link
-            to={`/books/${book.id}`}
-            aria-label={book.title}
+        <Wrapper
+            {...(onOpen ? { type: 'button', onClick: onOpen } : { to: `/books/${book.id}` })}
+            aria-label={onOpen ? t('books.read') : book.title}
             // `block`: a link is inline by default, and aspect-ratio does nothing to an inline
             // box — inside BookCard's flex row that was hidden (a flex item is blockified), and on a
             // shelf, whose parent is a plain block, the cover collapsed to the height of its text.
@@ -52,7 +58,7 @@ function BookCover({ book, progress, className = 'w-24' }) {
                     <div className="h-full bg-gold" style={{ width: `${readPercent}%` }} />
                 </div>
             )}
-        </Link>
+        </Wrapper>
     );
 }
 
