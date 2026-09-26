@@ -14,12 +14,10 @@ import { t } from '@/i18n';
  * navbar, wide screens only. It holds what the page beside it does NOT — the channels behind that
  * kind of content, a way to move around the page, a filter — never more of the page's own items.
  *
- * <p><b>Its scrollbar is thin, on its inner edge, and shown only while the pointer is over it</b>
- * (`.rail-scroll`, index.css). Inner edge, the side it meets the page, because that is where the
- * interface direction puts it: moving it to the window edge set it beside the page's own bar in
- * Arabic, two bars side by side. Thin and on hover, because a second full-width bar on every page
- * with a column competed with the page's for no reason; the column still scrolls by wheel and
- * touch, and the bar appears the moment the pointer is there to use it.
+ * <p><b>It scrolls with no scrollbar of its own</b> (`.rail-scroll`, index.css). Its inner edge
+ * carries the gold double rule, and a bar there — even thin, even only on hover — sat against those
+ * two lines and read as bars stacked on bars; on the outer edge it sat beside the page's own bar in
+ * Arabic. The column still scrolls by wheel, trackpad, touch and keyboard.
  */
 export function RailFrame({ label, children }) {
     return (
