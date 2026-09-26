@@ -54,15 +54,24 @@ function PageShell({ children, contentClassName = '', tab = false, sidebar = nul
             {/* `sidebar` is Discover's channel column and nobody else's (see ChannelRail): it sits
                 against the reading-start edge of the window, and the page's own column centres in
                 what is left beside it. */}
+            {/* With a side column, the footer (and the consent banner's spacer) sit INSIDE the page's
+                own column, beside it. The column is sticky, and a sticky element stays put only
+                within its parent: with the footer below that parent, reaching the end of the page
+                pushed the column up by the footer's height — it moved while the reader scrolled
+                only the page. Pages without a column keep the full-width footer. */}
             <div className="flex flex-1 min-w-0">
                 {sidebar}
-                <main id="main-content" tabIndex={-1} className={`flex-1 min-w-0 outline-none ${tab ? TAB_COLUMN : ''} ${contentClassName}`}>{children}</main>
+                <div className="flex-1 min-w-0 flex flex-col">
+                    <main id="main-content" tabIndex={-1} className={`flex-1 min-w-0 outline-none ${tab ? TAB_COLUMN : ''} ${contentClassName}`}>{children}</main>
+                    {sidebar && <Footer />}
+                    {sidebar && <ConsentBanner />}
+                </div>
             </div>
-            <Footer />
+            {!sidebar && <Footer />}
             {/* Rendered from the shell rather than from App, so it sits inside the same document
                 flow as the footer and cannot end up above a route that renders its own chrome.
                 It returns null once the reader has answered. */}
-            <ConsentBanner />
+            {!sidebar && <ConsentBanner />}
             <BottomTabBar />
         </div>
     );

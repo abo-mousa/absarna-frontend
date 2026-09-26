@@ -4,7 +4,7 @@ import { Avatar, KhatamStar } from '../../ui';
 import { ArrowForward } from '../../ui/DirectionalIcon';
 import { resolveMediaUrl } from '@/lib/media';
 import { formatChipLabel } from '@/lib/formats';
-import { direction, t } from '@/i18n';
+import { t } from '@/i18n';
 
 /**
  * The tabs' side column, one frame for all of them — Discover's channels, and the Books, Articles
@@ -14,22 +14,20 @@ import { direction, t } from '@/i18n';
  * navbar, wide screens only. It holds what the page beside it does NOT — the channels behind that
  * kind of content, a way to move around the page, a filter — never more of the page's own items.
  *
- * <p><b>The scrollbar is on the right in both languages.</b> A scroll container's bar sits on its
- * start side, so in Arabic it came up on the left — inside the column, against its own content.
- * The scrolling `<aside>` is therefore `dir="ltr"`, which puts its bar on the right, and
- * everything in it sits in one inner block that restores the interface's direction, so every
- * logical class inside (the gold rule at `end-0`, the star at `-start-10`) resolves exactly as
- * before.
+ * <p><b>Its scrollbar is thin, on its inner edge, and shown only while the pointer is over it</b>
+ * (`.rail-scroll`, index.css). Inner edge, the side it meets the page, because that is where the
+ * interface direction puts it: moving it to the window edge set it beside the page's own bar in
+ * Arabic, two bars side by side. Thin and on hover, because a second full-width bar on every page
+ * with a column competed with the page's for no reason; the column still scrolls by wheel and
+ * touch, and the bar appears the moment the pointer is there to use it.
  */
 export function RailFrame({ label, children }) {
     return (
         <aside
             aria-label={label}
-            dir="ltr"
-            className="hidden lg:block w-[256px] flex-shrink-0 bg-surface
+            className="rail-scroll hidden lg:flex flex-col relative w-[256px] flex-shrink-0 bg-surface
                 sticky top-[var(--navbar-h)] h-[calc(100vh-var(--navbar-h))] overflow-y-auto overflow-x-hidden"
         >
-            <div dir={direction()} className="relative flex flex-col min-h-full">
             <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 end-0 w-[5px] border-x border-gold/45" />
             <div aria-hidden="true" className="flex items-center justify-between px-4 pt-4 pb-3 me-[5px] border-b border-gold/25">
                 {Array.from({ length: 11 }, (_, i) => (
@@ -41,10 +39,9 @@ export function RailFrame({ label, children }) {
                 strokeWidth={1.5}
                 className="pointer-events-none absolute -bottom-10 -start-10 w-44 h-44 text-gold/25"
             />
-            {/* `flex-auto`, not `flex-1`: a zero basis let this block settle at the column's height
-                and the rest of the list was cut off rather than scrolled to. */}
+            {/* `flex-auto`, not `flex-1`: a zero basis can let this block settle at the column's
+                height, and the rest of the list is then cut off rather than scrolled to. */}
             <div className="relative flex-auto ps-3 pe-4 pt-5 pb-4 me-[5px]">{children}</div>
-            </div>
         </aside>
     );
 }
