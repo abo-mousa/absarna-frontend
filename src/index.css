@@ -123,21 +123,6 @@
   }
 }
 
-/* THE PAGE'S SCROLLBAR IS ON THE RIGHT IN EVERY BROWSER. A browser puts the window's scrollbar
-   by the root element's direction, and they disagree: Chrome and Firefox keep it on the right for
-   an Arabic page, Safari moves it to the left — so the same page had its bars on opposite sides
-   depending on the browser. The root is laid out left-to-right (which only places that one bar),
-   and the body takes the document's real direction back, so everything on the page is exactly as
-   before. `dir` stays on <html>: lang, Tailwind's rtl:/ltr: variants and every script read that
-   attribute, never the computed direction. The side column draws its own bar (RailScrollbar) on
-   its inner edge, so it is the same everywhere too. */
-html {
-  direction: ltr;
-}
-html[dir="rtl"] body {
-  direction: rtl;
-}
-
 /* THE PLATFORM'S SCROLLBAR, one design everywhere: the page, dialogs, the shelves, lists
    (product owner, 2026-09-26). A plain gold bar carrying the logo's eight-pointed star, white with
    a turquoise outline — the logo's own two colours — about every 1.5 cm, drawn large enough
@@ -349,32 +334,34 @@ html[dir="rtl"] body {
   }
 }
 
-/* THE SIDE COLUMN'S SCROLLBAR IS ITS GOLD RULE, drawn as ordinary elements by
-   layout/rail/RailScrollbar — not the browser's scrollbar, which Firefox will not let us put stars
-   in. The column scrolls with its native bar hidden (.rail-scroller); the track is the double rule,
-   two gold lines with a faint wash between them, and the handle is gold with the same repeated
-   stars as the page's bar. Identical in every browser. */
+/* THE PAGE AND THE SIDE COLUMN SCROLL WITH A BAR WE DRAW (ui/DrawnScrollbar), shown only while
+   they scroll — the product owner's rule (2026-09-26): the same in every browser, and out of sight
+   until used. Their native bars are hidden; scrolling itself stays native. The handle is the
+   platform's: rounded gold with the logo's stars spread along it. The page's track is invisible;
+   the column's is its gold double rule, part of its frame, always drawn. Other scrolling areas
+   (dialogs, the shelves) keep the styled native bar above. */
+html,
 .rail-scroller {
   scrollbar-width: none;
 }
+html::-webkit-scrollbar,
 .rail-scroller::-webkit-scrollbar {
   display: none;
+}
+.drawn-thumb {
+  border-radius: 999px;
+  cursor: grab;
+  background: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='4 -208 92 515'%3E%3Cpolygon points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%23FFFFFF' stroke='%2314897B' stroke-width='9' stroke-linejoin='round'/%3E%3C/svg%3E") center / 100% auto no-repeat space, rgb(var(--color-gold));
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.18);
+}
+.drawn-thumb:hover,
+.drawn-thumb:active {
+  background: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='4 -208 92 515'%3E%3Cpolygon points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%23FFFFFF' stroke='%2314897B' stroke-width='9' stroke-linejoin='round'/%3E%3C/svg%3E") center / 100% auto no-repeat space, color-mix(in srgb, rgb(var(--color-gold)) 88%, white);
+}
+.drawn-thumb:active {
+  cursor: grabbing;
 }
 .rail-track {
   border-inline: 1px solid rgb(var(--color-gold) / 0.5);
   background: rgb(var(--color-gold) / 0.08);
-}
-.rail-thumb {
-  /* Rounded ends, like the page's handle: the same object in two places. */
-  border-radius: 999px;
-  cursor: grab;
-  background: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='4 -208 92 515'%3E%3Cpolygon points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%23FFFFFF' stroke='%2314897B' stroke-width='9' stroke-linejoin='round'/%3E%3C/svg%3E") center / 10px 56px no-repeat space, rgb(var(--color-gold));
-  transition: background-color 0.15s ease;
-}
-.rail-thumb:hover,
-.rail-thumb:active {
-  background: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='4 -208 92 515'%3E%3Cpolygon points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%23FFFFFF' stroke='%2314897B' stroke-width='9' stroke-linejoin='round'/%3E%3C/svg%3E") center / 10px 56px no-repeat space, color-mix(in srgb, rgb(var(--color-gold)) 88%, white);
-}
-.rail-thumb:active {
-  cursor: grabbing;
 }

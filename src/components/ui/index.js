@@ -22,3 +22,4 @@ export { default as SwapLabel } from './SwapLabel';
 export { default as SearchField } from './SearchField';
 export { default as ImageUploadField } from './ImageUploadField';
 export { default as RejectedFields } from './RejectedFields';
+export { default as DrawnScrollbar } from './DrawnScrollbar';

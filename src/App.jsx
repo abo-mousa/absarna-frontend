@@ -10,7 +10,7 @@ import { safeSessionStorage } from '@/lib/safeStorage';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import { PRELOAD_RELOAD_FLAG, mayReloadAfterPreloadError } from '@/lib/preloadReload';
 import ErrorBoundary from './components/ErrorBoundary';
-import { Spinner } from './components/ui';
+import { Spinner, DrawnScrollbar } from './components/ui';
 import { t } from '@/i18n';
 
 const Today = lazy(() => import('./pages/Today'));
@@ -203,6 +203,10 @@ function AppRoutes() {
                 }}
             >{t('common.backHome')}</Link>}
         >
+        {/* The page's scrollbar, drawn and shown only while scrolling — see ui/DrawnScrollbar. On
+            the right in every language and browser; the native one is hidden in index.css. Once,
+            here, so every route has it whatever frame the page uses. */}
+        <DrawnScrollbar target="window" className="fixed inset-y-0 right-0 w-[14px] z-[1500]" />
         <Suspense fallback={<RouteFallback />}>
             <Routes>
                 {/* Public */}

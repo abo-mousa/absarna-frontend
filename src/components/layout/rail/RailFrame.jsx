@@ -1,12 +1,11 @@
 import { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Settings } from 'lucide-react';
-import { Avatar, KhatamStar } from '../../ui';
+import { Avatar, KhatamStar, DrawnScrollbar } from '../../ui';
 import { ArrowForward } from '../../ui/DirectionalIcon';
 import { resolveMediaUrl } from '@/lib/media';
 import { formatChipLabel } from '@/lib/formats';
 import { t } from '@/i18n';
-import RailScrollbar from './RailScrollbar';
 
 /**
  * The tabs' side column, one frame for all of them — Discover's channels, and the Books, Articles
@@ -16,10 +15,9 @@ import RailScrollbar from './RailScrollbar';
  * navbar, wide screens only. It holds what the page beside it does NOT — the channels behind that
  * kind of content, a way to move around the page, a filter — never more of the page's own items.
  *
- * <p><b>Its scrollbar is its gold double rule</b>, drawn by `RailScrollbar` rather than by the
- * browser: the two lines are the track and a gold handle with the logo's stars rides between them.
- * Drawn, because Firefox cannot style a scrollbar beyond two colours — the stars were missing there —
- * and this way it is the same in every browser. The column's native bar is hidden.
+ * <p><b>Its scrollbar is its gold double rule</b>, drawn by `ui/DrawnScrollbar` rather than by the
+ * browser: the two lines are the track, always there as part of the frame, and a gold handle with
+ * the logo's stars appears between them while the column scrolls. The same in every browser.
  */
 export function RailFrame({ label, children }) {
     const scrollerRef = useRef(null);
@@ -36,7 +34,7 @@ export function RailFrame({ label, children }) {
                 strokeWidth={1.5}
                 className="pointer-events-none absolute -bottom-10 -start-10 w-44 h-44 text-gold/25"
             />
-            {/* The column scrolls here, with the browser's own bar hidden; RailScrollbar draws the
+            {/* The column scrolls here, with the browser's own bar hidden; DrawnScrollbar draws the
                 gold rule and its handle over the inner edge, which the margin keeps clear. */}
             <div ref={scrollerRef} className="rail-scroller relative flex flex-col h-full me-[12px] overflow-y-auto overflow-x-hidden">
                 <div aria-hidden="true" className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-gold/25">
@@ -48,7 +46,7 @@ export function RailFrame({ label, children }) {
                     height, and the rest of the list is then cut off rather than scrolled to. */}
                 <div className="relative flex-auto ps-3 pe-4 pt-5 pb-4">{children}</div>
             </div>
-            <RailScrollbar scrollerRef={scrollerRef} />
+            <DrawnScrollbar target={scrollerRef} trackAlways className="rail-track absolute inset-y-0 end-0 w-[12px]" />
         </aside>
     );
 }
