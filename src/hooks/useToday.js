@@ -12,11 +12,21 @@ import { useUserScope } from './useUserScope';
  * is the caller's own — and NO_CACHE like the feed: coming back from a finished episode must show
  * the next one, not the one just watched.
  */
+const readerTimeZone = () => {
+    try {
+        return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined;
+    } catch {
+        return undefined;
+    }
+};
+
 export const useToday = () => {
     const scope = useUserScope();
     return useQuery({
         queryKey: queryKeys.today(scope),
-        queryFn: async () => (await api.get('/today')).data,
+        // The reader's time zone, so «أسبوعك» (Saturday to Friday) starts at their own Saturday
+        // midnight rather than the server's. Absent or unknown, the backend counts in UTC.
+        queryFn: async () => (await api.get('/today', { params: { tz: readerTimeZone() } })).data,
         ...NO_CACHE,
     });
 };

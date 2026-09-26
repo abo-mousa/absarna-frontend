@@ -867,8 +867,8 @@ export const ar = {
         loadFailed: 'تعذّر تحميل المنشورات',
     },
 
-    // The Today page (/): a dashboard that ends. «أسبوعك» counts what was finished in the last
-    // seven days — never a streak, nothing lost for a missed day.
+    // The Today page (/): a dashboard that ends. «أسبوعك» counts what was finished this week,
+    // Saturday to Friday in the reader's time zone — never a streak, nothing lost for a missed day.
     // The first-visit guide (components/guide) and its full page, /guide. One step per place in
     // the tab bar, between what the site is for and the marks a video can carry.
     // Discover's channel column (layout/ChannelRail), wide screens only.
@@ -940,7 +940,7 @@ export const ar = {
 
     today: {
         weekTitle: 'أسبوعك',
-        weekSpan: 'آخر سبعة أيام',
+        weekSpan: 'من السبت إلى الجمعة',
         episodesFinished: 'حلقات أنهيتها',
         booksRead: 'كتب قرأت فيها',
         pagesRead: 'صفحة قرأتها',

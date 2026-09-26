@@ -715,7 +715,7 @@ export const en = {
 
     today: {
         weekTitle: 'Your week',
-        weekSpan: 'The last seven days',
+        weekSpan: 'Saturday to Friday',
         episodesFinished: 'episodes finished',
         booksRead: 'books read in',
         pagesRead: 'pages read',
