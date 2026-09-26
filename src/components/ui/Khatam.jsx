@@ -107,11 +107,11 @@ export function KhatamProgress({ value, label, title, className = '', trackClass
                 )}
             </svg>
             {label != null && (
-                // The heading face (Markazi Text), like the week's counts beside it: Cairo's Arabic
-                // digits were squat and its «٠» a dot at this size. A label longer than a number
-                // («ص ٢١٤») steps down so it stays inside the star.
-                <span className={`absolute inset-0 flex items-center justify-center font-serif font-semibold leading-none text-text-primary ${
-                    String(label).length > 3 ? 'text-[0.875rem]' : 'text-[1rem]'
+                // Naskh, the reading face (product owner, 2026-09-26, over Cairo and Markazi): its
+                // Arabic digits are the classic shapes, where Cairo's were squat and its «٠» a dot.
+                // A label longer than a number («ص ٢١٤») steps down so it stays inside the star.
+                <span className={`absolute inset-0 flex items-center justify-center font-reading font-semibold leading-none text-text-primary ${
+                    String(label).length > 3 ? 'text-[0.75rem]' : 'text-[0.8125rem]'
                 }`}>
                     {label}
                 </span>

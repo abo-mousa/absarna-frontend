@@ -6,14 +6,18 @@ import PageShell from '../components/layout/PageShell';
 import { QueryState, Cartouche, KhatamProgress, KhatamStar, Avatar, PageHeader, DatePair } from '../components/ui';
 import { VideoCard, BookCard } from '../components/content';
 import { GuideDialog, GUIDE_SEEN_KEY } from '../components/guide';
-import { useToday } from '../hooks/useToday';
+import { useToday, useHideContinue } from '../hooks/useToday';
+import { useToast } from '../contexts/ToastContext';
+import { X } from 'lucide-react';
 import { useChannelInvitations } from '../hooks/useChannelClaim';
 import { safeStorage } from '@/lib/safeStorage';
 import { useWatchProgressMap } from '../hooks/useVideos';
+import { useGridColumns } from '../hooks/useGridColumns';
 import { formatTimestamp } from '@/lib/spans';
 import { formatCount } from '@/lib/numbers';
 import { resolveMediaUrl } from '@/lib/media';
 import { t } from '@/i18n';
+import { describeError } from '@/lib/describeError';
 
 const GRID = 'grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-8';
 
@@ -21,7 +25,7 @@ const GRID = 'grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-
  * The home page: a dashboard that ends.
  *
  * <p>What the reader started and can finish, what they finished this week, the news, one row
- * suggested because of something they finished, one row from their channels — and then a last
+ * from their channels or the feed's suggestions — and then a last
  * line that says they are done, with the way on to Discover for anyone who wants to browse. The
  * endless feed moved to Discover (/discover) on purpose: here the first thing is accomplishing
  * something, not scrolling.
@@ -39,6 +43,13 @@ function Today() {
     const navigate = useNavigate();
     const { token } = useAuth();
     const today = useToday();
+    const { showToast } = useToast();
+    const hideContinue = useHideContinue();
+    // Hidden at once; the toast says it is not deleted and how it comes back.
+    const hide = (target) => hideContinue.mutate(target, {
+        onSuccess: () => showToast(t('today.hidden'), 'success'),
+        onError: (error) => showToast(describeError(error, t('today.hideFailed')), 'error'),
+    });
     const watchProgress = useWatchProgressMap(!!token);
     const data = today.data;
 
@@ -52,7 +63,11 @@ function Today() {
 
     // One row from the feed, chosen by the backend (`fromFeed`): the reader's own channels when
     // they follow any, otherwise suggestions. Its kind picks the heading; nothing else is decided here.
-    const feedRow = data?.fromFeed?.videos || [];
+    // Up to eight suggestions (four of the reader's channels); whole rows only at this width, so a
+    // three-column grid shows six rather than a row with two cards and a gap.
+    const columns = useGridColumns();
+    const feedVideos = data?.fromFeed?.videos || [];
+    const feedRow = feedVideos.length > columns ? feedVideos.slice(0, feedVideos.length - (feedVideos.length % columns)) : feedVideos;
     const feedRowTitle = data?.fromFeed?.kind === 'SUBSCRIBED' ? t('home.subscribed') : t('home.discover');
 
     const hasContinue = !!(data?.continueWatching?.length || data?.continueReading?.length);
@@ -98,10 +113,10 @@ function Today() {
                             <Cartouche title={t('today.continueTitle')} />
                             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                 {data.continueWatching.map((item) => (
-                                    <ContinueVideo key={item.next.id} item={item} />
+                                    <ContinueVideo key={item.next.id} item={item} onHide={() => hide({ type: 'SERIES', id: item.next.seriesId })} />
                                 ))}
                                 {data.continueReading.map((entry) => (
-                                    <ContinueBook key={entry.bookId} entry={entry} />
+                                    <ContinueBook key={entry.bookId} entry={entry} onHide={() => hide({ type: 'BOOK', id: entry.bookId })} />
                                 ))}
                             </div>
                         </section>
@@ -133,16 +148,6 @@ function Today() {
                         </section>
                     )}
 
-                    {data?.because && (
-                        <section>
-                            {/* The page's one «اقتراحات لك» row (product owner, 2026-09-26). The backend
-                                folds these videos into the feed row when that row is suggestions,
-                                so this stands alone only beside «من القنوات التي تتابعها», and
-                                never says which video it came from. */}
-                            <Cartouche title={t('home.discover')} />
-                            <div className={GRID}>{data.because.videos.map((video) => <VideoCard {...cardProps(video)} />)}</div>
-                        </section>
-                    )}
 
                     {welcome?.channels?.length > 0 && (
                         <section>
@@ -316,15 +321,16 @@ function WelcomeHero({ signedIn }) {
  * A programme in progress: the star traced as far as the reader has come, and what is next.
  * `starting` is the welcome's case — a programme offered from its first episode, nothing traced.
  */
-function ContinueVideo({ item, starting = false }) {
+function ContinueVideo({ item, starting = false, onHide = null }) {
     const video = item.next;
     const position = video.seriesPosition;
     const total = video.seriesLength;
     const href = `/video/${video.id}${item.resumeSeconds ? `?t=${item.resumeSeconds}` : ''}`;
     return (
+        <div className="relative group/card">
         <Link
             to={href}
-            className="flex items-center gap-4 p-3.5 bg-surface border border-border-light rounded-lg text-text-primary hover:no-underline hover:border-border transition-colors"
+            className={`flex items-center gap-4 p-3.5 ${onHide ? 'pe-10' : ''} bg-surface border border-border-light rounded-lg text-text-primary hover:no-underline hover:border-border transition-colors`}
         >
             <KhatamProgress
                 value={item.progress || 0}
@@ -343,15 +349,18 @@ function ContinueVideo({ item, starting = false }) {
                 </div>
             </div>
         </Link>
+        {onHide && <HideButton onHide={onHide} />}
+        </div>
     );
 }
 
 /** A book in progress, traced in teal to tell it from a programme at a glance. */
-function ContinueBook({ entry }) {
+function ContinueBook({ entry, onHide = null }) {
     return (
+        <div className="relative group/card">
         <Link
             to={`/books/${entry.bookId}`}
-            className="flex items-center gap-4 p-3.5 bg-surface border border-border-light rounded-lg text-text-primary hover:no-underline hover:border-border transition-colors"
+            className={`flex items-center gap-4 p-3.5 ${onHide ? 'pe-10' : ''} bg-surface border border-border-light rounded-lg text-text-primary hover:no-underline hover:border-border transition-colors`}
         >
             <KhatamProgress
                 value={entry.progress || 0}
@@ -365,6 +374,30 @@ function ContinueBook({ entry }) {
                 <div className="text-xs font-bold text-primary mt-1">{t('today.readFrom', { page: entry.currentPage })}</div>
             </div>
         </Link>
+        {onHide && <HideButton onHide={onHide} />}
+        </div>
+    );
+}
+
+/**
+ * «إخفاء»: takes a card off «تكملة ما بدأته» — a sibling of the card's link, never inside it (a
+ * button in a link is two controls in one). Quiet until the card is hovered or focused on a
+ * pointer screen; always there on touch, which has no hover to find it with.
+ */
+function HideButton({ onHide }) {
+    return (
+        <button
+            type="button"
+            onClick={onHide}
+            aria-label={t('today.hide')}
+            title={t('today.hide')}
+            className="absolute top-2 end-2 flex items-center justify-center w-7 h-7 rounded-full text-text-muted
+                hover:text-text-primary hover:bg-surface-hover focus-visible:text-text-primary
+                [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/card:opacity-100
+                [@media(hover:hover)]:focus-visible:opacity-100 transition-opacity"
+        >
+            <X size={15} aria-hidden="true" />
+        </button>
     );
 }
 

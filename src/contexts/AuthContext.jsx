@@ -8,6 +8,7 @@ import { authFailureMessage } from '@/lib/authErrors';
 import { isProtectedPath } from '@/lib/navigation';
 import { useToast } from './ToastContext';
 import { currentLocale, t } from '@/i18n';
+import { keepRefusal } from '@/lib/rejectedFields';
 
 const AuthContext = createContext();
 
@@ -220,7 +221,7 @@ export const AuthProvider = ({ children }) => {
             return { success: true };
         } catch (error) {
             // `error` too, so the form can mark the fields a VALIDATION_FAILED names.
-            return { success: false, message: authFailureMessage(error, 'register'), error };
+            return { success: false, message: authFailureMessage(error, 'register'), error: keepRefusal(error) };
         }
     };
 

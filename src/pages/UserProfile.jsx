@@ -12,6 +12,7 @@ import { useProfilePicture } from '../hooks/useOwnerImage';
 import { useNavigate } from 'react-router-dom';
 import { getPasswordRules, getPasswordStrengthLabel, isPasswordValid } from '@/lib/validation';
 import { describeError } from '@/lib/describeError';
+import { keepRefusal } from '@/lib/rejectedFields';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { t } from '@/i18n';
 import { EMAIL_MAX_LENGTH, FULL_NAME_MAX_LENGTH, BIO_MAX_LENGTH } from '@/lib/validation';
@@ -344,7 +345,7 @@ function UserProfile() {
             // CURRENT_PASSWORD_INVALID arrive as `reason` codes and are worded in `errors.reasons`,
             // and the raw `message` on a Bean Validation 400 here is the constraint's English.
             showToast(describeError(err, t('profile.saveFailed')), 'error');
-            setSubmitError(err);
+            setSubmitError(keepRefusal(err));
         } finally {
             setSaving(false);
         }

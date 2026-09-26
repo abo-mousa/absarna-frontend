@@ -9,6 +9,7 @@ import { usePageMeta } from '../hooks/usePageMeta';
 import { useResolveYouTubeChannel } from '@/hooks/useChannelYouTube';
 import { useAuth } from '../contexts/AuthContext';
 import { describeError } from '@/lib/describeError';
+import { keepRefusal } from '@/lib/rejectedFields';
 import { uploadOwnerImage, channelImagePath } from '@/hooks/useOwnerImage';
 import { IMAGE_LIMITS } from '@/lib/imageResize';
 import { t } from '@/i18n';
@@ -185,7 +186,7 @@ function CreateChannel() {
 
             navigate(`/channel/${form.slug}/manage`);
         } catch (err) {
-            setSubmitError(err);
+            setSubmitError(keepRefusal(err));
             if (err.response?.data?.emailVerificationRequired) {
                 setNeedsVerification(true);
             } else if (String(err.response?.data?.reason || '').startsWith('CHANNEL_SLUG_')) {
