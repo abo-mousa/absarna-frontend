@@ -721,6 +721,7 @@ export const en = {
         programmesCompleted: 'programmes completed',
         closest: '{remaining} to go and you have finished “{title}”',
         continueTitle: 'Continue what you started',
+        startTitle: 'New programmes to start',
         hide: 'Hide from this list',
         hidden: 'Hidden from the list. It comes back if you continue it.',
         hideFailed: 'Could not hide it, please try again',

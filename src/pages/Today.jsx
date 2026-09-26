@@ -122,6 +122,20 @@ function Today() {
                         </section>
                     )}
 
+                    {/* For a reader past the welcome: programmes they have not started, from
+                        episode one, changing daily — what the Books tab's suggestions do for books
+                        (backend TodayWelcome#programmesToStart). */}
+                    {data?.startProgrammes?.length > 0 && (
+                        <section>
+                            <Cartouche title={t('today.startTitle')} />
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                                {data.startProgrammes.map((video) => (
+                                    <ContinueVideo key={video.id} item={{ next: video, progress: 0 }} starting />
+                                ))}
+                            </div>
+                        </section>
+                    )}
+
                     {welcome?.programmes?.length > 0 && (
                         <section>
                             <Cartouche title={t('today.welcome.programmesTitle')} />

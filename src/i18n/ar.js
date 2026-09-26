@@ -946,6 +946,7 @@ export const ar = {
         programmesCompleted: 'برامج أتممتها',
         closest: 'بقي {remaining} وتُتمّ «{title}»',
         continueTitle: 'تكملة ما بدأته',
+        startTitle: 'برامج جديدة يمكن أن تبدأها',
         hide: 'إخفاء من هذه القائمة',
         hidden: 'أُخفي من القائمة، ويعود إن تابعته من جديد.',
         hideFailed: 'تعذّر الإخفاء، حاول مرة أخرى',
