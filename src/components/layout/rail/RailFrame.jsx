@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Settings } from 'lucide-react';
 import { Avatar, KhatamStar, DrawnScrollbar } from '../../ui';
@@ -21,8 +21,30 @@ import { t } from '@/i18n';
  */
 export function RailFrame({ label, children }) {
     const scrollerRef = useRef(null);
+    const asideRef = useRef(null);
+
+    // The wheel over the column scrolls the column and nothing else. A browser hands the wheel to
+    // the page once the column cannot scroll further — at its end, or always when its list fits —
+    // so with the pointer on the column the page behind it lurched. Blocked only in the direction
+    // the column cannot go; within its range it scrolls natively as ever. Non-passive, or
+    // preventDefault is ignored. (Touch and trackpad momentum: overscroll-behavior, index.css.)
+    useEffect(() => {
+        const aside = asideRef.current;
+        if (!aside) return undefined;
+        const onWheel = (event) => {
+            const scroller = scrollerRef.current;
+            if (!scroller || event.ctrlKey || Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+            const atTop = scroller.scrollTop <= 0;
+            const atBottom = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1;
+            if ((event.deltaY < 0 && atTop) || (event.deltaY > 0 && atBottom)) event.preventDefault();
+        };
+        aside.addEventListener('wheel', onWheel, { passive: false });
+        return () => aside.removeEventListener('wheel', onWheel);
+    }, []);
+
     return (
         <aside
+            ref={asideRef}
             aria-label={label}
             className="hidden lg:block relative overflow-hidden w-[256px] flex-shrink-0 bg-surface
                 sticky top-[var(--navbar-h)] h-[calc(100vh-var(--navbar-h))]"

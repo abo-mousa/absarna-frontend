@@ -348,6 +348,11 @@ html::-webkit-scrollbar,
 .rail-scroller::-webkit-scrollbar {
   display: none;
 }
+/* A scroll that reaches the column's end stays in the column instead of carrying on into the page
+   (touch, trackpad momentum); the mouse wheel is held by RailFrame. */
+.rail-scroller {
+  overscroll-behavior: contain;
+}
 .drawn-thumb {
   border-radius: 999px;
   cursor: grab;
