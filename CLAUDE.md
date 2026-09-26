@@ -130,7 +130,7 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   that opens by itself on Today once — only when the backend sent a `welcome` (it decides who is
   new) and until `absarna.guideSeen` is set — and the full page, linked from the welcome and the
   account menu. A new tab means a new step in `GUIDE_STEPS`.
-- **Every tab is laid out the same**: `<PageShell tab>` (one column, `TAB_COLUMN`, 1200px) and
+- **Every tab is laid out the same**: `<PageShell tab>` (one column, `TAB_COLUMN`: 1200px, 1400px from `2xl`, 1640px from `3xl`) and
   `ui/PageHeader`, which shows **no visible title** — the lit tab already names the page, and a
   large «الكتب» under a lit «الكتب» said it twice. The title stays as a visually hidden `<h1>` for
   screen readers. The header line exists only for a page's own control: Today's dateline, and the
@@ -228,6 +228,14 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   click. A column with nothing in it renders nothing. There is still no drawer; beside a column,
   video grids still reach four per row from `xl` (product owner, 2026-09-26: four across an
   ordinary laptop, smaller cards accepted), and Discover's `useGridColumns` counts the same.
+  **On a large monitor (`3xl`, 1920px — added 2026-09-26, "a third of a 27-inch screen empty on
+  each side") the column widens and video grids gain a fifth column**, so a card stays about the
+  size it is on a laptop instead of the page staying a laptop's width. The list pages that had no
+  cap at all (search, history, saved, subscriptions, a channel) take `LIST_COLUMN`, the same
+  1640px, or four cards across 2560px were 600px each. **Today stays at four**: its sections are
+  whole rows of four, so its grid does not take `3xl:grid-cols-5` and calls `useGridColumns()`
+  without the `5` Discover passes — the two must change together, or the row trimming counts a
+  grid that is not on screen.
 - **The navbar is full-bleed on purpose — do not put a `max-w`/`mx-auto` back on it.** It had
   `max-w-[1400px] mx-auto`, which is right for a column of prose and wrong for a bar whose content
   is two anchored ends: past 1400px the cap stopped moving the logo and the account controls

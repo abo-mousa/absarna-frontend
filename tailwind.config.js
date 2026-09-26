@@ -6,6 +6,10 @@ export default {
     extend: {
       screens: {
         xs: '480px',
+        // A large monitor (a 27" at 2560, a 24" at 1920). Below this the layouts were tuned for
+        // laptops; at it the page column widens and the video grids gain a fifth column, so a
+        // card stays the size it is on a laptop instead of the column staying a laptop's width.
+        '3xl': '1920px',
       },
       // Brand palette lives in CSS custom properties (see index.css's `:root`/`.dark`
       // blocks), not literal hex here — that's what lets every existing `bg-surface`/

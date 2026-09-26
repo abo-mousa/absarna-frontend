@@ -1,7 +1,7 @@
 import { Bell } from 'lucide-react';
 import { resolveMediaUrl } from '@/lib/media';
 import { Link } from 'react-router-dom';
-import PageShell from '../components/layout/PageShell';
+import PageShell, { LIST_COLUMN } from '../components/layout/PageShell';
 import { QueryState, Avatar } from '../components/ui';
 import { useToast } from '../contexts/ToastContext';
 import { usePageMeta } from '../hooks/usePageMeta';
@@ -20,7 +20,7 @@ function Subscriptions() {
     };
 
     return (
-        <PageShell contentClassName="p-4 sm:p-6">
+        <PageShell contentClassName={LIST_COLUMN}>
             <h1 className="text-xl font-bold mb-6">{t('subscriptions.title')}</h1>
 
             <QueryState

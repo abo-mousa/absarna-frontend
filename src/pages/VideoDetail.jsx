@@ -135,7 +135,7 @@ function VideoDetail() {
 
     return (
         <PageShell>
-            <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
+            <div className="max-w-[900px] 2xl:max-w-[1120px] 3xl:max-w-[1280px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
                 {/* Above the player, because for a HELD or REJECTED video this is the answer to
                     the question the owner actually arrived with: their video is READY, visible,
                     and gone from every listing, and nothing else on this page would say why.

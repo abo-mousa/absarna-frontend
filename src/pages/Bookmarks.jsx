@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Trash2, Video, BookOpen, FileText, Bookmark } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import PageShell from '../components/layout/PageShell';
+import PageShell, { LIST_COLUMN } from '../components/layout/PageShell';
 import { QueryState } from '../components/ui';
 import { VideoCard, BookCard, ArticleCard } from '../components/content';
 import { useBookmarks, useClearBookmarks } from '../hooks/useBookmarks';
@@ -39,7 +39,7 @@ function Bookmarks() {
     };
 
     return (
-        <PageShell contentClassName="p-4 sm:p-6">
+        <PageShell contentClassName={LIST_COLUMN}>
             <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
                 <h1 className="text-xl font-bold">{t('bookmarks.title')}</h1>
                 {bookmarks.length > 0 && (
@@ -82,7 +82,7 @@ function Bookmarks() {
                 emptyTitle={t('bookmarks.empty')}
                 emptyDescription={t('bookmarks.emptyDescription')}
             >
-                <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-8">
+                <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 3xl:grid-cols-5 gap-x-5 gap-y-8">
                     {activeTab === 'VIDEO' &&
                         itemsForTab
                             .filter((b) => b.content)

@@ -9,8 +9,15 @@ import { useSyncExternalStore } from 'react';
  * <p>Four from `xl` (product owner, 2026-09-26): four videos across an ordinary laptop screen. It
  * was `2xl` for a while after Discover gained its channel column, because four beside the column
  * at 1280px are about 230px wide; smaller cards were chosen over a three-card row on most screens.
+ *
+ * <p><b>Five from `3xl` (1920px), for grids that ask for it.</b> On a large monitor the page column
+ * widens, and a grid that stayed at four made each card half as large again as on a laptop. A grid
+ * opts in with `useGridColumns(5)` and `3xl:grid-cols-5` together — Discover does. Today does not:
+ * its sections are sized in whole rows of four (four news, eight suggestions), so its grid stops at
+ * four and its cards grow instead. The cap is what keeps this number equal to the grid on screen.
  */
 const QUERIES = [
+    ['(min-width: 1920px)', 5],
     ['(min-width: 1280px)', 4],
     ['(min-width: 768px)', 3],
     ['(min-width: 480px)', 2],
@@ -28,9 +35,9 @@ const subscribe = (onChange) => {
     return () => lists.forEach((mql) => mql.removeEventListener('change', onChange));
 };
 
-export function useGridColumns() {
-    // 4 on the server/in tests with no matchMedia: the widest layout, which trims least.
-    return useSyncExternalStore(subscribe, read, () => 4);
+export function useGridColumns(maxColumns = 4) {
+    // 4 on the server/in tests with no matchMedia: the widest laptop layout, which trims least.
+    return Math.min(useSyncExternalStore(subscribe, read, () => 4), maxColumns);
 }
 
 export default useGridColumns;

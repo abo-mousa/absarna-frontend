@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Trash2, Video, BookOpen, History as HistoryIcon } from 'lucide-react';
 import api from '@/lib/api/client';
-import PageShell from '../components/layout/PageShell';
+import PageShell, { LIST_COLUMN } from '../components/layout/PageShell';
 import { QueryState } from '../components/ui';
 import { VideoCard, BookCard } from '../components/content';
 import { useWatchHistory, useReadingHistory } from '../hooks/useVideos';
@@ -45,7 +45,7 @@ function History() {
     };
 
     return (
-        <PageShell contentClassName="p-4 sm:p-6">
+        <PageShell contentClassName={LIST_COLUMN}>
             <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
                 <h1 className="text-xl font-bold">{t('history.title')}</h1>
                 {history.length > 0 && (
@@ -87,7 +87,7 @@ function History() {
                 emptyTitle={isVideos ? t('history.emptyWatch') : t('history.emptyRead')}
                 emptyDescription={isVideos ? t('history.emptyWatchDescription') : t('history.emptyReadDescription')}
             >
-                <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-8">
+                <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 3xl:grid-cols-5 gap-x-5 gap-y-8">
                     {isVideos
                         ? history.map((entry) => (
                               <VideoCard

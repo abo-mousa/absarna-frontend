@@ -50,7 +50,7 @@ function SeriesDetail() {
 
     return (
         <PageShell>
-            <div className="max-w-[1100px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
+            <div className="max-w-[1100px] 3xl:max-w-[1400px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
                 <div className="mb-4">
                     <Link to={backTo} className="flex items-center gap-1.5 text-primary font-semibold w-fit">
                         <ArrowBack size={16} /> {backLabel}
@@ -92,7 +92,7 @@ function SeriesDetail() {
                     emptyIcon={Clapperboard}
                     emptyTitle={t('series.empty')}
                 >
-                    <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-8">
+                    <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 3xl:grid-cols-5 gap-x-5 gap-y-8">
                         {content.map((item) => (
                             <VideoCard
                                 key={item.id}

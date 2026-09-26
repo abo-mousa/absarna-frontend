@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Video, BookOpen, FileText, MessageSquare, Settings, Tv, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import PageShell from '../components/layout/PageShell';
+import PageShell, { LIST_COLUMN } from '../components/layout/PageShell';
 import { QueryState, Avatar, SearchField, KhatamStar } from '../components/ui';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { VideoCard, BookCard, ArticleCard, PostCard, SubscribeButton } from '../components/content';
@@ -189,7 +189,7 @@ function ChannelPage() {
     }
 
     return (
-        <PageShell contentClassName="p-4 sm:p-6">
+        <PageShell contentClassName={LIST_COLUMN}>
             {/* The cover on its own, and the channel's identity BELOW it rather than on a coloured
                 band fused to it. They used to share one box — the cover, then a primaryColor panel
                 carrying the photo, name and subscriber count — which read as text laid over the
@@ -365,7 +365,7 @@ function ChannelPage() {
                     isEmpty={videos.length === 0}
                     emptyTitle={videoSearchTerm ? t('channel.noVideosMatch') : t('channel.noVideos')}
                 >
-                    <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-8">
+                    <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 3xl:grid-cols-5 gap-x-5 gap-y-8">
                         {videos.map((video) => (
                             <VideoCard
                                 key={video.id}
@@ -460,7 +460,7 @@ function ChannelPage() {
 
             {activeTab === 'series' && (
                 <QueryState isEmpty={series.length === 0} emptyTitle={t('series.emptyOnChannel')}>
-                    <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-8">
+                    <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 3xl:grid-cols-5 gap-x-5 gap-y-8">
                         {series.map((s) => (
                             // `publiclyListed === false` reaches only the channel's owner: a series
                             // no visitor can see, marked the way a hidden video card is — dashed

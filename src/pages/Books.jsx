@@ -111,7 +111,7 @@ function Books() {
             {shelves && readingNow.length > 0 && (
                 <section className="mb-10">
                     <Cartouche title={t('books.readingNow')} />
-                    <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-2 2xl:grid-cols-3 gap-x-5 gap-y-8">
+                    <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-2 2xl:grid-cols-3 3xl:grid-cols-4 gap-x-5 gap-y-8">
                         {readingNow.map((entry) => (
                             <BookCard key={entry.bookId} book={entry.book} progress={entry.progress} />
                         ))}
@@ -125,7 +125,7 @@ function Books() {
             {shelves && suggested.data?.books?.length > 0 && (
                 <section className="mb-10">
                     <Cartouche title={suggestedBooksTitle(suggested.data)} />
-                    <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-2 2xl:grid-cols-3 gap-x-5 gap-y-8">
+                    <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-2 2xl:grid-cols-3 3xl:grid-cols-4 gap-x-5 gap-y-8">
                         {suggested.data.books.map((book) => (
                             <BookCard key={book.id} book={book} progress={readingProgress[book.id]} />
                         ))}
@@ -164,7 +164,7 @@ function Books() {
                 emptyTitle={!filtering ? t('books.empty') : t('common.noResults')}
                 emptyDescription={!filtering ? t('books.emptyDescription') : t('common.tryAnotherSearch')}
             >
-                <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-2 2xl:grid-cols-3 gap-x-5 gap-y-8">
+                <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-2 2xl:grid-cols-3 3xl:grid-cols-4 gap-x-5 gap-y-8">
                     {books.map((book) => (
                         <BookCard key={book.id} book={book} progress={readingProgress[book.id]} />
                     ))}

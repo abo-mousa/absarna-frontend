@@ -24,7 +24,15 @@ import { t } from '@/i18n';
  * they each had their own (700px, 672px, 1100px, full width), and the title and the rule under it
  * jumped sideways on every tab change.
  */
-export const TAB_COLUMN = 'max-w-[1200px] mx-auto w-full px-4 sm:px-6 py-8';
+export const TAB_COLUMN = 'max-w-[1200px] 2xl:max-w-[1400px] 3xl:max-w-[1640px] mx-auto w-full px-4 sm:px-6 py-8';
+
+/**
+ * The column for the full-width list pages — search, history, saved, subscriptions, a channel.
+ * They had no cap at all, which was right on a laptop and wrong on a large monitor: a four-column
+ * grid across 2560px is four cards 600px wide. Capped at the tab column's widest, so the two kinds
+ * of page end at the same edge.
+ */
+export const LIST_COLUMN = 'max-w-[1640px] mx-auto w-full p-4 sm:p-6';
 
 function PageShell({ children, contentClassName = '', tab = false, sidebar = null }) {
     const { user } = useAuth();
