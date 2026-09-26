@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Settings } from 'lucide-react';
 import { Avatar, KhatamStar } from '../../ui';
@@ -5,6 +6,7 @@ import { ArrowForward } from '../../ui/DirectionalIcon';
 import { resolveMediaUrl } from '@/lib/media';
 import { formatChipLabel } from '@/lib/formats';
 import { t } from '@/i18n';
+import RailScrollbar from './RailScrollbar';
 
 /**
  * The tabs' side column, one frame for all of them — Discover's channels, and the Books, Articles
@@ -14,31 +16,39 @@ import { t } from '@/i18n';
  * navbar, wide screens only. It holds what the page beside it does NOT — the channels behind that
  * kind of content, a way to move around the page, a filter — never more of the page's own items.
  *
- * <p><b>Its scrollbar is its gold double rule</b> (`.rail-scroll`, index.css): the two lines down
- * the inner edge are the scrollbar's track and a solid gold piece between them is the handle. A
- * separate bar beside the rule read as bars stacked on bars; this is one mark doing both jobs. It
- * is always drawn (`overflow-y: scroll`), so the frame is whole when there is nothing to scroll.
+ * <p><b>Its scrollbar is its gold double rule</b>, drawn by `RailScrollbar` rather than by the
+ * browser: the two lines are the track and a gold handle with the logo's stars rides between them.
+ * Drawn, because Firefox cannot style a scrollbar beyond two colours — the stars were missing there —
+ * and this way it is the same in every browser. The column's native bar is hidden.
  */
 export function RailFrame({ label, children }) {
+    const scrollerRef = useRef(null);
     return (
         <aside
             aria-label={label}
-            className="rail-scroll hidden lg:flex flex-col relative w-[256px] flex-shrink-0 bg-surface
-                sticky top-[var(--navbar-h)] h-[calc(100vh-var(--navbar-h))] overflow-x-hidden"
+            className="hidden lg:block relative overflow-hidden w-[256px] flex-shrink-0 bg-surface
+                sticky top-[var(--navbar-h)] h-[calc(100vh-var(--navbar-h))]"
         >
-            <div aria-hidden="true" className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-gold/25">
-                {Array.from({ length: 11 }, (_, i) => (
-                    <KhatamStar key={i} filled={i % 2 === 0} strokeWidth={10} className={`w-2.5 h-2.5 ${i % 2 === 0 ? 'text-gold/70' : 'text-gold/50'}`} />
-                ))}
-            </div>
+            {/* The corner star belongs to the frame, not the list: inside the scrolling block it
+                poked 40px below the content and made every column scrollable for nothing. */}
             <KhatamStar
                 filled={false}
                 strokeWidth={1.5}
                 className="pointer-events-none absolute -bottom-10 -start-10 w-44 h-44 text-gold/25"
             />
-            {/* `flex-auto`, not `flex-1`: a zero basis can let this block settle at the column's
-                height, and the rest of the list is then cut off rather than scrolled to. */}
-            <div className="relative flex-auto ps-3 pe-4 pt-5 pb-4">{children}</div>
+            {/* The column scrolls here, with the browser's own bar hidden; RailScrollbar draws the
+                gold rule and its handle over the inner edge, which the margin keeps clear. */}
+            <div ref={scrollerRef} className="rail-scroller relative flex flex-col h-full me-[12px] overflow-y-auto overflow-x-hidden">
+                <div aria-hidden="true" className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-gold/25">
+                    {Array.from({ length: 11 }, (_, i) => (
+                        <KhatamStar key={i} filled={i % 2 === 0} strokeWidth={10} className={`w-2.5 h-2.5 ${i % 2 === 0 ? 'text-gold/70' : 'text-gold/50'}`} />
+                    ))}
+                </div>
+                {/* `flex-auto`, not `flex-1`: a zero basis can let this block settle at the column's
+                    height, and the rest of the list is then cut off rather than scrolled to. */}
+                <div className="relative flex-auto ps-3 pe-4 pt-5 pb-4">{children}</div>
+            </div>
+            <RailScrollbar scrollerRef={scrollerRef} />
         </aside>
     );
 }

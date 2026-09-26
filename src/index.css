@@ -123,9 +123,25 @@
   }
 }
 
+/* THE PAGE'S SCROLLBAR IS ON THE RIGHT IN EVERY BROWSER. A browser puts the window's scrollbar
+   by the root element's direction, and they disagree: Chrome and Firefox keep it on the right for
+   an Arabic page, Safari moves it to the left — so the same page had its bars on opposite sides
+   depending on the browser. The root is laid out left-to-right (which only places that one bar),
+   and the body takes the document's real direction back, so everything on the page is exactly as
+   before. `dir` stays on <html>: lang, Tailwind's rtl:/ltr: variants and every script read that
+   attribute, never the computed direction. The side column draws its own bar (RailScrollbar) on
+   its inner edge, so it is the same everywhere too. */
+html {
+  direction: ltr;
+}
+html[dir="rtl"] body {
+  direction: rtl;
+}
+
 /* THE PLATFORM'S SCROLLBAR, one design everywhere: the page, dialogs, the shelves, lists
    (product owner, 2026-09-26). A plain gold bar carrying the logo's eight-pointed star, white with
-   a turquoise outline — the logo's own two colours — about every 1.3 cm. `space` spreads whole
+   a turquoise outline — the logo's own two colours — about every 1.5 cm, drawn large enough
+   (about 9px) to read as a star on an ordinary screen; at 5px it was a dot. `space` spreads whole
    stars evenly along the handle, so none is cut in half at a rounded end, and a short handle shows
    one, centred. No brown anywhere (the product owner's call): no darker shading, and the stars are
    not gold-brown. No drawn track: the page shows through, with room around the handle. Under the
@@ -136,37 +152,37 @@
    set it ignores the pseudo-elements — so the standard pair is scoped to engines that do not
    support ::-webkit-scrollbar at all, or it would flatten Chrome's design to two colours. */
 ::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
+  width: 16px;
+  height: 16px;
 }
 ::-webkit-scrollbar-track,
 ::-webkit-scrollbar-corner {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  border: 2px solid transparent;
+  border: 3px solid transparent;
   border-radius: 999px;
   min-height: 48px;
   background:
-    url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-6 -6 112 686'%3E%3Cg transform='translate(0 287)'%3E%3Cpolygon points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%23FFFFFF' stroke='%2314897B' stroke-width='10' stroke-linejoin='round'/%3E%3C/g%3E%3C/svg%3E") center / 7px 48px no-repeat space padding-box,
+    url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='4 -208 92 515'%3E%3Cpolygon points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%23FFFFFF' stroke='%2314897B' stroke-width='9' stroke-linejoin='round'/%3E%3C/svg%3E") center / 10px 56px no-repeat space padding-box,
     rgb(var(--color-gold)) padding-box;
 }
 ::-webkit-scrollbar-thumb:hover,
 ::-webkit-scrollbar-thumb:active {
   background:
-    url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-6 -6 112 686'%3E%3Cg transform='translate(0 287)'%3E%3Cpolygon points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%23FFFFFF' stroke='%2314897B' stroke-width='10' stroke-linejoin='round'/%3E%3C/g%3E%3C/svg%3E") center / 7px 48px no-repeat space padding-box,
+    url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='4 -208 92 515'%3E%3Cpolygon points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%23FFFFFF' stroke='%2314897B' stroke-width='9' stroke-linejoin='round'/%3E%3C/svg%3E") center / 10px 56px no-repeat space padding-box,
     color-mix(in srgb, rgb(var(--color-gold)) 88%, white) padding-box;
 }
 ::-webkit-scrollbar-thumb:horizontal {
   min-width: 48px;
   background:
-    url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-6 -6 686 112'%3E%3Cg transform='translate(287 0)'%3E%3Cpolygon points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%23FFFFFF' stroke='%2314897B' stroke-width='10' stroke-linejoin='round'/%3E%3C/g%3E%3C/svg%3E") center / 48px 7px space no-repeat padding-box,
+    url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-208 4 515 92'%3E%3Cpolygon points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%23FFFFFF' stroke='%2314897B' stroke-width='9' stroke-linejoin='round'/%3E%3C/svg%3E") center / 56px 10px space no-repeat padding-box,
     rgb(var(--color-gold)) padding-box;
 }
 ::-webkit-scrollbar-thumb:horizontal:hover,
 ::-webkit-scrollbar-thumb:horizontal:active {
   background:
-    url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-6 -6 686 112'%3E%3Cg transform='translate(287 0)'%3E%3Cpolygon points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%23FFFFFF' stroke='%2314897B' stroke-width='10' stroke-linejoin='round'/%3E%3C/g%3E%3C/svg%3E") center / 48px 7px space no-repeat padding-box,
+    url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-208 4 515 92'%3E%3Cpolygon points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%23FFFFFF' stroke='%2314897B' stroke-width='9' stroke-linejoin='round'/%3E%3C/svg%3E") center / 56px 10px space no-repeat padding-box,
     color-mix(in srgb, rgb(var(--color-gold)) 88%, white) padding-box;
 }
 @supports not selector(::-webkit-scrollbar) {
@@ -333,46 +349,32 @@
   }
 }
 
-/* THE SIDE COLUMN'S SCROLLBAR IS ITS GOLD RULE (layout/rail/RailFrame). The column's inner edge
-   has always carried a gold double rule; a scrollbar beside it read as bars stacked on bars, so the
-   rule now IS the scrollbar: its two lines are the track's borders, and a solid gold piece moving
-   between them is the handle. `overflow-y: scroll` keeps the track — the rule — drawn when the
-   column has nothing to scroll; the handle then simply does not appear. It sits on the column's
-   inner edge because that is where the interface direction puts a scrollbar (left in Arabic,
-   right in English), which is where the rule was.
-
-   Firefox cannot style a scrollbar beyond two colours and a thinner width, so there the rule is a
-   thin gold bar in the same place: the handle gold, the track a faint gold line. */
-.rail-scroll {
-  overflow-y: scroll;
+/* THE SIDE COLUMN'S SCROLLBAR IS ITS GOLD RULE, drawn as ordinary elements by
+   layout/rail/RailScrollbar — not the browser's scrollbar, which Firefox will not let us put stars
+   in. The column scrolls with its native bar hidden (.rail-scroller); the track is the double rule,
+   two gold lines with a faint wash between them, and the handle is gold with the same repeated
+   stars as the page's bar. Identical in every browser. */
+.rail-scroller {
+  scrollbar-width: none;
 }
-.rail-scroll::-webkit-scrollbar {
-  width: 9px;
+.rail-scroller::-webkit-scrollbar {
+  display: none;
 }
-.rail-scroll::-webkit-scrollbar-track {
-  /* The double rule: two gold lines with a faint gold wash between them. */
+.rail-track {
   border-inline: 1px solid rgb(var(--color-gold) / 0.5);
   background: rgb(var(--color-gold) / 0.08);
 }
-.rail-scroll::-webkit-scrollbar-thumb {
-  /* The handle rides between the lines (the transparent border keeps them showing on either side):
-     solid gold with the same repeated star as the page's bar. */
-  border: 1px solid transparent;
-  border-radius: 2px;
-  min-height: 40px;
-  background:
-    url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-6 -6 112 686'%3E%3Cg transform='translate(0 287)'%3E%3Cpolygon points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%23FFFFFF' stroke='%2314897B' stroke-width='10' stroke-linejoin='round'/%3E%3C/g%3E%3C/svg%3E") center / 7px 48px no-repeat space padding-box,
-    rgb(var(--color-gold)) padding-box;
+.rail-thumb {
+  /* Rounded ends, like the page's handle: the same object in two places. */
+  border-radius: 999px;
+  cursor: grab;
+  background: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='4 -208 92 515'%3E%3Cpolygon points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%23FFFFFF' stroke='%2314897B' stroke-width='9' stroke-linejoin='round'/%3E%3C/svg%3E") center / 10px 56px no-repeat space, rgb(var(--color-gold));
+  transition: background-color 0.15s ease;
 }
-.rail-scroll::-webkit-scrollbar-thumb:hover,
-.rail-scroll::-webkit-scrollbar-thumb:active {
-  background:
-    url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-6 -6 112 686'%3E%3Cg transform='translate(0 287)'%3E%3Cpolygon points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%23FFFFFF' stroke='%2314897B' stroke-width='10' stroke-linejoin='round'/%3E%3C/g%3E%3C/svg%3E") center / 7px 48px no-repeat space padding-box,
-    color-mix(in srgb, rgb(var(--color-gold)) 88%, white) padding-box;
+.rail-thumb:hover,
+.rail-thumb:active {
+  background: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='4 -208 92 515'%3E%3Cpolygon points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%23FFFFFF' stroke='%2314897B' stroke-width='9' stroke-linejoin='round'/%3E%3C/svg%3E") center / 10px 56px no-repeat space, color-mix(in srgb, rgb(var(--color-gold)) 88%, white);
 }
-@supports not selector(::-webkit-scrollbar) {
-  .rail-scroll {
-    scrollbar-width: thin;
-    scrollbar-color: rgb(var(--color-gold)) rgb(var(--color-gold) / 0.2);
-  }
+.rail-thumb:active {
+  cursor: grabbing;
 }
