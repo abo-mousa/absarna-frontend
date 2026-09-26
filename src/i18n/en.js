@@ -808,6 +808,15 @@ export const en = {
     },
 
     consent: {
+        bothTitle: 'Before you start',
+        bothBody: 'We need your agreement to two small things. You can refuse both or pick one, and the site works as usual either way. We show no ads, sell nothing about you, and do not track you for advertising.',
+        bothYoutube: 'YouTube videos: some videos play from YouTube, so Google sees that you watch them, as if you had opened YouTube yourself.',
+        bothViews: 'Counting views: a random number in your browser, with nothing about you in it, so your view is counted once and only once.',
+        privacy: 'Details in the privacy policy',
+        choose: 'Let me choose each',
+        chooseYoutube: 'YouTube videos',
+        chooseViews: 'Count my views',
+        save: 'Save my choice',
         viewsTitle: 'Counting your views',
         viewsBody: 'So that each video, book or article you open is counted once and no more, your browser keeps a random number with nothing about you or your device in it, used for nothing but the count. If you refuse, your views are not counted, and the site works as usual.',
         viewsMore: 'How are views counted?',

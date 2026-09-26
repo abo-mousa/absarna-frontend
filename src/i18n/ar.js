@@ -1129,6 +1129,16 @@ export const ar = {
     // refusing reader cannot avoid — and of everything on this banner, the guarantee is the one
     // sentence that must not overstate itself.
     consent: {
+        // The one question a first visit gets when both choices are open (ConsentBanner).
+        bothTitle: 'قبل أن تبدأ',
+        bothBody: 'نحتاج موافقتك على أمرين صغيرين، ولك أن ترفضهما أو تختار أحدهما، والموقع يعمل كالمعتاد في كل الأحوال. لا نعرض إعلانات، ولا نبيع شيئاً عنك، ولا نتتبّعك لأيّ إعلان.',
+        bothYoutube: 'فيديوهات يوتيوب: بعض المقاطع معروضة من يوتيوب، فيرى جوجل أنك تشاهدها، كما لو فتحت يوتيوب بنفسك.',
+        bothViews: 'عدّ المشاهدات: رقم عشوائي في متصفّحك، ليس فيه شيء عنك، لتُعدّ مشاهدتك مرة واحدة فقط.',
+        privacy: 'التفاصيل في سياسة الخصوصية',
+        choose: 'أختار كلّاً على حدة',
+        chooseYoutube: 'فيديوهات يوتيوب',
+        chooseViews: 'عدّ مشاهداتي',
+        save: 'حفظ اختياري',
         // The second, separate question (lib/viewerId): counting this visitor's views.
         viewsTitle: 'عدّ مشاهداتك',
         viewsBody: 'لتُعدّ مشاهدتك لكل فيديو أو كتاب أو مقال مرة واحدة لا أكثر، يحفظ متصفّحك رقماً عشوائياً ليس فيه شيء عنك ولا عن جهازك، ولا يُستعمل في غير العدّ. وإن رفضت فلا تُعدّ مشاهداتك، ويعمل الموقع كالمعتاد.',
