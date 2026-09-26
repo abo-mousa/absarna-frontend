@@ -1,16 +1,17 @@
 import { useSyncExternalStore } from 'react';
 
 /**
- * How many columns `grid-cols-1 xs:grid-cols-2 md:grid-cols-3 2xl:grid-cols-4` is rendering right
+ * How many columns `grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4` is rendering right
  * now — Discover's grid, the one `fitFeedToRows` fills. Read from the same breakpoints Tailwind
- * compiles (tailwind.config.js `xs`, and the defaults `md` 768px / `2xl` 1536px), so a change there
+ * compiles (tailwind.config.js `xs`, and the defaults `md` 768px / `xl` 1280px), so a change there
  * has to be made here too; `fitFeedToRows` is only as right as this number.
  *
- * <p>Four only from `2xl` since Discover gained its 240px channel column (from `lg`): four cards
- * beside it on a 1280px screen came out around 230px wide, thumbnails rather than pictures.
+ * <p>Four from `xl` (product owner, 2026-09-26): four videos across an ordinary laptop screen. It
+ * was `2xl` for a while after Discover gained its channel column, because four beside the column
+ * at 1280px are about 230px wide; smaller cards were chosen over a three-card row on most screens.
  */
 const QUERIES = [
-    ['(min-width: 1536px)', 4],
+    ['(min-width: 1280px)', 4],
     ['(min-width: 768px)', 3],
     ['(min-width: 480px)', 2],
 ];

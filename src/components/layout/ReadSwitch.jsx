@@ -26,12 +26,15 @@ function ReadSwitch() {
                         key={item.key}
                         to={item.to}
                         aria-current={active ? 'page' : undefined}
-                        className={`relative pb-2.5 text-sm font-semibold hover:no-underline transition-colors ${
-                            active ? 'text-text-primary' : 'text-text-muted hover:text-text-primary'
+                        // Hover and focus as NavTabs: a faint gold preview of the current tab's line.
+                        className={`group relative pb-2.5 text-sm font-semibold hover:no-underline focus:outline-none transition-colors ${
+                            active ? 'text-text-primary' : 'text-text-muted hover:text-text-primary focus-visible:text-text-primary'
                         }`}
                     >
                         {t(`nav.tabs.${item.key}`)}
-                        {active && <span aria-hidden="true" className="absolute inset-x-0 -bottom-px h-0.5 bg-gold" />}
+                        <span aria-hidden="true" className={`absolute inset-x-0 -bottom-px h-0.5 bg-gold transition-opacity duration-150 ${
+                            active ? 'opacity-100' : 'opacity-0 group-hover:opacity-40 group-focus-visible:opacity-70'
+                        }`} />
                     </Link>
                 );
             })}

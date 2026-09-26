@@ -365,7 +365,7 @@ function ChannelPage() {
                     isEmpty={videos.length === 0}
                     emptyTitle={videoSearchTerm ? t('channel.noVideosMatch') : t('channel.noVideos')}
                 >
-                    <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-x-5 gap-y-8">
+                    <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-8">
                         {videos.map((video) => (
                             <VideoCard
                                 key={video.id}
@@ -460,7 +460,7 @@ function ChannelPage() {
 
             {activeTab === 'series' && (
                 <QueryState isEmpty={series.length === 0} emptyTitle={t('series.emptyOnChannel')}>
-                    <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-x-5 gap-y-8">
+                    <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-8">
                         {series.map((s) => (
                             // `publiclyListed === false` reaches only the channel's owner: a series
                             // no visitor can see, marked the way a hidden video card is — dashed

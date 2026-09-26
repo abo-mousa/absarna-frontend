@@ -36,7 +36,8 @@ function BottomTabBar() {
                             key={tab.key}
                             to={tab.to}
                             aria-current={active ? 'page' : undefined}
-                            className={`flex flex-col items-center gap-0.5 pt-2 pb-1.5 text-[0.68rem] font-semibold hover:no-underline ${
+                            // No hover on touch; a brief tint while pressed says the tap landed.
+                            className={`flex flex-col items-center gap-0.5 pt-2 pb-1.5 text-[0.68rem] font-semibold hover:no-underline active:bg-gold-light/50 transition-colors ${
                                 active ? 'text-primary' : 'text-text-muted'
                             }`}
                         >

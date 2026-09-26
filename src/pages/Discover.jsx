@@ -306,7 +306,7 @@ function Discover() {
                                     {/* A heading only when there is more than one section to tell
                                         apart: alone, «اقتراحات لك» just repeated «المقترح لك». */}
                                     {shownSections > 1 && <Cartouche title={section.title} />}
-                                    <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 2xl:grid-cols-4 gap-x-5 gap-y-8">
+                                    <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-8">
                                         {items.map((video) => (
                                             <VideoCard {...videoCardProps(video)} />
                                         ))}
@@ -319,7 +319,7 @@ function Discover() {
                     {fitted.tail.length > 0 && (
                         <div className="mt-8">
                             <Cartouche title={t('home.more')} />
-                            <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 2xl:grid-cols-4 gap-x-5 gap-y-8">
+                            <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-8">
                                 {fitted.tail.map((video) => (
                                     <VideoCard {...videoCardProps(video)} />
                                 ))}
@@ -351,7 +351,7 @@ function Discover() {
                         emptyTitle={t('home.empty')}
                         emptyDescription={t('common.comingSoon')}
                     >
-                        <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 2xl:grid-cols-4 gap-x-5 gap-y-8">
+                        <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-8">
                             {infiniteData?.pages.flatMap((page) => page.content).map((video) => (
                                 <VideoCard {...videoCardProps(video)} />
                             ))}
