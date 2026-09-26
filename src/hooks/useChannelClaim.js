@@ -65,3 +65,17 @@ export const useStartClaimOAuth = (slug, claimToken) =>
         mutationFn: async () =>
             (await api.post(withToken(`/channels/${slug}/claim/oauth`, claimToken))).data,
     });
+
+/**
+ * The channels waiting to be taken over by the signed-in reader — unclaimed channels whose
+ * invitation went to their confirmed address (`GET /api/user/channel-invitations`). What lets Today
+ * say «قناتك بانتظارك» on any device and any day, long after the emailed link's tab is gone.
+ */
+export const useChannelInvitations = (enabled = true) => {
+    const scope = useUserScope();
+    return useQuery({
+        queryKey: ['channel-invitations', scope],
+        queryFn: async () => (await api.get('/user/channel-invitations')).data || [],
+        enabled,
+    });
+};

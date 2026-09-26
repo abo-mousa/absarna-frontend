@@ -74,8 +74,11 @@ export const useCompleteYouTubeOAuth = () => {
     return useMutation({
         mutationFn: async ({ code, state }) =>
             (await api.post('/youtube/oauth/complete', { code, state })).data,
-        onSuccess: (data) =>
-            queryClient.invalidateQueries({ queryKey: ['channel-youtube', data.slug] }),
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ['channel-youtube', data.slug] });
+            // A claim spends the invitation: Today's «قناتك بانتظارك» must go at once.
+            if (data.claimed) queryClient.invalidateQueries({ queryKey: ['channel-invitations'] });
+        },
     });
 };
 

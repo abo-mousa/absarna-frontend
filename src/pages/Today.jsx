@@ -7,6 +7,7 @@ import { QueryState, Cartouche, KhatamProgress, KhatamStar, Avatar, PageHeader, 
 import { VideoCard, BookCard } from '../components/content';
 import { GuideDialog, GUIDE_SEEN_KEY } from '../components/guide';
 import { useToday } from '../hooks/useToday';
+import { useChannelInvitations } from '../hooks/useChannelClaim';
 import { safeStorage } from '@/lib/safeStorage';
 import { useWatchProgressMap } from '../hooks/useVideos';
 import { formatTimestamp } from '@/lib/spans';
@@ -56,6 +57,9 @@ function Today() {
 
     const hasContinue = !!(data?.continueWatching?.length || data?.continueReading?.length);
     const welcome = data?.welcome;
+    // A channel we built for this reader, waiting for them to take it over — first on the page,
+    // since it is the one thing here addressed to them alone.
+    const { data: invitations = [] } = useChannelInvitations(!!token);
 
     // The guide opens by itself once: for a reader the backend calls new (it sent a welcome), and
     // never again after it is closed. Remembered per browser — which dialog someone has seen is a
@@ -84,6 +88,7 @@ function Today() {
                 errorTitle={t('today.loadFailed')}
             >
                 <div className="flex flex-col gap-10">
+                    {invitations.map((invitation) => <ChannelWaiting key={invitation.slug} invitation={invitation} />)}
                     {welcome && <WelcomeHero signedIn={!!token} />}
 
                     {data?.week && <WeekStrip week={data.week} />}
@@ -223,6 +228,31 @@ function WeekStrip({ week }) {
                     </span>
                 </Link>
             )}
+        </section>
+    );
+}
+
+/**
+ * «قناتك بانتظارك»: a channel page we assembled for this reader, invited at their address, that
+ * they have not taken over yet. Gold, because it is the one thing on the page that is theirs to
+ * act on; the channel page (which recognises the same address) carries the offer itself.
+ */
+function ChannelWaiting({ invitation }) {
+    return (
+        <section className="flex flex-wrap items-center gap-4 p-5 rounded-lg border border-gold/50 bg-gold-light/50">
+            <KhatamStar className="w-6 h-6 flex-shrink-0 text-gold" />
+            <div className="flex-1 min-w-[14rem]">
+                <h2 className="font-serif text-[1.5rem] font-semibold leading-tight">
+                    {t('today.channelWaiting.title', { name: invitation.name })}
+                </h2>
+                <p className="text-sm text-text-secondary mt-1">{t('today.channelWaiting.text')}</p>
+            </div>
+            <Link
+                to={`/channel/${invitation.slug}`}
+                className="px-5 py-2 bg-primary text-white rounded-md font-semibold hover:no-underline"
+            >
+                {t('today.channelWaiting.cta')}
+            </Link>
         </section>
     );
 }

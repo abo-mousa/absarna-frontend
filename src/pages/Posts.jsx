@@ -35,8 +35,10 @@ function Posts() {
                         <ViewTabs
                             label={t('nav.tabs.posts')}
                             items={[
-                                { key: 'followed', label: t('postsPage.followed'), active: followed, onClick: () => setFollowed(true) },
-                                { key: 'all', label: t('postsPage.all'), active: !followed, onClick: () => setFollowed(false) },
+                                // Choosing a view lets go of the column's channel filter, which would
+                                // otherwise win over it while this tab looked chosen.
+                                { key: 'followed', label: t('postsPage.followed'), active: !channel && followed, onClick: () => { setFollowed(true); setChannel(null); } },
+                                { key: 'all', label: t('postsPage.all'), active: !channel && !followed, onClick: () => { setFollowed(false); setChannel(null); } },
                             ]}
                         />
                     )}

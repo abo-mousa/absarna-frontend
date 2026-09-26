@@ -722,6 +722,11 @@ export const en = {
         toDiscover: 'Discover',
         signInPrompt: 'Sign in to see what you started and what you finished this week here.',
         loadFailed: 'Today’s page could not be loaded',
+        channelWaiting: {
+            title: 'Your channel {name} is waiting',
+            text: 'We built a page for your channel on Absarna, and it is kept for you until you take it over. Taking it over means signing in with the Google account that owns the channel on YouTube.',
+            cta: 'See it and take it over',
+        },
         welcome: {
             title: 'Welcome to Absarna',
             text: 'A place to know what is happening in the world, to learn something worth knowing, and to hear from those silenced on other platforms.',

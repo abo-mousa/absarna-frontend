@@ -947,6 +947,12 @@ export const ar = {
         toDiscover: 'اكتشف',
         signInPrompt: 'سجّل الدخول لتظهر هنا تكملة ما بدأته وما أنجزته هذا الأسبوع.',
         loadFailed: 'تعذّر تحميل صفحة اليوم',
+        // A channel we built for this reader, invited at their address, not yet taken over.
+        channelWaiting: {
+            title: 'قناة «{name}» بانتظارك',
+            text: 'أعددنا لقناتك صفحة على أبصرنا، وهي محفوظة لك حتى تستلمها. استلامها بتسجيل الدخول بحساب جوجل الذي تملك به القناة على يوتيوب.',
+            cta: 'اطّلع عليها واستلمها',
+        },
         // A first visit (the backend's `welcome`): what this place is for, and a way in.
         welcome: {
             title: 'أهلاً بك في أبصرنا',
