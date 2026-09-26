@@ -240,6 +240,7 @@ export const en = {
         notFound: 'This content does not exist, or is no longer available',
         forbidden: 'You do not have permission to do this',
         server: 'The server had a problem. Please try again later',
+        fileTooLarge: 'The file is larger than the allowed size',
 
         /**
          * Why an action was refused, keyed by the backend's `reason` code. The backend sends codes
@@ -251,6 +252,16 @@ export const en = {
          * how people learn to ignore the ones that would.
          */
         reasons: {
+            // The channel's address (its slug), on creating one.
+            CHANNEL_SLUG_TAKEN: 'That address is already used by another channel. Choose a different one.',
+            CHANNEL_SLUG_RESERVED: 'That address is reserved by the platform. Choose a different one.',
+            CHANNEL_SLUG_INVALID: 'An address may use only lowercase English letters, numbers and hyphens (-).',
+            // Taking over a seeded channel.
+            CHANNEL_NOT_CLAIMABLE: 'This channel is no longer available to take over: it has been claimed, or was never set up for it.',
+            CHANNEL_ALREADY_CLAIMED: 'This channel already has an owner, so it cannot be opened for claiming. Use a transfer instead.',
+            // A form field the server refused (a length limit, a link that is not https…).
+            VALIDATION_FAILED: 'Some of what you entered was not accepted. Check the fields and try again.',
+            FILE_TOO_LARGE: 'The file is larger than the allowed size.',
             CHANNEL_REJECTED: 'This channel was rejected by the platform team, so nothing can be imported into it. Contact us if you believe that is a mistake.',
             CHANNEL_SUSPENDED: 'This channel is suspended, and nothing can be imported into it until the suspension is lifted.',
 

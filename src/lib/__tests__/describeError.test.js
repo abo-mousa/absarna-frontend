@@ -235,4 +235,15 @@ describe('an error the SPA has already worded', () => {
         expect(describeError(new UserFacingError('اختر صورة أصغر من 5 ميغابايت.'))).toBe('اختر صورة أصغر من 5 ميغابايت.');
         expect(describeError(new ThumbnailTooLargeError('too large'))).toBe('too large');
     });
+
+    it('words the codes added for the review: the channel address, claiming, a refused field, an oversize file', () => {
+        for (const reason of ['CHANNEL_SLUG_TAKEN', 'CHANNEL_SLUG_RESERVED', 'CHANNEL_SLUG_INVALID',
+            'CHANNEL_NOT_CLAIMABLE', 'CHANNEL_ALREADY_CLAIMED', 'VALIDATION_FAILED', 'FILE_TOO_LARGE']) {
+            expect(describeError(failure(400, { reason }))).toBe(t(`errors.reasons.${reason}`));
+        }
+    });
+
+    it('words a 413 a proxy sent with no body', () => {
+        expect(describeError(failure(413, {}))).toBe(t('errors.fileTooLarge'));
+    });
 });

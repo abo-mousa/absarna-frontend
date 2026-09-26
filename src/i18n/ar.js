@@ -247,6 +247,7 @@ export const ar = {
         notFound: 'المحتوى غير موجود أو لم يعد متاحاً',
         forbidden: 'ليس لديك صلاحية لهذا الإجراء',
         server: 'حدث خلل في الخادم، يرجى المحاولة لاحقاً',
+        fileTooLarge: 'الملف أكبر من الحجم المسموح به',
 
         /**
          * Why an action was refused, keyed by the backend's `reason` code.
@@ -268,6 +269,16 @@ export const ar = {
          * full set.
          */
         reasons: {
+            // The channel's address (its slug), on creating one.
+            CHANNEL_SLUG_TAKEN: 'هذا العنوان مستخدم لقناة أخرى، اختر عنواناً غيره.',
+            CHANNEL_SLUG_RESERVED: 'هذا العنوان محجوز للمنصة، اختر عنواناً غيره.',
+            CHANNEL_SLUG_INVALID: 'يتكوّن العنوان من حروف إنجليزية صغيرة وأرقام وشرطات (-) فقط.',
+            // Taking over a seeded channel.
+            CHANNEL_NOT_CLAIMABLE: 'هذه القناة لم تعد متاحة للاستلام، فقد استُلمت أو لم تكن مُعدّة لذلك.',
+            CHANNEL_ALREADY_CLAIMED: 'لهذه القناة مالكٌ بالفعل، فلا يمكن فتحها للاستلام. استخدم نقل الملكية بدلاً من ذلك.',
+            // A form field the server refused (a length limit, a link that is not https…).
+            VALIDATION_FAILED: 'بعض ما أدخلته غير مقبول، راجع الحقول ثم أعد المحاولة.',
+            FILE_TOO_LARGE: 'الملف أكبر من الحجم المسموح به.',
             // Channel review. PENDING is deliberately absent — a channel awaiting review may now
             // import, precisely so it can be reviewed on its content.
             CHANNEL_REJECTED: 'تم رفض هذه القناة من قبل إدارة المنصة، ولا يمكن الاستيراد إليها. راسل الإدارة إن كنت ترى أن هذا خطأ.',

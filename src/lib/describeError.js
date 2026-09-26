@@ -172,6 +172,9 @@ export function describeError(error, fallback) {
     }
 
     if (status === 429) return t('errors.rateLimited');
+    // 413 with no reason: a proxy in front of the API refused the body before the backend saw
+    // it (the backend's own 413 carries FILE_TOO_LARGE and is worded above).
+    if (status === 413) return t('errors.fileTooLarge');
     if (status === 404) return fallback || t('errors.notFound');
     if (status === 403) return fallback || t('errors.forbidden');
     if (status >= 500) return fallback || t('errors.server');

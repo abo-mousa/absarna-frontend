@@ -78,6 +78,10 @@ function CreateChannel() {
     const logo = usePickedImage();
     const banner = usePickedImage();
     const [error, setError] = useState('');
+    // An address refusal (CHANNEL_SLUG_*) is said under the address field, beside what is wrong,
+    // rather than at the foot of the form — where «تعذّر إنشاء القناة» used to leave the owner
+    // guessing which of five fields to change.
+    const [slugError, setSlugError] = useState('');
     const [needsVerification, setNeedsVerification] = useState(false);
     const [loading, setLoading] = useState(false);
     const resolveYouTube = useResolveYouTubeChannel();
@@ -124,6 +128,7 @@ function CreateChannel() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setSlugError('');
         setNeedsVerification(false);
         setLoading(true);
 
@@ -179,6 +184,8 @@ function CreateChannel() {
         } catch (err) {
             if (err.response?.data?.emailVerificationRequired) {
                 setNeedsVerification(true);
+            } else if (String(err.response?.data?.reason || '').startsWith('CHANNEL_SLUG_')) {
+                setSlugError(describeError(err, t('createChannel.failed')));
             } else {
                 setError(describeError(err, t('createChannel.failed')));
             }
@@ -208,12 +215,17 @@ function CreateChannel() {
                             <Input
                                 label={t('createChannel.slugLabel')}
                                 value={form.slug}
-                                onChange={(e) => handleSlugChange(e.target.value)}
+                                onChange={(e) => { setSlugError(''); handleSlugChange(e.target.value); }}
                                 required
                                 dir="ltr"
                                 placeholder="my-channel"
+                                aria-invalid={slugError ? true : undefined}
+                                aria-describedby={slugError ? 'slug-error' : undefined}
+                                className={slugError ? '!border-red-600 dark:!border-red-500' : ''}
                             />
-                            <p className="text-xs text-text-muted mt-1">{t('createChannel.slugHint')}</p>
+                            {slugError
+                                ? <p id="slug-error" role="alert" className="text-xs text-red-600 dark:text-red-400 mt-1">{slugError}</p>
+                                : <p className="text-xs text-text-muted mt-1">{t('createChannel.slugHint')}</p>}
                         </div>
 
                         <Input
