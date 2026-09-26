@@ -123,18 +123,50 @@
   }
 }
 
-/* Scrollbar (no Tailwind utility equivalent) */
+/* THE PLATFORM'S SCROLLBAR, one design everywhere: the page, dialogs, the shelves, lists.
+   At rest a slim pill in the muted ink, with room around it and no drawn track — the page shows
+   through, so it never reads as a grey slab down the window. Under the pointer or while dragged it
+   becomes the platform's: a gold bar, gold to gold-ink down its length, carrying the logo's
+   eight-pointed star as its grip. Gold is the design's one accent and marks the thing being
+   handled, so it is never gold at rest. Both themes, through the colour tokens (the star is cream
+   in both: it only ever sits on gold).
+
+   Two dialects. Blink and WebKit read the ::-webkit-scrollbar pseudo-elements; Firefox reads only
+   `scrollbar-width` / `scrollbar-color`. Chrome 121+ ALSO reads the standard pair, and when it is
+   set it ignores the pseudo-elements — so the standard pair is scoped to engines that do not
+   support ::-webkit-scrollbar at all, or it would flatten Chrome's design to two colours. */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 11px;
+  height: 11px;
 }
-::-webkit-scrollbar-track {
-  @apply bg-bg;
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  @apply bg-border rounded-full;
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: rgb(var(--color-text-muted) / 0.4) padding-box;
+  min-height: 48px;
 }
-::-webkit-scrollbar-thumb:hover {
-  @apply bg-text-muted;
+::-webkit-scrollbar-thumb:hover,
+::-webkit-scrollbar-thumb:active {
+  border-width: 2px;
+  background:
+    url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpolygon points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%23FFF8EC'/%3E%3C/svg%3E") center / 5px 5px no-repeat padding-box,
+    linear-gradient(to bottom, rgb(var(--color-gold)), rgb(var(--color-gold-ink))) padding-box;
+}
+::-webkit-scrollbar-thumb:horizontal:hover,
+::-webkit-scrollbar-thumb:horizontal:active {
+  background:
+    url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpolygon points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%23FFF8EC'/%3E%3C/svg%3E") center / 5px 5px no-repeat padding-box,
+    linear-gradient(to right, rgb(var(--color-gold)), rgb(var(--color-gold-ink))) padding-box;
+}
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--color-text-muted) / 0.45) transparent;
+  }
 }
 
 .content-transition {
@@ -294,13 +326,46 @@
   }
 }
 
-/* The tabs' side column (layout/rail/RailFrame) scrolls with no bar of its own. Its inner edge
-   carries a gold double rule, and any bar there — thin, on hover, or on either edge — read beside
-   those two lines, or beside the page's own bar in Arabic, as bars stacked on bars. The column still
-   scrolls by wheel, trackpad, touch and keyboard; the page's bar is the only one drawn. */
+/* THE SIDE COLUMN'S SCROLLBAR IS ITS GOLD RULE (layout/rail/RailFrame). The column's inner edge
+   has always carried a gold double rule; a scrollbar beside it read as bars stacked on bars, so the
+   rule now IS the scrollbar: its two lines are the track's borders, and a solid gold piece moving
+   between them is the handle. `overflow-y: scroll` keeps the track — the rule — drawn when the
+   column has nothing to scroll; the handle then simply does not appear. It sits on the column's
+   inner edge because that is where the interface direction puts a scrollbar (left in Arabic,
+   right in English), which is where the rule was.
+
+   Firefox cannot style a scrollbar beyond two colours and a thinner width, so there the rule is a
+   thin gold bar in the same place: the handle gold, the track a faint gold line. */
 .rail-scroll {
-    scrollbar-width: none;
+  overflow-y: scroll;
 }
 .rail-scroll::-webkit-scrollbar {
-    display: none;
+  width: 7px;
+}
+.rail-scroll::-webkit-scrollbar-track {
+  /* The double rule: two gold lines with a faint gold wash between them. */
+  border-inline: 1px solid rgb(var(--color-gold) / 0.5);
+  background: rgb(var(--color-gold) / 0.08);
+}
+.rail-scroll::-webkit-scrollbar-thumb {
+  /* The handle rides between the lines (the transparent border keeps them showing on either side),
+     solid gold with the star at its centre. */
+  border: 1px solid transparent;
+  border-radius: 2px;
+  min-height: 40px;
+  background:
+    url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpolygon points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%23FFF8EC'/%3E%3C/svg%3E") center / 5px 5px no-repeat padding-box,
+    rgb(var(--color-gold)) padding-box;
+}
+.rail-scroll::-webkit-scrollbar-thumb:hover,
+.rail-scroll::-webkit-scrollbar-thumb:active {
+  background:
+    url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpolygon points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%23FFF8EC'/%3E%3C/svg%3E") center / 5px 5px no-repeat padding-box,
+    linear-gradient(to bottom, rgb(var(--color-gold)), rgb(var(--color-gold-ink))) padding-box;
+}
+@supports not selector(::-webkit-scrollbar) {
+  .rail-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--color-gold)) rgb(var(--color-gold) / 0.2);
+  }
 }

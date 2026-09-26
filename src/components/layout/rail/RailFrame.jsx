@@ -14,20 +14,19 @@ import { t } from '@/i18n';
  * navbar, wide screens only. It holds what the page beside it does NOT — the channels behind that
  * kind of content, a way to move around the page, a filter — never more of the page's own items.
  *
- * <p><b>It scrolls with no scrollbar of its own</b> (`.rail-scroll`, index.css). Its inner edge
- * carries the gold double rule, and a bar there — even thin, even only on hover — sat against those
- * two lines and read as bars stacked on bars; on the outer edge it sat beside the page's own bar in
- * Arabic. The column still scrolls by wheel, trackpad, touch and keyboard.
+ * <p><b>Its scrollbar is its gold double rule</b> (`.rail-scroll`, index.css): the two lines down
+ * the inner edge are the scrollbar's track and a solid gold piece between them is the handle. A
+ * separate bar beside the rule read as bars stacked on bars; this is one mark doing both jobs. It
+ * is always drawn (`overflow-y: scroll`), so the frame is whole when there is nothing to scroll.
  */
 export function RailFrame({ label, children }) {
     return (
         <aside
             aria-label={label}
             className="rail-scroll hidden lg:flex flex-col relative w-[256px] flex-shrink-0 bg-surface
-                sticky top-[var(--navbar-h)] h-[calc(100vh-var(--navbar-h))] overflow-y-auto overflow-x-hidden"
+                sticky top-[var(--navbar-h)] h-[calc(100vh-var(--navbar-h))] overflow-x-hidden"
         >
-            <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 end-0 w-[5px] border-x border-gold/45" />
-            <div aria-hidden="true" className="flex items-center justify-between px-4 pt-4 pb-3 me-[5px] border-b border-gold/25">
+            <div aria-hidden="true" className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-gold/25">
                 {Array.from({ length: 11 }, (_, i) => (
                     <KhatamStar key={i} filled={i % 2 === 0} strokeWidth={10} className={`w-2.5 h-2.5 ${i % 2 === 0 ? 'text-gold/70' : 'text-gold/50'}`} />
                 ))}
@@ -39,7 +38,7 @@ export function RailFrame({ label, children }) {
             />
             {/* `flex-auto`, not `flex-1`: a zero basis can let this block settle at the column's
                 height, and the rest of the list is then cut off rather than scrolled to. */}
-            <div className="relative flex-auto ps-3 pe-4 pt-5 pb-4 me-[5px]">{children}</div>
+            <div className="relative flex-auto ps-3 pe-4 pt-5 pb-4">{children}</div>
         </aside>
     );
 }
