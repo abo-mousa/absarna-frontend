@@ -124,12 +124,12 @@
 }
 
 /* THE PLATFORM'S SCROLLBAR, one design everywhere: the page, dialogs, the shelves, lists
-   (product owner, 2026-09-26). A gold bar, gold to gold-ink down its length, with the logo's
-   eight-pointed star repeated along it about every two centimetres — one on a short handle, a few
-   on a long one, never a pattern — in a deep gold-brown that reads on the gold (cream did not).
-   No drawn track: the page shows through, with room around the handle. The shading stays within
-   gold (color-mix), never down to gold-ink, which in the light theme is a dark brown that swallowed
-   the star. Under the pointer or while dragged it deepens a step, so the hand has a response.
+   (product owner, 2026-09-26). A plain gold bar carrying the logo's eight-pointed star, white with
+   a turquoise outline — the logo's own two colours — about every 1.3 cm. `space` spreads whole
+   stars evenly along the handle, so none is cut in half at a rounded end, and a short handle shows
+   one, centred. No brown anywhere (the product owner's call): no darker shading, and the stars are
+   not gold-brown. No drawn track: the page shows through, with room around the handle. Under the
+   pointer or while dragged the gold lightens a step, so the hand has a response.
 
    Two dialects. Blink and WebKit read the ::-webkit-scrollbar pseudo-elements; Firefox reads only
    `scrollbar-width` / `scrollbar-color`. Chrome 121+ ALSO reads the standard pair, and when it is
@@ -148,26 +148,26 @@
   border-radius: 999px;
   min-height: 48px;
   background:
-    url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 1100'%3E%3Cpolygon transform='translate(0.0 500.0) scale(1.0)' points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%237A5512'/%3E%3C/svg%3E") center / 7px 77px repeat-y padding-box,
-    linear-gradient(to bottom, rgb(var(--color-gold)), color-mix(in srgb, rgb(var(--color-gold)) 86%, black)) padding-box;
+    url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-6 -6 112 686'%3E%3Cg transform='translate(0 287)'%3E%3Cpolygon points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%23FFFFFF' stroke='%2314897B' stroke-width='10' stroke-linejoin='round'/%3E%3C/g%3E%3C/svg%3E") center / 7px 48px no-repeat space padding-box,
+    rgb(var(--color-gold)) padding-box;
 }
 ::-webkit-scrollbar-thumb:hover,
 ::-webkit-scrollbar-thumb:active {
   background:
-    url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 1100'%3E%3Cpolygon transform='translate(0.0 500.0) scale(1.0)' points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%237A5512'/%3E%3C/svg%3E") center / 7px 77px repeat-y padding-box,
-    color-mix(in srgb, rgb(var(--color-gold)) 80%, black) padding-box;
+    url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-6 -6 112 686'%3E%3Cg transform='translate(0 287)'%3E%3Cpolygon points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%23FFFFFF' stroke='%2314897B' stroke-width='10' stroke-linejoin='round'/%3E%3C/g%3E%3C/svg%3E") center / 7px 48px no-repeat space padding-box,
+    color-mix(in srgb, rgb(var(--color-gold)) 88%, white) padding-box;
 }
 ::-webkit-scrollbar-thumb:horizontal {
   min-width: 48px;
   background:
-    url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1100 100'%3E%3Cpolygon transform='translate(500.0 0.0) scale(1.0)' points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%237A5512'/%3E%3C/svg%3E") center / 77px 7px repeat-x padding-box,
-    linear-gradient(to right, rgb(var(--color-gold)), color-mix(in srgb, rgb(var(--color-gold)) 86%, black)) padding-box;
+    url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-6 -6 686 112'%3E%3Cg transform='translate(287 0)'%3E%3Cpolygon points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%23FFFFFF' stroke='%2314897B' stroke-width='10' stroke-linejoin='round'/%3E%3C/g%3E%3C/svg%3E") center / 48px 7px space no-repeat padding-box,
+    rgb(var(--color-gold)) padding-box;
 }
 ::-webkit-scrollbar-thumb:horizontal:hover,
 ::-webkit-scrollbar-thumb:horizontal:active {
   background:
-    url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1100 100'%3E%3Cpolygon transform='translate(500.0 0.0) scale(1.0)' points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%237A5512'/%3E%3C/svg%3E") center / 77px 7px repeat-x padding-box,
-    color-mix(in srgb, rgb(var(--color-gold)) 80%, black) padding-box;
+    url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-6 -6 686 112'%3E%3Cg transform='translate(287 0)'%3E%3Cpolygon points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%23FFFFFF' stroke='%2314897B' stroke-width='10' stroke-linejoin='round'/%3E%3C/g%3E%3C/svg%3E") center / 48px 7px space no-repeat padding-box,
+    color-mix(in srgb, rgb(var(--color-gold)) 88%, white) padding-box;
 }
 @supports not selector(::-webkit-scrollbar) {
   * {
@@ -361,14 +361,14 @@
   border-radius: 2px;
   min-height: 40px;
   background:
-    url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 1100'%3E%3Cpolygon transform='translate(0.0 500.0) scale(1.0)' points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%237A5512'/%3E%3C/svg%3E") center / 7px 77px repeat-y padding-box,
+    url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-6 -6 112 686'%3E%3Cg transform='translate(0 287)'%3E%3Cpolygon points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%23FFFFFF' stroke='%2314897B' stroke-width='10' stroke-linejoin='round'/%3E%3C/g%3E%3C/svg%3E") center / 7px 48px no-repeat space padding-box,
     rgb(var(--color-gold)) padding-box;
 }
 .rail-scroll::-webkit-scrollbar-thumb:hover,
 .rail-scroll::-webkit-scrollbar-thumb:active {
   background:
-    url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 1100'%3E%3Cpolygon transform='translate(0.0 500.0) scale(1.0)' points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%237A5512'/%3E%3C/svg%3E") center / 7px 77px repeat-y padding-box,
-    color-mix(in srgb, rgb(var(--color-gold)) 80%, black) padding-box;
+    url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-6 -6 112 686'%3E%3Cg transform='translate(0 287)'%3E%3Cpolygon points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%23FFFFFF' stroke='%2314897B' stroke-width='10' stroke-linejoin='round'/%3E%3C/g%3E%3C/svg%3E") center / 7px 48px no-repeat space padding-box,
+    color-mix(in srgb, rgb(var(--color-gold)) 88%, white) padding-box;
 }
 @supports not selector(::-webkit-scrollbar) {
   .rail-scroll {
