@@ -107,11 +107,12 @@ export function KhatamProgress({ value, label, title, className = '', trackClass
                 )}
             </svg>
             {label != null && (
-                // Naskh, the reading face (product owner, 2026-09-26, over Cairo and Markazi): its
-                // Arabic digits are the classic shapes, where Cairo's were squat and its «٠» a dot.
-                // A label longer than a number («ص ٢١٤») steps down so it stays inside the star.
-                <span className={`absolute inset-0 flex items-center justify-center font-reading font-semibold leading-none text-text-primary ${
-                    String(label).length > 3 ? 'text-[0.75rem]' : 'text-[0.8125rem]'
+                // Amiri, a classical Naskh (product owner, 2026-09-26, after Cairo, Markazi and Noto
+                // Naskh): its Arabic zero is a clear diamond at mid-height. Noto Naskh's sits low and
+                // small, so «١٠» read as a one and a comma; Cairo's digits were squat. A label longer
+                // than three characters («ص ٢١٤») steps down so it stays inside the star.
+                <span className={`absolute inset-0 flex items-center justify-center font-numeral font-bold leading-none text-text-primary ${
+                    String(label).length > 3 ? 'text-[0.8rem]' : 'text-[0.95rem]'
                 }`}>
                     {label}
                 </span>

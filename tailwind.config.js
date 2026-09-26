@@ -58,6 +58,8 @@ export default {
         // mostly that. The interface stays `sans` — a button is a label, not something to read —
         // so the two faces never meet inside one sentence, only across a page.
         reading: ['Noto Naskh Arabic', 'Amiri', 'serif'],
+        // The progress stars' numbers only — see index.html, which loads just those characters.
+        numeral: ['Amiri', 'Noto Naskh Arabic', 'serif'],
       },
       // Near-square, like a page or a tile, not an app's rounded pill. The redesign's one
       // ornament is the eight-pointed star, and 16px corners on every card read as a video site

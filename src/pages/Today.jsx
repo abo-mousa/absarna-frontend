@@ -16,7 +16,7 @@ import { useGridColumns } from '../hooks/useGridColumns';
 import { formatTimestamp } from '@/lib/spans';
 import { formatCount } from '@/lib/numbers';
 import { resolveMediaUrl } from '@/lib/media';
-import { t } from '@/i18n';
+import { formatDigits, t } from '@/i18n';
 import { describeError } from '@/lib/describeError';
 
 const GRID = 'grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-8';
@@ -334,7 +334,8 @@ function ContinueVideo({ item, starting = false, onHide = null }) {
         >
             <KhatamProgress
                 value={item.progress || 0}
-                label={position ? formatCount(position) : null}
+                // A position, not a count: no thousands separator («١٢٣٤», not «١٬٢٣٤»).
+                label={position ? formatDigits(String(position)) : null}
                 title={position && total ? t('today.progressAria', { title: video.seriesTitle || video.title, position, total }) : video.title}
                 className="w-16 h-16 flex-shrink-0"
             />

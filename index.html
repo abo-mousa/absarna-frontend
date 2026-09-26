@@ -45,6 +45,10 @@
          interface stays sans, because a button is a label rather than something to read. -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Cairo:wght@300;400;500;600;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Rubik:wght@300;400;500;600;700&family=Markazi+Text:wght@500;600;700&display=swap"
           rel="stylesheet">
+    <!-- Amiri for the numbers inside the progress stars only (KhatamProgress), and so only the
+         characters they use: its Arabic zero is a clear diamond at mid-height, where Naskh's sits
+         low and small and «١٠» read as a one and a comma. `text=` makes this a few kilobytes. -->
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@700&text=%D9%A0%D9%A1%D9%A2%D9%A3%D9%A4%D9%A5%D9%A6%D9%A7%D9%A8%D9%A90123456789%D8%B5%20&display=swap" rel="stylesheet">
     <script>
       // Applied synchronously, before React/CSS paint anything, so a dark-mode visitor never
       // sees a flash of the light theme on load — ThemeContext (src/contexts/ThemeContext.jsx)
