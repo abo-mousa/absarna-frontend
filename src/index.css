@@ -349,19 +349,28 @@ html::-webkit-scrollbar,
   display: none;
 }
 /* A scroll that reaches the column's end stays in the column instead of carrying on into the page
-   (touch, trackpad momentum); the mouse wheel is held by RailFrame. */
+   (touch, trackpad momentum); the wheel is taken over entirely by RailFrame. */
 .rail-scroller {
   overscroll-behavior: contain;
 }
 .drawn-thumb {
+  /* While scrolling: a thin gold line — a hint, not a stripe. Solid, not see-through: gold over the
+     night page turns a muddy brown-olive (and brown is out). Under the pointer, or while dragged, it
+     widens to a full handle and the stars appear — the moment it is about to be grabbed. At 5px the
+     stars would not read, so they wait. */
+  left: 0;
+  right: 0;
+  width: 5px;
+  margin-inline: auto;
   border-radius: 999px;
   cursor: grab;
-  background: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='4 -208 92 515'%3E%3Cpolygon points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%23FFFFFF' stroke='%2314897B' stroke-width='9' stroke-linejoin='round'/%3E%3C/svg%3E") center / 100% auto no-repeat space, rgb(var(--color-gold));
-  box-shadow: 0 1px 3px rgb(0 0 0 / 0.18);
+  background: rgb(var(--color-gold));
+  transition: width 0.15s ease;
 }
-.drawn-thumb:hover,
+.drawn-track:hover .drawn-thumb,
 .drawn-thumb:active {
-  background: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='4 -208 92 515'%3E%3Cpolygon points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%23FFFFFF' stroke='%2314897B' stroke-width='9' stroke-linejoin='round'/%3E%3C/svg%3E") center / 100% auto no-repeat space, color-mix(in srgb, rgb(var(--color-gold)) 88%, white);
+  width: 10px;
+  background: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='4 -208 92 515'%3E%3Cpolygon points='90,50 78.284,61.716 78.284,78.284 61.716,78.284 50,90 38.284,78.284 21.716,78.284 21.716,61.716 10,50 21.716,38.284 21.716,21.716 38.284,21.716 50,10 61.716,21.716 78.284,21.716 78.284,38.284' fill='%23FFFFFF' stroke='%2314897B' stroke-width='9' stroke-linejoin='round'/%3E%3C/svg%3E") center / 100% auto no-repeat space, rgb(var(--color-gold));
 }
 .drawn-thumb:active {
   cursor: grabbing;

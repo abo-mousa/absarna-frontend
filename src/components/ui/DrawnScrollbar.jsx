@@ -155,7 +155,7 @@ function DrawnScrollbar({ target, className = '', trackAlways = false }) {
                     onPointerMove={onThumbMove}
                     onPointerUp={onThumbUp}
                     onPointerCancel={onThumbUp}
-                    className={`drawn-thumb absolute inset-x-[2px] touch-none transition-opacity duration-300 ${shown ? 'opacity-100' : 'opacity-0'}`}
+                    className={`drawn-thumb absolute touch-none transition-opacity duration-300 ${shown ? 'opacity-100' : 'opacity-0'}`}
                     style={{ height: `${thumb.size}px`, transform: `translateY(${thumb.offset}px)` }}
                 />
             )}

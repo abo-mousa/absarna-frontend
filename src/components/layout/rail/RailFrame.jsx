@@ -23,20 +23,24 @@ export function RailFrame({ label, children }) {
     const scrollerRef = useRef(null);
     const asideRef = useRef(null);
 
-    // The wheel over the column scrolls the column and nothing else. A browser hands the wheel to
-    // the page once the column cannot scroll further — at its end, or always when its list fits —
-    // so with the pointer on the column the page behind it lurched. Blocked only in the direction
-    // the column cannot go; within its range it scrolls natively as ever. Non-passive, or
-    // preventDefault is ignored. (Touch and trackpad momentum: overscroll-behavior, index.css.)
+    // The wheel over the column scrolls the column and NEVER the page. A browser hands the wheel
+    // to the page once the column cannot go further (and Firefox may decide where a wheel gesture
+    // goes before the column has reached its end, and rounds positions), so with the pointer on the
+    // column the page lurched. Rather than guessing whether the column is "at the end", the column
+    // takes the wheel over entirely: it scrolls itself by the wheel's amount and the event stops
+    // here, so at its end the wheel does nothing. Line- and page-based wheels (Firefox reports a
+    // mouse wheel in lines) are converted to pixels. Pinch-zoom (ctrl) and sideways wheels pass.
     useEffect(() => {
         const aside = asideRef.current;
         if (!aside) return undefined;
         const onWheel = (event) => {
             const scroller = scrollerRef.current;
             if (!scroller || event.ctrlKey || Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
-            const atTop = scroller.scrollTop <= 0;
-            const atBottom = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1;
-            if ((event.deltaY < 0 && atTop) || (event.deltaY > 0 && atBottom)) event.preventDefault();
+            event.preventDefault();
+            // Pixels as given; a line is ~20px (one wheel notch, three lines, about 60px); a page
+            // is most of the column.
+            const unit = event.deltaMode === 1 ? 20 : event.deltaMode === 2 ? scroller.clientHeight * 0.9 : 1;
+            scroller.scrollTop += event.deltaY * unit;
         };
         aside.addEventListener('wheel', onWheel, { passive: false });
         return () => aside.removeEventListener('wheel', onWheel);
