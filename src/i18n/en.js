@@ -1157,6 +1157,13 @@ export const en = {
             needsConfirmingHint: 'We read these details from YouTube. Unless you confirm or edit them, we re-read them from YouTube every month and whatever is written here is replaced.',
             retryQueued: 'The video is back in the processing queue.',
             retryFailed: 'Could not reprocess it.',
+            // A YouTube copy of a video the owner uploaded here. Said as a fact, not a problem.
+            duplicate: 'YouTube copy of a video you uploaded here',
+            duplicateHint: 'This is the same video as one you uploaded to the platform, so visitors see your upload and the YouTube copy is hidden.',
+            duplicateOpen: 'Open your upload',
+            notDuplicate: 'Not the same video',
+            notDuplicateDone: 'The video is shown again and will not be treated as a copy.',
+            notDuplicateFailed: 'Could not show the video.',
         },
         underReviewImport: 'Your channel is hidden from visitors until the platform team has reviewed what you imported from YouTube. You can carry on uploading and editing here in the meantime, and everything appears the moment it is approved.',
         underReview: 'Your channel is hidden from visitors until the platform team has reviewed it. You can carry on uploading and editing here in the meantime.',

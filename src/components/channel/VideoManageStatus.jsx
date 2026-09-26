@@ -1,7 +1,8 @@
-import { AlertTriangle, Loader2, RotateCw, VideoOff } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { AlertTriangle, Copy, Loader2, RotateCw, VideoOff } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import { Button } from '@/components/ui';
-import { useRetryTranscode } from '@/hooks/useChannels';
+import { useDismissDuplicate, useRetryTranscode } from '@/hooks/useChannels';
 import { ownerNotices } from '@/lib/review';
 import { describeError } from '@/lib/describeError';
 import { t } from '@/i18n';
@@ -30,6 +31,9 @@ import { t } from '@/i18n';
  *       row of a freshly imported catalogue, and a warning repeated two thousand times teaches an
  *       owner to stop reading the badges below it. The loud version belongs once, at the top of
  *       the dashboard.</li>
+ *   <li><b>A copy of your upload</b> — the backend found this YouTube row is the same video as
+ *       one the owner uploaded here, and shows only the upload. Neutral, with the one button a
+ *       wrong match needs.</li>
  *   <li><b>Gone from YouTube</b> — the 30-day sweep found the video is no longer there, so the
  *       row is hidden. No button: the three things an owner can do about it (re-upload the
  *       original, retitle it, delete it) are all controls this row already has.</li>
@@ -46,6 +50,7 @@ import { t } from '@/i18n';
 function VideoManageStatus({ video, slug, isOwner }) {
     const { showToast } = useToast();
     const retry = useRetryTranscode(slug);
+    const dismissDuplicate = useDismissDuplicate(slug);
     const notices = ownerNotices(video, true);
 
     const handleRetry = () => {
@@ -58,7 +63,16 @@ function VideoManageStatus({ video, slug, isOwner }) {
         });
     };
 
+    const handleNotDuplicate = () => {
+        dismissDuplicate.mutate(video.id, {
+            onSuccess: () => showToast(t('channelManage.videoStatus.notDuplicateDone'), 'success'),
+            onError: (err) => showToast(
+                describeError(err, t('channelManage.videoStatus.notDuplicateFailed')), 'error'),
+        });
+    };
+
     const gone = Boolean(video.youtubeUnavailableAt);
+    const duplicateOf = video.duplicateOfVideoId;
     // Explicitly false, not falsy: the backend leaves this NULL on a video that was never
     // imported, which means "the question does not apply here" rather than "not yet done".
     // `!video.metadataConfirmed` would badge every ordinary upload on the channel.
@@ -66,7 +80,7 @@ function VideoManageStatus({ video, slug, isOwner }) {
     // managing a claimed channel would otherwise see it on every imported row.
     const needsConfirming = isOwner && video.metadataConfirmed === false;
 
-    if (!gone && !needsConfirming && video.status !== 'UPLOADED' && video.status !== 'FAILED'
+    if (!duplicateOf && !gone && !needsConfirming && video.status !== 'UPLOADED' && video.status !== 'FAILED'
         && notices.length === 0) {
         return null;
     }
@@ -104,6 +118,33 @@ function VideoManageStatus({ video, slug, isOwner }) {
                         {retry.isPending
                             ? t('channelManage.videoStatus.retrying')
                             : t('channelManage.videoStatus.retry')}
+                    </Button>
+                </div>
+            )}
+
+            {/* A YOUTUBE COPY OF THE OWNER'S OWN UPLOAD, hidden so visitors see the upload only.
+                Neutral, not amber: nothing is wrong, the platform did the tidy-up itself. The one
+                button is for a wrong match — the backend matched on length and title, and a
+                lecture series can fool both. Nothing else here needs deciding. */}
+            {duplicateOf && (
+                <div className="rounded-md border border-border bg-surface-hover p-2.5">
+                    <p className="flex items-center gap-1.5 text-xs font-semibold text-text-secondary mb-1">
+                        <Copy size={13} className="flex-shrink-0" />
+                        {t('channelManage.videoStatus.duplicate')}
+                    </p>
+                    <p className="text-xs text-text-secondary leading-relaxed mb-2">
+                        {t('channelManage.videoStatus.duplicateHint')}{' '}
+                        <Link to={`/video/${duplicateOf}`} className="underline">
+                            {t('channelManage.videoStatus.duplicateOpen')}
+                        </Link>
+                    </p>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={dismissDuplicate.isPending}
+                        onClick={handleNotDuplicate}
+                    >
+                        {t('channelManage.videoStatus.notDuplicate')}
                     </Button>
                 </div>
             )}

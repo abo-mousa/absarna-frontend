@@ -1529,6 +1529,13 @@ export const ar = {
             needsConfirmingHint: 'هذه البيانات قرأناها من يوتيوب. ما لم تؤكّدها أو تعدّلها، نعيد قراءتها من يوتيوب كل شهر ويُستبدل ما هو مكتوب هنا.',
             retryQueued: 'أُعيد الفيديو إلى قائمة المعالجة.',
             retryFailed: 'تعذّرت إعادة المعالجة.',
+            // A YouTube copy of a video the owner uploaded here. Said as a fact, not a problem.
+            duplicate: 'نسخة يوتيوب من فيديو رفعته هنا',
+            duplicateHint: 'هذا الفيديو هو نفسه فيديو رفعته على المنصة، فنعرض للزوار ما رفعته أنت ونُخفي نسخة يوتيوب.',
+            duplicateOpen: 'افتح ما رفعته',
+            notDuplicate: 'ليس نسخة منه',
+            notDuplicateDone: 'أُظهر الفيديو، ولن نعدّه نسخة بعد الآن.',
+            notDuplicateFailed: 'تعذّر إظهار الفيديو.',
         },
         /**
          * The banner an owner sees while their channel is hidden pending review.

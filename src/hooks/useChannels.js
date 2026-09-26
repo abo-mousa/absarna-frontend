@@ -522,6 +522,23 @@ export const useRetryTranscode = (slug) => {
     });
 };
 
+/**
+ * "Not a duplicate": undoes the backend hiding a YouTube row as a copy of one of the owner's
+ * uploads (content/duplicate). The row is shown again as its own visibility toggle says, and the
+ * backend never matches it again.
+ */
+export const useDismissDuplicate = (slug) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (videoId) => {
+            const res = await api.post(`/channels/${slug}/content/videos/${videoId}/not-duplicate`);
+            return res.data;
+        },
+        onSuccess: () => invalidateChannelContent(queryClient, slug, 'videos'),
+    });
+};
+
 // Home's feed mixes videos from many owned channels, so (unlike the tab hooks above, which are
 // scoped to one fixed slug via useParams) the slug varies per call and is passed with the video.
 export const useToggleVideoVisibilityByChannelId = () => {

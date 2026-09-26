@@ -88,7 +88,8 @@ export const UNTIL_DAY_ENDS = {
 };
 
 /**
- * The home feed's (Discover's) tier. Its random parts are fixed for the day, but the catalogue is
+ * The home feed's (Discover's) tier. Its random parts are fixed for the day and the page load (the
+ * shuffle is not in the query key, so a refetch inside one load returns the same row), but the catalogue is
  * not — a followed channel's new upload belongs in its subscribed section the same day — so it
  * is kept for a quarter of an hour rather than until midnight: long enough that browsing a few
  * videos and coming back costs nothing, short enough that a new lecture is not a day late.
