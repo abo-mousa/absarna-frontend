@@ -4,7 +4,7 @@ import { Avatar, KhatamStar } from '../../ui';
 import { ArrowForward } from '../../ui/DirectionalIcon';
 import { resolveMediaUrl } from '@/lib/media';
 import { formatChipLabel } from '@/lib/formats';
-import { t } from '@/i18n';
+import { direction, t } from '@/i18n';
 
 /**
  * The tabs' side column, one frame for all of them — Discover's channels, and the Books, Articles
@@ -13,14 +13,23 @@ import { t } from '@/i18n';
  * thin-line star low in the far corner), full height against the reading-start edge under the
  * navbar, wide screens only. It holds what the page beside it does NOT — the channels behind that
  * kind of content, a way to move around the page, a filter — never more of the page's own items.
+ *
+ * <p><b>The scrollbar is on the right in both languages.</b> A scroll container's bar sits on its
+ * start side, so in Arabic it came up on the left — inside the column, against its own content.
+ * The scrolling `<aside>` is therefore `dir="ltr"`, which puts its bar on the right, and
+ * everything in it sits in one inner block that restores the interface's direction, so every
+ * logical class inside (the gold rule at `end-0`, the star at `-start-10`) resolves exactly as
+ * before.
  */
 export function RailFrame({ label, children }) {
     return (
         <aside
             aria-label={label}
-            className="hidden lg:flex flex-col relative w-[256px] flex-shrink-0 bg-surface
+            dir="ltr"
+            className="hidden lg:block w-[256px] flex-shrink-0 bg-surface
                 sticky top-[var(--navbar-h)] h-[calc(100vh-var(--navbar-h))] overflow-y-auto overflow-x-hidden"
         >
+            <div dir={direction()} className="relative flex flex-col min-h-full">
             <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 end-0 w-[5px] border-x border-gold/45" />
             <div aria-hidden="true" className="flex items-center justify-between px-4 pt-4 pb-3 me-[5px] border-b border-gold/25">
                 {Array.from({ length: 11 }, (_, i) => (
@@ -32,7 +41,10 @@ export function RailFrame({ label, children }) {
                 strokeWidth={1.5}
                 className="pointer-events-none absolute -bottom-10 -start-10 w-44 h-44 text-gold/25"
             />
-            <div className="relative flex-1 ps-3 pe-4 pt-5 pb-4 me-[5px]">{children}</div>
+            {/* `flex-auto`, not `flex-1`: a zero basis let this block settle at the column's height
+                and the rest of the list was cut off rather than scrolled to. */}
+            <div className="relative flex-auto ps-3 pe-4 pt-5 pb-4 me-[5px]">{children}</div>
+            </div>
         </aside>
     );
 }
