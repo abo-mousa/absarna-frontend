@@ -135,7 +135,11 @@ function Today() {
 
                     {data?.because && (
                         <section>
-                            <Cartouche title={t('today.because', { title: data.because.basedOn.title })} />
+                            {/* The page's one «اقتراحات لك» row (product owner, 2026-09-26). The backend
+                                folds these videos into the feed row when that row is suggestions,
+                                so this stands alone only beside «من القنوات التي تتابعها», and
+                                never says which video it came from. */}
+                            <Cartouche title={t('home.discover')} />
                             <div className={GRID}>{data.because.videos.map((video) => <VideoCard {...cardProps(video)} />)}</div>
                         </section>
                     )}

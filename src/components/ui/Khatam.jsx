@@ -107,7 +107,12 @@ export function KhatamProgress({ value, label, title, className = '', trackClass
                 )}
             </svg>
             {label != null && (
-                <span className="absolute inset-0 flex items-center justify-center text-[0.7rem] font-bold text-text-primary">
+                // The heading face (Markazi Text), like the week's counts beside it: Cairo's Arabic
+                // digits were squat and its «٠» a dot at this size. A label longer than a number
+                // («ص ٢١٤») steps down so it stays inside the star.
+                <span className={`absolute inset-0 flex items-center justify-center font-serif font-semibold leading-none text-text-primary ${
+                    String(label).length > 3 ? 'text-[0.875rem]' : 'text-[1rem]'
+                }`}>
                     {label}
                 </span>
             )}

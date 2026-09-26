@@ -6,7 +6,7 @@ import { useUserScope } from './useUserScope';
 
 /**
  * The Today page's data (`GET /api/today`): the week, what to continue, the news and one
- * "because you finished" row, in one response.
+ * suggestions drawn from what the reader finished, in one response.
  *
  * <p>User-scoped, with the viewer last in the key like every personal list, because most of it
  * is the caller's own — and NO_CACHE like the feed: coming back from a finished episode must show

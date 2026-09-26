@@ -953,7 +953,6 @@ export const ar = {
         progressAria: '{title}: {position} من {total}',
         readingAria: '{title}: صفحة {page}',
         newsTitle: 'آخر الأخبار',
-        because: 'لأنك أنهيت «{title}»',
         colophonTitle: 'أنت على اطّلاع، وما بدأته في انتظارك',
         colophonText: 'هذه صفحة اليوم. وكل ما سواها في «اكتشف».',
         toDiscover: 'اكتشف',

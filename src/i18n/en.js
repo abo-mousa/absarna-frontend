@@ -728,7 +728,6 @@ export const en = {
         progressAria: '{title}: {position} of {total}',
         readingAria: '{title}: page {page}',
         newsTitle: 'Latest news',
-        because: 'Because you finished “{title}”',
         colophonTitle: 'You are up to date, and what you started is waiting',
         colophonText: 'That is today’s page. Everything else is in Discover.',
         toDiscover: 'Discover',
