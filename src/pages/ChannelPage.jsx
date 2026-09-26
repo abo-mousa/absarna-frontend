@@ -277,6 +277,12 @@ function ChannelPage() {
                     <p className="font-reading text-sm text-text-secondary leading-relaxed m-0">
                         {t('channel.claim.bannerBody')}
                     </p>
+                    {/* The person the link was for, arriving after it lapsed (backend
+                        INVITATION_VALID). Only the token's holder is told; saying nothing read as a
+                        broken link. The contact link beside it is how they ask for a fresh one. */}
+                    {claim?.invitationExpired && (
+                        <p className="text-sm text-gold-ink font-semibold mt-3 mb-0">{t('channel.claim.expired')}</p>
+                    )}
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3">
                         {showClaim && (token ? (
                             <button
@@ -300,6 +306,11 @@ function ChannelPage() {
                                 {t('channel.claim.ctaSignedOut')}
                             </Link>
                         ))}
+                        {claim?.invitationExpired && (
+                            <Link to="/contact" className="text-sm font-semibold text-primary underline underline-offset-4">
+                                {t('channel.claim.expiredCta')}
+                            </Link>
+                        )}
                         <Link to="/contact" className="text-sm text-text-muted underline underline-offset-4">
                             {t('channel.claim.removeInstead')}
                         </Link>

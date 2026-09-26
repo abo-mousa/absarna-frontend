@@ -424,6 +424,10 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   backend also treats a signed-in reader whose CONFIRMED address is the one the invitation went to
   as holding it (`ChannelAccess#holdsInvitation`), and `GET /api/user/channel-invitations` feeds
   Today's «قناتك بانتظارك». Seeing the offer grants nothing; the Google proof is the claim.
+  **Both halves lapse together, 90 days after the last send** (backend `INVITATION_VALID`); a
+  re-send renews the same link. A lapsed token's holder gets `invitationExpired` on the claim status
+  and the channel page says so rather than going quiet; the admin row shows «انتهت مدتها». Never
+  tell a scholar to keep or copy the link — the mail tells them the same address is enough.
   The page strips the one-time code off the URL before doing anything else (history, RUM), and
   `lib/youtubeOAuth.js` refuses to navigate anywhere but `https://accounts.google.com`.
 - **`ExpandableText`** — long prose collapsed to four lines with a fade and a disclosure button,

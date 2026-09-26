@@ -819,6 +819,8 @@ export const en = {
             cta: 'Is this your channel? Take it over',
             ctaSignedOut: 'Is this your channel? Sign in to take it over',
             removeInstead: 'Ask us to remove the page',
+            expired: 'This invitation has lapsed. If this is your channel, write to us and we will send it again.',
+            expiredCta: 'Ask for a new invitation',
             title: 'Take over this channel',
             intro: 'To take this channel over, prove that you own the YouTube channel linked to it. The linked channel cannot be changed — the proof is about that channel alone.',
             linkedChannel: 'Linked YouTube channel',
@@ -1577,6 +1579,8 @@ export const en = {
             copied: 'Invitation link copied',
             copyFailed: 'Could not create an invitation link',
             sentNote: 'Invited {when} → {address} ({locale})',
+            sentNoteNoAddress: 'Invited {when}',
+            lapsed: 'lapsed — send again to renew it',
         },
         claimLink: {
             /**
@@ -1854,7 +1858,7 @@ export const en = {
      */
     legal: {
         lastUpdated: 'Last updated: {date}',
-        lastUpdatedDate: '25 September 2026',
+        lastUpdatedDate: '26 September 2026',
         contentsHeading: 'On this page',
         sourceNotice: 'These pages were written in Arabic. This English text is provided for convenience; where the two differ, the Arabic version is the one that governs.',
 
@@ -1968,6 +1972,7 @@ export const en = {
                     heading: 'Email: what we send, and through whom',
                     paragraphs: [
                         'We send you two kinds of message to your account address and no others: an address-verification message, and a password-reset message. There is no newsletter, no marketing mail and no content notifications; there is nothing in the software that sends an account holder anything but these two. (The software can send one further message, and it is never sent to an account: an administrator can email the owner of a channel we assembled for them, once, inviting them to take it over. It goes to an address an administrator was given, not to anything collected here.)',
+                        'We keep that address with the channel for one purpose: if its owner creates an account with the same address and confirms it, we recognise that the channel is waiting for them and tell them so. The address is shown to no one but the platform’s administrators and is used for nothing else. The invitation is valid for ninety days from when it was last sent, and the address is deleted once the channel is taken over or the invitation is withdrawn.',
                         'A verification link is valid for ten minutes, and a password-reset link for one hour and a single use. The brevity is deliberate: whoever holds the link holds the account.',
                         'Mail is sent through a specialist outside provider that handles delivery on our behalf, which receives your address, your display name and the text of the message. Nothing else about your account or your activity reaches it.',
                         'The number of requests is limited: three verification messages an hour, and three password-reset requests an hour.',
@@ -2032,7 +2037,7 @@ export const en = {
                     heading: 'Cookies and local storage',
                     paragraphs: [
                         'The platform sets no cookies, for tracking or for anything else; there is nothing on the server that creates a cookie at all.',
-                        'It does use your browser’s local storage, for things that concern your browser alone and never reach us: your access token after signing in, your choice of light or dark mode, the interface language, your answer about showing YouTube videos, the playback speed and volume you set in the player, that you have seen the site guide so it does not open again, your answer about counting your views, and a random number for counting them if you agreed and are not signed in (see “How the view counter is calculated”), and the state of an unfinished upload until you resume it.',
+                        'It does use your browser’s local storage, for things that concern your browser alone and never reach us: your access token after signing in, your choice of light or dark mode, the interface language, your answer about showing YouTube videos, the playback speed and volume you set in the player, that you have seen the site guide so it does not open again, your answer about counting your views, and a random number for counting them if you agreed and are not signed in (see “How the view counter is calculated”), and the state of an unfinished upload until you resume it, and a channel-takeover invitation link if you opened one, kept for that tab’s session only and gone when it closes.',
                         'Two things are exceptions to “never reach us”: the interface language, which is copied to your account if you are signed in so that account emails reach you in it; and the view-counting number, which is sent to be counted with and stored only as a hash.',
                         'An access token is valid for an hour and is renewed with a refresh token valid for seven days, or ninety if you choose “stay signed in”. If you do not, both are kept for the browser session alone and go when it closes. Signing out erases both from your browser.',
                         'The YouTube player, however — on pages of imported videos alone — may store things of its own in your browser, over which we have no control. That player is not loaded at all without your permission; see the "YouTube" section.',
@@ -2173,7 +2178,7 @@ export const en = {
                     id: 'terms-channels',
                     heading: 'Who may open a channel, and what they are answerable for',
                     paragraphs: [
-                        'Opening a channel is available to any account holder with a verified email address. A new channel is not published immediately, but awaits the platform team’s approval; and the team may approve, refuse, or suspend an existing channel.',
+                        'Opening a channel is available to any account holder with a verified email address. A new channel is published as soon as it is opened; importing a channel from YouTube, however, hides it until the platform team approves the import. The team may also refuse, or suspend an existing channel.',
                         'A channel’s owner is answerable for everything published on it: the soundness of its attribution, its freedom from breaches, and the publication rights in it. The platform is not a co-publisher of what is in the channels.',
                         'They are likewise answerable for the comments published on their channel, to the extent the management tools allow them.',
                     ],

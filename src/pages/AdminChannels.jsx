@@ -43,13 +43,20 @@ function InvitationNote({ invitation }) {
     const masked = address.includes('@')
         ? `${address[0]}\u2022\u2022\u2022${address.slice(address.indexOf('@'))}`
         : address;
+    // Lapsed and unanswered: the cue to send again, which renews it with the same link. Null
+    // once the channel is claimed or the offer withdrawn — and then the address is gone too.
+    const expires = invitation.expiresAt ? parseTimestamp(invitation.expiresAt) : null;
+    const lapsed = expires?.isValid() && expires.isBefore(Date.now());
     return (
         <p className="text-xs text-text-muted mt-1" title={address}>
-            {t('admin.invite.sentNote', {
-                when: when ?? '',
-                address: masked,
-                locale: (invitation.locale ?? '').toUpperCase(),
-            })}
+            {address
+                ? t('admin.invite.sentNote', {
+                    when: when ?? '',
+                    address: masked,
+                    locale: (invitation.locale ?? '').toUpperCase(),
+                })
+                : t('admin.invite.sentNoteNoAddress', { when: when ?? '' })}
+            {lapsed && <span className="text-gold-ink font-semibold"> · {t('admin.invite.lapsed')}</span>}
         </p>
     );
 }
