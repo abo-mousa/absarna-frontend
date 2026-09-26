@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import { KHATAM_POINTS, khatamDash, khatamSweep } from '@/lib/khatam';
 
 /**
@@ -39,9 +40,20 @@ export function KhatamStar({ filled = true, strokeWidth = 9, className = '' }) {
  * drawn by the operating system rather than by us, and looked different on every phone.
  * `tone="error"` is for a failed load: the star goes quiet and the glyph takes the voice colour.
  */
+/**
+ * Glyphs whose weight sits low, lifted so they LOOK centred in the star rather than measure it.
+ * A triangle is centred by its box, but its mass is in the base (its centroid is two thirds of the
+ * way down from the tip), so a box-centred warning sign sat visibly low inside the star's
+ * symmetric frame. The lift is a fraction of the glyph's size — 2.5px at 30px, compared by eye
+ * against 0, 1.5 and 3.75 — so both sizes keep the same correction.
+ */
+const OPTICAL_LIFT = new Map([[AlertTriangle, 1 / 12]]);
+
 export function KhatamEmblem({ icon: Icon, tone = 'default', size = 'md', className = '' }) {
     const error = tone === 'error';
     const small = size === 'sm';
+    const glyph = small ? 22 : 30;
+    const lift = (OPTICAL_LIFT.get(Icon) || 0) * glyph;
     return (
         <span className={`relative inline-block ${small ? 'w-16 h-16' : 'w-24 h-24'} ${className}`} aria-hidden="true">
             <KhatamStar className={`absolute inset-0 w-full h-full ${error ? 'text-border-light' : 'text-gold/10'}`} />
@@ -53,7 +65,12 @@ export function KhatamEmblem({ icon: Icon, tone = 'default', size = 'md', classN
             />
             {Icon && (
                 <span className="absolute inset-0 flex items-center justify-center">
-                    <Icon size={small ? 22 : 30} strokeWidth={1.5} className={error ? 'text-voice' : 'text-primary'} />
+                    <Icon
+                        size={glyph}
+                        strokeWidth={1.5}
+                        className={error ? 'text-voice' : 'text-primary'}
+                        style={lift ? { transform: `translateY(-${lift}px)` } : undefined}
+                    />
                 </span>
             )}
         </span>

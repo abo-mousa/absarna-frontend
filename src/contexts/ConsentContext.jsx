@@ -51,16 +51,22 @@ export function ConsentProvider({ children }) {
             setConsent(DENIED);
         },
         /**
-         * Clears the decision, which puts the banner back.
+         * Clears BOTH decisions, which puts the banner back with both questions — the footer's one
+         * «خياراتك في الخصوصية», where the reader changes either choice the way they first made it.
          *
          * <p>This is the withdrawal route, and it has to be as easy to reach as the banner was —
          * so it is a footer link on every page rather than a control buried in the privacy policy.
          * Clearing rather than setting DENIED on purpose: the reader asked to decide again, and
-         * silently recording a refusal on their behalf answers a question they reopened.
+         * silently recording a refusal on their behalf answers a question they reopened. Until they
+         * answer, both behave as refused — nothing loads from Google and no view is counted — and
+         * the view-counting id is deleted now rather than at the next request.
          */
         reset: () => {
             writeConsent(null);
             setConsent(null);
+            writeViewsConsent(null);
+            forgetViewerId();
+            setViewsConsent(null);
         },
 
         // The second, separate purpose: counting this visitor's views (lib/viewerId). Its own

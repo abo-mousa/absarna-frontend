@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { SwapLabel } from '../ui';
 import { t } from '@/i18n';
 import { useConsent } from '@/contexts/ConsentContext';
 
@@ -39,7 +38,7 @@ const footerLinkClass = 'text-text-muted hover:text-text-secondary hover:underli
  * it is a claim about when a human last read the text, which no clock knows.
  */
 function Footer() {
-    const { reset: resetConsent, viewsAllowed, grantViews, denyViews } = useConsent();
+    const { reset: resetConsent } = useConsent();
     const year = new Date().getFullYear();
 
     return (
@@ -62,26 +61,15 @@ function Footer() {
                     <Link to="/contact" className={footerLinkClass}>{t('legal.footer.contact')}</Link>
                     {/* WITHDRAWAL, and it is here because it has to be as easy as consenting was.
                         A decision that can only be undone by clearing site data is not a decision
-                        that was freely given. A button rather than a Link: it changes state on
-                        this page — the banner comes back and anything loaded from Google stops
-                        being loaded — and navigating somewhere to find a toggle is the friction
-                        the rule is about. */}
+                        that was freely given. ONE link for both choices — YouTube and counting
+                        views — because the banner asks them together: it brings the banner back
+                        with both questions and its «choose each» switches, so either can be
+                        changed alone, and until it is answered nothing loads from Google and no
+                        view is counted. A button rather than a Link: it changes state on this
+                        page, and navigating somewhere to find a toggle is the friction the rule is
+                        about. */}
                     <button type="button" onClick={resetConsent} className={footerLinkClass}>
                         {t('consent.footerLink')}
-                    </button>
-                    {/* Counting my views: withdraw or allow, as easy as the banner's yes was. Withdrawing
-                        deletes the id at once (denyViews). The words say what a press will do, and
-                        both share one cell so the link does not move. */}
-                    <button
-                        type="button"
-                        onClick={viewsAllowed ? denyViews : grantViews}
-                        className={footerLinkClass}
-                        aria-pressed={viewsAllowed}
-                    >
-                        <SwapLabel
-                            showing={viewsAllowed ? 'withdraw' : 'allow'}
-                            faces={{ withdraw: t('legal.footer.viewsWithdraw'), allow: t('legal.footer.viewsAllow') }}
-                        />
                     </button>
                 </nav>
 

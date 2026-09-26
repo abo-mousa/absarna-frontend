@@ -187,8 +187,10 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   `X-Absarna-Viewer` with the three detail GETs only (`countsAView`). The backend also caps one
   signed-out view per address per item per day, however the browser describes itself. A refusal or
   no answer is not counted at all, and there is no consent wall: content never waits on a yes. The
-  footer's switch withdraws (deleting the id) or allows, and the privacy policy's «كيف يُحسب عدّاد
-  المشاهدات» says all of this — keep the two in step.
+  footer has ONE link for both choices, «خياراتك في الخصوصية» (`ConsentContext.reset`): it clears
+  both answers, deletes the id at once and brings the banner back with both questions and its
+  «choose each» switches — the two stay separable there, never in the footer. The privacy policy's
+  «كيف يُحسب عدّاد المشاهدات» and YouTube section name that link — keep them in step.
 - **All `localStorage` goes through `lib/safeStorage.js`** — unguarded access *throws* when a browser
   blocks site data, and at module scope that renders a blank page.
 - **The session's tokens go through `lib/authStorage.js`, never either storage directly** — and
