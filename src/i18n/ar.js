@@ -764,6 +764,10 @@ export const ar = {
         stoppedAtPage: 'توقفت عند صفحة {page}',
         hideReader: 'إخفاء القراءة',
         continueReading: 'متابعة القراءة',
+        // The first section's heading, by the reason the backend chose the books (ContentSuggestions).
+        suggestedReading: 'لأنك تقرأ «{title}»',
+        suggestedInterests: 'مما يوافق اهتماماتك',
+        suggestedNew: 'جديد المكتبة',
         emptyOnChannel: 'لا توجد كتب بعد',
         loadFailed: 'تعذر تحميل الكتب',
         // The read-url answered, but with nothing the browser may open (no file, or a stored link
@@ -787,6 +791,8 @@ export const ar = {
     },
 
     articles: {
+        // The first section, on the reader's topics (backend ContentSuggestions).
+        suggested: 'قد يهمّك',
         title: 'المقالات',
         metaDescription: 'مقالات إسلامية على أَبْصَرْنا',
         searchPlaceholder: 'ابحث عن مقال...',
@@ -833,6 +839,9 @@ export const ar = {
     // The posts page (/posts): short notes channels write, from the channels a reader follows or
     // from all of them. It ends: «من قنواتك» has an end, said in the last line.
     postsPage: {
+        // The column's channel filter (layout/rail/PostsRail).
+        onlyFrom: 'منشورات {name} وحدها',
+        showAll: 'عرض كل المنشورات',
         title: 'المنشورات',
         followed: 'من قنواتك',
         all: 'كل القنوات',
@@ -850,6 +859,19 @@ export const ar = {
     // The first-visit guide (components/guide) and its full page, /guide. One step per place in
     // the tab bar, between what the site is for and the marks a video can carry.
     // Discover's channel column (layout/ChannelRail), wide screens only.
+    // The Books, Articles and Posts columns (layout/rail).
+    rail: {
+        booksLabel: 'الكتب',
+        articlesLabel: 'المقالات',
+        postsLabel: 'المنشورات',
+        shelves: 'الرفوف',
+        bookPublishers: 'قنوات تنشر الكتب',
+        topics: 'الموضوعات',
+        writers: 'قنوات تكتب المقالات',
+        fromFollowed: 'من تتابعهم',
+        posters: 'قنوات تنشر',
+    },
+
     channelRail: {
         label: 'القنوات',
         mine: 'قنواتي',
@@ -2472,7 +2494,7 @@ export const ar = {
                     heading: 'نشاطك على المنصة',
                     paragraphs: [
                         'إن كنت مسجّل الدخول حُفِظ ما يلي مرتبطاً بحسابك. وسجلّا المشاهدة والقراءة قائمتان لراحتك أنت لا سجلَّا تتبّع: كلٌّ منهما محدود بمئتي مدخل يُحذف أقدمها تلقائياً، وكلٌّ منهما يُمسَح كاملاً بضغطة واحدة.',
-                        'ومنهما تُبنى صفحة «اليوم»: الحلقةُ التالية من برنامج بدأته، وموضعُ توقّفك في كتاب، وما أنهيتَه هذا الأسبوع، واقتراحاتٌ تشبه آخرَ فيديو أنهيتَ مشاهدته يُذكَر لك اسمُه معها. ولا يُقترَح لك فيما بعدُ شيءٌ بسبب فيديو فتحتَه ولم تُتمّه، ولا يُرتَّب به شيءٌ في صفحة «اكتشف»، وإنما يُحذَف منها ما شاهدتَه.',
+                        'ومنهما تُبنى صفحة «اليوم»: الحلقةُ التالية من برنامج بدأته، وموضعُ توقّفك في كتاب، وما أنهيتَه هذا الأسبوع، واقتراحاتٌ تشبه آخرَ فيديو أنهيتَ مشاهدته يُذكَر لك اسمُه معها. ولا يُقترَح لك فيما بعدُ شيءٌ بسبب فيديو فتحتَه ولم تُتمّه. ومنهما كذلك، ومن القنوات التي تتابعها، تُعرَف الموضوعاتُ التي تهمّك، فتتقدّم في صفحتي الكتب والمقالات كتبٌ ومقالاتٌ عليها، وفي الأعمدة الجانبية قنواتٌ تنشر فيها، ويُذكَر لك السبب حيث يُذكر. أمّا فيديوهات «اكتشف» فلا يُرتَّب بهما شيءٌ منها، وإنما يُحذَف منها ما شاهدتَه.',
                     ],
                     bullets: [
                         'سجل المشاهدة — آخر مئتي فيديو شاهدتَها وموضع توقّفك في كلٍّ منها، ليعمل «أكمل المشاهدة».',

@@ -4,8 +4,9 @@ import { Link } from 'react-router-dom';
 import { Clock, FileText, Search } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
 import { ArticleCard } from '../components/content';
-import { QueryState, Input, PageHeader } from '../components/ui';
-import { useArticles, useArticleCategories } from '../hooks/useArticles';
+import { QueryState, Input, PageHeader, Cartouche } from '../components/ui';
+import { useArticles, useArticleCategories, useSuggestedArticles } from '../hooks/useArticles';
+import { ArticlesRail } from '../components/layout/rail';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { formatPublishDate, displayDate } from '@/lib/datetime';
 import { t } from '@/i18n';
@@ -38,12 +39,13 @@ function Articles() {
         isFetchingNextPage,
     } = useArticles(PAGE_SIZE, { sort: sortBy, category, search: searchTerm });
     const { data: categories = [] } = useArticleCategories();
+    const suggested = useSuggestedArticles(!filtering);
     const articles = useMemo(() => data?.pages.flatMap((page) => page.content) || [], [data]);
 
 
 
     return (
-        <PageShell tab>
+        <PageShell tab sidebar={<ArticlesRail categories={categories} category={category} onCategory={setCategory} />}>
             <PageHeader title={t('nav.tabs.articles')} />
 
             {/* Shown whenever there is anything to narrow OR a narrowing is active: a search
@@ -100,8 +102,18 @@ function Articles() {
                     headline in Markazi, its opening in Naskh, the faces the article page itself
                     uses — and the rest follow as text in three columns. A search or a category is
                     a hunt for one article, so it gets the plain grid with no lead. */}
+                {/* On this reader's topics (backend ContentSuggestions), above the page's own newest —
+                    and only when there is something to go on: otherwise it would just repeat them. */}
+                {!filtering && suggested.data?.basis === 'INTERESTS' && suggested.data.articles.length > 0 && (
+                    <section className="mb-10">
+                        <Cartouche title={t('articles.suggested')} />
+                        <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-x-7 gap-y-6">
+                            {suggested.data.articles.map((article) => <ArticleCard key={article.id} article={article} />)}
+                        </div>
+                    </section>
+                )}
                 {!filtering && articles[0] && <LeadArticle article={articles[0]} />}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-7 gap-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-x-7 gap-y-6">
                     {(filtering ? articles : articles.slice(1)).map((article) => (
                         <ArticleCard key={article.id} article={article} />
                     ))}

@@ -205,11 +205,12 @@ export const useChannelDirectory = (size = 24) => {
  * largest public catalogues, less their own and the ones they follow. User-scoped, because what
  * is left out depends on who is asking; a subscribe toggle invalidates it.
  */
-export const useSuggestedChannels = (size = 8) => {
+export const useSuggestedChannels = (size = 8, kind = 'VIDEOS') => {
     const scope = useUserScope();
     return useInfiniteQuery({
-        queryKey: ['channels-suggested', size, scope],
-        queryFn: async ({ pageParam = 0 }) => (await api.get('/channels/suggested', { params: { page: pageParam, size } })).data,
+        // `kind` is which tab is asking — the backend ranks the channels behind that content.
+        queryKey: ['channels-suggested', kind, size, scope],
+        queryFn: async ({ pageParam = 0 }) => (await api.get('/channels/suggested', { params: { page: pageParam, size, kind } })).data,
         initialPageParam: 0,
         getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.currentPage + 1 : undefined),
     });

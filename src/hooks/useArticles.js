@@ -1,5 +1,6 @@
 import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import api from '@/lib/api/client';
+import { useUserScope } from './useUserScope';
 
 // "Load more" pagination, same accumulating-pages shape as useInfiniteContents/
 // useChannelContents — GET /api/articles used to return the whole table in one unpaginated
@@ -42,5 +43,15 @@ export const useArticle = (id) => {
             return res.data;
         },
         enabled: !!id,
+    });
+};
+
+/** The Articles tab's first section: `{basis, articles}` on the reader's topics, or none. */
+export const useSuggestedArticles = (enabled = true) => {
+    const scope = useUserScope();
+    return useQuery({
+        queryKey: ['articles-suggested', scope],
+        queryFn: async () => (await api.get('/articles/suggested', { params: { limit: 4 } })).data,
+        enabled,
     });
 };

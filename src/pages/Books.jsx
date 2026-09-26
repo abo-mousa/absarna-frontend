@@ -4,9 +4,10 @@ import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
 import { QueryState, Input, Cartouche, PageHeader } from '../components/ui';
+import { BooksRail } from '../components/layout/rail';
 import { BookCard, BookCover } from '../components/content';
 import { useReadingProgressMap, useReadingNow } from '../hooks/useVideos';
-import { useBooks, useBookCategories, useBookShelves } from '../hooks/useBooks';
+import { useBooks, useBookCategories, useBookShelves, useSuggestedBooks } from '../hooks/useBooks';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { t } from '@/i18n';
 
@@ -50,11 +51,12 @@ function Books() {
     const shelfList = shelvesQuery.data || [];
     const shelves = !filtering && categories.length > 1;
     const { data: readingNow = [] } = useReadingNow(!!token && shelves);
+    const suggested = useSuggestedBooks(shelves);
 
 
 
     return (
-        <PageShell tab>
+        <PageShell tab sidebar={<BooksRail shelves={shelves ? shelfList : []} />}>
             <PageHeader title={t('nav.tabs.books')} />
 
             {/* Shown whenever there is anything to narrow OR a narrowing is active: a search
@@ -99,9 +101,23 @@ function Books() {
             {shelves && readingNow.length > 0 && (
                 <section className="mb-10">
                     <Cartouche title={t('books.readingNow')} />
-                    <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-x-5 gap-y-8">
+                    <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-2 2xl:grid-cols-3 gap-x-5 gap-y-8">
                         {readingNow.map((entry) => (
                             <BookCard key={entry.bookId} book={entry.book} progress={entry.progress} />
+                        ))}
+                    </div>
+                </section>
+            )}
+
+            {/* Chosen for this reader, and saying why: the book they are reading, their topics, or
+                the newest (backend ContentSuggestions) — in the page, where books already are, so
+                the column beside it never repeats them. */}
+            {shelves && suggested.data?.books?.length > 0 && (
+                <section className="mb-10">
+                    <Cartouche title={suggestedBooksTitle(suggested.data)} />
+                    <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-2 2xl:grid-cols-3 gap-x-5 gap-y-8">
+                        {suggested.data.books.map((book) => (
+                            <BookCard key={book.id} book={book} progress={readingProgress[book.id]} />
                         ))}
                     </div>
                 </section>
@@ -119,8 +135,8 @@ function Books() {
                     errorTitle={t('books.loadFailed')}
                 >
                     <div className="flex flex-col gap-10">
-                        {shelfList.map((shelf) => (
-                            <Shelf key={shelf.category} shelf={shelf} progress={readingProgress} onOpen={() => setCategory(shelf.category)} />
+                        {shelfList.map((shelf, index) => (
+                            <Shelf key={shelf.category} id={`shelf-${index}`} shelf={shelf} progress={readingProgress} onOpen={() => setCategory(shelf.category)} />
                         ))}
                     </div>
                 </QueryState>
@@ -138,7 +154,7 @@ function Books() {
                 emptyTitle={!filtering ? t('books.empty') : t('common.noResults')}
                 emptyDescription={!filtering ? t('books.emptyDescription') : t('common.tryAnotherSearch')}
             >
-                <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-x-5 gap-y-8">
+                <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-2 2xl:grid-cols-3 gap-x-5 gap-y-8">
                     {books.map((book) => (
                         <BookCard key={book.id} book={book} progress={readingProgress[book.id]} />
                     ))}
@@ -166,9 +182,10 @@ function Books() {
  * the way a shelf does. Its books come with the page's one shelves request. "See all" narrows the
  * page to the category, which is the grid view with its search and sort.
  */
-function Shelf({ shelf, progress, onOpen }) {
+function Shelf({ id, shelf, progress, onOpen }) {
     return (
-        <section>
+        // `id` is what the column's shelf index scrolls to; clear of the sticky navbar.
+        <section id={id} className="scroll-mt-[calc(var(--navbar-h)+1rem)]">
             <Cartouche
                 title={shelf.category}
                 action={<button type="button" onClick={onOpen} className="text-primary hover:underline">{t('books.shelfAll')}</button>}
@@ -183,6 +200,13 @@ function Shelf({ shelf, progress, onOpen }) {
             </div>
         </section>
     );
+}
+
+/** The suggestions' heading says why they were chosen. */
+function suggestedBooksTitle(data) {
+    if (data.basis === 'READING' && data.basedOn) return t('books.suggestedReading', { title: data.basedOn.title });
+    if (data.basis === 'INTERESTS') return t('books.suggestedInterests');
+    return t('books.suggestedNew');
 }
 
 export default Books;

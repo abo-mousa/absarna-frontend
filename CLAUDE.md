@@ -206,14 +206,18 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   and `PageShell` gives every page bottom room for that bar plus the safe-area inset. History and
   saved items are in the account menu; the channel lists are the Channels page. A column of links
   on every page and a hamburger drawer were the plainest YouTube marks the app had — don't bring
-  either back. **The one exception is Discover's channel column** (`layout/ChannelRail`, product
-  owner's call, 2026-09-25): the old sidebar's shape — 240px, against the window's reading-start
-  edge, sticky under the navbar, passed to `PageShell` as `sidebar` — holding the reader's own
-  channels, their subscriptions (`GET /api/user/subscriptions/page`, by name) and
-  `GET /api/channels/suggested` (the backend's ranking, the same one Today's welcome uses), both a
-  page at a time with «تحميل المزيد» — never every follow of a reader who has hundreds. Wide screens only; Today stays without it, and there is still no
-  drawer. Beside it Discover's grid is three wide below `2xl`, and `useGridColumns` counts the
-  same, or `fitFeedToRows` leaves broken rows.
+  either back. **The browsing tabs have a side column; Today and Channels do not** (product owner, 2026-09-25):
+  Discover, Books, Articles and Posts, wide screens only, one frame for all (`layout/rail`: the
+  manuscript frame, sticky under the navbar, passed to `PageShell` as `sidebar`). **A column holds
+  what its page does NOT** — the channels behind that kind of content (`GET /api/channels/suggested?kind=`,
+  the reader's interests first, then size), a way around the page (Books' shelf index, Articles'
+  topics), and on Posts a filter by followed channel (`GET /api/posts?channel=`) — never more of the
+  page's own items. **Personal suggestions go IN the page**, as its first section, saying why:
+  Books' «لأنك تقرأ «…»» / «مما يوافق اهتماماتك» / «جديد المكتبة» (`/books/suggested`), Articles'
+  «قد يهمّك» (`/articles/suggested`, shown only when there is something to go on). All of it comes
+  from the backend's ReaderInterests — videos finished, books being read, channels followed; never a
+  click. A column with nothing in it renders nothing. There is still no drawer; beside a column,
+  grids drop one card per row below `2xl`, and Discover's `useGridColumns` counts the same.
 - **The navbar is full-bleed on purpose — do not put a `max-w`/`mx-auto` back on it.** It had
   `max-w-[1400px] mx-auto`, which is right for a column of prose and wrong for a bar whose content
   is two anchored ends: past 1400px the cap stopped moving the logo and the account controls

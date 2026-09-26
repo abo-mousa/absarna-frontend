@@ -556,6 +556,9 @@ export const en = {
         stoppedAtPage: 'You stopped at page {page}',
         hideReader: 'Hide the reader',
         continueReading: 'Continue reading',
+        suggestedReading: 'Because you are reading “{title}”',
+        suggestedInterests: 'On topics you follow',
+        suggestedNew: 'New in the library',
         emptyOnChannel: 'No books yet',
         loadFailed: 'Could not load the books',
         noFile: 'There is no file available for this book',
@@ -577,6 +580,7 @@ export const en = {
     },
 
     articles: {
+        suggested: 'You may find these useful',
         title: 'Articles',
         metaDescription: 'Islamic articles on أَبْصَرْنا',
         searchPlaceholder: 'Search for an article...',
@@ -617,6 +621,8 @@ export const en = {
     },
 
     postsPage: {
+        onlyFrom: 'Only posts from {name}',
+        showAll: 'Show all posts',
         title: 'Posts',
         followed: 'From your channels',
         all: 'All channels',
@@ -627,6 +633,18 @@ export const en = {
         emptyHint: 'This is where channels say something short: an announcement, a comment on the news, a heads-up about a new episode. The channels you follow reach you first.',
         loadMore: 'Show more',
         loadFailed: 'Posts could not be loaded',
+    },
+
+    rail: {
+        booksLabel: 'Books',
+        articlesLabel: 'Articles',
+        postsLabel: 'Posts',
+        shelves: 'Shelves',
+        bookPublishers: 'Channels that publish books',
+        topics: 'Topics',
+        writers: 'Channels that write articles',
+        fromFollowed: 'From channels you follow',
+        posters: 'Channels that post',
     },
 
     channelRail: {
@@ -1955,7 +1973,7 @@ export const en = {
                     heading: 'Your activity on the platform',
                     paragraphs: [
                         'If you are signed in, the following is stored against your account. Your watch and reading histories are lists for your own convenience, not tracking logs: each is capped at two hundred entries with the oldest dropped automatically, and each is cleared in full with one press.',
-                        'They are also what the Today page is built from: the next episode of a programme you started, your place in a book, what you finished this week, and suggestions like the last video you finished, which is named beside them. A video you opened and did not finish never leads to a suggestion later, and none of it orders the Discover page, which only leaves out what you have already watched.',
+                        'They are also what the Today page is built from: the next episode of a programme you started, your place in a book, what you finished this week, and suggestions like the last video you finished, which is named beside them. A video you opened and did not finish never leads to a suggestion later. From them too, and from the channels you follow, come the topics you care about: books and articles on them come first on the Books and Articles pages, and channels publishing on them come first in the side columns, with the reason given where it is shown. The videos on Discover are not ordered by them at all; Discover only leaves out what you have already watched.',
                     ],
                     bullets: [
                         'Watch history — the last two hundred videos you watched and where you stopped in each, so that "continue watching" works.',
@@ -2319,7 +2337,7 @@ export const TRANSLATED = [
     'channel', 'consent', 'createChannel', 'comments', 'likes', 'bookmarks', 'history',
     'subscriptions', 'profile', 'search', 'biography', 'share', 'upload', 'notFound',
     'channelManage', 'youtube', 'youtubeOAuth', 'admin', 'adminReports', 'legal',
-    'pager', 'report', 'ownerImage', 'formats', 'channelRail', 'guide', 'today', 'postsPage', 'channelsPage', 'voice',
+    'pager', 'report', 'ownerImage', 'formats', 'rail', 'channelRail', 'guide', 'today', 'postsPage', 'channelsPage', 'voice',
 ];
 
 export default en;

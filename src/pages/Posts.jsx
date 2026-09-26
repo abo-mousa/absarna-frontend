@@ -5,6 +5,7 @@ import PageShell from '../components/layout/PageShell';
 import { QueryState, KhatamStar, PageHeader, ViewTabs } from '../components/ui';
 import { PostCard } from '../components/content';
 import { usePostsFeed } from '../hooks/usePosts';
+import { PostsRail } from '../components/layout/rail';
 import { t } from '@/i18n';
 
 /**
@@ -19,11 +20,13 @@ import { t } from '@/i18n';
 function Posts() {
     const { token } = useAuth();
     const [followed, setFollowed] = useState(!!token);
-    const posts = usePostsFeed(followed && !!token);
+    // The column's filter: one channel's posts ({id, name}), or null for the stream.
+    const [channel, setChannel] = useState(null);
+    const posts = usePostsFeed(followed && !!token, 20, channel?.id);
     const items = posts.data?.pages.flatMap((page) => page.content) || [];
 
     return (
-        <PageShell tab>
+        <PageShell tab sidebar={<PostsRail selected={channel} onSelect={setChannel} />}>
             <div>
                 <PageHeader
                     title={t('nav.tabs.posts')}
@@ -39,6 +42,17 @@ function Posts() {
                     )}
                 />
 
+                {/* One channel chosen in the column: said here, with the way back, since the column
+                    is not on a phone and a filtered stream must never pass for the whole one. */}
+                {channel && (
+                    <div className="flex flex-wrap items-center gap-3 mb-5">
+                        <span dir="auto" className="text-sm font-semibold text-gold-ink">{t('postsPage.onlyFrom', { name: channel.name })}</span>
+                        <button type="button" onClick={() => setChannel(null)} className="text-xs font-semibold text-text-muted hover:text-text-primary underline">
+                            {t('postsPage.showAll')}
+                        </button>
+                    </div>
+                )}
+
                 <QueryState
                     isLoading={posts.isLoading}
                     isError={posts.isError}
@@ -50,7 +64,7 @@ function Posts() {
                     emptyDescription={t('postsPage.emptyHint')}
                     emptyTitle={followed && token ? t('postsPage.emptyFollowed') : t('postsPage.emptyAll')}
                 >
-                    <div className="grid lg:grid-cols-2 gap-4 items-start">
+                    <div className="grid 2xl:grid-cols-2 gap-4 items-start">
                         {items.map((post) => <PostCard key={post.id} post={post} />)}
                     </div>
 

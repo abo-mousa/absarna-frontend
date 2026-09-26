@@ -106,3 +106,16 @@ export const useSaveReadProgress = (id) => {
 // ['admin-books'] or ['admin-stats']. Nothing imported them (the admin pages have always used
 // useAdminData's), so they were dead code that would have refreshed the wrong lists the first
 // time anyone reached for the nearer-looking name. Removed 2026-09-08; use useAdminData's.
+
+/**
+ * The Books tab's first section: `{basis, basedOn, books}` — READING names the book being read,
+ * INTERESTS the reader's topics, NEW the newest (backend ContentSuggestions). User-scoped.
+ */
+export const useSuggestedBooks = (enabled = true) => {
+    const scope = useUserScope();
+    return useQuery({
+        queryKey: ['books-suggested', scope],
+        queryFn: async () => (await api.get('/books/suggested', { params: { limit: 6 } })).data,
+        enabled,
+    });
+};
