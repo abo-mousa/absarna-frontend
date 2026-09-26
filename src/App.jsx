@@ -206,7 +206,9 @@ function AppRoutes() {
         {/* The page's scrollbar, drawn and shown only while scrolling — see ui/DrawnScrollbar. On
             the right in every language and browser; the native one is hidden in index.css. Once,
             here, so every route has it whatever frame the page uses. */}
-        <DrawnScrollbar target="window" className="fixed inset-y-0 right-0 w-[14px] z-[1500]" />
+        {/* Purely visual on a touch screen (no hover, scrolled by swiping): a strip along the edge
+            that took taps would steal them from the tab bar and anything else beside the edge. */}
+        <DrawnScrollbar target="window" className="fixed inset-y-0 right-0 w-[14px] z-[1500] [@media(hover:none)]:pointer-events-none" />
         <Suspense fallback={<RouteFallback />}>
             <Routes>
                 {/* Public */}

@@ -119,6 +119,10 @@ function DrawnScrollbar({ target, className = '', trackAlways = false }) {
         drag.current = null;
         setHeld(false);
         event.currentTarget.releasePointerCapture?.(event.pointerId);
+        // Fade after a moment, as after a scroll — not the instant the hand lets go.
+        setActive(true);
+        clearTimeout(hideTimer.current);
+        hideTimer.current = setTimeout(() => setActive(false), LINGER_MS);
     };
 
     // A click on the track pages towards it, as a browser's own track does.
@@ -147,7 +151,9 @@ function DrawnScrollbar({ target, className = '', trackAlways = false }) {
                 clearTimeout(hideTimer.current);
                 hideTimer.current = setTimeout(() => setActive(false), LINGER_MS);
             }}
-            className={`drawn-track ${className} ${trackAlways || shown ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}
+            // Hidden, it is click-through: an invisible strip must not take a click meant for
+            // what lies under it (the page's sits along the window's edge, over the phone's tab bar).
+            className={`drawn-track ${className} ${trackAlways || shown ? 'opacity-100' : 'opacity-0 pointer-events-none'} transition-opacity duration-300`}
         >
             {thumb.size > 0 && (
                 <div
