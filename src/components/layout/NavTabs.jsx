@@ -15,7 +15,7 @@ function NavTabs() {
     const { pathname } = useLocation();
     const current = activeTab(pathname);
     return (
-        <div className="hidden lg:flex items-center gap-1 px-8 border-t border-border-light" aria-label={t('nav.tabsLabel')}>
+        <nav className="hidden lg:flex items-center gap-1 px-8 border-t border-border-light" aria-label={t('nav.tabsLabel')}>
             {TABS.map((tab) => {
                 const active = current === tab.key;
                 return (
@@ -32,7 +32,7 @@ function NavTabs() {
                     </Link>
                 );
             })}
-        </div>
+        </nav>
     );
 }
 

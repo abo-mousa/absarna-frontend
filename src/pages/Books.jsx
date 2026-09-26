@@ -1,8 +1,10 @@
-import { BookOpen, Search } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { BookOpen, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
+import ReadSwitch from '../components/layout/ReadSwitch';
 import { QueryState, Input, Cartouche, PageHeader } from '../components/ui';
 import { BooksRail } from '../components/layout/rail';
 import { BookCard, BookCover } from '../components/content';
@@ -29,6 +31,18 @@ function Books() {
     // Debounced so typing is one request per pause, not one per keystroke.
     const searchTerm = useDebouncedValue(search.trim(), 300);
     const filtering = !!(searchTerm || category);
+    const categoriesQuery = useBookCategories();
+    const categories = useMemo(() => categoriesQuery.data || [], [categoriesQuery.data]);
+    const categoriesSettled = categoriesQuery.isSuccess || categoriesQuery.isError;
+    // SHELVES when nothing is narrowed and there is more than one kind of book: what the reader
+    // has open, then one shelf of covers per category — a library walked along, where the same
+    // books in one sorted grid read as a list. A search, a chosen category or a single-category
+    // catalogue keeps the grid below, which is how a particular book is FOUND. Which categories,
+    // which books and what counts as "reading now" are all the backend's.
+    const shelves = !filtering && categories.length > 1;
+    // The paged list is requested only when it is what will be drawn — it used to load behind
+    // the shelves on every visit, a page and a count nobody saw.
+    const listNeeded = filtering || (categoriesSettled && !shelves);
     const {
         data,
         isLoading,
@@ -39,17 +53,13 @@ function Books() {
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
-    } = useBooks(PAGE_SIZE, { sort: sortBy, category, search: searchTerm });
-    const { data: categories = [] } = useBookCategories();
+    } = useBooks(PAGE_SIZE, { sort: sortBy, category, search: searchTerm }, listNeeded);
     const books = useMemo(() => data?.pages.flatMap((page) => page.content) || [], [data]);
-    // SHELVES when nothing is narrowed and there is more than one kind of book: what the reader
-    // has open, then one shelf of covers per category — a library walked along, where the same
-    // books in one sorted grid read as a list. A search, a chosen category or a single-category
-    // catalogue keeps the grid below, which is how a particular book is FOUND. Which categories,
-    // which books and what counts as "reading now" are all the backend's.
-    const shelvesQuery = useBookShelves(sortBy, !filtering && categories.length > 1);
+    const shelvesQuery = useBookShelves(sortBy, shelves);
     const shelfList = shelvesQuery.data || [];
-    const shelves = !filtering && categories.length > 1;
+    // Until the categories arrive neither view is decided; the list stands in as loading rather
+    // than as an empty library.
+    const listLoading = isLoading || !listNeeded;
     const { data: readingNow = [] } = useReadingNow(!!token && shelves);
     const suggested = useSuggestedBooks(shelves);
 
@@ -57,14 +67,14 @@ function Books() {
 
     return (
         <PageShell tab sidebar={<BooksRail shelves={shelves ? shelfList : []} />}>
-            <PageHeader title={t('nav.tabs.books')} />
+            <PageHeader title={t('nav.tabs.books')} action={<ReadSwitch />} tabs belowLg />
 
             {/* Shown whenever there is anything to narrow OR a narrowing is active: a search
                 that matches nothing must still leave the box on screen to change it. */}
             {/* isPlaceholderData too: while a new sort or a cleared search loads, the rows on
                 screen are the previous query's, possibly an empty "no match" — and unmounting the
                 bar then took the search box away from under the reader's cursor. */}
-            {!isLoading && (books.length > 0 || filtering || isPlaceholderData) && (
+            {(shelves || (!listLoading && (books.length > 0 || filtering || isPlaceholderData))) && (
                 <div className="flex gap-3 flex-wrap mb-6">
                     <div className="flex-1 min-w-[200px]">
                         <Input
@@ -142,7 +152,7 @@ function Books() {
                 </QueryState>
             ) : (
             <QueryState
-                isLoading={isLoading}
+                isLoading={listLoading}
                 isError={isError}
                 error={error}
                 onRetry={refetch}
@@ -183,18 +193,65 @@ function Books() {
  * page to the category, which is the grid view with its search and sort.
  */
 function Shelf({ id, shelf, progress, onOpen }) {
+    const rowRef = useRef(null);
+    // Arrows only where a mouse needs them — a row that overflows, from `sm` up. A touch screen
+    // swipes; a mouse had no way along a shelf but a horizontal wheel most people do not have.
+    const [overflows, setOverflows] = useState(false);
+    useEffect(() => {
+        const row = rowRef.current;
+        if (!row || typeof ResizeObserver === 'undefined') return undefined;
+        const measure = () => setOverflows(row.scrollWidth > row.clientWidth + 1);
+        measure();
+        const observer = new ResizeObserver(measure);
+        observer.observe(row);
+        return () => observer.disconnect();
+    }, [shelf.books.length]);
+
+    // `onward` is toward the reading end: leftward in Arabic, rightward in English.
+    const scrollShelf = (onward) => {
+        const row = rowRef.current;
+        if (!row) return;
+        const rtl = getComputedStyle(row).direction === 'rtl';
+        const step = row.clientWidth * 0.8 * (onward ? 1 : -1) * (rtl ? -1 : 1);
+        row.scrollBy({ left: step, behavior: 'smooth' });
+    };
+    const arrow = 'hidden sm:flex items-center justify-center w-8 h-8 rounded-full border border-border text-text-secondary hover:text-primary hover:border-primary';
+
     return (
         // `id` is what the column's shelf index scrolls to; clear of the sticky navbar.
         <section id={id} className="scroll-mt-[calc(var(--navbar-h)+1rem)]">
             <Cartouche
                 title={shelf.category}
-                action={<button type="button" onClick={onOpen} className="text-primary hover:underline">{t('books.shelfAll')}</button>}
+                action={(
+                    <div className="flex items-center gap-3">
+                        {overflows && (
+                            <>
+                                {/* Chevrons drawn for left-to-right and mirrored in Arabic, so each
+                                    points the way its button moves the shelf. */}
+                                <button type="button" onClick={() => scrollShelf(false)} aria-label={t('books.shelfBack')} className={arrow}>
+                                    <ChevronLeft size={16} className="rtl:rotate-180" />
+                                </button>
+                                <button type="button" onClick={() => scrollShelf(true)} aria-label={t('books.shelfOnward')} className={arrow}>
+                                    <ChevronRight size={16} className="rtl:rotate-180" />
+                                </button>
+                            </>
+                        )}
+                        <button type="button" onClick={onOpen} className="text-primary hover:underline">{t('books.shelfAll')}</button>
+                    </div>
+                )}
             />
-            <div className="flex gap-5 overflow-x-auto pb-3 border-b-4 border-border-light">
+            <div ref={rowRef} className="flex gap-5 overflow-x-auto pb-3 border-b-4 border-border-light">
                 {shelf.books.map((book) => (
                     <div key={book.id} className="w-28 flex-shrink-0">
                         <BookCover book={book} progress={progress[book.id]} className="w-28" />
-                        <p dir="auto" className="mt-2 text-xs font-semibold leading-snug line-clamp-2">{book.title}</p>
+                        <Link
+                            to={`/books/${book.id}`}
+                            dir="auto"
+                            tabIndex={-1}
+                            className="block mt-2 text-xs font-semibold leading-snug line-clamp-2 text-text-primary hover:text-primary hover:no-underline"
+                        >
+                            {book.title}
+                        </Link>
                     </div>
                 ))}
             </div>

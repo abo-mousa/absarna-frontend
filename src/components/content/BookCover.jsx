@@ -44,7 +44,7 @@ function BookCover({ book, progress, className = 'w-24', onOpen = null }) {
                 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary`}
         >
             {previewUrl ? (
-                <img src={previewUrl} alt="" onError={() => setPreviewFailed(true)} className="w-full h-full object-cover" />
+                <img src={previewUrl} alt="" loading="lazy" decoding="async" onError={() => setPreviewFailed(true)} className="w-full h-full object-cover" />
             ) : (
                 <div aria-hidden="true" className="relative w-full h-full flex items-center justify-center p-3 bg-primary-dark text-white text-center">
                     <span className="absolute inset-1.5 border border-gold/50" />

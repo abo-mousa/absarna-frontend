@@ -3,6 +3,7 @@ import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { Link } from 'react-router-dom';
 import { Clock, FileText, Search } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
+import ReadSwitch from '../components/layout/ReadSwitch';
 import { ArticleCard } from '../components/content';
 import { QueryState, Input, PageHeader, Cartouche } from '../components/ui';
 import { useArticles, useArticleCategories, useSuggestedArticles } from '../hooks/useArticles';
@@ -46,7 +47,7 @@ function Articles() {
 
     return (
         <PageShell tab sidebar={<ArticlesRail categories={categories} category={category} onCategory={setCategory} />}>
-            <PageHeader title={t('nav.tabs.articles')} />
+            <PageHeader title={t('nav.tabs.articles')} action={<ReadSwitch />} tabs belowLg />
 
             {/* Shown whenever there is anything to narrow OR a narrowing is active: a search
                 that matches nothing must still leave the box on screen to change it. */}

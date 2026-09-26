@@ -35,6 +35,7 @@ function Navbar() {
     const { theme, toggleTheme } = useTheme();
 
     const location = useLocation();
+    const onToday = location.pathname === '/';
     const queryClient = useQueryClient();
     const navRef = useRef(null);
     const searchButtonRef = useRef(null);
@@ -192,8 +193,10 @@ function Navbar() {
                     is the one item here nobody needs in order to use the page. Read once per
                     mount rather than per render (the bar re-renders on every fetch through
                     `busy`); a tab left open across midnight shows yesterday's until the next
-                    load, which is the same staleness the day-stable feed already has. */}
-                <DatePair size="bar" className="hidden xl:flex flex-shrink-0" />
+                    load, which is the same staleness the day-stable feed already has.
+                    Not on Today, whose own header is this dateline, larger — the same date twice
+                    on one screen. */}
+                {!onToday && <DatePair size="bar" className="hidden xl:flex flex-shrink-0" />}
 
                 <div className="flex items-center gap-1 flex-shrink-0">
                     <button

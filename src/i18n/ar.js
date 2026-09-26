@@ -758,6 +758,8 @@ export const ar = {
         // The shelves view: what a reader has open, then one shelf of covers per category.
         readingNow: 'تقرأ الآن',
         shelfAll: 'عرض الكل',
+        shelfBack: 'مرّر الرفّ إلى الخلف',
+        shelfOnward: 'مرّر الرفّ إلى الأمام',
         download: 'تحميل',
         notFound: 'الكتاب غير موجود',
         backToLibrary: 'العودة للمكتبة',

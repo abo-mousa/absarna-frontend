@@ -137,7 +137,9 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   view switches of Discover and Posts, which are `ui/ViewTabs` (words with the navbar's gold
   underline, on the header's hairline — never filled buttons). Discover's format/topic toggles are
   hairline pills that take gold when on, one sideways-scrolling row on a phone, and its section
-  headings show only when there is more than one section to tell apart. Narrower content goes
+  headings show only when there is more than one section to tell apart. Discover's view and both
+  toggles live in the address (`?view=all&format=…&topic=…`, replaced rather than pushed), so Back
+  from a video returns to the same narrowed view instead of the feed. Narrower content goes
   inside the column, never in place of it.
 - **Tailwind only.** Brand colours are theme tokens resolving through CSS custom properties
   (`rgb(var(--color-x) / <alpha-value>)`), with light values on `:root` and dark under `.dark` in
@@ -202,8 +204,9 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   bar plus its border — and it cannot be a constant anyway: the logo and wordmark change size at
   `sm`, and the Arabic webfont arrives after first paint (`display=swap`) and re-lays the line box.
 - **There is no sidebar, on purpose.** The places are six tabs (`lib/tabs`): a strip in the navbar
-  from `lg`, a five-tab bar fixed to the bottom below it (Books and Articles fold into «اقرأ»),
-  and `PageShell` gives every page bottom room for that bar plus the safe-area inset. History and
+  from `lg`, a five-tab bar fixed to the bottom below it (Books and Articles fold into «اقرأ»,
+  which opens Books — so below `lg` both pages carry `layout/ReadSwitch` in a `PageHeader belowLg`,
+  or the Articles list has no way in at all), and `PageShell` gives every page bottom room for that bar plus the safe-area inset. History and
   saved items are in the account menu; the channel lists are the Channels page. A column of links
   on every page and a hamburger drawer were the plainest YouTube marks the app had — don't bring
   either back. **The browsing tabs have a side column; Today and Channels do not** (product owner, 2026-09-25):

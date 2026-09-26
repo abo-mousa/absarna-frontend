@@ -550,6 +550,8 @@ export const en = {
         read: 'Read',
         readingNow: 'Reading now',
         shelfAll: 'See all',
+        shelfBack: 'Scroll the shelf back',
+        shelfOnward: 'Scroll the shelf on',
         download: 'Download',
         notFound: 'That book does not exist',
         backToLibrary: 'Back to the library',

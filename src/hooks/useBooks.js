@@ -10,8 +10,11 @@ import { useUserScope } from './useUserScope';
 // Ordering, the category filter and search all happen on the server, over the whole catalogue: the
 // page used to do them to the rows it had loaded, which could only ever find what was on page one.
 // `sort` is a backend name (NEWEST / TITLE, `ListingSort`); this hook passes it and nothing more.
-export const useBooks = (size = 12, { sort = 'NEWEST', category = '', search = '' } = {}) => {
+// `enabled`: the Books page shows shelves instead of this list when nothing narrows it, and asks
+// for the list only when it will draw it.
+export const useBooks = (size = 12, { sort = 'NEWEST', category = '', search = '' } = {}, enabled = true) => {
     return useInfiniteQuery({
+        enabled,
         queryKey: ['books', size, sort, category, search],
         queryFn: async ({ pageParam = 0 }) => {
             const params = new URLSearchParams({ page: pageParam, size, sort });

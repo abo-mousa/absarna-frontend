@@ -10,10 +10,23 @@
  * filter, Today's dateline — on a line with a hairline under it, at the reading start. `tabs`
  * drops the bottom padding so a switch drawn as tabs puts its gold underline ON that hairline,
  * the way the navbar's tabs sit on theirs. A page with no control starts with its content.
+ *
+ * <p>`belowLg` is for a control only the narrow layout needs — Books and Articles, which share
+ * the phone bar's one «اقرأ» item and so need a switch between them that the wide navbar strip
+ * already is. The line and its hairline disappear from `lg`; the `<h1>` never does.
  */
-function PageHeader({ title, action = null, tabs = false }) {
+function PageHeader({ title, action = null, tabs = false, belowLg = false }) {
+    const line = `flex flex-wrap items-end gap-4 mb-6 border-b border-border ${tabs ? '' : 'pb-3'}`;
+    if (action && belowLg) {
+        return (
+            <>
+                <h1 className="sr-only">{title}</h1>
+                <header className={`${line} lg:hidden`}>{action}</header>
+            </>
+        );
+    }
     return (
-        <header className={action ? `flex flex-wrap items-end gap-4 mb-6 border-b border-border ${tabs ? '' : 'pb-3'}` : ''}>
+        <header className={action ? line : ''}>
             <h1 className="sr-only">{title}</h1>
             {action}
         </header>

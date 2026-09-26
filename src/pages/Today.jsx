@@ -129,7 +129,7 @@ function Today() {
                     {data?.news?.length > 0 && (
                         <section>
                             <Cartouche title={t('today.newsTitle')} />
-                            <div className={GRID}>{data.news.slice(0, 4).map((video) => <VideoCard {...cardProps(video)} />)}</div>
+                            <div className={GRID}>{data.news.map((video) => <VideoCard {...cardProps(video)} />)}</div>
                         </section>
                     )}
 
@@ -191,24 +191,34 @@ function Today() {
     );
 }
 
+// Static class names for Tailwind: the strip has as many columns as it has cells, from `md`.
+const WEEK_COLUMNS = { 1: 'md:grid-cols-1', 2: 'md:grid-cols-2', 3: 'md:grid-cols-3', 4: 'md:grid-cols-4', 5: 'md:grid-cols-5', 6: 'md:grid-cols-6' };
+
 /**
  * The week, counted. The backend sends no week at all when there is nothing to count, so a new
- * reader is not shown a row of zeros; this only draws what it is given.
+ * reader is not shown a row of zeros; this only draws what it is given — and only the counts that
+ * are not zero, for the same reason: «٠ برامج أتممتها» beside five finished episodes reads as a
+ * verdict. The grid has exactly as many columns as cells, and an odd last cell spans both phone
+ * columns, because the hairlines are the grid's background showing through its gaps and an empty
+ * slot showed as a grey block.
  */
 function WeekStrip({ week }) {
     const counts = [
         { value: week.episodesFinished, label: t('today.episodesFinished') },
         { value: week.pagesRead, label: t('today.pagesRead') },
+        { value: week.booksRead, label: t('today.booksRead') },
         { value: week.programmesCompleted, label: t('today.programmesCompleted') },
-    ];
+    ].filter((count) => Number(count.value) > 0);
+    const cells = 1 + counts.length + (week.closest ? 1 : 0);
+    const spanLast = (index) => (index === cells - 1 && cells % 2 === 1 ? 'col-span-2 md:col-span-1' : '');
     return (
-        <section className="grid grid-cols-2 md:grid-cols-5 gap-px bg-border-light border border-border-light rounded-lg overflow-hidden">
-            <div className="bg-surface p-4">
+        <section className={`grid grid-cols-2 ${WEEK_COLUMNS[cells]} gap-px bg-border-light border border-border-light rounded-lg overflow-hidden`}>
+            <div className={`bg-surface p-4 ${spanLast(0)}`}>
                 <h2 className="font-serif text-[1.6rem] font-semibold leading-none">{t('today.weekTitle')}</h2>
                 <p className="text-xs text-text-muted mt-1">{t('today.weekSpan')}</p>
             </div>
-            {counts.map((count) => (
-                <div key={count.label} className="bg-surface p-4">
+            {counts.map((count, index) => (
+                <div key={count.label} className={`bg-surface p-4 ${spanLast(index + 1)}`}>
                     <strong className="block font-serif text-[2rem] leading-none text-primary font-semibold">
                         {formatCount(count.value)}
                     </strong>
@@ -218,7 +228,7 @@ function WeekStrip({ week }) {
             {week.closest && (
                 <Link
                     to={`/series/${week.closest.seriesId}`}
-                    className="bg-gold-light p-4 text-text-primary hover:no-underline col-span-2 md:col-span-1"
+                    className={`bg-gold-light p-4 text-text-primary hover:no-underline ${spanLast(cells - 1)}`}
                 >
                     <strong className="block font-serif text-[2rem] leading-none text-gold-ink font-semibold">
                         {formatCount(week.closest.remaining)}

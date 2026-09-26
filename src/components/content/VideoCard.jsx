@@ -138,6 +138,11 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                     <img
                         src={thumbnail}
                         alt={video.title}
+                        // Lazy: a grid, the Today page and the shelves draw far more pictures than
+                        // a phone's first screen shows; the box's aspect ratio already holds the
+                        // space, so deferring them moves nothing.
+                        loading="lazy"
+                        decoding="async"
                         // Blurred past recognition under a graphic-content warning: the cover below
                         // says what the picture holds, and the video page asks before it plays.
                         className={`w-full h-full object-cover ${video.graphicContent ? 'blur-xl scale-110' : ''}`}

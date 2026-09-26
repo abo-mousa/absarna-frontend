@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -37,18 +37,22 @@ const chipClass = (active) =>
  *
  * <p>This was the home page. It moves one tab over because the home page is becoming the Today
  * dashboard, which ends; this one keeps loading, and that is right here, because a reader who
- * opens Discover has chosen to browse. Until Today lands, `/` renders this page too.
+ * opens Discover has chosen to browse.
+ *
+ * <p><b>The view and both narrowings live in the address</b> (`?view=all&format=…&topic=…`), not
+ * in component state. Opening a video unmounts this page, so state reset it to the feed on the
+ * way back, and a reader three chips deep into «وثائقيات · تاريخ» returned to the start. The
+ * address also makes a narrowed view something that can be shared. Replaced, not pushed: a chip
+ * is a change of view, not a page, and Back should leave Discover rather than un-press chips.
  */
 function Discover() {
     const navigate = useNavigate();
     const { token } = useAuth();
     const { showToast } = useToast();
-    const [selectedCategory, setSelectedCategory] = useState('');
-    // What kind of video (a format chip), independent of the topic (a category chip): the two
-    // combine, «وثائقيات» and «تاريخ» at once.
-    const [selectedFormat, setSelectedFormat] = useState('');
+    const [searchParams, setSearchParams] = useSearchParams();
     /**
-     * Which of the two home views is showing.
+     * Which of the two views is showing: `feed` (the default, no parameter) or `browse`
+     * (`?view=all`).
      *
      * <p>Previously implied by `selectedCategory === ''`, which made the curated feed and
      * "browse everything" the same state — so the paginated list was only reachable by picking a
@@ -61,7 +65,23 @@ function Discover() {
      * capped, non-paginated snapshot on purpose (see FeedService); browsing is the honest way to
      * reach a catalogue, and neither has to pretend to be the other.
      */
-    const [view, setView] = useState('feed');
+    const view = searchParams.get('view') === 'all' ? 'browse' : 'feed';
+    // What kind of video (a format chip), independent of the topic (a category chip): the two
+    // combine, «وثائقيات» and «تاريخ» at once. Both belong to browse; the feed ignores them.
+    const selectedCategory = view === 'browse' ? (searchParams.get('topic') || '') : '';
+    const selectedFormat = view === 'browse' ? (searchParams.get('format') || '') : '';
+
+    /** Writes the view into the address; `null` for the feed, else browse narrowed as given. */
+    const showView = (narrowing) => {
+        const next = new URLSearchParams(searchParams);
+        ['view', 'topic', 'format'].forEach((key) => next.delete(key));
+        if (narrowing) {
+            next.set('view', 'all');
+            if (narrowing.topic) next.set('topic', narrowing.topic);
+            if (narrowing.format) next.set('format', narrowing.format);
+        }
+        setSearchParams(next, { replace: true });
+    };
     const [deletingVideo, setDeletingVideo] = useState(null);
     const { data: myChannels = [] } = useMyChannels(!!token);
 
@@ -77,17 +97,14 @@ function Discover() {
     const { data: categories = [] } = useCategories();
     const { data: formats = [] } = useFormats();
 
-    const showBrowse = (category) => {
-        setView('browse');
-        setSelectedCategory(category);
-    };
+    const showBrowse = (category) => showView({ topic: category, format: selectedFormat });
 
     // A second press on the active format chip lets go of it, and the topic stays: the two are
     // separate questions, so dropping one does not reset the other.
-    const toggleFormat = (format) => {
-        setView('browse');
-        setSelectedFormat((current) => (current === format ? '' : format));
-    };
+    const toggleFormat = (format) => showView({
+        topic: selectedCategory,
+        format: selectedFormat === format ? '' : format,
+    });
 
     const feedQuery = useFeed(isDefaultView);
 
@@ -228,10 +245,10 @@ function Discover() {
                         label={t('nav.tabs.discover')}
                         items={[
                             { key: 'feed', label: t('home.forYou'), active: isDefaultView,
-                                onClick: () => { setView('feed'); setSelectedCategory(''); setSelectedFormat(''); } },
+                                onClick: () => showView(null) },
                             // The route to the whole catalogue; it lets go of both narrowings.
                             { key: 'all', label: t('home.browseAll'), active: !isDefaultView,
-                                onClick: () => { showBrowse(''); setSelectedFormat(''); } },
+                                onClick: () => showView({}) },
                         ]}
                     />
                 )}
@@ -258,7 +275,9 @@ function Discover() {
                 {categories.map((cat) => (
                     <button
                         key={cat}
-                        onClick={() => showBrowse(cat)}
+                        // Lets go on a second press, as a format chip does.
+                        onClick={() => showBrowse(selectedCategory === cat ? '' : cat)}
+                        aria-pressed={!isDefaultView && selectedCategory === cat}
                         className={chipClass(!isDefaultView && selectedCategory === cat)}
                     >
                         {cat}

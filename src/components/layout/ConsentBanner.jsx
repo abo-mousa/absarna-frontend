@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui';
 import { useConsent } from '@/contexts/ConsentContext';
@@ -32,8 +32,27 @@ function ConsentBanner() {
     const { asking, grant, deny, askingViews, grantViews, denyViews } = useConsent();
     const [choosing, setChoosing] = useState(false);
     const [picks, setPicks] = useState({ youtube: false, views: false });
+    const showing = asking || askingViews;
 
-    if (!asking && !askingViews) return null;
+    // The banner is fixed, so it reserved no room: until it was answered it sat over the end of
+    // every page — Today's last line and its way on to Discover, and the footer with the privacy
+    // policy the banner itself links to. A spacer of its measured height, in the page's flow,
+    // lets everything scroll clear of it; measured, because its height changes with the width,
+    // the language and the «choose each» view.
+    const bannerRef = useRef(null);
+    const [height, setHeight] = useState(0);
+    useLayoutEffect(() => {
+        const banner = bannerRef.current;
+        if (!showing || !banner) return undefined;
+        const measure = () => setHeight(banner.offsetHeight);
+        measure();
+        if (typeof ResizeObserver === 'undefined') return undefined;
+        const observer = new ResizeObserver(measure);
+        observer.observe(banner);
+        return () => observer.disconnect();
+    }, [showing]);
+
+    if (!showing) return null;
 
     const both = asking && askingViews;
     const answer = (youtube, views) => {
@@ -74,7 +93,10 @@ function ConsentBanner() {
     }
 
     return (
+        <>
+        <div aria-hidden="true" style={{ height }} />
         <div
+            ref={bannerRef}
             // `role="region"` and a label rather than `role="dialog"`: it is not modal, nothing is
             // trapped, and announcing a dialog that does not behave like one is worse for a screen
             // reader than announcing nothing.
@@ -134,6 +156,7 @@ function ConsentBanner() {
                 )}
             </div>
         </div>
+        </>
     );
 }
 
