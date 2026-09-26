@@ -100,6 +100,8 @@ export const useSaveReadProgress = (id) => {
             // serving the pre-read snapshot for the rest of their staleTime. Same fix as
             // VideoPlayer's watch-progress reporting. Prefix, so it matches this viewer's copy.
             queryClient.invalidateQueries({ queryKey: ['reading-history'] });
+            // Today's «تكملة ما بدأته» and its week's pages come from the same history.
+            queryClient.invalidateQueries({ queryKey: ['today'] });
         },
     });
 };

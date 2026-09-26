@@ -106,8 +106,8 @@ function Navbar() {
      * is redrawn, rather than the same videos re-fetched.
      */
     const handleLogoClick = (event) => {
-        // Elsewhere in the app this is an ordinary link: navigating to `/` mounts Home, and the
-        // feed is NO_CACHE, so it arrives fresh without any help from here.
+        // Elsewhere in the app this is an ordinary link: navigating to `/` mounts Home, which
+        // shows the cached feed and refetches it once it is stale — the same row the reader left.
         if (location.pathname !== '/') return;
 
         event.preventDefault();

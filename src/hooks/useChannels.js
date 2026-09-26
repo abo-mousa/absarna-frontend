@@ -159,18 +159,29 @@ export const useToggleSubscription = (channelId) => {
                 queryClient.setQueryData(key, data);
             }
         },
-        onSuccess: () => {
-            // Prefixes: the viewer's scope is the last segment of each of these keys, so a
-            // prefix match reaches this viewer's copy without the hook needing the scope itself.
-            queryClient.invalidateQueries({ queryKey: ['subscription-status', channelId] });
-            queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
-            // The directory leaves out followed channels, so following one moves it out of there.
-            queryClient.invalidateQueries({ queryKey: ['channel-directory'] });
-            queryClient.invalidateQueries({ queryKey: ['channels-suggested'] });
-            // The feed's "من القنوات التي تتابعها" section is exactly this list.
-            queryClient.invalidateQueries({ queryKey: ['feed'] });
-        },
+        onSuccess: () => invalidateAfterSubscriptionChange(queryClient, channelId),
     });
+};
+
+/**
+ * Everything a follow or an unfollow changes, shared by the button and the Subscriptions page.
+ *
+ * <p>One list, because the page's unfollow once invalidated only the first two: the feed is cached
+ * now, so a channel unfollowed there kept filling "من القنوات التي تتابعها" until the cache aged
+ * out, and its button elsewhere still read "subscribed".
+ */
+const invalidateAfterSubscriptionChange = (queryClient, channelId) => {
+    // Prefixes: the viewer's scope is the last segment of each of these keys, so a
+    // prefix match reaches this viewer's copy without the hook needing the scope itself.
+    queryClient.invalidateQueries({ queryKey: ['subscription-status', channelId] });
+    queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
+    // The directory leaves out followed channels, so following one moves it out of there.
+    queryClient.invalidateQueries({ queryKey: ['channel-directory'] });
+    queryClient.invalidateQueries({ queryKey: ['channels-suggested'] });
+    // The feed's "من القنوات التي تتابعها" section is exactly this list, and Today's feed row
+    // switches to the reader's own channels once there are any.
+    queryClient.invalidateQueries({ queryKey: ['feed'] });
+    queryClient.invalidateQueries({ queryKey: ['today'] });
 };
 
 // ============ Sidebar / Subscriptions page ============
@@ -266,10 +277,7 @@ export const useUnsubscribe = () => {
             await api.delete(`/channels/${channelId}/subscribe`);
             return channelId;
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
-            queryClient.invalidateQueries({ queryKey: ['channel-directory'] });
-        },
+        onSuccess: (channelId) => invalidateAfterSubscriptionChange(queryClient, channelId),
     });
 };
 
@@ -363,6 +371,7 @@ const invalidateChannelContent = (queryClient, slug, type) => {
     if (publicKey) queryClient.invalidateQueries({ queryKey: [publicKey, slug] });
     if (type === 'videos') {
         queryClient.invalidateQueries({ queryKey: ['feed'] });
+        queryClient.invalidateQueries({ queryKey: ['today'] });
         queryClient.invalidateQueries({ queryKey: ['videos'] });
     }
 };

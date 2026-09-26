@@ -58,14 +58,21 @@ export function useWatchProgress(videoId, positionOf) {
         // its 60s staleTime. Invalidating is what makes a partial watch show up without a full
         // page reload.
         //
-        // ['watch-history'] ONLY, and never ['feed']. The backend drops watched videos out of the
+        // ['today'] too: Today is cached until the day ends, and a watch is exactly what moves its
+        // «تكملة ما بدأته» and «أسبوعك» — Back from an episode must show the next one. Marking it
+        // stale costs nothing while Today is not on screen; the request happens on the next visit.
+        //
+        // Never ['feed']. The backend drops watched videos out of the
         // feed's recommendations, so invalidating it here looks like the consistent thing to do —
-        // it is the opposite. The feed is `refetchOnMount: 'always'`, so Back from this video
-        // already re-requests it, and the backend's suppression window closes at midnight exactly
-        // so that answer is unchanged: the card the viewer just clicked is still where they left
-        // it. Adding the feed here would spend a request to redraw a row nobody asked to have
+        // it is the opposite. The backend's suppression window closes at midnight exactly, so a
+        // watch never changes today's feed — Back from this video shows the cached row, or a
+        // refetch of it that answers identically: the card the viewer just clicked is still
+        // where they left it. Adding the feed here would spend a request to redraw a row nobody asked to have
         // redrawn, and on a slower response it would do it while they were reading it.
-        const invalidate = () => queryClient.invalidateQueries({ queryKey: ['watch-history'] });
+        const invalidate = () => {
+            queryClient.invalidateQueries({ queryKey: ['watch-history'] });
+            queryClient.invalidateQueries({ queryKey: ['today'] });
+        };
 
         // A hidden page is a page that may never get another turn: the tab is closing, or the
         // phone's browser is on its way to the background where it can be killed without notice.

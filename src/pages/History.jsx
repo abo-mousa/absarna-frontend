@@ -38,6 +38,7 @@ function History() {
         try {
             await api.delete(isVideos ? '/user/history' : '/user/reading-history');
             queryClient.invalidateQueries({ queryKey: [isVideos ? 'watch-history' : 'reading-history'] });
+            queryClient.invalidateQueries({ queryKey: ['today'] });
         } catch (err) {
             showToast(describeError(err, t('history.clearFailed')), 'error');
         }

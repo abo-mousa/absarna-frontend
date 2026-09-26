@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useInfiniteQuery, useQuery, keepPreviousData } from '@tanstack/react-query';
 import api from '@/lib/api/client';
-import { NO_CACHE, STATIC } from '@/lib/queryCache';
+import { FEED, STATIC } from '@/lib/queryCache';
 import { queryKeys } from '@/lib/queryKeys';
 import { useUserScope } from './useUserScope';
 import { useDebouncedValue } from './useDebouncedValue';
@@ -149,8 +149,8 @@ export const useSearchSuggestions = (rawQuery, limit = 8, enabled = true) => {
  * The feed's shuffle: the number that decides the last few discover slots (FeedService#buildFeed).
  *
  * Once per page load, and again on a logo click (reshuffleFeed) — the two gestures that mean "give
- * me the page again". Deliberately NOT once per request: the feed is refetched on every mount, so a
- * per-request shuffle would redraw the row on Back from a video, and the one just watched or about
+ * me the page again". Deliberately NOT once per request: the feed is refetched whenever its cache
+ * goes stale, so a per-request shuffle would redraw the row on Back from a video, and the one just watched or about
  * to be would be gone from the page the reader came back to.
  */
 const newFeedShuffle = () => Math.floor(Math.random() * 2 ** 31);
@@ -170,9 +170,12 @@ export const useFeed = (enabled = true) => {
             return res.data;
         },
         enabled,
-        // Not cached: a subscription made elsewhere, or a video published since, shows on the next
-        // visit to the home page. What varies between refreshes is the shuffle above, not this.
-        ...NO_CACHE,
+        // FEED (15 min). It used to be uncached. The backend builds it fresh on every request — it caches
+        // nothing per reader, by rule — and answers the same (viewer, day, shuffle) identically,
+        // so refetching on every Back from a video rebuilt a response the client already held. A
+        // follow, an unfollow, an owner's edit and a logo click invalidate ['feed'] explicitly;
+        // a video published by someone else appears within the window.
+        ...FEED,
     });
 };
 

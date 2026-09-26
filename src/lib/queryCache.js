@@ -13,19 +13,6 @@
  */
 
 /**
- * Never cached. Every mount is a fresh request.
- *
- * <p>For responses that can change between visits and must show it on the next one. The feed is
- * the case: a cached copy kept the home page frozen on what it was when first loaded — a
- * subscription made since, or a video published since, did not appear.
- */
-export const NO_CACHE = {
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: 'always',
-};
-
-/**
  * Things the user themselves just changed, or that others change while they watch — comments,
  * bookmarks, history, an import's progress. Short enough that their own action is reflected,
  * long enough that a re-render is not a request.
@@ -51,4 +38,63 @@ export const STANDARD = {
 export const STATIC = {
     staleTime: 60 * 60 * 1000,
     refetchOnMount: false,
+};
+
+/**
+ * How long until the backend's day ends, measured from `fromMs`.
+ *
+ * <p>The backend's day is its own `LocalDate.now()` and the servers run in UTC
+ * (`absarna-backend/infra/deployment.md`), so the day ends at UTC midnight — not at the reader's.
+ * A reader in Riyadh gets a fresh feed at 03:00 local, which is when the feed actually changes.
+ */
+export const msUntilServerMidnight = (fromMs) => {
+    const next = new Date(fromMs);
+    next.setUTCHours(24, 0, 0, 0);
+    return next.getTime() - fromMs;
+};
+
+/** How long until the reader's own midnight, in the browser's time zone. */
+const msUntilLocalMidnight = (fromMs) => {
+    const next = new Date(fromMs);
+    next.setHours(24, 0, 0, 0);
+    return next.getTime() - fromMs;
+};
+
+/**
+ * How long until either day ends — the backend's (UTC) or the reader's own. Today needs both: its
+ * feed row is seeded by the backend's day, and «أسبوعك» and «برامج جديدة» turn over at the
+ * reader's midnight (the SPA sends `?tz=`). Whichever comes first makes the copy wrong.
+ */
+export const msUntilDayEnds = (fromMs) => Math.min(msUntilServerMidnight(fromMs), msUntilLocalMidnight(fromMs));
+
+/**
+ * Good until the day ends — for per-reader responses the backend builds fresh on every request
+ * and that change within a day only because the reader did something. Today is the case. The
+ * backend deliberately does not cache per-reader answers (only what is the same for everybody),
+ * so this is where they are kept.
+ *
+ * <p>Each copy goes stale at the first midnight after it was FETCHED. What changes the answer
+ * inside a day is the reader's own action, and each such action invalidates the key — a watch, a
+ * page read, a hide, a follow, clearing history. This tier is only as correct as those
+ * invalidations.
+ *
+ * <p>`gcTime` covers the longest possible remaining day, so an unmounted copy is not thrown away
+ * before it goes stale — the app-wide 30 minutes would bring back a request on every return.
+ */
+export const UNTIL_DAY_ENDS = {
+    staleTime: (query) => msUntilDayEnds(query.state.dataUpdatedAt || Date.now()),
+    gcTime: 24 * 60 * 60 * 1000,
+    refetchOnMount: true,
+};
+
+/**
+ * The home feed's (Discover's) tier. Its random parts are fixed for the day, but the catalogue is
+ * not — a followed channel's new upload belongs in its subscribed section the same day — so it
+ * is kept for a quarter of an hour rather than until midnight: long enough that browsing a few
+ * videos and coming back costs nothing, short enough that a new lecture is not a day late.
+ */
+export const FEED = {
+    staleTime: 15 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnMount: true,
 };

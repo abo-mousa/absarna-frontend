@@ -173,8 +173,12 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
     care.
 - **Every GET goes through a `useQuery`/`useInfiniteQuery` hook in `hooks/`**, never a raw `api.get`
   in a `useEffect`. The one exception is `AuthContext`'s own profile fetch.
-- **Cache tiers are named** (`lib/queryCache.js`): `NO_CACHE` (the feed), `LIVE`, `STANDARD`
-  (default, 2 min), `STATIC` (1h). `refetchOnWindowFocus` stays off everywhere. Put the tier spread
+- **Cache tiers are named** (`lib/queryCache.js`): `LIVE`, `STANDARD` (default, 2 min),
+  `FEED` (15 min, the feed), `STATIC` (1h), `UNTIL_DAY_ENDS` (Today — stale at the earlier of UTC
+  midnight and the reader's). **Per-reader answers are cached HERE, never on the backend** (product
+  owner, 2026-09-26): the backend caches only what is the same for everybody and builds `/api/feed`
+  and a signed-in Today page fresh on every request, so a missing invalidation in this repo is a
+  stale page, and a missing cache in this repo is a request per navigation. `refetchOnWindowFocus` stays off everywhere. Put the tier spread
   **last** or a literal silently overrides it.
 - **User-scoped query keys carry the viewer's identity as the LAST segment** (`lib/queryKeys.js`), so
   every existing prefix invalidation keeps working. The scope comes from the token, not from `user`
@@ -641,19 +645,26 @@ What this app relies on; the mirror lives in the backend's `CLAUDE.md`.
   `GET /api/today` sends the week (finished counts, never a streak), what to continue (the next
   episode in the series' public order, with a resume position), the news, and one "because you
   finished" row that names the video it is based on. "Finished" is 90% of the measured length and
-  is the backend's rule — never re-derive it here. `useToday` is user-scoped and NO_CACHE, so
-  coming back from an episode shows the next one. This page reads watch history as a signal on
+  is the backend's rule — never re-derive it here. `useToday` is user-scoped and `UNTIL_DAY_ENDS`;
+  coming back from an episode still shows the next one because the watch report invalidates
+  `['today']`, as do reading progress, a hide, a follow or unfollow, an owner's video edit and
+  clearing history — each new thing that changes Today needs its own line there. This page reads watch history as a signal on
   purpose (a product decision of 2026-09-25); the feed still only subtracts.
 - **`GET /api/feed` is stable for a viewer for a whole day**, so a refresh is not a way to reshuffle
   it. The backend guarantees the response for a given (viewer, day, `shuffle`) is identical every
-  time it is asked for, which is what makes `refetchOnMount: 'always'` safe here: Back from a video
-  re-requests the feed and gets the same row back. **That includes after watching the video** — the
-  backend drops watched videos out of the feed's recommendations, but its window closes at midnight
-  precisely so today's page does not move under the reader. So do **not** invalidate `['feed']` from
-  a watch, a like, a subscribe or a view: it buys nothing the next mount would not fetch anyway, and
-  it is the shape that would make the row change while someone is reading it. `reshuffleFeed()` on a
-  logo click is the one gesture that may, and it mints a new `shuffle` first so the change is asked
-  for rather than incidental.
+  time it is asked for, which is what makes caching it safe: `useFeed` is `FEED` (15 minutes), so Back
+  from a video shows the cached row and costs the backend nothing (it was uncached, which rebuilt the
+  whole feed — sampling and history subtraction — on every Back, for an answer the client already
+  held). **That includes after watching the video** — the backend drops watched videos out of the
+  feed's recommendations, but its window closes at midnight precisely so today's page does not move
+  under the reader. So do **not** invalidate `['feed']` from a watch, a like or a view. What *does*
+  change the answer has a mutation, and each invalidates `['feed']`: a follow or unfollow (both go
+  through `invalidateAfterSubscriptionChange` — the Subscriptions page's unfollow once skipped it),
+  an owner's edit to their videos, series, thumbnails or channel, and `reshuffleFeed()` on a logo
+  click, which mints a new `shuffle` first so the change is asked for rather than incidental. A
+  video published by someone else appears within the fifteen minutes — deliberately not cached
+  until midnight, since a followed channel's new upload belongs in the subscribed section the same
+  day.
 - **`/auth/refresh` rotates the refresh token — store the one it returns.** The response is
   `{token, refreshToken}`, and the replacement carries a fresh expiry, which is what turns the
   session into a window measured from the last visit. Keeping only the access token pins the
