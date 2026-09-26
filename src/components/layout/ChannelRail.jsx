@@ -48,11 +48,9 @@ function ChannelRail() {
                 </RailSection>
             )}
             {suggested.length > 0 && (
-                <RailSection
-                    title={t('channelRail.suggested')}
-                    more={{ to: '/channels', label: t('channelRail.all') }}
-                    pages={suggestions}
-                >
+                // No «كل القنوات» link here: the Channels tab in the navbar is that page, one
+                // glance away, and the column should not restate the navigation above it.
+                <RailSection title={t('channelRail.suggested')} pages={suggestions}>
                     {suggested.map((channel) => (
                         <RailChannel key={channel.id} slug={channel.slug} name={channel.name} logoUrl={channel.logoUrl} kind={channel.defaultFormat} />
                     ))}

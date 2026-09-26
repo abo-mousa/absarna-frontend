@@ -667,7 +667,6 @@ export const en = {
         following: 'Your subscriptions',
         manageFollowing: 'Manage subscriptions',
         suggested: 'Suggested channels',
-        all: 'All channels',
     },
 
     guide: {

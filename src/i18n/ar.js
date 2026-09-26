@@ -892,7 +892,6 @@ export const ar = {
         following: 'اشتراكاتك',
         manageFollowing: 'إدارة الاشتراكات',
         suggested: 'قنوات مقترحة',
-        all: 'كل القنوات',
     },
 
     guide: {
