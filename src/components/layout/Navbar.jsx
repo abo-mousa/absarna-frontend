@@ -102,8 +102,8 @@ function Navbar() {
      * So the one gesture everybody uses to mean "give me the page again" did nothing at all.
      *
      * <p>Invalidating rather than reloading: a full reload would re-download the app to refresh a
-     * dozen cards. A new shuffle first, so this counts as a refresh and the end of the discover row
-     * is redrawn, rather than the same videos re-fetched.
+     * dozen cards. A new shuffle first, so this counts as a refresh and half the discover row is
+     * redrawn, rather than the same videos re-fetched.
      */
     const handleLogoClick = (event) => {
         // Elsewhere in the app this is an ordinary link: navigating to `/` mounts Home, which

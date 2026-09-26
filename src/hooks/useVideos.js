@@ -146,7 +146,8 @@ export const useSearchSuggestions = (rawQuery, limit = 8, enabled = true) => {
 };
 
 /*
- * The feed's shuffle: the number that decides the last few discover slots (FeedService#buildFeed).
+ * The feed's shuffle: the number that decides half of discover's slots, interleaved with the day's
+ * stable ones (FeedService#buildFeed).
  *
  * Once per page load, and again on a logo click (reshuffleFeed) — the two gestures that mean "give
  * me the page again". Deliberately NOT once per request: the feed is refetched whenever its cache
