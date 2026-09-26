@@ -129,7 +129,13 @@ export function useChannelContentTab(slug, type, active, series = null) {
         // both — the box binds to the first, and the empty state has to say "nothing matches
         // <term>" about the query that was actually run rather than about what is being typed.
         search, setSearch, term,
-        isPublishing: create.isPending, isSaving: update.isPending };
+        isPublishing: create.isPending, isSaving: update.isPending,
+        // The last failed publish and save, for `RejectedFields` to mark the fields the backend
+        // refused. TanStack keeps a mutation's error until its next attempt, which is exactly how
+        // long a mark should last. A save's error belongs to the row it was for (`saveErrorFor`),
+        // so opening a different row's editor does not arrive with the last one's marks.
+        publishError: create.error,
+        saveErrorFor: (id) => (update.variables?.id === id ? update.error : null) };
 }
 
 /**

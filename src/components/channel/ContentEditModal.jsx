@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Modal, Input, Button } from '@/components/ui';
+import { Modal, Input, Button, RejectedFields } from '@/components/ui';
 import VideoThumbnailPicker from './VideoThumbnailPicker';
 import { FieldLabel } from './ContentPublishForm';
 import { formatLabel } from '@/lib/formats';
@@ -35,7 +35,7 @@ const LABELS = {
     originalPublishDate: 'fields.originalPublishDateOptional',
 };
 
-function ContentEditModal({ open, type, item, onClose, onSave, saving, slug }) {
+function ContentEditModal({ open, type, item, onClose, onSave, saving, error = null, slug }) {
     const fields = FIELDS[type] || [];
     const [form, setForm] = useState({});
     // A video's format is a select, and it edits the owner's OWN choice (`ownFormat`, from the
@@ -94,6 +94,7 @@ function ContentEditModal({ open, type, item, onClose, onSave, saving, slug }) {
 
     return (
         <Modal open={open} onClose={onClose} title={t('channelManage.editTitle')} maxWidth="560px">
+            <RejectedFields error={error}>
             <form onSubmit={handleSubmit} className="grid gap-4">
                 {/* Says plainly that this is a local edit. An imported video still plays from
                     YouTube's player, and an owner retitling it here should not be left wondering
@@ -112,6 +113,7 @@ function ContentEditModal({ open, type, item, onClose, onSave, saving, slug }) {
                         rows={field === 'content' ? 12 : 3}
                         type={field === 'originalPublishDate' ? 'date' : field === 'pages' ? 'number' : 'text'}
                         required={field === 'title'}
+                        field={field}
                     />
                 ))}
 
@@ -170,6 +172,7 @@ function ContentEditModal({ open, type, item, onClose, onSave, saving, slug }) {
                     </Button>
                 </div>
             </form>
+            </RejectedFields>
         </Modal>
     );
 }

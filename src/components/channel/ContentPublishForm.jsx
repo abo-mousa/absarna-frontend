@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import { Button, FilePicker, SwapLabel } from '@/components/ui';
+import { Button, FilePicker, RejectedFields, SwapLabel } from '@/components/ui';
 import { t } from '@/i18n';
 
 /**
@@ -26,8 +26,12 @@ import { t } from '@/i18n';
  * @param submitting   the create call is in flight — see the button below
  * @param bare         drop the card and the heading — for a form inside a Modal, which has both
  */
+/**
+ * @param error the last failed publish (`useChannelContentTab().publishError`): the fields it
+ *        refused are marked, by the `field` each child `Input` names.
+ */
 function ContentPublishForm({ heading, onSubmit, file, submitLabel, submitIcon, submitting = false,
-                              bare = false, children }) {
+                              bare = false, error = null, children }) {
     const hintId = useId();
 
     return (
@@ -73,7 +77,7 @@ function ContentPublishForm({ heading, onSubmit, file, submitLabel, submitIcon, 
                 </div>
             )}
 
-            {children}
+            <RejectedFields error={error}>{children}</RejectedFields>
 
             {/* DISABLED WHILE EITHER HALF IS BUSY, and the two halves fail differently.
                 A second press while the create call is in flight sends a second create. For a

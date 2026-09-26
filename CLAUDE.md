@@ -222,7 +222,8 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   «قد يهمّك» (`/articles/suggested`, shown only when there is something to go on). All of it comes
   from the backend's ReaderInterests — videos finished, books being read, channels followed; never a
   click. A column with nothing in it renders nothing. There is still no drawer; beside a column,
-  grids drop one card per row below `2xl`, and Discover's `useGridColumns` counts the same.
+  video grids still reach four per row from `xl` (product owner, 2026-09-26: four across an
+  ordinary laptop, smaller cards accepted), and Discover's `useGridColumns` counts the same.
 - **The navbar is full-bleed on purpose — do not put a `max-w`/`mx-auto` back on it.** It had
   `max-w-[1400px] mx-auto`, which is right for a column of prose and wrong for a bar whose content
   is two anchored ends: past 1400px the cap stopped moving the logo and the account controls
@@ -258,6 +259,11 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   forgot-password were the last of it), so `serverMessage` is now purely a **deploy-skew** shim —
   it stays for the window where a new SPA meets an older API, and **must never start trusting
   English**.
+  - **A field the backend refused is marked where it is.** `VALIDATION_FAILED` carries `fields`
+    (the request DTO's names); a form wraps its fields in `ui/RejectedFields error={…}` (a
+    mutation's `error`, or a caught one in state) and gives each `Input` a `field` spelled as the
+    DTO spells it. The field turns red with `aria-invalid` until it is edited. A new form that
+    posts a validated DTO does both, or its refusals are a toast with nothing to point at.
   - **The gate is `currentLocale() !== BACKEND_LEGACY_LOCALE`, never `isRtl()`.** The two agree
     today and would part company on the first other right-to-left language: Urdu and Persian are
     written in this script's range, so a direction check would hand an Urdu reader an Arabic

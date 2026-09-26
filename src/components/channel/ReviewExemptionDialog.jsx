@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Modal, Input, Button } from '@/components/ui';
+import { Modal, Input, Button, RejectedFields } from '@/components/ui';
+import { describeError } from '@/lib/describeError';
 import { useToast } from '@/contexts/ToastContext';
 import { useSetChannelReviewExemptions } from '@/hooks/useChannels';
 import { t } from '@/i18n';
@@ -52,7 +53,7 @@ export default function ReviewExemptionDialog({ channel, exemptions, open, onClo
                     showToast(t('admin.exemptions.saved'), 'success');
                     onClose();
                 },
-                onError: () => showToast(t('admin.exemptions.saveFailed'), 'error'),
+                onError: (error) => showToast(describeError(error, t('admin.exemptions.saveFailed')), 'error'),
             },
         );
     };
@@ -96,14 +97,17 @@ export default function ReviewExemptionDialog({ channel, exemptions, open, onClo
                 ))}
             </div>
 
-            <Input
-                label={t('admin.exemptions.reasonLabel')}
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                textarea
-                rows={2}
-                required
-            />
+            <RejectedFields error={save.error}>
+                <Input
+                    label={t('admin.exemptions.reasonLabel')}
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    textarea
+                    rows={2}
+                    required
+                    field="reason"
+                />
+            </RejectedFields>
             <p className="text-text-muted text-xs mt-1">{t('admin.exemptions.reasonHint')}</p>
 
             <div className="flex gap-2 justify-end mt-5">

@@ -93,6 +93,7 @@ export default function ManagedContentList({
                     onClose={() => setEditing(null)}
                     onSave={(id, changes) => content.save(id, changes)}
                     saving={content.isSaving}
+                    error={editing ? content.saveErrorFor(editing.id) : null}
                     slug={slug}
                 />
             )}

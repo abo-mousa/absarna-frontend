@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Mail, Link2 } from 'lucide-react';
-import { Modal, Input, Button } from '@/components/ui';
+import { Modal, Input, Button, RejectedFields } from '@/components/ui';
 import { useToast } from '@/contexts/ToastContext';
 import { describeError } from '@/lib/describeError';
 import { useInviteChannelOwner, useChannelClaimLink } from '@/hooks/useChannels';
@@ -95,15 +95,18 @@ export default function ChannelInviteDialog({ channel, open, onClose }) {
             {/* What the letter actually says. The admin is the sender and did not write it. */}
             <p className="text-text-muted text-sm mb-4">{t('admin.invite.contents')}</p>
 
-            <Input
-                label={t('admin.invite.emailLabel')}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                type="email"
-                dir="ltr"
-                autoFocus
-                required
-            />
+            <RejectedFields error={invite.error}>
+                <Input
+                    label={t('admin.invite.emailLabel')}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    type="email"
+                    dir="ltr"
+                    autoFocus
+                    required
+                    field="email"
+                />
+            </RejectedFields>
             {channel?.claimInvitation?.email && (
                 <p className="text-text-muted text-xs mt-1">
                     {t('admin.invite.previousAddress')}

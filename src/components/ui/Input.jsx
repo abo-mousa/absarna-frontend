@@ -1,6 +1,7 @@
 import { useId, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { direction, isRtl, t } from '@/i18n';
+import { useRejectedFields } from './rejectedFieldsContext';
 
 // Native date/color inputs render their own browser chrome instead of respecting a custom
 // `placeholder` (Chrome always shows its own "mm/dd/yyyy" segments regardless of what's set,
@@ -26,8 +27,24 @@ function Input({
                    textarea = false,
                    rows = 3,
                    className = '',
+                   // The request DTO's name for this field (`title`, `logoUrl`…). Inside a
+                   // `RejectedFields`, a field the backend refused is marked until it is edited.
+                   field,
                    ...rest
                }) {
+    const { rejected, token } = useRejectedFields();
+    // Which refusal this field was last edited after: editing clears the mark for THAT refusal,
+    // and a new one (a new error object) marks it again.
+    const [editedAfter, setEditedAfter] = useState(null);
+    const refused = !!field && rejected.has(field) && editedAfter !== token;
+    const handleChange = (e) => {
+        if (refused) setEditedAfter(token);
+        onChange?.(e);
+    };
+    // Red, and said to a screen reader too. After the caller's classes, so a refused field wins
+    // over a caller's own border; a caller's explicit aria-invalid still stands when not refused.
+    const refusedClass = refused ? '!border-red-600 dark:!border-red-500' : '';
+    const ariaInvalid = refused ? true : rest['aria-invalid'];
     const generatedId = useId();
     const id = rest.id || generatedId;
     const [showPassword, setShowPassword] = useState(false);
@@ -52,7 +69,7 @@ function Input({
     if (!floating) {
         const baseClass = `w-full px-3.5 py-2.5 rounded-md border border-border bg-surface text-[0.95rem]
             outline-none transition-colors focus:border-primary ${textAlignClass}
-            disabled:bg-surface-hover disabled:cursor-not-allowed ${className}`;
+            disabled:bg-surface-hover disabled:cursor-not-allowed ${className} ${refusedClass}`;
 
         return (
             <div>
@@ -66,7 +83,7 @@ function Input({
                     id={id}
                     type={type}
                     value={value}
-                    onChange={onChange}
+                    onChange={handleChange}
                     onFocus={onFocus}
                     onBlur={onBlur}
                     placeholder={placeholder}
@@ -75,6 +92,7 @@ function Input({
                     dir={dir}
                     className={baseClass}
                     {...rest}
+                    aria-invalid={ariaInvalid}
                 />
             </div>
         );
@@ -112,7 +130,7 @@ function Input({
 
     const fieldClass = `peer w-full ${labelSidePad} ${eyeSidePad} py-2.5 rounded-md border border-border bg-surface
         text-[0.95rem] outline-none transition-colors focus:border-primary resize-${textarea ? 'y' : 'none'}
-        disabled:bg-surface-hover disabled:cursor-not-allowed ${textAlignClass} ${className}`;
+        disabled:bg-surface-hover disabled:cursor-not-allowed ${textAlignClass} ${className} ${refusedClass}`;
 
     // Deliberately NOT `textAlignClass`/the field's `dir` here: a field's `dir="ltr"` describes
     // its *value* (a username, an email, a URL — Latin content the user types), not the label
@@ -144,7 +162,7 @@ function Input({
                 <textarea
                     id={id}
                     value={value}
-                    onChange={onChange}
+                    onChange={handleChange}
                     onFocus={onFocus}
                     onBlur={onBlur}
                     placeholder={domPlaceholder}
@@ -154,13 +172,14 @@ function Input({
                     rows={rows}
                     className={fieldClass}
                     {...rest}
+                    aria-invalid={ariaInvalid}
                 />
             ) : (
                 <input
                     id={id}
                     type={inputType}
                     value={value}
-                    onChange={onChange}
+                    onChange={handleChange}
                     onFocus={onFocus}
                     onBlur={onBlur}
                     placeholder={domPlaceholder}
@@ -169,6 +188,7 @@ function Input({
                     dir={dir}
                     className={fieldClass}
                     {...rest}
+                    aria-invalid={ariaInvalid}
                 />
             )}
 

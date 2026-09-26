@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Save, ShieldOff, Trash2, ImageDown, BadgeCheck } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { Input, Button, Modal, ImageUploadField } from '@/components/ui';
+import { Input, Button, Modal, ImageUploadField, RejectedFields } from '@/components/ui';
 import ReviewExemptionDialog, { ReviewExemptionSummary } from '../ReviewExemptionDialog';
 import { useUpdateChannel, useChannelReviewExemptions, useDeleteOwnChannel } from '@/hooks/useChannels';
 import { useChannelImage, useCopyYouTubeImages, useConfirmYouTubeImages } from '@/hooks/useOwnerImage';
@@ -69,9 +69,10 @@ export default function ChannelSettingsTab({ slug, channel, youtubeState, isOwne
             to stop scanning one is a decision made by LOOKING at it — the same argument the
             pending queue's "open channel" link exists for — rather than from a row in a list of
             every channel on the platform, which shows a name, a slug and a status. */}
+        <RejectedFields error={updateChannel.error}>
         <form onSubmit={handleSave} className="grid gap-4 bg-surface p-6 rounded-lg border border-border-light">
-            <Input label={t('channelManage.channelName')} value={form.name} onChange={field('name')} />
-            <Input label={t('fields.description')} textarea rows={3} value={form.description} onChange={field('description')} />
+            <Input label={t('channelManage.channelName')} value={form.name} onChange={field('name')} field="name" />
+            <Input label={t('fields.description')} textarea rows={3} value={form.description} onChange={field('description')} field="description" />
             {/* "What this channel mostly makes": the format every video with none of its own
                 reads as, imports included — so an imported catalogue is sorted by one choice
                 here rather than an edit per video. The list is the backend's. */}
@@ -96,6 +97,7 @@ export default function ChannelSettingsTab({ slug, channel, youtubeState, isOwne
                 {saving ? t('common.saving') : t('common.save')}
             </Button>
         </form>
+        </RejectedFields>
 
         <ChannelImagesCard slug={slug} channel={channel} youtubeState={youtubeState} isOwner={isOwner} />
 

@@ -219,7 +219,8 @@ export const AuthProvider = ({ children }) => {
             setUser(res.data.user);
             return { success: true };
         } catch (error) {
-            return { success: false, message: authFailureMessage(error, 'register') };
+            // `error` too, so the form can mark the fields a VALIDATION_FAILED names.
+            return { success: false, message: authFailureMessage(error, 'register'), error };
         }
     };
 

@@ -5,7 +5,7 @@ import api from '@/lib/api/client';
 import { changePassword, deleteAccount } from '@/lib/api/auth';
 import { isRemembered } from '@/lib/authStorage';
 import PageShell from '../components/layout/PageShell';
-import { Input, Button, Modal, ImageUploadField } from '../components/ui';
+import { Input, Button, Modal, ImageUploadField, RejectedFields } from '../components/ui';
 import { EmailVerificationNotice } from '../components/auth';
 import { useMyChannels } from '../hooks/useChannels';
 import { useProfilePicture } from '../hooks/useOwnerImage';
@@ -279,6 +279,8 @@ function UserProfile() {
     // every save, which after an upload is the picture's media address — written back into the
     // URL column by a bio edit. The picture is ProfilePictureField's, and saves on its own.
     const [form, setForm] = useState({ fullName: '', bio: '', email: '' });
+    // The failed save, for RejectedFields to mark what a VALIDATION_FAILED names.
+    const [submitError, setSubmitError] = useState(null);
     const [saving, setSaving] = useState(false);
     /**
      * The address currently stored on the account, and the only thing "did this edit change the
@@ -324,6 +326,7 @@ function UserProfile() {
         }
 
         setSaving(true);
+        setSubmitError(null);
 
         try {
             // `currentPassword` is added ONLY when the email actually changes. The backend asks for
@@ -341,6 +344,7 @@ function UserProfile() {
             // CURRENT_PASSWORD_INVALID arrive as `reason` codes and are worded in `errors.reasons`,
             // and the raw `message` on a Bean Validation 400 here is the constraint's English.
             showToast(describeError(err, t('profile.saveFailed')), 'error');
+            setSubmitError(err);
         } finally {
             setSaving(false);
         }
@@ -356,12 +360,14 @@ function UserProfile() {
                         <ProfilePictureField user={user} />
                     </div>
 
+                    <RejectedFields error={submitError}>
                     <form onSubmit={handleSubmit} className="grid gap-4">
                         <Input label={t('fields.username')} value={user?.username || ''} dir="ltr" disabled />
                         <Input
                             label={t('fields.fullName')}
                             value={form.fullName}
                             onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+                            field="fullName"
                             maxLength={FULL_NAME_MAX_LENGTH}
                             placeholder={t('fields.fullNamePlaceholder')}
                         />
@@ -370,6 +376,7 @@ function UserProfile() {
                             type="email"
                             value={form.email}
                             onChange={(e) => setForm({ ...form, email: e.target.value })}
+                            field="email"
                             maxLength={EMAIL_MAX_LENGTH}
                             dir="ltr"
                             placeholder="email@example.com"
@@ -409,6 +416,7 @@ function UserProfile() {
                             rows={3}
                             value={form.bio}
                             onChange={(e) => setForm({ ...form, bio: e.target.value })}
+                            field="bio"
                             maxLength={BIO_MAX_LENGTH}
                             placeholder={t('profile.bioPlaceholder')}
                         />
@@ -417,6 +425,7 @@ function UserProfile() {
                             {saving ? t('common.saving') : t('common.save')}
                         </Button>
                     </form>
+                    </RejectedFields>
                 </div>
 
                 <VerificationCard verified={user?.emailVerified !== false} />

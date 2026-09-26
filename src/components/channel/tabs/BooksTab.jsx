@@ -66,6 +66,7 @@ export default function BooksTab({ slug, active }) {
                     onSubmit={handleSubmit}
                     submitLabel={t('channelManage.forms.book.submit')}
                     submitting={content.isPublishing}
+                    error={content.publishError}
                     file={{
                         label: t('channelManage.forms.book.fileLabel'),
                         hint: t('channelManage.forms.book.fileHint'),
@@ -76,14 +77,14 @@ export default function BooksTab({ slug, active }) {
                         fileName: upload.fileName,
                     }}
                 >
-                    <Input label={t('fields.title')} value={form.title} onChange={field('title')} required />
-                    <Input label={t('fields.description')} textarea rows={3} value={form.description} onChange={field('description')} />
+                    <Input label={t('fields.title')} value={form.title} onChange={field('title')} field="title" required />
+                    <Input label={t('fields.description')} textarea rows={3} value={form.description} onChange={field('description')} field="description" />
 
                     <div className="grid grid-cols-1 xs:grid-cols-2 gap-4">
-                        <Input label={t('fields.category')} value={form.category} onChange={field('category')} />
-                        <Input label={t('channelManage.forms.book.pagesLabel')} type="number" value={form.pages} onChange={field('pages')} />
+                        <Input label={t('fields.category')} value={form.category} onChange={field('category')} field="category" />
+                        <Input label={t('channelManage.forms.book.pagesLabel')} type="number" value={form.pages} onChange={field('pages')} field="pages" />
                     </div>
-                    <Input label={t('fields.originalPublishDateOptional')} type="date" value={form.originalPublishDate} onChange={field('originalPublishDate')} />
+                    <Input label={t('fields.originalPublishDateOptional')} type="date" value={form.originalPublishDate} onChange={field('originalPublishDate')} field="originalPublishDate" />
                 </ContentPublishForm>
             </Modal>
 

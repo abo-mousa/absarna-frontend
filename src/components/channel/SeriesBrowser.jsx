@@ -76,8 +76,8 @@ export function SeriesActions({ slug, series, onChanged, onDeleted }) {
             onChanged?.(updated);
             showToast(t('channelManage.seriesView.saved'), 'success');
             return true;
-        } catch {
-            showToast(t('channelManage.seriesView.saveFailed'), 'error');
+        } catch (err) {
+            showToast(describeError(err, t('channelManage.seriesView.saveFailed')), 'error');
             return false;
         }
     };
@@ -133,6 +133,7 @@ export function SeriesActions({ slug, series, onChanged, onDeleted }) {
                 onClose={() => setEditing(false)}
                 onSave={save}
                 saving={updateSeries.isPending}
+                error={updateSeries.error}
             />
 
             <Modal
@@ -208,12 +209,14 @@ export function NewSeriesModal({ slug, open, onClose }) {
                 submitLabel={t('channelManage.createSeries')}
                 submitIcon={<Plus size={18} />}
                 submitting={createSeries.isPending}
+                error={createSeries.error}
             >
                 <Input
                     label={t('channelManage.seriesTitleLabel')}
                     value={form.title}
                     onChange={(e) => setForm({ ...form, title: e.target.value })}
                     required
+                    field="title"
                 />
                 <Input
                     label={t('fields.description')}
@@ -221,6 +224,7 @@ export function NewSeriesModal({ slug, open, onClose }) {
                     rows={2}
                     value={form.description}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    field="description"
                 />
             </ContentPublishForm>
         </Modal>

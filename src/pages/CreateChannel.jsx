@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '@/lib/api/client';
 import PageShell from '../components/layout/PageShell';
-import { Input, Button, ImageUploadField } from '../components/ui';
+import { Input, Button, ImageUploadField, RejectedFields } from '../components/ui';
 import { EmailVerificationNotice } from '../components/auth';
 import { useToast } from '../contexts/ToastContext';
 import { usePageMeta } from '../hooks/usePageMeta';
@@ -82,6 +82,8 @@ function CreateChannel() {
     // rather than at the foot of the form — where «تعذّر إنشاء القناة» used to leave the owner
     // guessing which of five fields to change.
     const [slugError, setSlugError] = useState('');
+    // The failed submit itself, for RejectedFields to mark the fields a VALIDATION_FAILED names.
+    const [submitError, setSubmitError] = useState(null);
     const [needsVerification, setNeedsVerification] = useState(false);
     const [loading, setLoading] = useState(false);
     const resolveYouTube = useResolveYouTubeChannel();
@@ -129,6 +131,7 @@ function CreateChannel() {
         e.preventDefault();
         setError('');
         setSlugError('');
+        setSubmitError(null);
         setNeedsVerification(false);
         setLoading(true);
 
@@ -182,6 +185,7 @@ function CreateChannel() {
 
             navigate(`/channel/${form.slug}/manage`);
         } catch (err) {
+            setSubmitError(err);
             if (err.response?.data?.emailVerificationRequired) {
                 setNeedsVerification(true);
             } else if (String(err.response?.data?.reason || '').startsWith('CHANNEL_SLUG_')) {
@@ -201,11 +205,13 @@ function CreateChannel() {
                     <h1 className="text-xl font-bold mb-2">{t('createChannel.heading')}</h1>
                     <p className="text-text-muted text-sm mb-6">{t('createChannel.subheading')}</p>
 
+                    <RejectedFields error={submitError}>
                     <form onSubmit={handleSubmit} className="grid gap-4">
                         <Input
                             label={t('createChannel.nameLabel')}
                             value={form.name}
                             onChange={(e) => setForm({ ...form, name: e.target.value })}
+                            field="name"
                             onBlur={(e) => { if (!form.slug) handleSlugChange(e.target.value); }}
                             required
                             placeholder={t('createChannel.namePlaceholder')}
@@ -216,6 +222,7 @@ function CreateChannel() {
                                 label={t('createChannel.slugLabel')}
                                 value={form.slug}
                                 onChange={(e) => { setSlugError(''); handleSlugChange(e.target.value); }}
+                                field="slug"
                                 required
                                 dir="ltr"
                                 placeholder="my-channel"
@@ -234,6 +241,7 @@ function CreateChannel() {
                             rows={3}
                             value={form.description}
                             onChange={(e) => setForm({ ...form, description: e.target.value })}
+                            field="description"
                             placeholder={t('createChannel.descriptionPlaceholder')}
                         />
 
@@ -242,6 +250,7 @@ function CreateChannel() {
                                 label={t('createChannel.youtubeLabel')}
                                 value={form.youtubeSource}
                                 onChange={(e) => setForm({ ...form, youtubeSource: e.target.value })}
+                            field="youtubeSource"
                                 placeholder={t('youtube.sourcePlaceholder')}
                                 dir="ltr"
                             />
@@ -307,6 +316,7 @@ function CreateChannel() {
                             {loading ? t('createChannel.submitting') : t('createChannel.submit')}
                         </Button>
                     </form>
+                    </RejectedFields>
                 </div>
             </div>
         </PageShell>

@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { usePageMeta } from '../hooks/usePageMeta';
 import PageShell from '../components/layout/PageShell';
-import { Input, Button } from '../components/ui';
+import { Input, Button, RejectedFields } from '../components/ui';
 import {
     getPasswordRules, getPasswordStrengthLabel, isPasswordValid, validateUsername,
     USERNAME_MAX_LENGTH, EMAIL_MAX_LENGTH, FULL_NAME_MAX_LENGTH,
@@ -35,6 +35,8 @@ function Register() {
         acceptedTerms: false,
     });
     const [error, setError] = useState('');
+    // The failed signup, for RejectedFields to mark what a VALIDATION_FAILED names.
+    const [submitError, setSubmitError] = useState(null);
     const [loading, setLoading] = useState(false);
 
     const passwordRules = getPasswordRules(form.password);
@@ -45,6 +47,7 @@ function Register() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setSubmitError(null);
 
         const usernameValidationError = validateUsername(form.username);
         if (usernameValidationError) {
@@ -90,6 +93,7 @@ function Register() {
             navigate(safeInternalPath(location.state?.from) || '/');
         } else {
             setError(result.message);
+            setSubmitError(result.error ?? null);
         }
         setLoading(false);
     };
@@ -102,12 +106,14 @@ function Register() {
                     <p className="text-text-muted mt-2">{t('auth.register.joinUs')}</p>
                 </div>
 
+                <RejectedFields error={submitError}>
                 <form onSubmit={handleSubmit} className="grid gap-4">
                     <div>
                         <Input
                             label={t('fields.usernameRequired')}
                             value={form.username}
                             onChange={(e) => setForm({ ...form, username: e.target.value })}
+                            field="username"
                             required
                             maxLength={USERNAME_MAX_LENGTH}
                             placeholder="username"
@@ -123,6 +129,7 @@ function Register() {
                         label={t('fields.fullName')}
                         value={form.fullName}
                         onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+                        field="fullName"
                         maxLength={FULL_NAME_MAX_LENGTH}
                         placeholder={t('fields.fullNamePlaceholder')}
                     />
@@ -177,6 +184,7 @@ function Register() {
                         type="email"
                         value={form.email}
                         onChange={(e) => setForm({ ...form, email: e.target.value })}
+                        field="email"
                         required
                         maxLength={EMAIL_MAX_LENGTH}
                         placeholder="email@example.com"
@@ -189,6 +197,7 @@ function Register() {
                             type="password"
                             value={form.password}
                             onChange={(e) => setForm({ ...form, password: e.target.value })}
+                            field="password"
                             required
                             placeholder="••••••••"
                             dir="ltr"
@@ -300,6 +309,7 @@ function Register() {
                         {loading ? t('auth.register.submitting') : t('auth.register.submit')}
                     </Button>
                 </form>
+                </RejectedFields>
 
                 <div className="text-center mt-5">
                     <p className="text-sm text-text-secondary">

@@ -207,6 +207,7 @@ export default function VideosTab({ slug, channel, youtubeState, isOwner, active
                     submitLabel={t('channelManage.forms.video.submit')}
                     submitIcon={<Upload size={18} />}
                     submitting={content.isPublishing}
+                    error={content.publishError}
                     file={{
                         label: t('channelManage.forms.video.fileLabel'),
                         hint: t('channelManage.forms.video.fileHint'),
@@ -217,9 +218,9 @@ export default function VideosTab({ slug, channel, youtubeState, isOwner, active
                         fileName: upload.fileName,
                     }}
                 >
-                    <Input label={t('fields.title')} value={form.title} onChange={field('title')} required />
-                    <Input label={t('fields.description')} textarea rows={3} value={form.description} onChange={field('description')} />
-                    <Input label={t('fields.category')} value={form.category} onChange={field('category')} />
+                    <Input label={t('fields.title')} value={form.title} onChange={field('title')} field="title" required />
+                    <Input label={t('fields.description')} textarea rows={3} value={form.description} onChange={field('description')} field="description" />
+                    <Input label={t('fields.category')} value={form.category} onChange={field('category')} field="category" />
                     {/* Starts on "as the channel": an upload with no format of its own reads as the
                         channel's default, so an owner who set one never has to touch this. The
                         empty value is stripped before sending, which is what leaves it unset. */}
@@ -262,10 +263,11 @@ export default function VideosTab({ slug, channel, youtubeState, isOwner, active
                                 min="1"
                                 value={form.orderInSeries}
                                 onChange={field('orderInSeries')}
+                                field="orderInSeries"
                             />
                         )}
                     </div>
-                    <Input label={t('fields.originalPublishDateOptional')} type="date" value={form.originalPublishDate} onChange={field('originalPublishDate')} />
+                    <Input label={t('fields.originalPublishDateOptional')} type="date" value={form.originalPublishDate} onChange={field('originalPublishDate')} field="originalPublishDate" />
                     {[
                         ['graphicContent', 'voice.formGraphic', 'voice.formGraphicHint'],
                         ['removedElsewhere', 'voice.formRemoved', 'voice.formRemovedHint'],

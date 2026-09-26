@@ -37,6 +37,7 @@ export default function PostsTab({ slug, active }) {
                     onSubmit={handleSubmit}
                     submitLabel={t('channelManage.forms.post.submit')}
                     submitting={content.isPublishing}
+                    error={content.publishError}
                 >
                     <Input
                         label={t('fields.content')}
@@ -45,6 +46,7 @@ export default function PostsTab({ slug, active }) {
                         value={form.content}
                         onChange={(e) => setForm({ content: e.target.value })}
                         required
+                        field="content"
                     />
                 </ContentPublishForm>
             </Modal>

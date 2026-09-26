@@ -38,13 +38,14 @@ export default function ArticlesTab({ slug, active }) {
                     onSubmit={handleSubmit}
                     submitLabel={t('channelManage.forms.article.submit')}
                     submitting={content.isPublishing}
+                    error={content.publishError}
                 >
-                    <Input label={t('fields.title')} value={form.title} onChange={field('title')} required />
-                    <Input label={t('fields.content')} textarea rows={15} className="min-h-[300px]" value={form.content} onChange={field('content')} required />
+                    <Input label={t('fields.title')} value={form.title} onChange={field('title')} field="title" required />
+                    <Input label={t('fields.content')} textarea rows={15} className="min-h-[300px]" value={form.content} onChange={field('content')} field="content" required />
 
                     <div className="grid grid-cols-1 xs:grid-cols-2 gap-4">
-                        <Input label={t('fields.category')} value={form.category} onChange={field('category')} />
-                        <Input label={t('fields.originalPublishDateOptional')} type="date" value={form.originalPublishDate} onChange={field('originalPublishDate')} />
+                        <Input label={t('fields.category')} value={form.category} onChange={field('category')} field="category" />
+                        <Input label={t('fields.originalPublishDateOptional')} type="date" value={form.originalPublishDate} onChange={field('originalPublishDate')} field="originalPublishDate" />
                     </div>
                 </ContentPublishForm>
             </Modal>
