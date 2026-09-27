@@ -260,11 +260,11 @@ function VideoDetail() {
                             </div>
                         ) : <span />}
                         {stats.length > 0 && (
-                            <span className="flex items-center gap-1 text-xs text-text-muted">
+                            <span className="flex flex-wrap items-center gap-x-1 gap-y-0.5 min-w-0 text-xs text-text-muted">
                                 {stats.map((item, i) => (
                                     <Fragment key={i}>
                                         {i > 0 && <MetaDivider />}
-                                        <span>{item}</span>
+                                        <span className="whitespace-nowrap">{item}</span>
                                     </Fragment>
                                 ))}
                             </span>
