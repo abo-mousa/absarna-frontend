@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Eye, EyeOff, Trash2, Calendar, Clock, Loader2, AlertTriangle } from 'lucide-react';
+import { Play, Eye, EyeOff, Trash2, Calendar, Loader2, AlertTriangle } from 'lucide-react';
 import { resolveMediaUrl, youtubeThumbnail } from '@/lib/media';
 import { useConsent } from '@/contexts/ConsentContext';
 import { formatPublishDate, displayDate } from '@/lib/datetime';
@@ -256,18 +256,32 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                     </div>
                 )}
 
-                {/* Finished — the backend's rule (90%). The star, and only here: on the few cards a
-                    viewer has actually finished, a quiet «done», the Today page's idea of
-                    accomplishment carried to the grid. */}
-                {finished && (
-                    <span
-                        role="img"
-                        aria-label={t('video.finished')}
-                        title={t('video.finished')}
-                        className="absolute bottom-2 end-2 flex items-center justify-center w-6 h-6 rounded-full bg-black/65"
-                    >
-                        <KhatamStar className="w-3.5 h-3.5 text-gold" />
-                    </span>
+                {/* The length and the finished star share the corner, so a finished video shows
+                    both rather than one covering the other. */}
+                {(video.duration || finished) && (
+                    <div className="absolute bottom-2 end-2 flex items-center gap-1">
+                        {/* Finished — the backend's rule (90%). The star, and only here: on the
+                            few cards a viewer has actually finished, a quiet «done», the Today
+                            page's idea of accomplishment carried to the grid. */}
+                        {finished && (
+                            <span
+                                role="img"
+                                aria-label={t('video.finished')}
+                                title={t('video.finished')}
+                                className="flex items-center justify-center w-6 h-6 rounded-full bg-black/65"
+                            >
+                                <KhatamStar className="w-3.5 h-3.5 text-gold" />
+                            </span>
+                        )}
+                        {/* A display string the backend sends verbatim ("45:30"), so it never
+                            passed through `formatCount` or a `t()` placeholder; mapping its
+                            digits is the whole of what is safe to do to it. */}
+                        {video.duration && (
+                            <span className="bg-black/70 text-white text-xs font-semibold px-2 py-0.5 rounded">
+                                {formatDigits(video.duration)}
+                            </span>
+                        )}
+                    </div>
                 )}
 
                 {watchedPercent !== null && (
@@ -281,8 +295,8 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
             </div>
 
             {/* The kicker, the title, then one column of what this video is: channel, and a
-                last line carrying its length, its number and its date together —
-                «٤٥:٣٠ · ١٫٢ ألف مشاهدات · ٣ مارس ٢٠٢٤».
+                last line carrying its number and its date together —
+                «١٫٢ ألف مشاهدات · ٣ مارس ٢٠٢٤». The length is a badge on the picture.
 
                 ONE COLUMN, NOT TWO, now that there is one number. The card used to split into
                 "what it is" at the start edge and "its numbers" (views, comments, likes) at the
@@ -350,23 +364,13 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                             <span dir="auto" className="truncate">{video.channelName}</span>
                         </button>
                     )}
-                    {(video.duration || hasViews || date) && (
+                    {(hasViews || date) && (
                         <div className={`${META_ROW} text-text-muted`}>
-                            {/* The glyph names the line's first item: the clock when it opens with
-                                the length, the eye with views, the calendar when the date stands
-                                alone. */}
+                            {/* The glyph names the line's first item: the eye with views, the
+                                calendar when the date stands alone. The length is on the picture. */}
                             <span className={META_GLYPH}>
-                                {video.duration ? <Clock size={12} /> : hasViews ? <Eye size={12} /> : <Calendar size={12} />}
+                                {hasViews ? <Eye size={12} /> : <Calendar size={12} />}
                             </span>
-                            {/* The length moved here from a black badge over the picture — the
-                                most recognisable single mark of a YouTube thumbnail. A display
-                                string the backend sends verbatim ("45:30"), so it never passed
-                                through `formatCount` or a `t()` placeholder; mapping its digits
-                                is the whole of what is safe to do to it. */}
-                            {video.duration && (
-                                <span className="flex-shrink-0 whitespace-nowrap">{formatDigits(video.duration)}</span>
-                            )}
-                            {video.duration && (hasViews || date) && <span aria-hidden="true">·</span>}
                             {hasViews && (
                                 <span className="flex-shrink-0 whitespace-nowrap">
                                     {t('common.views', { count: formatCompactCount(video.viewCount) })}
