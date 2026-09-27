@@ -15,7 +15,7 @@ import { resolveMediaUrl, youtubeThumbnail } from '@/lib/media';
 import { useConsent } from '@/contexts/ConsentContext';
 import { formatPublishDate, displayDate } from '@/lib/datetime';
 import { resumeFrom } from '@/lib/watch';
-import { t } from '@/i18n';
+import { formatDigits, t } from '@/i18n';
 import { formatCount, formatCompactCount } from '@/lib/numbers';
 
 function VideoDetail() {
@@ -107,7 +107,7 @@ function VideoDetail() {
         : null;
 
     const meta = [
-        video.duration && { icon: Clock, text: video.duration },
+        video.duration && { icon: Clock, text: formatDigits(video.duration) },
         video.category && { icon: Folder, text: video.category },
         video.speaker && { icon: User, text: video.speaker },
     ].filter(Boolean);
