@@ -94,6 +94,7 @@ function Today() {
             <PageHeader
                 title={t('nav.tabs.today')}
                 action={<DatePair />}
+                rule={false}
             />
             <QueryState
                 isLoading={today.isLoading}
