@@ -57,6 +57,8 @@ export const queryKeys = {
     channel: (slug, scope) => ['channel', slug, scope],
     today: (scope) => ['today', scope],
     watchHistory: (scope) => ['watch-history', scope],
+    // Under the same prefix, so every invalidation of ['watch-history'] reaches it too.
+    groupedWatchHistory: (scope) => ['watch-history', scope, 'grouped'],
     readingHistory: (scope) => ['reading-history', scope],
     bookmarks: (scope) => ['bookmarks', scope],
     subscriptions: (scope) => ['subscriptions', scope],

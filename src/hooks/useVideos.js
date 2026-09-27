@@ -225,6 +225,23 @@ export const useWatchHistory = (enabled = true) => {
     });
 };
 
+// The History page's list, grouped by the backend: a series is one entry (its latest episode,
+// with `episodesWatched`), anything else one entry per video. Grouped there, not here, because
+// only the server sees every row — this side holds the latest 200 and would under-count.
+export const useGroupedWatchHistory = (enabled = true) => {
+    const scope = useUserScope();
+    return useQuery({
+        queryKey: queryKeys.groupedWatchHistory(scope),
+        queryFn: async () => {
+            const res = await api.get('/user/history/grouped?limit=200');
+            return res.data;
+        },
+        enabled,
+        staleTime: 60 * 1000,
+        refetchOnMount: true, // as useWatchHistory, for the same reason
+    });
+};
+
 // videoId -> progressSeconds, for VideoCard's watched-progress bar.
 export const useWatchProgressMap = (enabled = true) => {
     const { data: history = [] } = useWatchHistory(enabled);

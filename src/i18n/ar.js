@@ -1779,6 +1779,9 @@ export const ar = {
         emptyRead: 'لا يوجد سجل قراءة',
         emptyWatchDescription: 'الفيديوهات التي تشاهدها ستظهر هنا',
         emptyReadDescription: 'الكتب التي تقرأها ستظهر هنا',
+        // Under a series' card on the History page; links to the series. A label and a number rather
+        // than a counted noun, so it reads right for every count (the catalogs have no plural forms).
+        episodesWatched: 'الحلقات التي شاهدتها: {count}',
     },
 
     subscriptions: {

@@ -1377,6 +1377,7 @@ export const en = {
         emptyRead: 'No reading history',
         emptyWatchDescription: 'Videos you watch will appear here',
         emptyReadDescription: 'Books you read will appear here',
+        episodesWatched: 'Episodes watched: {count}',
     },
 
     subscriptions: {
