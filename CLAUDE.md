@@ -13,7 +13,8 @@ into channels.
 | `absarna-backend` | The API (Spring Boot). Owns all data and authorization; see "Backend contract". |
 | `absarna-worker` | Transcode worker. **Nothing here talks to it** — it produces the rendition ladder behind `playback-url`'s `qualities` and the poster frames in `thumbnailUrl`. |
 
-`HISTORY.md` holds closed review passes and the rebrand — archaeology only.
+Closed review passes and the rebrand were recorded in `HISTORY.md`, retired on 2026-09-27 — read it
+with `git show f71f8a7:HISTORY.md`.
 **Logging and metrics across all three repos are designed once, in `absarna-backend/OBSERVABILITY.md`.**
 This repo's part is `lib/telemetry.js` (Grafana Faro RUM); don't restate the design here.
 
