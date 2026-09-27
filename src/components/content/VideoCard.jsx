@@ -6,6 +6,7 @@ import { useConsent } from '@/contexts/ConsentContext';
 import { formatPublishDate, displayDate } from '@/lib/datetime';
 import Avatar from '../ui/Avatar';
 import { KhatamStar } from '../ui/Khatam';
+import MetaDivider from '../ui/MetaDivider';
 import SourceBadge from './SourceBadge';
 import { formatDigits, t } from '@/i18n';
 import { ownerBadge } from '@/lib/review';
@@ -55,7 +56,7 @@ function watchedPercentOf(watch) {
 
 /**
  * A kicker's two halves side by side: the name in its own direction and allowed to truncate, the
- * count in the interface's and never cut — «…السيرة النبوية · ١٠٣ من ١٤٠» loses the end of the
+ * count in the interface's and never cut — «…السيرة النبوية │ ١٠٣ من ١٤٠» loses the end of the
  * title, not the number, which is the part a reader scanning a series needs.
  */
 function KickerText({ kicker }) {
@@ -64,9 +65,7 @@ function KickerText({ kicker }) {
             <span dir="auto" className="truncate">{kicker.name}</span>
             {kicker.place && (
                 <>
-                    {/* A drawn rule, not a «·»: set beside Arabic-Indic digits the dot reads as
-                        a zero, so «… · ١٠٣» looked like «٠١٠٣». */}
-                    <span aria-hidden="true" className="w-px h-2.5 mx-0.5 bg-current opacity-50 flex-shrink-0" />
+                    <MetaDivider />
                     <span className="flex-shrink-0 whitespace-nowrap">{kicker.place}</span>
                 </>
             )}
@@ -298,7 +297,7 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
 
             {/* The kicker, the title, then one column of what this video is: channel, and a
                 last line carrying its number and its date together —
-                «١٫٢ ألف مشاهدات · ٣ مارس ٢٠٢٤». The length is a badge on the picture.
+                «١٫٢ ألف مشاهدات │ ٣ مارس ٢٠٢٤». The length is a badge on the picture.
 
                 ONE COLUMN, NOT TWO, now that there is one number. The card used to split into
                 "what it is" at the start edge and "its numbers" (views, comments, likes) at the
@@ -378,7 +377,7 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                                     {t('common.views', { count: formatCompactCount(video.viewCount) })}
                                 </span>
                             )}
-                            {hasViews && date && <span aria-hidden="true">·</span>}
+                            {hasViews && date && <MetaDivider />}
                             {/* The date gives way first on a narrow card: it is the longer of the
                                 two, and the number is what a reader scanning the grid compares.
                                 `displayDate` prefers originalPublishDate; see lib/datetime. */}

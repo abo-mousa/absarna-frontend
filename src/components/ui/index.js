@@ -23,3 +23,4 @@ export { default as SearchField } from './SearchField';
 export { default as ImageUploadField } from './ImageUploadField';
 export { default as RejectedFields } from './RejectedFields';
 export { default as DrawnScrollbar } from './DrawnScrollbar';
+export { default as MetaDivider } from './MetaDivider';

@@ -1,9 +1,9 @@
-import { useRef, useState } from 'react';
+import { Fragment, useRef, useState } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Clock, Folder, User, AlertTriangle } from 'lucide-react';
 import { ArrowBack, ChevronBack, ChevronForward } from '@/components/ui/DirectionalIcon';
 import PageShell from '../components/layout/PageShell';
-import { QueryState, Avatar, Spinner, LinkifiedText, ExpandableText, KhatamStar } from '../components/ui';
+import { QueryState, Avatar, Spinner, LinkifiedText, ExpandableText, KhatamStar, MetaDivider } from '../components/ui';
 import { VideoPlayer, CommentsSection, VideoCard, BookmarkButton, LikeButton, ReportButton, ShareButton, SourceBadge, SubscribeButton } from '../components/content';
 import { useVideo, useRelatedVideo, useWatchProgressMap, useWatchHistory } from '../hooks/useVideos';
 import { useChannel } from '../hooks/useChannels';
@@ -112,7 +112,7 @@ function VideoDetail() {
         video.speaker && { icon: User, text: video.speaker },
     ].filter(Boolean);
 
-    // Views · comments · publish date — sits opposite the channel name instead of buried in
+    // Views │ comments │ publish date — sits opposite the channel name instead of buried in
     // the meta row below, so it reads as this video's own stats rather than one more attribute
     // alongside duration/category.
     const stats = [
@@ -121,7 +121,7 @@ function VideoDetail() {
         displayDate(video) && formatPublishDate(displayDate(video)),
         // Not the like count: LikeButton above already shows it, next to the control that
         // changes it, and it is the one number here that updates without a reload.
-    ].filter(Boolean).join(' · ');
+    ].filter(Boolean);
 
     // The backend does not send `review` to anyone but the channel's manager or a platform admin
     // (ReviewAttacher.attachOwnerVerdicts), so this check is a second lock on a door the server
@@ -259,7 +259,16 @@ function VideoDetail() {
                                 <SubscribeButton channelId={channel.id} className="!px-4 !py-1.5 !text-xs" />
                             </div>
                         ) : <span />}
-                        {stats && <span className="text-xs text-text-muted">{stats}</span>}
+                        {stats.length > 0 && (
+                            <span className="flex items-center gap-1 text-xs text-text-muted">
+                                {stats.map((item, i) => (
+                                    <Fragment key={i}>
+                                        {i > 0 && <MetaDivider />}
+                                        <span>{item}</span>
+                                    </Fragment>
+                                ))}
+                            </span>
+                        )}
                     </div>
 
                     <div className="flex gap-4 flex-wrap text-sm text-text-secondary mb-4 items-center">
