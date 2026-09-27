@@ -24,8 +24,8 @@ pnpm-debug.log*
 # cross-repo review can read them. Absolute paths, so it must not be committed.
 .claude/settings.local.json
 
-# The filled-in build config for a real deployment. `.env.example` is the tracked one and
-# documents every key; this copy names live hosts, so it stays on the machine that builds.
+# Local overrides stay on the machine. `.env.production` IS tracked: every VITE_* value is
+# compiled into the public bundle and its CSP anyway, so it holds nothing a visitor cannot read,
+# and tracking it means any machine can build the live site. Never put a secret in a VITE_ var.
 .env
-.env.production
 .env.local
