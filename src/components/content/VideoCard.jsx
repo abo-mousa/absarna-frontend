@@ -64,7 +64,9 @@ function KickerText({ kicker }) {
             <span dir="auto" className="truncate">{kicker.name}</span>
             {kicker.place && (
                 <>
-                    <span aria-hidden="true">·</span>
+                    {/* A drawn rule, not a «·»: set beside Arabic-Indic digits the dot reads as
+                        a zero, so «… · ١٠٣» looked like «٠١٠٣». */}
+                    <span aria-hidden="true" className="w-px h-2.5 mx-0.5 bg-current opacity-50 flex-shrink-0" />
                     <span className="flex-shrink-0 whitespace-nowrap">{kicker.place}</span>
                 </>
             )}

@@ -4,8 +4,8 @@ import { formatLabel } from '@/lib/formats';
 /**
  * The gold line above a card's title: what the item belongs to, before what it is called.
  *
- * <p>For a video in a series it is the series and the video's place in it — «السيرة النبوية · ١٠٣
- * من ١٤٠» — which is what someone scanning a grid of lectures needs first: whether this is part
+ * <p>For a video in a series it is the series and the video's place in it, «السيرة النبوية — ١٠٣
+ * من ١٤٠», which is what someone scanning a grid of lectures needs first: whether this is part
  * one or part eighty. The position is the backend's `seriesPosition`/`seriesLength`, counted the
  * way the series page counts, and never `orderInSeries`, which is a sort key an owner may leave
  * null or space out. A video with a series but no position (an owner's own hidden or processing
@@ -33,7 +33,7 @@ export function videoKicker(video) {
             place = t('series.place', { position });
         }
         const name = video.seriesTitle;
-        return { text: place ? `${name} · ${place}` : name, name, place, seriesId: video.seriesId };
+        return { text: place ? `${name} — ${place}` : name, name, place, seriesId: video.seriesId };
     }
     // Outside a series: what kind of thing it is, then what it is about — «وثائقي · تاريخ». Either
     // half alone when the other is missing. The format is the effective one (the channel's
