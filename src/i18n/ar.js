@@ -270,6 +270,15 @@ export const ar = {
          */
         reasons: {
             // The channel's address (its slug), on creating one.
+            // The progress tab's goals and the Friday review (backend content/goal, content/weeklyreview).
+            GOAL_LIMIT_REACHED: 'بلغتَ عدد الأهداف المتاح الآن. أتمِم هدفاً أو أرشِفه، ثم ابدأ غيره.',
+            GOAL_ALREADY_EXISTS: 'لك هدفٌ قائم لهذا من قبل؛ تجده في «مسيرتي».',
+            GOAL_NOT_ACTIVE: 'هذا الهدف لم يعد قائماً: أتممتَه أو أرشفتَه.',
+            GOAL_TARGET_NOT_FOUND: 'تعذّر العثور على هذا البرنامج أو الكتاب، فلعلّه أُخفي.',
+            QADA_NOT_AVAILABLE: 'لا شيء فاتك أمس يُتدارَك الآن؛ والتدارك يكون من الفجر إلى الظهر.',
+            CARRY_NOT_AVAILABLE: 'لا شيء فاتك أمس يُضاف إلى يومك.',
+            REVIEW_NOT_OPEN: 'محاسبة الأسبوع تُفتح بعد صلاة الجمعة، إلى آخر الأسبوع.',
+            INCREASE_NOT_OFFERED: 'تُقترح الزيادة بعد أسبوعين أتممتَ فيهما وِردك كاملاً.',
             CHANNEL_SLUG_TAKEN: 'هذا العنوان مستخدم لقناة أخرى، اختر عنواناً غيره.',
             CHANNEL_SLUG_RESERVED: 'هذا العنوان محجوز للمنصة، اختر عنواناً غيره.',
             CHANNEL_SLUG_INVALID: 'يتكوّن العنوان من حروف إنجليزية صغيرة وأرقام وشرطات (-) فقط.',

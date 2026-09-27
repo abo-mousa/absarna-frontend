@@ -253,6 +253,15 @@ export const en = {
          */
         reasons: {
             // The channel's address (its slug), on creating one.
+            // The progress tab's goals and the Friday review (backend content/goal, content/weeklyreview).
+            GOAL_LIMIT_REACHED: 'You have as many goals as you can hold for now. Finish or archive one, then start another.',
+            GOAL_ALREADY_EXISTS: 'You already have a goal for this; it is in My Journey.',
+            GOAL_NOT_ACTIVE: 'This goal is no longer running: you finished or archived it.',
+            GOAL_TARGET_NOT_FOUND: 'This programme or book could not be found; it may have been hidden.',
+            QADA_NOT_AVAILABLE: 'Nothing from yesterday is waiting to be made up; making up runs from dawn until noon.',
+            CARRY_NOT_AVAILABLE: 'Nothing from yesterday is waiting to be added to today.',
+            REVIEW_NOT_OPEN: 'The weekly review opens after Friday prayer, until the end of the week.',
+            INCREASE_NOT_OFFERED: 'An increase is offered after two weeks in which you kept your portion in full.',
             CHANNEL_SLUG_TAKEN: 'That address is already used by another channel. Choose a different one.',
             CHANNEL_SLUG_RESERVED: 'That address is reserved by the platform. Choose a different one.',
             CHANNEL_SLUG_INVALID: 'An address may use only lowercase English letters, numbers and hyphens (-).',
