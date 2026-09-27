@@ -91,7 +91,9 @@ function History() {
                     {isVideos
                         ? history.map((entry) => (
                               <VideoCard
-                                  key={entry.id}
+                                  // videoId, not an entry id: a watch row is keyed by (reader,
+                                  // video) and has no id of its own any more.
+                                  key={entry.videoId}
                                   video={entry.video}
                                   onClick={() => navigate(`/video/${entry.videoId}`)}
                                   watch={{ progress: entry.progress, finished: entry.finished }}
