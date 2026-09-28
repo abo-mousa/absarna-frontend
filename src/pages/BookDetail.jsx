@@ -15,11 +15,15 @@ import { useBook, useBookReadProgress, useSaveReadProgress } from '../hooks/useB
 import { usePageMeta } from '../hooks/usePageMeta';
 import MakeWird from '../components/journey/MakeWird';
 import PausedLine from '../components/journey/PausedLine';
+import ReflectionPrompt from '../components/journey/ReflectionPrompt';
 import { t } from '@/i18n';
 import { formatCompactCount } from '@/lib/numbers';
 
 // Code-split: pdfjs is a large dependency that only visitors who actually open a book should pay for.
 const PdfReader = lazy(() => import('../components/content/PdfReader'));
+
+// Pages turned in one visit before the reflection prompt is offered.
+const READ_BEFORE_PROMPT = 3;
 
 function BookDetail() {
     const { id } = useParams();
@@ -64,9 +68,17 @@ function BookDetail() {
         image: resolveMediaUrl(book?.previewImageUrl),
     });
 
+    // How far this visit has read, for «ما الذي بقي معك؟»: offered once a few pages have turned,
+    // not on opening the book.
+    const startPageRef = useRef(null);
+    const [readThisVisit, setReadThisVisit] = useState(0);
+    const [pageNow, setPageNow] = useState(null);
     const handlePageChange = (page) => {
         if (!token) return;
         saveReadProgress.mutate(page);
+        startPageRef.current ??= savedPage || 1;
+        setReadThisVisit((read) => Math.max(read, page - startPageRef.current));
+        setPageNow(page);
     };
 
     // Zero-cost local tracking (no request) so the pagehide flush below always has the true
@@ -197,6 +209,14 @@ function BookDetail() {
                         </div>
                     </div>
                 )}
+
+                <ReflectionPrompt
+                    kind="BOOK"
+                    itemId={book.id}
+                    position={pageNow}
+                    show={readThisVisit >= READ_BEFORE_PROMPT}
+                    className="mb-6"
+                />
 
                 <CommentsSection type="book" id={book.id} />
 

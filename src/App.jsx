@@ -34,6 +34,7 @@ const JourneyGoals = lazy(() => import('./pages/JourneyGoals'));
 const JourneyGoal = lazy(() => import('./pages/JourneyGoal'));
 const JourneyMilestones = lazy(() => import('./pages/JourneyMilestones'));
 const JourneyRecord = lazy(() => import('./pages/JourneyRecord'));
+const JourneyReflections = lazy(() => import('./pages/JourneyReflections'));
 const Bookmarks = lazy(() => import('./pages/Bookmarks'));
 const SearchPage = lazy(() => import('./pages/SearchPage'));
 const Books = lazy(() => import('./pages/Books'));
@@ -263,6 +264,7 @@ function AppRoutes() {
                 <Route path="/journey/goals/:id" element={<ProtectedRoute><JourneyGoal /></ProtectedRoute>} />
                 <Route path="/journey/milestones" element={<ProtectedRoute><JourneyMilestones /></ProtectedRoute>} />
                 <Route path="/journey/record" element={<ProtectedRoute><JourneyRecord /></ProtectedRoute>} />
+                <Route path="/journey/reflections" element={<ProtectedRoute><JourneyReflections /></ProtectedRoute>} />
                 {/* The History page folded into the record; the old path is kept for bookmarks. */}
                 <Route path="/history" element={<Navigate to="/journey/record" replace />} />
                 <Route path="/bookmarks" element={

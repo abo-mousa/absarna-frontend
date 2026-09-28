@@ -407,7 +407,7 @@ function TimeStep({ form, set, editing, originalSlot }) {
                     {form.anchor === 'CUSTOM' && (
                         <input
                             type="text"
-                            dir="auto"
+                            dir={form.anchorText ? 'auto' : undefined}
                             maxLength={80}
                             value={form.anchorText}
                             onChange={(e) => set({ anchorText: e.target.value })}
@@ -446,7 +446,7 @@ function IntentionStep({ form, set }) {
             <label className="block">
                 <span className="block text-sm font-semibold mb-2">{t('journey.dialog.intentionLabel')}</span>
                 <textarea
-                    dir="auto"
+                    dir={form.intentionText ? 'auto' : undefined}
                     rows={3}
                     maxLength={500}
                     value={form.intentionText}

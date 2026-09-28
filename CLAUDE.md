@@ -442,7 +442,10 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
     erase with or without the counts) are one page; the old per-list "clear" is gone. While
     recording is paused, `PausedLine` shows under the player, in the book reader, on Today's portions
     and on every journey page, and resumes recording in place with one tap.
-  - Pages outside the tab import `journey/MakeWird` and `journey/PausedLine` by file, not through
+  - **«خواطري» (`/journey/reflections`)**: `ReflectionPrompt` asks one optional line under the player
+    once the backend counts the episode finished, and on a book page after three pages in one
+    visit; answered or closed, it is put away until tomorrow in that browser. Verified readers only.
+  - Pages outside the tab import `journey/MakeWird`, `journey/PausedLine` and `journey/ReflectionPrompt` by file, not through
     the barrel, so the texts chunk stays lazy.
 - **Progress reporting has three layers** (`lib/api/beacon.js`): a throttled checkpoint, a flush on
   React unmount (SPA navigation), and a `pagehide` listener using `fetch(..., {keepalive:true})` —

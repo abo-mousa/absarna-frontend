@@ -14,3 +14,4 @@ export { default as SlotSplit } from './SlotSplit';
 export { default as RetentionPanel } from './RetentionPanel';
 export { default as HistoryList } from './HistoryList';
 export { default as PausedLine } from './PausedLine';
+export { default as ReflectionPrompt } from './ReflectionPrompt';

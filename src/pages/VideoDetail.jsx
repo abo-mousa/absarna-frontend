@@ -6,6 +6,7 @@ import PageShell from '../components/layout/PageShell';
 import { QueryState, Avatar, Spinner, LinkifiedText, ExpandableText, KhatamStar, MetaDivider } from '../components/ui';
 import { VideoPlayer, CommentsSection, VideoCard, BookmarkButton, LikeButton, ReportButton, ShareButton, SourceBadge, SubscribeButton } from '../components/content';
 import PausedLine from '../components/journey/PausedLine';
+import ReflectionPrompt from '../components/journey/ReflectionPrompt';
 import { useVideo, useRelatedVideo, useWatchProgressMap, useWatchHistory } from '../hooks/useVideos';
 import { useChannel } from '../hooks/useChannels';
 import { useSeriesDetail, useSeriesNeighbours } from '../hooks/useSeries';
@@ -214,6 +215,15 @@ function VideoDetail() {
                 </div>
                 {/* Recording paused: the place is not being kept, and the reader should know before leaving. */}
                 <PausedLine className="mb-4" />
+                {/* «ما الذي بقي معك؟» once the backend counts this episode as finished — the same
+                    reading of "finished" the history and the portions use, for either player. */}
+                <ReflectionPrompt
+                    kind="VIDEO"
+                    itemId={video.id}
+                    position={watchProgress[video.id]?.seconds}
+                    show={!!watchProgress[video.id]?.finished}
+                    className="mb-6"
+                />
 
                 {/* The video's details as the book page draws its own: no panel, a serif title, a
                     hairline under the block. */}

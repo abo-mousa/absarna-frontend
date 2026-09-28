@@ -5,6 +5,7 @@ const ITEMS = [
     { key: 'overview', to: '/journey', exact: true },
     { key: 'goals', to: '/journey/goals' },
     { key: 'milestones', to: '/journey/milestones' },
+    { key: 'reflections', to: '/journey/reflections' },
     { key: 'record', to: '/journey/record' },
 ];
 

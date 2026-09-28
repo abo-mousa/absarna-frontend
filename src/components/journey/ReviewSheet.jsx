@@ -72,6 +72,19 @@ function ReviewForm({ review, goals, onDone }) {
                     <DayStars days={review.week} />
                 </div>
             )}
+            {review.reflections?.length > 0 && (
+                <div>
+                    <p className="text-sm font-semibold mb-2">{t('journey.review.reflections')}</p>
+                    <ul className="flex flex-col gap-2">
+                        {review.reflections.map((row) => (
+                            <li key={row.id} className="text-sm border-s-2 border-gold/50 ps-3">
+                                <span dir="auto" className="font-reading">{row.text}</span>
+                                {row.itemTitle && <span dir="auto" className="block text-xs text-text-muted">{row.itemTitle}</span>}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
             <MultiChips label={t('journey.review.helped')} values={helped} onChange={setHelped}
                         options={HELPED.map((code) => ({ value: code, label: t(`journey.review.answers.${code}`) }))} />
             <MultiChips label={t('journey.review.hindered')} values={hindered} onChange={setHindered}
@@ -89,7 +102,7 @@ function ReviewForm({ review, goals, onDone }) {
             <SacredText moment={increaseOffered ? 'gradual' : 'review'} kind="HADITH" size="sm" />
             <label className="block">
                 <span className="block text-sm font-semibold mb-2">{t('journey.review.note')}</span>
-                <textarea dir="auto" rows={3} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)}
+                <textarea dir={note ? 'auto' : undefined} rows={3} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)}
                           className="w-full px-3 py-2 rounded-md border border-border bg-surface font-reading" />
                 <span className="block text-xs text-text-muted mt-1">{t('journey.dialog.intentionPrivate')}</span>
             </label>
