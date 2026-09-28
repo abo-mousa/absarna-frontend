@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Clock, FileText, Search } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
 import ReadSwitch from '../components/layout/ReadSwitch';
+import ChannelScopeTabs from '../components/content/ChannelScopeTabs';
 import { ArticleCard } from '../components/content';
 import { QueryState, Input, PageHeader, Cartouche } from '../components/ui';
 import { useArticles, useArticleCategories, useSuggestedArticles } from '../hooks/useArticles';
@@ -25,9 +26,11 @@ function Articles() {
     const [search, setSearch] = useState('');
     const [category, setCategory] = useState('');
     const [sortBy, setSortBy] = useState('NEWEST');
+    // «من قنواتك» — a narrowing like a search or a category, so it gets the plain list.
+    const [followed, setFollowed] = useState(false);
     // Debounced so typing is one request per pause, not one per keystroke.
     const searchTerm = useDebouncedValue(search.trim(), 300);
-    const filtering = !!(searchTerm || category);
+    const filtering = !!(searchTerm || category || followed);
     const {
         data,
         isLoading,
@@ -38,7 +41,7 @@ function Articles() {
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
-    } = useArticles(PAGE_SIZE, { sort: sortBy, category, search: searchTerm });
+    } = useArticles(PAGE_SIZE, { sort: sortBy, category, search: searchTerm, followed });
     const { data: categories = [] } = useArticleCategories();
     const suggested = useSuggestedArticles(!filtering);
     const articles = useMemo(() => data?.pages.flatMap((page) => page.content) || [], [data]);
@@ -48,6 +51,7 @@ function Articles() {
     return (
         <PageShell tab sidebar={<ArticlesRail categories={categories} category={category} onCategory={setCategory} />}>
             <PageHeader title={t('nav.tabs.articles')} action={<ReadSwitch />} tabs belowLg />
+            <ChannelScopeTabs followed={followed} onChange={setFollowed} />
 
             {/* Shown whenever there is anything to narrow OR a narrowing is active: a search
                 that matches nothing must still leave the box on screen to change it. */}
@@ -96,8 +100,8 @@ function Articles() {
                 // placeholder would flash the wrong empty message.
                 isEmpty={articles.length === 0 && !isPlaceholderData}
                 emptyIcon={!filtering ? FileText : Search}
-                emptyTitle={!filtering ? t('articles.empty') : t('common.noResults')}
-                emptyDescription={!filtering ? t('articles.emptyHint') : t('common.tryAnotherSearch')}
+                emptyTitle={!filtering ? t('articles.empty') : followed && !searchTerm && !category ? t('articles.emptyFollowed') : t('common.noResults')}
+                emptyDescription={!filtering ? t('articles.emptyHint') : followed && !searchTerm && !category ? t('common.channelScope.emptyHint') : t('common.tryAnotherSearch')}
             >
                 {/* A MAGAZINE PAGE, not a list of boxes. Unnarrowed, the newest article leads —
                     headline in Markazi, its opening in Naskh, the faces the article page itself

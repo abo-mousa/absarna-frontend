@@ -14,14 +14,15 @@ import { emitProgressReport } from '@/lib/progressEvents';
 // `sort` is a backend name (NEWEST / TITLE, `ListingSort`); this hook passes it and nothing more.
 // `enabled`: the Books page shows shelves instead of this list when nothing narrows it, and asks
 // for the list only when it will draw it.
-export const useBooks = (size = 12, { sort = 'NEWEST', category = '', search = '' } = {}, enabled = true) => {
+export const useBooks = (size = 12, { sort = 'NEWEST', category = '', search = '', followed = false } = {}, enabled = true) => {
     return useInfiniteQuery({
         enabled,
-        queryKey: ['books', size, sort, category, search],
+        queryKey: ['books', size, sort, category, search, followed],
         queryFn: async ({ pageParam = 0 }) => {
             const params = new URLSearchParams({ page: pageParam, size, sort });
             if (category) params.set('category', category);
             if (search) params.set('search', search);
+            if (followed) params.set('followed', 'true');
             const res = await api.get(`/books?${params}`);
             return res.data;
         },

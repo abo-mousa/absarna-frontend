@@ -17,6 +17,13 @@ export const ar = {
 
     /** Words that genuinely mean the same thing everywhere they appear. */
     common: {
+        // Books' and Articles' «من قنواتك | كل القنوات» (content/ChannelScopeTabs), worded as Posts'.
+        channelScope: {
+            label: 'من أيّ القنوات',
+            followed: 'من قنواتك',
+            all: 'كل القنوات',
+            emptyHint: 'اختر «كل القنوات» لترى ما نُشر في غيرها.',
+        },
         // A card released today or yesterday (backend NewRelease).
         newRelease: 'جديد',
         // The two days a date-only value can name without inventing a time of day. A backend
@@ -803,6 +810,7 @@ export const ar = {
     },
 
     books: {
+        emptyFollowed: 'لا كتب من القنوات التي تتابعها بعد',
         title: 'المكتبة',
         metaDescription: 'مكتبة الكتب الإسلامية على أَبْصَرْنا',
         searchPlaceholder: 'ابحث عن كتاب...',
@@ -847,6 +855,7 @@ export const ar = {
     },
 
     articles: {
+        emptyFollowed: 'لا مقالات من القنوات التي تتابعها بعد',
         // The first section, on the reader's topics (backend ContentSuggestions).
         suggested: 'قد يهمّك',
         title: 'المقالات',
@@ -884,6 +893,7 @@ export const ar = {
         mine: 'قنواتي',
         manage: 'إدارة القناة',
         create: 'إنشاء قناة',
+        createPrompt: 'لديك علم تنشره؟',
         following: 'قنواتك',
         manageFollowing: 'إدارة المتابعات',
         directory: 'اكتشف القنوات',

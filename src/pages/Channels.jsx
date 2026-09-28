@@ -30,7 +30,9 @@ function Channels() {
             <PageHeader title={t('nav.tabs.channels')} />
 
             <div className="flex flex-col gap-10">
-                {token && (
+                {/* A heading only over something (product owner, 2026-09-28): a reader with no channel of
+                    their own gets the way to make one as a line at the foot of the page instead. */}
+                {token && myChannels.length > 0 && (
                     <section>
                         <Cartouche
                             title={t('channelsPage.mine')}
@@ -40,13 +42,11 @@ function Channels() {
                                 </Link>
                             )}
                         />
-                        {myChannels.length > 0 && (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8">
-                                {myChannels.map((channel) => (
-                                    <ChannelRow key={channel.id} slug={channel.slug} name={channel.name} logoUrl={channel.logoUrl} manage />
-                                ))}
-                            </div>
-                        )}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8">
+                            {myChannels.map((channel) => (
+                                <ChannelRow key={channel.id} slug={channel.slug} name={channel.name} logoUrl={channel.logoUrl} manage />
+                            ))}
+                        </div>
                     </section>
                 )}
 
@@ -72,7 +72,8 @@ function Channels() {
                 )}
 
                 <section>
-                    <Cartouche title={t('channelsPage.directory')} />
+                    {/* Shown while it loads or fails too, so the spinner or the retry has its place. */}
+                    {(others.length > 0 || directory.isLoading || directory.isError) && <Cartouche title={t('channelsPage.directory')} />}
                     <QueryState
                         isLoading={directory.isLoading}
                         isError={directory.isError}
@@ -130,6 +131,13 @@ function Channels() {
                         )}
                     </QueryState>
                 </section>
+
+                {token && myChannels.length === 0 && (
+                    <p className="text-sm text-text-secondary">
+                        {t('channelsPage.createPrompt')}{' '}
+                        <Link to="/create-channel" className="font-semibold">{t('channelsPage.create')}</Link>
+                    </p>
+                )}
             </div>
         </PageShell>
     );

@@ -5,6 +5,7 @@ import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
 import ReadSwitch from '../components/layout/ReadSwitch';
+import ChannelScopeTabs from '../components/content/ChannelScopeTabs';
 import { QueryState, Input, Cartouche, PageHeader } from '../components/ui';
 import { BooksRail } from '../components/layout/rail';
 import { BookCard, BookCover } from '../components/content';
@@ -28,9 +29,11 @@ function Books() {
     const [search, setSearch] = useState('');
     const [category, setCategory] = useState('');
     const [sortBy, setSortBy] = useState('NEWEST');
+    // «من قنواتك» — a narrowing like a search or a category, so it gets the plain list.
+    const [followed, setFollowed] = useState(false);
     // Debounced so typing is one request per pause, not one per keystroke.
     const searchTerm = useDebouncedValue(search.trim(), 300);
-    const filtering = !!(searchTerm || category);
+    const filtering = !!(searchTerm || category || followed);
     const categoriesQuery = useBookCategories();
     const categories = useMemo(() => categoriesQuery.data || [], [categoriesQuery.data]);
     const categoriesSettled = categoriesQuery.isSuccess || categoriesQuery.isError;
@@ -53,7 +56,7 @@ function Books() {
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
-    } = useBooks(PAGE_SIZE, { sort: sortBy, category, search: searchTerm }, listNeeded);
+    } = useBooks(PAGE_SIZE, { sort: sortBy, category, search: searchTerm, followed }, listNeeded);
     const books = useMemo(() => data?.pages.flatMap((page) => page.content) || [], [data]);
     const shelvesQuery = useBookShelves(sortBy, shelves);
     const shelfList = shelvesQuery.data || [];
@@ -68,6 +71,7 @@ function Books() {
     return (
         <PageShell tab sidebar={<BooksRail shelves={shelves ? shelfList : []} />}>
             <PageHeader title={t('nav.tabs.books')} action={<ReadSwitch />} tabs belowLg />
+            <ChannelScopeTabs followed={followed} onChange={setFollowed} />
 
             {/* Shown whenever there is anything to narrow OR a narrowing is active: a search
                 that matches nothing must still leave the box on screen to change it. */}
@@ -161,8 +165,8 @@ function Books() {
                 // placeholder would flash the wrong empty message.
                 isEmpty={books.length === 0 && !isPlaceholderData}
                 emptyIcon={!filtering ? BookOpen : Search}
-                emptyTitle={!filtering ? t('books.empty') : t('common.noResults')}
-                emptyDescription={!filtering ? t('books.emptyDescription') : t('common.tryAnotherSearch')}
+                emptyTitle={!filtering ? t('books.empty') : followed && !searchTerm && !category ? t('books.emptyFollowed') : t('common.noResults')}
+                emptyDescription={!filtering ? t('books.emptyDescription') : followed && !searchTerm && !category ? t('common.channelScope.emptyHint') : t('common.tryAnotherSearch')}
             >
                 <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-2 2xl:grid-cols-3 3xl:grid-cols-4 gap-x-5 gap-y-8">
                     {books.map((book) => (

@@ -32,6 +32,12 @@ export const en = {
 
     /** Words that genuinely mean the same thing everywhere they appear. */
     common: {
+        channelScope: {
+            label: 'Which channels',
+            followed: 'From your channels',
+            all: 'All channels',
+            emptyHint: 'Choose "All channels" to see what the others have published.',
+        },
         // A card released today or yesterday (backend NewRelease).
         newRelease: 'New',
         loginRequired: 'Sign in to do this',
@@ -588,6 +594,7 @@ export const en = {
     },
 
     books: {
+        emptyFollowed: 'No books from the channels you follow yet',
         title: 'Library',
         metaDescription: 'The Islamic book library on أَبْصَرْنا',
         searchPlaceholder: 'Search for a book...',
@@ -628,6 +635,7 @@ export const en = {
     },
 
     articles: {
+        emptyFollowed: 'No articles from the channels you follow yet',
         suggested: 'You may find these useful',
         title: 'Articles',
         metaDescription: 'Islamic articles on أَبْصَرْنا',
@@ -660,6 +668,7 @@ export const en = {
         mine: 'My channels',
         manage: 'Manage channel',
         create: 'Create a channel',
+        createPrompt: 'Have knowledge to share?',
         following: 'Your channels',
         manageFollowing: 'Manage subscriptions',
         directory: 'Discover channels',

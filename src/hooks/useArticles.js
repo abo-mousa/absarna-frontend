@@ -9,13 +9,14 @@ import { useUserScope } from './useUserScope';
 // Ordering, the category filter and search all happen on the server, over the whole catalogue: the
 // page used to do them to the rows it had loaded, which could only ever find what was on page one.
 // `sort` is a backend name (NEWEST / TITLE, `ListingSort`); this hook passes it and nothing more.
-export const useArticles = (size = 15, { sort = 'NEWEST', category = '', search = '' } = {}) => {
+export const useArticles = (size = 15, { sort = 'NEWEST', category = '', search = '', followed = false } = {}) => {
     return useInfiniteQuery({
-        queryKey: ['articles', size, sort, category, search],
+        queryKey: ['articles', size, sort, category, search, followed],
         queryFn: async ({ pageParam = 0 }) => {
             const params = new URLSearchParams({ page: pageParam, size, sort });
             if (category) params.set('category', category);
             if (search) params.set('search', search);
+            if (followed) params.set('followed', 'true');
             const res = await api.get(`/articles?${params}`);
             return res.data;
         },
