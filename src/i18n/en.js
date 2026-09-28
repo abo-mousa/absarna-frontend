@@ -892,7 +892,7 @@ export const en = {
         legend: {
             FULL: 'Done in full',
             MINIMUM: 'Done at the minimum',
-            MADE_UP: 'Made up next morning',
+            MADE_UP: 'Missed, then finished the next morning',
             REST: 'Rest day',
             EXCUSED: 'Excused',
             PENDING: 'Not done yet',
