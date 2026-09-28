@@ -2,6 +2,11 @@ import { useEffect, useRef } from 'react';
 
 const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
 
+// The traps currently open, innermost last. Every trap listens on `document`, so without this a
+// dialog opened from inside another (the subject picker in the edit dialog) would have one Escape
+// close both, and the outer trap would fight the inner one over Tab. Only the top one answers.
+const openTraps = [];
+
 // Traps Tab/Shift+Tab focus cycling within `containerRef` while `active`, moves focus into
 // the container on activation, restores it to whatever was focused before on deactivation,
 // locks body scroll, and closes on Escape via `onClose`. Shared by Modal and the former sidebar's mobile
@@ -45,7 +50,10 @@ export function useFocusTrap(active, containerRef, onClose) {
 
     useEffect(() => {
         if (!active) return;
+        const token = {};
+        openTraps.push(token);
         const handleKeyDown = (e) => {
+            if (openTraps[openTraps.length - 1] !== token) return;
             if (e.key === 'Escape') {
                 onClose?.();
                 return;
@@ -64,6 +72,9 @@ export function useFocusTrap(active, containerRef, onClose) {
             }
         };
         document.addEventListener('keydown', handleKeyDown);
-        return () => document.removeEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+            openTraps.splice(openTraps.indexOf(token), 1);
+        };
     }, [active, containerRef, onClose]);
 }

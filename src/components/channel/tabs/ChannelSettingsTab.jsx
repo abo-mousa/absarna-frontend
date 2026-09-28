@@ -12,6 +12,7 @@ import { describeError } from '@/lib/describeError';
 import { FieldLabel } from '../ContentPublishForm';
 import { formatLabel } from '@/lib/formats';
 import { useFormats } from '@/hooks/useVideos';
+import SubjectPicker from '@/components/content/SubjectPicker';
 
 /**
  * The channel's own properties: name and description — and its two pictures.
@@ -35,6 +36,7 @@ export default function ChannelSettingsTab({ slug, channel, youtubeState, isOwne
         name: channel.name || '',
         description: channel.description || '',
         defaultFormat: channel.defaultFormat || '',
+        defaultSubject: channel.defaultSubject || null,
         // No logoUrl/bannerUrl here. They were carried through a form with no field for either,
         // so every save re-sent whatever the DTO held — and since an uploaded logo's DTO value is
         // its media address, saving the name would have written that address into the URL column.
@@ -47,10 +49,13 @@ export default function ChannelSettingsTab({ slug, channel, youtubeState, isOwne
         try {
             // '' is not a format: choosing "no default" sends clearDefaultFormat, which the backend
             // added because its PATCH merges and cannot hear a null.
-            const { defaultFormat, ...rest } = form;
-            await updateChannel.mutateAsync(defaultFormat
-                ? { ...rest, defaultFormat }
-                : { ...rest, clearDefaultFormat: !!channel.defaultFormat });
+            const { defaultFormat, defaultSubject, ...rest } = form;
+            await updateChannel.mutateAsync({
+                ...rest,
+                ...(defaultFormat ? { defaultFormat } : { clearDefaultFormat: !!channel.defaultFormat }),
+                // The same for the subject: absent from a merge means "unchanged", so a removal is a flag.
+                ...(defaultSubject ? { defaultSubject } : { clearDefaultSubject: !!channel.defaultSubject }),
+            });
             showToast(t('channelManage.saved'), 'success');
         } catch (err) {
             showToast(describeError(err, t('channelManage.saveFailed')), 'error');
@@ -89,6 +94,17 @@ export default function ChannelSettingsTab({ slug, channel, youtubeState, isOwne
                         <option key={name} value={name}>{formatLabel(name)}</option>
                     ))}
                 </select>
+            </div>
+            {/* The channel's field: every video and book with none of its own reads as it, imports
+                included, so an imported catalogue is filed by one choice here. */}
+            <div>
+                <SubjectPicker
+                    id="channel-default-subject"
+                    label={t('subjects.channelDefault.label')}
+                    value={form.defaultSubject}
+                    onChange={(defaultSubject) => setForm((current) => ({ ...current, defaultSubject }))}
+                />
+                <p className="text-xs text-text-muted mt-1.5">{t('subjects.channelDefault.hint')}</p>
             </div>
             {/* No colour picker: a channel's colour only ever painted the letter circle of a
                 channel with no photo, and Avatar now draws every one of those in the brand's own

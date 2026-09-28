@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { t } from '@/i18n';
@@ -39,7 +40,10 @@ function Modal({ open, onClose, title, children, maxWidth = '800px' }) {
 
     if (!rendered) return null;
 
-    return (
+    // Into <body>, not in place: a dialog opened from inside another (the subject picker inside the
+    // edit dialog) sat inside that dialog's scaled box, and `position: fixed` under a transform is
+    // relative to the transformed box rather than the screen.
+    return createPortal((
         <div
             className={`fixed inset-0 bg-black/50 z-[2000] flex items-center justify-center p-4
                 transition-opacity duration-200 ${visible ? 'opacity-100' : 'opacity-0'}`}
@@ -75,7 +79,7 @@ function Modal({ open, onClose, title, children, maxWidth = '800px' }) {
                 <div className="p-6">{children}</div>
             </div>
         </div>
-    );
+    ), document.body);
 }
 
 export default Modal;

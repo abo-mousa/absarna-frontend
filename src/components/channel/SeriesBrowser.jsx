@@ -17,6 +17,8 @@ import { useKeepScrollPlace } from '@/hooks/useKeepScrollPlace';
 import { describeError } from '@/lib/describeError';
 import { stripEmpty } from '@/lib/forms';
 import { t } from '@/i18n';
+import { useChannel } from '@/hooks/useChannels';
+import SubjectPicker from '@/components/content/SubjectPicker';
 
 /**
  * `'empty'`, `'hidden'`, `'partial'` or `'visible'` — what the owner's series row says about who
@@ -128,6 +130,7 @@ export function SeriesActions({ slug, series, onChanged, onDeleted }) {
 
             <ContentEditModal
                 open={editing}
+                slug={slug}
                 type="series"
                 item={editing ? series : null}
                 onClose={() => setEditing(false)}
@@ -187,13 +190,14 @@ function SeriesSummary({ series }) {
 export function NewSeriesModal({ slug, open, onClose }) {
     const { showToast } = useToast();
     const createSeries = useCreateSeries(slug);
-    const [form, setForm] = useState({ title: '', description: '' });
+    const [form, setForm] = useState({ title: '', description: '', subject: '' });
+    const { data: channel } = useChannel(slug, open);
 
     const handleCreate = async (e) => {
         e.preventDefault();
         try {
             await createSeries.mutateAsync(stripEmpty(form));
-            setForm({ title: '', description: '' });
+            setForm({ title: '', description: '', subject: '' });
             showToast(t('channelManage.seriesCreated'), 'success');
             onClose();
         } catch (err) {
@@ -226,6 +230,15 @@ export function NewSeriesModal({ slug, open, onClose }) {
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
                     field="description"
                 />
+                <div>
+                    <SubjectPicker
+                        id="new-series-subject"
+                        value={form.subject || null}
+                        onChange={(subject) => setForm((current) => ({ ...current, subject: subject || '' }))}
+                        inherited={channel?.defaultSubject ? { code: channel.defaultSubject, from: 'channel' } : null}
+                    />
+                    <p className="text-xs text-text-muted mt-1.5">{t('subjects.seriesHint')}</p>
+                </div>
             </ContentPublishForm>
         </Modal>
     );

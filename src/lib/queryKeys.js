@@ -66,6 +66,7 @@ export const queryKeys = {
     progressYear: (scope) => ['progress', 'year', scope],
     progressWeeks: (count, scope) => ['progress', 'weeks', count, scope],
     progressSlots: (days, scope) => ['progress', 'slots', days, scope],
+    progressFields: (days, scope) => ['progress', 'fields', days, scope],
     historySettings: (scope) => ['history-settings', scope],
     reflections: (scope) => ['reflections', scope],
     weeklyReview: (scope) => ['weekly-review', scope],

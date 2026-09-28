@@ -4,6 +4,9 @@ import VideoThumbnailPicker from './VideoThumbnailPicker';
 import { FieldLabel } from './ContentPublishForm';
 import { formatLabel } from '@/lib/formats';
 import { useFormats } from '@/hooks/useVideos';
+import { useChannel } from '@/hooks/useChannels';
+import { useChannelSeriesManage } from '@/hooks/useSeries';
+import SubjectPicker from '@/components/content/SubjectPicker';
 import { t } from '@/i18n';
 
 /**
@@ -47,6 +50,15 @@ function ContentEditModal({ open, type, item, onClose, onSave, saving, error = n
     // The two things every reader is told about a video: booleans on the backend, so unticking
     // one really does take it off.
     const [flags, setFlags] = useState({ graphicContent: false, removedElsewhere: false });
+    // The item's OWN subject; what it reads as without one (its series', its channel's) is shown by
+    // the picker as the inherited value, from caches the dashboard already holds.
+    const hasSubject = type === 'videos' || type === 'books' || type === 'series';
+    const [subject, setSubject] = useState(null);
+    const { data: channel } = useChannel(slug, !!slug && open && hasSubject);
+    const { data: seriesList = [] } = useChannelSeriesManage(slug, !!slug && open && type === 'videos' && !!item?.seriesId);
+    const seriesSubject = type === 'videos' ? seriesList.find((s) => s.id === item?.seriesId)?.subject : null;
+    const inherited = seriesSubject ? { code: seriesSubject, from: 'series' }
+        : channel?.defaultSubject ? { code: channel.defaultSubject, from: 'channel' } : null;
 
     // Re-seeded whenever a different item is opened. Without this the dialog would show the
     // previous item's values for a moment, and a quick save would write them onto the new one.
@@ -55,6 +67,7 @@ function ContentEditModal({ open, type, item, onClose, onSave, saving, error = n
         setForm(Object.fromEntries(fields.map((f) => [f, item[f] ?? ''])));
         setFormat(type === 'videos' ? item.ownFormat || '' : '');
         setFlags({ graphicContent: !!item.graphicContent, removedElsewhere: !!item.removedElsewhere });
+        setSubject(item.subject || null);
         // Keyed on the item's IDENTITY, not the item: `item` is a fresh object on every refetch
         // of the list behind this dialog, and re-seeding then would silently discard whatever the
         // owner has typed. `fields` is derived from `type` (a new array each render), so `type`
@@ -79,6 +92,11 @@ function ContentEditModal({ open, type, item, onClose, onSave, saving, error = n
         if (type === 'videos' && format !== (item.ownFormat || '')) {
             if (format) changes.format = format;
             else changes.inheritFormat = true;
+        }
+        if (hasSubject && subject !== (item.subject || null)) {
+            // The PATCH merges and cannot hear a null, so "no subject" is its own flag.
+            if (subject) changes.subject = subject;
+            else changes.clearSubject = true;
         }
         if (type === 'videos') {
             for (const flag of ['graphicContent', 'removedElsewhere']) {
@@ -116,6 +134,13 @@ function ContentEditModal({ open, type, item, onClose, onSave, saving, error = n
                         field={field}
                     />
                 ))}
+
+                {hasSubject && (
+                    <div>
+                        <SubjectPicker id={`subject-${type}-${item.id}`} value={subject} onChange={setSubject} inherited={inherited} />
+                        {type === 'series' && <p className="text-xs text-text-muted mt-1.5">{t('subjects.seriesHint')}</p>}
+                    </div>
+                )}
 
                 {type === 'videos' && (
                     <div>

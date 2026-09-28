@@ -7,11 +7,13 @@ import { useChannelContentTab } from '@/hooks/useChannelContentTab';
 import { useChannelUpload } from '@/hooks/useChannelUpload';
 import { acceptAttribute } from '@/hooks/usePresignedUpload';
 import { stripEmpty } from '@/lib/forms';
+import { useChannel } from '@/hooks/useChannels';
+import SubjectPicker from '@/components/content/SubjectPicker';
 import { t } from '@/i18n';
 
 const EMPTY_FORM = {
     title: '', description: '', pdfUrl: '', uploadSessionId: '', previewImageUrl: '',
-    category: '', originalPublishDate: '', pages: '',
+    category: '', subject: '', originalPublishDate: '', pages: '',
 };
 
 /**
@@ -24,6 +26,8 @@ const EMPTY_FORM = {
  * nothing — the button shows the progress and reopening shows the form as it was left.
  */
 export default function BooksTab({ slug, active }) {
+    // Cached by the dashboard already: only for the subject the channel gives its books by default.
+    const { data: channel } = useChannel(slug, active);
     const content = useChannelContentTab(slug, 'books', active);
     const upload = useChannelUpload(slug, 'books');
     const [form, setForm] = useState(EMPTY_FORM);
@@ -84,6 +88,12 @@ export default function BooksTab({ slug, active }) {
                         <Input label={t('fields.category')} value={form.category} onChange={field('category')} field="category" />
                         <Input label={t('channelManage.forms.book.pagesLabel')} type="number" value={form.pages} onChange={field('pages')} field="pages" />
                     </div>
+                    <SubjectPicker
+                        id="book-subject"
+                        value={form.subject || null}
+                        onChange={(subject) => setForm((current) => ({ ...current, subject: subject || '' }))}
+                        inherited={channel?.defaultSubject ? { code: channel.defaultSubject, from: 'channel' } : null}
+                    />
                     <Input label={t('fields.originalPublishDateOptional')} type="date" value={form.originalPublishDate} onChange={field('originalPublishDate')} field="originalPublishDate" />
                 </ContentPublishForm>
             </Modal>

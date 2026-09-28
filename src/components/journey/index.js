@@ -11,6 +11,7 @@ export { default as ReviewSheet } from './ReviewSheet';
 export { default as YearStars } from './YearStars';
 export { default as WeekBars } from './WeekBars';
 export { default as SlotSplit } from './SlotSplit';
+export { default as FieldsChart } from './FieldsChart';
 export { default as RetentionPanel } from './RetentionPanel';
 export { default as HistoryList } from './HistoryList';
 export { default as PausedLine } from './PausedLine';

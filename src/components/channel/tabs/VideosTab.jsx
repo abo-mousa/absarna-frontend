@@ -19,6 +19,7 @@ import { stripEmpty } from '@/lib/forms';
 import { t } from '@/i18n';
 import { formatLabel } from '@/lib/formats';
 import { useFormats } from '@/hooks/useVideos';
+import SubjectPicker from '@/components/content/SubjectPicker';
 
 // Named so that "reset the form after publishing" is one reference rather than a second copy of
 // the field list that can silently fall out of step with the first.
@@ -28,7 +29,7 @@ import { useFormats } from '@/hooks/useVideos';
 // is why neither is pre-filled.
 const EMPTY_FORM = {
     title: '', description: '', sourceType: '', sourceUrl: '', uploadSessionId: '',
-    category: '', format: '', seriesId: '', orderInSeries: '', originalPublishDate: '',
+    category: '', format: '', subject: '', seriesId: '', orderInSeries: '', originalPublishDate: '',
     graphicContent: false, removedElsewhere: false,
 };
 
@@ -267,6 +268,18 @@ export default function VideosTab({ slug, channel, youtubeState, isOwner, active
                             />
                         )}
                     </div>
+                    {/* Optional, and usually already answered: an upload with none of its own reads as
+                        its series' subject, else the channel's, and the picker says which. */}
+                    <SubjectPicker
+                        id="upload-subject"
+                        value={form.subject || null}
+                        onChange={(subject) => setForm((current) => ({ ...current, subject: subject || '' }))}
+                        inherited={(() => {
+                            const fromSeries = seriesList.find((s) => String(s.id) === String(form.seriesId))?.subject;
+                            if (fromSeries) return { code: fromSeries, from: 'series' };
+                            return channel?.defaultSubject ? { code: channel.defaultSubject, from: 'channel' } : null;
+                        })()}
+                    />
                     <Input label={t('fields.originalPublishDateOptional')} type="date" value={form.originalPublishDate} onChange={field('originalPublishDate')} field="originalPublishDate" />
                     {[
                         ['graphicContent', 'voice.formGraphic', 'voice.formGraphicHint'],

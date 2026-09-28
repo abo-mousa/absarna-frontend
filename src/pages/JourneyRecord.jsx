@@ -1,15 +1,16 @@
 import PageShell from '../components/layout/PageShell';
 import { PageHeader, QueryState, Cartouche } from '../components/ui';
 import {
-    HistoryList, JourneyNav, PausedLine, RetentionPanel, SacredText, SlotSplit, WeekBars, YearStars,
+    FieldsChart, HistoryList, JourneyNav, PausedLine, RetentionPanel, SacredText, SlotSplit, WeekBars, YearStars,
 } from '../components/journey';
-import { useProgressSlots, useProgressWeeks, useProgressYear } from '../hooks/useProgress';
+import { useProgressFields, useProgressSlots, useProgressWeeks, useProgressYear } from '../hooks/useProgress';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { countOf } from '@/lib/plural';
 import { formatCount } from '@/lib/numbers';
 import { t } from '@/i18n';
 
 const SLOT_DAYS = 30;
+const FIELD_DAYS = 90;
 
 /**
  * «السجل» — the reader's record (PROGRESS-AND-GOALS.md §7.3, the `Record` board): the year as
@@ -24,6 +25,7 @@ function JourneyRecord() {
     const year = useProgressYear();
     const weeks = useProgressWeeks(12);
     const slots = useProgressSlots(SLOT_DAYS);
+    const fields = useProgressFields(FIELD_DAYS);
 
     return (
         <PageShell tab>
@@ -59,6 +61,16 @@ function JourneyRecord() {
                         <p className="text-sm text-text-secondary mb-4">{t('journey.record.slotsText', { days: SLOT_DAYS })}</p>
                         <SlotSplit seconds={slots.data.seconds} />
                         <SacredText moment="slotsInsight" kind="HADITH" size="sm" className="mt-5 max-w-[560px]" />
+                    </section>
+                )}
+
+                {/* Only once most of the time is filed: below that it would chart the catalogue's gaps
+                    rather than the reader (the backend's `shown`). */}
+                {fields.data?.shown && (
+                    <section>
+                        <Cartouche title={t('journey.record.fieldsTitle')} />
+                        <p className="text-sm text-text-secondary mb-4">{t('journey.record.fieldsText', { days: FIELD_DAYS })}</p>
+                        <FieldsChart minutes={fields.data.minutes} />
                     </section>
                 )}
 

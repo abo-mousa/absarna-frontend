@@ -950,6 +950,65 @@ export const ar = {
 
     // «مسيرتي» — the progress tab, the goal dialog, and Today's «وِردك اليوم» (PROGRESS-AND-GOALS.md
     // §7). Nothing here blames: a missed day is «نيّتك مكتوبة», never a failure, and no count is a streak.
+    // What a lecture or a book is about (lib/subjects, backend content/subject/Subject). Codes are
+    // stored by name and never renamed; only the words here change.
+    subjects: {
+        names: {
+            ISLAMIC: 'العلوم الشرعية', QURAN: 'القرآن وعلومه', HADITH: 'الحديث وعلومه', AQEEDAH: 'العقيدة',
+            FIQH: 'الفقه وأصوله', SEERAH: 'السيرة النبوية', TAZKIYAH: 'التزكية والرقائق', DAWAH: 'الدعوة',
+            HISTORY: 'التاريخ والحضارة', ISLAMIC_HISTORY: 'التاريخ الإسلامي', WORLD_HISTORY: 'تاريخ العالم',
+            BIOGRAPHIES: 'التراجم والأعلام', CIVILISATION: 'الحضارة والتراث',
+            LANGUAGE: 'اللغة والأدب', ARABIC: 'اللغة العربية', LITERATURE: 'الأدب والشعر', LANGUAGES: 'تعلّم اللغات',
+            THOUGHT: 'الفكر والمجتمع', PHILOSOPHY: 'الفكر والفلسفة', CONTEMPORARY: 'قضايا معاصرة',
+            POLITICS: 'السياسة والعلاقات الدولية', MEDIA: 'الإعلام والوعي',
+            FAMILY: 'الأسرة والنفس', MARRIAGE: 'الزواج والأسرة', PARENTING: 'تربية الأبناء', WOMEN: 'المرأة',
+            YOUTH: 'الشباب', SELF: 'النفس وتطوير الذات',
+            SCIENCE: 'العلوم والتقنية', NATURAL_SCIENCES: 'العلوم الطبيعية', MEDICINE: 'الطب والصحة',
+            MATHEMATICS: 'الرياضيات', ASTRONOMY: 'الفلك والفضاء', ENGINEERING: 'الهندسة', TECHNOLOGY: 'التقنية والبرمجة',
+            WORK: 'المال والعمل', ECONOMICS: 'الاقتصاد والتمويل الإسلامي', ENTREPRENEURSHIP: 'ريادة الأعمال',
+            CAREER: 'المهارات المهنية', CRAFTS: 'الحِرف والمهن',
+            LEISURE: 'الترفيه الهادف', STORIES: 'القصص والحكايات', CHILDREN: 'محتوى الأطفال',
+            TRAVEL: 'الرحلات والاستكشاف', COOKING: 'الطبخ', SPORTS: 'الرياضة واللياقة',
+        },
+        // Extra words a person might search by, beyond the names.
+        keywords: {
+            QURAN: 'تفسير تجويد قراءات حفظ', HADITH: 'سنة مصطلح', AQEEDAH: 'توحيد إيمان',
+            FIQH: 'أحكام فتاوى عبادات معاملات', TAZKIYAH: 'أخلاق آداب قلوب', DAWAH: 'دعاة',
+            BIOGRAPHIES: 'سير علماء صحابة', LITERATURE: 'شعر رواية', LANGUAGES: 'إنجليزي انجليزية ترجمة',
+            ARABIC: 'نحو صرف بلاغة إملاء', POLITICS: 'سياسة', MEDIA: 'صحافة إعلام', PARENTING: 'أطفال تربية',
+            SELF: 'نفسي علم النفس', NATURAL_SCIENCES: 'فيزياء كيمياء أحياء', MEDICINE: 'صحة تغذية',
+            TECHNOLOGY: 'برمجة حاسوب ذكاء اصطناعي تقنية', ECONOMICS: 'مال بنوك استثمار', CAREER: 'وظيفة عمل',
+            CRAFTS: 'نجارة خياطة مهنة', STORIES: 'قصص حكايات', CHILDREN: 'أطفال', TRAVEL: 'سفر',
+            SPORTS: 'رياضة لياقة',
+        },
+        picker: {
+            label: 'المجال والموضوع',
+            optional: '(اختياري)',
+            placeholder: 'اختر المجال والموضوع',
+            placeholderHint: 'مثلاً: العلوم الشرعية ‹ الفقه',
+            wholeField: 'المجال كلّه',
+            wholeFieldOf: '{field} كلّه',
+            inheritedFrom: {
+                series: 'من السلسلة — اضغط لتغييره لهذا وحده',
+                channel: 'من إعداد القناة — اضغط لتغييره لهذا وحده',
+            },
+            title: 'ما مجال هذا المحتوى؟',
+            search: 'ابحث عن موضوع: فقه، برمجة، طبخ…',
+            hint: 'اختر مجالاً، ثم موضوعه إن شئت. يمكنك التخطّي.',
+            listJoiner: '، ',
+            allFields: 'كل المجالات',
+            subjectHint: 'اختر الموضوع، أو اكتفِ بالمجال كلّه.',
+            clear: 'إزالة الاختيار',
+            skip: 'تخطَّ الآن',
+            noResults: 'لا موضوع بهذه الكلمة. جرّب كلمة أخرى، أو تصفّح المجالات.',
+        },
+        channelDefault: {
+            label: 'مجال القناة',
+            hint: 'ما تتناوله القناة في الغالب. يُعطى لكل فيديو وكتاب لم يُحدَّد له مجال — ومنها المستورد — فتختاره مرة واحدة هنا.',
+        },
+        seriesHint: 'يُعطى لكل حلقات السلسلة التي لم يُحدَّد لها مجال.',
+    },
+
     journey: {
         title: 'مسيرتي',
         navLabel: 'أقسام مسيرتي',
@@ -1303,6 +1362,10 @@ export const ar = {
             stillGoing: 'ما زال جاريًا',
             slotsTitle: 'متى تتعلّم',
             slotsText: 'في آخر {days} يومًا.',
+            fieldsTitle: 'مجالاتك',
+            fieldsText: 'أين ذهب وقت تعلّمك في آخر {days} يومًا.',
+            fieldsNews: 'أخبار وتقارير',
+            fieldsUnclassified: 'غير مصنّف',
             historyTitle: 'ما شاهدتَه وقرأتَه',
             controlTitle: 'سجلّك بيدك',
             controlText: 'لا يراه أحد غيرك، ولا نقترح عليك شيئًا منه.',

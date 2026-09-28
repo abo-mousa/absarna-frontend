@@ -419,6 +419,12 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
 - **Playback speed and volume persist across videos** (`safeStorage`), and the rate is re-applied on
   every `loadedmetadata`: the media load algorithm resets it to `defaultPlaybackRate`, and a rung
   swap is a load, so without that a quality change silently dropped a 1.5× lecture to 1×.
+- **Subjects are picked in `content/SubjectPicker`** — a small window, the eight fields in view with
+  a search above them, a field opening its subjects plus «… كلّه», skip and clear always there. It is
+  in every form that files content (upload, book, new series, the edit window, channel settings) and
+  shows the inherited value and its source. `lib/subjects.js` is the backend's list, code for code.
+  `Modal` renders through a portal and only the topmost `useFocusTrap` answers keys, so a dialog
+  opened from inside another works — keep both if you touch either.
 - **«مسيرتي», the progress tab, is `components/journey` + `pages/Journey*.jsx`** (the plan is the
   backend's `PROGRESS-AND-GOALS.md` §7). What is easy to get wrong:
   - **Today decides current / later / passed / kept from the LOCAL clock** (`lib/journey.js`,

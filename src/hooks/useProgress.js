@@ -82,3 +82,13 @@ export const useProgressSlots = (days = 30) => {
         ...STANDARD,
     });
 };
+
+/** «مجالاتك» — learning time by field over the last `days` (the backend says whether it is `shown`). */
+export const useProgressFields = (days = 90) => {
+    const scope = useUserScope();
+    return useQuery({
+        queryKey: queryKeys.progressFields(days, scope),
+        queryFn: async () => (await api.get('/user/progress/fields', withZone({ days }))).data,
+        ...STANDARD,
+    });
+};
