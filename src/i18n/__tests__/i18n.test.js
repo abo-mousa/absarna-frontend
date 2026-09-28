@@ -385,3 +385,21 @@ describe('the active locale', () => {
         expect(t('common.views', { count: 12 })).toBe('12 views');
     });
 });
+
+describe('the milestones', () => {
+    // The backend's `Milestone` enum, in declared order. A station the backend sends and this side
+    // has no name for renders its code on the page, so a new one is named in the same change.
+    const CODES = ['FIRST_STEP', 'FIRST_KHATMA', 'HUNDRED_EPISODES', 'HUNDRED_PAGES', 'STEADY_SEASON', 'TEN_KHATMAT',
+        'HUNDRED_HOURS', 'THOUSAND_PAGES', 'LONG_PROGRAMME', 'FIVE_HUNDRED_EPISODES', 'THOUSAND_EPISODES',
+        'TWO_THOUSAND_FIVE_HUNDRED_EPISODES', 'FIVE_THOUSAND_EPISODES', 'FIVE_THOUSAND_PAGES', 'TEN_THOUSAND_PAGES',
+        'TWENTY_FIVE_THOUSAND_PAGES', 'TWENTY_FIVE_KHATMAT', 'FIFTY_KHATMAT', 'HUNDRED_KHATMAT', 'FIVE_HUNDRED_HOURS',
+        'THOUSAND_HOURS', 'TWO_THOUSAND_FIVE_HUNDRED_HOURS', 'STEADY_YEAR', 'THREE_STEADY_YEARS', 'FIVE_STEADY_YEARS',
+        'FIVE_LONG_PROGRAMMES', 'LONGEST_PROGRAMME'];
+
+    it.each([['ar', ar], ['en', en]])('are all named and described in %s', (_, catalog) => {
+        for (const code of CODES) {
+            expect(catalog.journey.milestones.names[code], code).toBeTruthy();
+            expect(catalog.journey.milestones.about[code], code).toBeTruthy();
+        }
+    });
+});
