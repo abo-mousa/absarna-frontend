@@ -42,7 +42,9 @@ export function commitmentSentence(goal) {
     const amount = amountText(measure, goal.amount);
     const parts = [];
     if (goal.period === 'WEEK') {
-        parts.push(t('journey.sentence.week', { amount, what: isolate(goalTitle(goal)) }));
+        parts.push(goal.kind === 'HABIT'
+            ? t('journey.sentence.weekHabit', { amount })
+            : t('journey.sentence.week', { amount, what: isolate(goalTitle(goal)) }));
     } else {
         parts.push(t(goal.kind === 'HABIT' ? 'journey.sentence.dayHabit' : 'journey.sentence.day',
             { amount, what: isolate(goalTitle(goal)) }));

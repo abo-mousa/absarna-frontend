@@ -1066,7 +1066,8 @@ export const ar = {
             WEEKS_OBL: { two: 'أسبوعين' },
         },
         habit: {
-            MINUTES: 'وقتٌ للعلم كل يوم',
+            // No frequency in the name: the goal's own period says daily or weekly.
+            MINUTES: 'وقتٌ للعلم',
             EPISODES: 'حلقات من العلم',
             PAGES: 'صفحات من القراءة',
         },
@@ -1115,6 +1116,7 @@ export const ar = {
             day: 'وِردي {amount} من «{what}» كل يوم',
             dayHabit: 'وِردي من العلم {amount} كل يوم',
             week: 'في أسبوعي {amount} من «{what}»',
+            weekHabit: 'في أسبوعي من العلم {amount}',
             days: '{days} أيام في الأسبوع',
             slot: 'في {slot}',
             slotAnchor: 'في {slot}، {anchor}',

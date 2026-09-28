@@ -837,7 +837,7 @@ export const en = {
             WEEKS_OBL: { two: '{count} weeks' },
         },
         habit: {
-            MINUTES: 'Time for learning each day',
+            MINUTES: 'Time for learning',
             EPISODES: 'Episodes of learning',
             PAGES: 'Pages of reading',
         },
@@ -886,6 +886,7 @@ export const en = {
             day: 'My daily portion is {amount} of “{what}”',
             dayHabit: 'My daily portion of learning is {amount}',
             week: 'Each week, {amount} of “{what}”',
+            weekHabit: 'Each week, {amount} of learning',
             days: '{days} days a week',
             slot: 'in the {slot}',
             slotAnchor: 'in the {slot}, {anchor}',

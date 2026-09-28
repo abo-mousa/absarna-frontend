@@ -42,6 +42,12 @@ describe('commitmentSentence', () => {
             'My daily portion is 4 pages of “\u2068Riyad\u2069”, 6 days a week, in the morning, after Fajr, and on a hard day at least 1 page.');
     });
 
+    it('says a weekly habit as a week of learning, not as a title', () => {
+        setActiveLocale('en');
+        expect(commitmentSentence({ kind: 'HABIT', measure: 'MINUTES', period: 'WEEK', amount: 150 }))
+            .toBe('Each week, 150 minutes of learning.');
+    });
+
     it('leaves out what does not apply — all seven days, no time, a minimum equal to the amount', () => {
         setActiveLocale('en');
         expect(commitmentSentence({ ...goal, daysPerWeek: 7, slot: null, minimumAmount: 4 }))
