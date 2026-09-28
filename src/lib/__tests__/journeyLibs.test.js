@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { beforeNoon, slotOf } from '@/lib/slots';
+import { beforeNoon, slotOf, slotOfTime } from '@/lib/slots';
 import { creditDayFor, endQada, startQada } from '@/lib/qada';
 import { emitProgressReport, onProgressReport } from '@/lib/progressEvents';
 import { goalFor, orderPortions, portionView } from '@/lib/journey';
@@ -7,6 +7,18 @@ import { goalFor, orderPortions, portionView } from '@/lib/journey';
 const at = (hh, mm = 0) => new Date(2026, 8, 28, hh, mm);
 
 /** The mirror of the backend's LearningSlotTest: the same boundaries, both sides. */
+describe('slotOfTime', () => {
+    // The backend's LearningSlot.of does the same to a goal's hour; the boundaries must agree.
+    it('files a goal\'s hour where the backend does', () => {
+        expect(slotOfTime('02:59')).toBe('DULJA');
+        expect(slotOfTime('03:00')).toBe('GHADWA');
+        expect(slotOfTime('11:59')).toBe('GHADWA');
+        expect(slotOfTime('12:00')).toBe('RAWHA');
+        expect(slotOfTime('17:59')).toBe('RAWHA');
+        expect(slotOfTime('18:00')).toBe('DULJA');
+    });
+});
+
 describe('slotOf', () => {
     it('starts the day and its morning at 03:00', () => {
         expect(slotOf(at(2, 59))).toBe('DULJA');

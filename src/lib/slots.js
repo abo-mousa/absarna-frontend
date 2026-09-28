@@ -17,6 +17,12 @@ export function slotOf(date) {
     return 'DULJA';
 }
 
+/** The slot an "HH:MM" clock time falls in — the goal's hour, which the backend turns into its slot the same way. */
+export function slotOfTime(hhmm) {
+    const [hours, minutes] = hhmm.split(':').map(Number);
+    return slotOf(new Date(2000, 0, 1, hours, minutes || 0));
+}
+
 /** A slot's place in the day: 0, 1, 2. */
 export const slotIndex = (slot) => SLOTS.indexOf(slot);
 

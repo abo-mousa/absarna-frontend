@@ -1110,13 +1110,13 @@ export const ar = {
             EPISODES: 'حلقات من العلم',
             PAGES: 'صفحات من القراءة',
         },
-        // Plain words a reader of any dialect knows (product owner, 2026-09-28). The codes keep the
-        // hadith's own names, and the goal dialog's time step quotes it (Bukhari 39), so the source
-        // stays where the choice is made. Not «بعد الظهر» / «بعد العصر»: those are prayer anchors.
+        // The hadith's own names (Bukhari 39), kept (product owner, 2026-09-28); the dialog explains
+        // them in plain words (`dialog.slotsExplain`), and a card says the reader's own hour or
+        // prayer before it says one of these.
         slots: {
-            GHADWA: 'الصباح',
-            RAWHA: 'العصرية',
-            DULJA: 'المساء',
+            GHADWA: 'الغَدوة',
+            RAWHA: 'الرَّوحة',
+            DULJA: 'الدُّلجة',
         },
         slotHours: {
             GHADWA: 'من الفجر إلى الظهر',
@@ -1133,6 +1133,7 @@ export const ar = {
             COMMUTE: 'في الطريق',
             CUSTOM: 'بكلماتي',
         },
+        hourAt: 'الساعة {time}',
         identity: {
             FINISHES_WHAT_HE_STARTS: 'أنا ممّن يُتمّ ما بدأه',
             READS_EVERY_DAY: 'أنا ممّن لا يمضي يومه بلا علم',
@@ -1219,10 +1220,15 @@ export const ar = {
             deadlineLabel: 'إلى متى؟',
             noDeadline: 'بلا موعد',
             pickDate: 'أو اختر يومًا:',
+            whenLabel: 'متى تجعل وِردك؟',
+            atHour: 'في ساعة أحدّدها',
+            partOfDay: 'في وقت من يومي',
+            hourLabel: 'الساعة',
+            hourSlot: 'وهي من وقت {slot}.',
             slotLabel: 'في أي وقت من يومك؟',
+            prayerSlotHint: 'اخترناه من وقت الصلاة المعتاد؛ غيّره إن كانت الصلاة عندك في غيره.',
+            slotsExplain: 'الغَدوة والرَّوحة والدُّلجة أسماء أوقات اليوم في الحديث: أوّل النهار، ثم آخره، ثم الليل.',
             anyTime: 'أيّ وقت',
-            anchorLabel: 'بعد ماذا؟',
-            noAnchor: 'لا شيء بعينه',
             anchorPlaceholder: 'مثلًا: بعد الإفطار',
             fallbackLabel: 'وإن فاتك وقته؟',
             noFallback: 'لا وقت ثانٍ',

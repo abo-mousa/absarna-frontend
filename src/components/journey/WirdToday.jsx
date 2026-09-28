@@ -8,7 +8,7 @@ import { useCarry, useStartQada, useUpdateGoal } from '@/hooks/useGoals';
 import { useToast } from '@/contexts/ToastContext';
 import { MILESTONES_SEEN_KEY, orderPortions, shownSlot } from '@/lib/journey';
 import { beforeNoon, slotOf } from '@/lib/slots';
-import { amountText, anchorName, goalTitle, isolate, measureOf, resumeHref, slotName, tomorrowText } from '@/lib/goalText';
+import { amountText, goalTitle, isolate, measureOf, resumeHref, slotName, tomorrowText, whenName } from '@/lib/goalText';
 import { safeStorage } from '@/lib/safeStorage';
 import { localDay } from '@/lib/dayFormat';
 import { describeError } from '@/lib/describeError';
@@ -125,8 +125,8 @@ function PortionCard({ goal, view }) {
     const units = goal.today?.units || 0;
     const target = goal.today?.target || goal.amount;
     const slot = shownSlot(goal, view);
-    const anchor = anchorName(goal);
-    const when = slot ? [slotName(slot), anchor].filter(Boolean).join(' · ') : t('journey.today.anyTime');
+    // In its own slot a portion is named by the reader's hour or prayer; moved to its fallback, by the slot it is in now.
+    const when = !slot ? t('journey.today.anyTime') : slot === goal.slot ? whenName(goal) : slotName(slot);
     const done = view.status === 'done';
     const current = view.status === 'current';
     const tomorrow = done ? tomorrowText(goal) : null;

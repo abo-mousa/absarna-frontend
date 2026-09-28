@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import DayStars from './DayStars';
-import { amountText, goalTitle, measureOf, paceText, slotName } from '@/lib/goalText';
+import { amountText, goalTitle, measureOf, paceText, whenName } from '@/lib/goalText';
 import { t } from '@/i18n';
 
 /**
@@ -38,7 +38,7 @@ function GoalRow({ goal }) {
         goal.period === 'WEEK'
             ? t('journey.goalRow.perWeek', { amount: amountText(measure, goal.amount) })
             : t('journey.goalRow.perDay', { amount: amountText(measure, goal.amount) }),
-        goal.slot ? slotName(goal.slot) : null,
+        whenName(goal) || null,
         goal.paused ? t('journey.goalRow.paused') : null,
     ].filter(Boolean).join(' · ');
     return (

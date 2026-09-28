@@ -13,13 +13,22 @@ import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useToast } from '@/contexts/ToastContext';
 import { hijriDeadlines } from '@/lib/hijriSeasons';
 import { amountText, commitmentSentence, goalTitle, measureOf } from '@/lib/goalText';
-import { SLOTS } from '@/lib/slots';
+import { SLOTS, slotOfTime } from '@/lib/slots';
 import { describeError } from '@/lib/describeError';
 import { formatDay } from '@/lib/dayFormat';
 import { countOf } from '@/lib/plural';
 import { t } from '@/i18n';
 
 const ANCHORS = ['FAJR', 'DHUHR', 'ASR', 'MAGHRIB', 'ISHA', 'MORNING_ADHKAR', 'COMMUTE', 'CUSTOM'];
+/**
+ * The part of the day a prayer usually falls in — a starting choice, never a calculation: the
+ * platform asks for no location (PROGRESS-AND-GOALS.md D2), so the reader may move it (a winter
+ * Maghrib before six is the case). Whatever the reader picks, the goal stores ONE slot, and that
+ * slot is all Today, the fallback and the review read; the anchor and the hour only describe it.
+ */
+const PRAYER_SLOT = { FAJR: 'GHADWA', MORNING_ADHKAR: 'GHADWA', DHUHR: 'RAWHA', ASR: 'RAWHA', MAGHRIB: 'DULJA', ISHA: 'DULJA' };
+/** The time step's first question: nothing, a prayer or habit to follow, an hour, or a part of the day. */
+const whenOf = (form) => (form.atTime ? 'HOUR' : form.anchor || (form.slot ? 'PART' : null));
 const IDENTITIES = ['FINISHES_WHAT_HE_STARTS', 'READS_EVERY_DAY', 'TEACHES_HIS_FAMILY'];
 const HABITS = [
     { kind: 'HABIT', measure: 'MINUTES', amount: 15 },
@@ -43,6 +52,8 @@ function initialForm(goal, prefill) {
         deadline: source.deadline || null,
         slot: source.slot || null,
         fallbackSlot: source.fallbackSlot || null,
+        // "HH:MM" for the time input; the API answers "HH:MM:SS".
+        atTime: source.atTime ? source.atTime.slice(0, 5) : '',
         anchor: source.anchor || null,
         anchorText: source.anchorText || '',
         identityPreset: source.identityPreset || null,
@@ -50,6 +61,8 @@ function initialForm(goal, prefill) {
         intentionText: source.intentionText || '',
     };
     form.measure = measureOf(form);
+    // Its own field: «في ساعة أحدّدها» chosen with no hour typed yet is still that choice.
+    form.when = whenOf(form);
     return form;
 }
 
@@ -118,7 +131,7 @@ function GoalForm({ goal, prefill, onDone }) {
     }), [form.kind, form.targetId, form.measure, form.period, form.amount, form.minimumAmount, form.daysPerWeek, form.deadline, daily]), 300);
     const preview = useGoalPreview(body, !!body.kind);
 
-    const canContinue = step !== 'target' || !!form.kind;
+    const canContinue = (step !== 'target' || !!form.kind) && (step !== 'time' || form.when !== 'HOUR' || !!form.atTime);
 
     const submit = () => {
         setError(null);
@@ -128,6 +141,7 @@ function GoalForm({ goal, prefill, onDone }) {
             daysPerWeek: form.period === 'DAY' ? form.daysPerWeek : undefined,
             slot: form.period === 'DAY' ? form.slot || undefined : undefined,
             fallbackSlot: form.period === 'DAY' && form.slot ? form.fallbackSlot || undefined : undefined,
+            atTime: form.period === 'DAY' && form.atTime ? form.atTime : undefined,
             anchor: form.slot ? form.anchor || undefined : undefined,
             anchorText: form.slot && form.anchor === 'CUSTOM' ? form.anchorText.trim() || undefined : undefined,
             identityPreset: form.identityPreset || undefined,
@@ -142,6 +156,8 @@ function GoalForm({ goal, prefill, onDone }) {
                 deadline: form.deadline || undefined,
                 clearDeadline: goal.deadline && !form.deadline ? true : undefined,
                 clearFallbackSlot: goal.fallbackSlot && !shared.fallbackSlot ? true : undefined,
+                clearAtTime: goal.atTime && !shared.atTime ? true : undefined,
+                clearAnchor: goal.anchor && !shared.anchor ? true : undefined,
             }, {
                 onSuccess: () => { showToast(t('journey.dialog.updated'), 'success'); onDone(); },
                 onError,
@@ -458,51 +474,80 @@ function yearlyLine(form, unit) {
 }
 
 function TimeStep({ form, set, editing, originalSlot }) {
-    const slotOptions = [
+    const { when } = form;
+    const choose = (value) => {
+        if (value === null) set({ when: null, slot: null, fallbackSlot: null, anchor: null, atTime: '' });
+        else if (value === 'HOUR') set({ when: value, anchor: null });
+        else if (value === 'PART') set({ when: value, anchor: null, atTime: '', slot: form.slot || 'GHADWA' });
+        else set({ when: value, anchor: value, atTime: '', slot: PRAYER_SLOT[value] || form.slot || 'GHADWA' });
+    };
+    const setSlot = (slot) => set({ slot, fallbackSlot: form.fallbackSlot === slot ? null : form.fallbackSlot });
+    const whenOptions = [
         // A slot cannot be taken away in an edit (there is nothing to send that means "none").
         ...(editing && originalSlot ? [] : [{ value: null, label: t('journey.dialog.anyTime') }]),
-        ...SLOTS.map((slot) => ({ value: slot, label: t(`journey.slots.${slot}`), hint: t(`journey.slotHours.${slot}`) })),
+        ...ANCHORS.map((anchor) => ({ value: anchor, label: t(`journey.anchors.${anchor}`) })),
+        { value: 'HOUR', label: t('journey.dialog.atHour') },
+        { value: 'PART', label: t('journey.dialog.partOfDay') },
     ];
     return (
         <div className="flex flex-col gap-6">
-            <Chips
-                label={t('journey.dialog.slotLabel')}
-                value={form.slot}
-                onChange={(slot) => set({ slot, fallbackSlot: form.fallbackSlot === slot ? null : form.fallbackSlot })}
-                options={slotOptions}
-            />
-            {form.slot && (
-                <>
-                    <Chips
-                        label={t('journey.dialog.anchorLabel')}
-                        value={form.anchor}
-                        onChange={(anchor) => set({ anchor })}
-                        options={[{ value: null, label: t('journey.dialog.noAnchor') },
-                            ...ANCHORS.map((anchor) => ({ value: anchor, label: t(`journey.anchors.${anchor}`) }))]}
+            <Chips label={t('journey.dialog.whenLabel')} value={when} onChange={choose} options={whenOptions} />
+            {form.anchor === 'CUSTOM' && (
+                <input
+                    type="text"
+                    dir={form.anchorText ? 'auto' : undefined}
+                    maxLength={80}
+                    value={form.anchorText}
+                    onChange={(e) => set({ anchorText: e.target.value })}
+                    placeholder={t('journey.dialog.anchorPlaceholder')}
+                    aria-label={t('journey.dialog.anchorPlaceholder')}
+                    className="w-full px-3 py-2 rounded-md border border-border bg-surface"
+                />
+            )}
+            {when === 'HOUR' && (
+                <label className="block">
+                    <span className="block text-sm font-semibold mb-2">{t('journey.dialog.hourLabel')}</span>
+                    <input
+                        type="time"
+                        value={form.atTime}
+                        onChange={(e) => {
+                            const atTime = e.target.value;
+                            const slot = atTime ? slotOfTime(atTime) : form.slot;
+                            set({ atTime, slot, fallbackSlot: form.fallbackSlot === slot ? null : form.fallbackSlot });
+                        }}
+                        className="px-3 py-2 rounded-md border border-border bg-surface tabular-nums"
                     />
-                    {form.anchor === 'CUSTOM' && (
-                        <input
-                            type="text"
-                            dir={form.anchorText ? 'auto' : undefined}
-                            maxLength={80}
-                            value={form.anchorText}
-                            onChange={(e) => set({ anchorText: e.target.value })}
-                            placeholder={t('journey.dialog.anchorPlaceholder')}
-                            aria-label={t('journey.dialog.anchorPlaceholder')}
-                            className="w-full px-3 py-2 rounded-md border border-border bg-surface"
-                        />
+                    {form.atTime && (
+                        <span className="block text-xs text-text-muted mt-2">
+                            {t('journey.dialog.hourSlot', { slot: t(`journey.slots.${form.slot}`) })}
+                        </span>
                     )}
-                    <div>
-                        <Chips
-                            label={t('journey.dialog.fallbackLabel')}
-                            value={form.fallbackSlot}
-                            onChange={(fallbackSlot) => set({ fallbackSlot })}
-                            options={[{ value: null, label: t('journey.dialog.noFallback') },
-                                ...SLOTS.filter((slot) => slot !== form.slot).map((slot) => ({ value: slot, label: t(`journey.slots.${slot}`) }))]}
-                        />
-                        <p className="text-xs text-text-muted mt-2">{t('journey.dialog.fallbackHint')}</p>
-                    </div>
-                </>
+                </label>
+            )}
+            {when && when !== 'HOUR' && (
+                <div>
+                    <Chips
+                        label={t('journey.dialog.slotLabel')}
+                        value={form.slot}
+                        onChange={setSlot}
+                        options={SLOTS.map((slot) => ({ value: slot, label: t(`journey.slots.${slot}`), hint: t(`journey.slotHours.${slot}`) }))}
+                    />
+                    <p className="text-xs text-text-muted mt-2">
+                        {PRAYER_SLOT[when] ? t('journey.dialog.prayerSlotHint') : t('journey.dialog.slotsExplain')}
+                    </p>
+                </div>
+            )}
+            {form.slot && (
+                <div>
+                    <Chips
+                        label={t('journey.dialog.fallbackLabel')}
+                        value={form.fallbackSlot}
+                        onChange={(fallbackSlot) => set({ fallbackSlot })}
+                        options={[{ value: null, label: t('journey.dialog.noFallback') },
+                            ...SLOTS.filter((slot) => slot !== form.slot).map((slot) => ({ value: slot, label: t(`journey.slots.${slot}`) }))]}
+                    />
+                    <p className="text-xs text-text-muted mt-2">{t('journey.dialog.fallbackHint')}</p>
+                </div>
             )}
             <SacredText moment="slots" kind="HADITH" size="sm" />
         </div>

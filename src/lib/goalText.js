@@ -1,4 +1,4 @@
-import { t } from '@/i18n';
+import { formatDigits, t } from '@/i18n';
 import { countOf } from './plural';
 import { formatDay } from './dayFormat';
 
@@ -32,6 +32,15 @@ export const slotName = (slot) => t(`journey.slots.${slot}`);
 export const anchorName = (goal) =>
     goal.anchor === 'CUSTOM' ? (goal.anchorText || '').trim() : goal.anchor ? t(`journey.anchors.${goal.anchor}`) : '';
 
+/** «الساعة ٧:٣٠» — the goal's own hour, in the reader's digits; empty when it has none. */
+export const hourName = (goal) => (goal.atTime ? t('journey.hourAt', { time: formatDigits(goal.atTime.slice(0, 5)) }) : '');
+
+/**
+ * How a card says when a portion is kept: the reader's own hour, else what it follows, else its
+ * time of day — the words the reader chose before the category they were filed under.
+ */
+export const whenName = (goal) => hourName(goal) || anchorName(goal) || (goal.slot ? slotName(goal.slot) : '');
+
 /**
  * The commitment read back as one sentence («عهدك مع نفسك»): what, how much, how often, when, and
  * the minimum that keeps a hard day. Built from parts so a goal with no time or all seven days
@@ -52,7 +61,7 @@ export function commitmentSentence(goal) {
             parts.push(t('journey.sentence.days', { days: goal.daysPerWeek }));
         }
         if (goal.slot) {
-            const anchor = anchorName(goal);
+            const anchor = hourName(goal) || anchorName(goal);
             // Lower-cased inside a sentence ("in the morning"); Arabic has no case to change.
             const slot = slotName(goal.slot).toLocaleLowerCase();
             parts.push(anchor
