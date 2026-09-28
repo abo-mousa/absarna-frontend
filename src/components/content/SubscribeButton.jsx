@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Bell, Check, X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Bell, Check, Lock, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSignInPrompt } from '../../contexts/SignInPromptContext';
 import { useSubscriptionStatus, useToggleSubscription } from '../../hooks/useChannels';
 import { primaryPointerCanHover } from '@/lib/pointer';
 import { t } from '@/i18n';
@@ -21,12 +21,12 @@ const faceClass = 'col-start-1 row-start-1 flex items-center gap-2 whitespace-no
  * one case that is easy to get wrong — the press that must NOT unsubscribe — and there is no jsdom
  * here to press it in.
  *
- * @returns `'login'`, `'arm'` (show the consequence and wait for a second press) or `'toggle'`.
+ * @returns `'login'` (open the sign-in popup), `'arm'` (show the consequence and wait for a second
+ *          press) or `'toggle'`.
  */
 export const pressOutcome = ({ authenticated, subscribed, needsConfirm, armed }) => {
-    // The button is disabled for a visitor with no account, so this is a floor rather than the
-    // route anyone travels: it stays because the rule is "a press by nobody subscribes nobody",
-    // and that must hold even if the control is ever rendered enabled again.
+    // "A press by nobody subscribes nobody": a visitor with no account is asked to sign in,
+    // whatever a stale status says the button shows.
     if (!authenticated) return 'login';
     if (subscribed && needsConfirm && !armed) return 'arm';
     return 'toggle';
@@ -59,16 +59,17 @@ export const pressOutcome = ({ authenticated, subscribed, needsConfirm, armed })
  * left armed is a trap set for whoever presses it next — failing back to "does nothing" is the
  * right way for it to fail.
  *
- * <p><b>A visitor with no account gets the button disabled</b>, not hidden and not live: the
- * channel header keeps its shape for every reader, and «اشتراك» that silently becomes a login page
- * is a control promising something it does not do. `title`/`aria-label` say why.
+ * <p><b>A visitor with no account gets the button locked</b>, not hidden and not live: the channel
+ * header keeps its shape for every reader, a small lock beside «اشتراك» says it needs an account,
+ * and a press opens the sign-in popup saying so — never a silent jump to a login page, which would
+ * be a control promising something it does not do.
  *
  * `variant="banner"` is the white-on-primary treatment for the channel header; `inline` is the
  * ordinary pill used in a page body.
  */
 function SubscribeButton({ channelId, variant = 'inline', className = '' }) {
     const { token } = useAuth();
-    const navigate = useNavigate();
+    const { promptSignIn } = useSignInPrompt();
     const { data: status } = useSubscriptionStatus(channelId, !!token && !!channelId);
     const toggleSubscription = useToggleSubscription(channelId);
     const [armed, setArmed] = useState(false);
@@ -90,7 +91,7 @@ function SubscribeButton({ channelId, variant = 'inline', className = '' }) {
     const handleClick = () => {
         const outcome = pressOutcome({ authenticated: !!token, subscribed, needsConfirm, armed: showArmed });
         if (outcome === 'login') {
-            navigate('/login');
+            promptSignIn('subscribe');
             return;
         }
         if (outcome === 'arm') {
@@ -106,11 +107,13 @@ function SubscribeButton({ channelId, variant = 'inline', className = '' }) {
     // things. Written as whole alternatives rather than appended classes: `bg-white/20` and
     // `bg-white/30` in one string is a coin toss decided by stylesheet order, not by which came
     // last in the JSX.
-    // Nothing to warn about and nothing to hover towards on a control that cannot be pressed, so
-    // the disabled face is one flat tone in both variants rather than the resting face with the
-    // hover rules left armed behind it — CSS `:hover` still matches a disabled element.
+    // Signed out there is nothing to warn about, so the locked face is one quiet tone in both
+    // variants, deliberately not the inviting white/primary of «اشتراك» — the press asks for an
+    // account, not a subscription.
     const palette = needsLogin
-        ? (variant === 'banner' ? 'bg-white/20 text-white' : 'bg-surface-hover text-text-muted border border-border')
+        ? (variant === 'banner'
+            ? 'bg-white/20 text-white hover:bg-white/30'
+            : 'bg-surface-hover text-text-secondary border border-border hover:border-primary')
         : variant === 'banner'
         ? (subscribed
             ? (showArmed
@@ -130,7 +133,7 @@ function SubscribeButton({ channelId, variant = 'inline', className = '' }) {
             // An armed button that is tabbed or tapped away from disarms. The timeout above would
             // get there anyway; this gets there at the moment the viewer's attention does.
             onBlur={() => setArmed(false)}
-            disabled={needsLogin || toggleSubscription.isPending}
+            disabled={toggleSubscription.isPending}
             title={needsLogin ? t('common.loginRequired') : undefined}
             // A CONSTANT accessible name plus `aria-pressed`, which is the whole toggle-button
             // contract. This used to change the name with the state *as well*, so a screen reader
@@ -173,7 +176,7 @@ function SubscribeButton({ channelId, variant = 'inline', className = '' }) {
                 takes the text out of the accessible tree the same way display:none does. */}
             <span className="grid place-items-center">
                 <span className={`${faceClass} ${subscribed ? 'invisible' : ''}`}>
-                    <Bell size={18} /> {t('channel.subscribe')}
+                    {needsLogin ? <Lock size={16} aria-hidden="true" /> : <Bell size={18} />} {t('channel.subscribe')}
                 </span>
                 <span className={`${faceClass} ${
                     !subscribed || showArmed

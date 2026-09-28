@@ -1,9 +1,9 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { JourneyContext } from './journeyContext';
-import { useLocation, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
+import { useSignInPrompt } from '@/contexts/SignInPromptContext';
 import { useUserScope } from '@/hooks/useUserScope';
 import { onProgressReport } from '@/lib/progressEvents';
 import { queryKeys } from '@/lib/queryKeys';
@@ -31,22 +31,21 @@ function readShown() {
  * listener for what a progress report answers — the finishing moment when a programme or book is
  * completed, and a short word when a daily portion is filled (PROGRESS-AND-GOALS.md §7.5).
  *
- * <p>Signed out, «اجعله وِردًا» goes to sign-in and comes back; unverified, the dialog shows the
- * verification notice instead of a form (§7.10).
+ * <p>Signed out, «اجعله وِردًا» opens the sign-in popup, whose links come back here; unverified,
+ * the dialog shows the verification notice instead of a form (§7.10).
  */
 export function JourneyProvider({ children }) {
     const { token, user } = useAuth();
-    const navigate = useNavigate();
-    const location = useLocation();
+    const { promptSignIn } = useSignInPrompt();
     const [dialog, setDialog] = useState(null);
 
     const openGoal = useCallback((prefill = null) => {
         if (!token) {
-            navigate('/login', { state: { from: location.pathname + location.search } });
+            promptSignIn('goal');
             return;
         }
         setDialog({ prefill });
-    }, [token, navigate, location.pathname, location.search]);
+    }, [token, promptSignIn]);
     const editGoal = useCallback((goal) => setDialog({ goal }), []);
     const value = useMemo(() => ({ openGoal, editGoal }), [openGoal, editGoal]);
 

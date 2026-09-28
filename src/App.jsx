@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ConsentProvider } from './contexts/ConsentContext';
+import { SignInPromptProvider } from './contexts/SignInPromptContext';
 import { safeSessionStorage } from '@/lib/safeStorage';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import { PRELOAD_RELOAD_FLAG, mayReloadAfterPreloadError } from '@/lib/preloadReload';
@@ -325,11 +326,15 @@ function App() {
                     <BrowserRouter>
                         <ToastProvider>
                             <AuthProvider>
-                                {/* The goal dialog every «اجعله وِردًا» opens, and the finishing
-                                    moment a progress report can trigger from any page. */}
-                                <JourneyProvider>
-                                    <AppRoutes />
-                                </JourneyProvider>
+                                {/* The popup every account-only control opens when nobody is
+                                    signed in; above the journey, whose «اجعله وِردًا» opens it too. */}
+                                <SignInPromptProvider>
+                                    {/* The goal dialog every «اجعله وِردًا» opens, and the finishing
+                                        moment a progress report can trigger from any page. */}
+                                    <JourneyProvider>
+                                        <AppRoutes />
+                                    </JourneyProvider>
+                                </SignInPromptProvider>
                             </AuthProvider>
                         </ToastProvider>
                     </BrowserRouter>

@@ -129,6 +129,30 @@ export const en = {
         titleSuffix: '{title} | أَبْصَرْنا',
     },
 
+    signInPrompt: {
+        headline: {
+            like: 'Enjoyed this?',
+            bookmark: 'Save it for later',
+            subscribe: 'Follow this channel',
+            report: 'Report this',
+            comment: 'Join the conversation',
+            goal: 'Make it a daily portion',
+            generic: 'You need an account',
+        },
+        reason: {
+            like: 'Create an account or sign in to like it.',
+            bookmark: 'With an account you can save it to your list and come back to it on any device.',
+            subscribe: 'With an account you can subscribe and see its new uploads on your home page.',
+            report: 'Reporting needs an account, so every report comes from a real person and is taken seriously.',
+            comment: 'Create an account or sign in to comment or reply to others.',
+            goal: 'With an account you can make it a daily portion and follow your progress day by day.',
+            generic: 'Sign in to do this.',
+        },
+        free: 'An account is free. Once it is created we email you a link to confirm your address.',
+        register: 'Create an account',
+        login: 'I have an account — sign in',
+    },
+
     nav: {
         // THE BRAND IS NEVER TRANSLATED, AND NEVER TRANSLITERATED. «أَبْصَرْنا» is the name of the
         // thing rather than a word describing it, so it reads the same to every reader — the same
@@ -1877,8 +1901,7 @@ export const en = {
         commentingAs: 'Commenting as',
         placeholder: 'Write your comment here...',
         submit: 'Post comment',
-        loginPrompt: 'Sign in',
-        loginPromptSuffix: 'to leave a comment',
+        signedOutPlaceholder: 'Sign in to leave a comment…',
         empty: 'No comments yet — be the first.',
         reply: 'Reply',
         replyPlaceholder: 'Write your reply...',
@@ -2913,7 +2936,7 @@ export const TRANSLATED = [
     'subscriptions', 'profile', 'search', 'biography', 'share', 'upload', 'notFound',
     'channelManage', 'youtube', 'youtubeOAuth', 'admin', 'adminReports', 'legal',
     'pager', 'report', 'ownerImage', 'formats', 'rail', 'channelRail', 'guide', 'today',
-    'journey', 'subjects', 'postsPage', 'channelsPage', 'voice',
+    'journey', 'subjects', 'postsPage', 'channelsPage', 'voice', 'signInPrompt',
 ];
 
 export default en;

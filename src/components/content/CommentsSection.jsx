@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { CornerUpLeft, Pencil, Trash2 } from 'lucide-react';
+import { CornerUpLeft, Lock, Pencil, Trash2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSignInPrompt } from '../../contexts/SignInPromptContext';
 import { useToast } from '../../contexts/ToastContext';
 import { EmailVerificationNotice } from '../auth';
 import { Modal } from '../ui';
@@ -33,6 +33,7 @@ function formatDate(dateStr) {
 
 function CommentsSection({ type, id }) {
     const { token, user } = useAuth();
+    const { promptSignIn } = useSignInPrompt();
     const { showToast } = useToast();
     const {
         data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage,
@@ -124,7 +125,7 @@ function CommentsSection({ type, id }) {
      * an ordinary reader of everyone else's, and comment moderation for them lives on the
      * dashboard, not here.
      *
-     * <p>A signed-out reader gets the report control too. It sends them to /login on press, like
+     * <p>A signed-out reader gets the report control too. It opens the sign-in popup on press, like
      * every other action in this app that needs an account.
      */
     const renderActions = (comment) => {
@@ -225,9 +226,17 @@ function CommentsSection({ type, id }) {
                     </div>
                 </form>
             ) : (
-                <div className="mb-6 bg-surface p-5 rounded-lg border border-border-light text-center text-text-secondary">
-                    <Link to="/login" className="text-primary font-semibold">{t('comments.loginPrompt')}</Link> {t('comments.loginPromptSuffix')}
-                </div>
+                /* Shaped like the box a signed-in reader types into, with a lock, so what is
+                   missing is visible before the press; the press opens the sign-in popup. */
+                <button
+                    type="button"
+                    onClick={() => promptSignIn('comment')}
+                    className="w-full mb-6 flex items-center gap-2.5 bg-surface px-4 py-4 rounded-lg border border-border
+                        text-start text-text-muted hover:border-primary transition-colors"
+                >
+                    <Lock size={16} aria-hidden="true" className="flex-shrink-0" />
+                    <span>{t('comments.signedOutPlaceholder')}</span>
+                </button>
             )}
 
             {isLoading ? (

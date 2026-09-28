@@ -22,9 +22,8 @@ export const ar = {
         // The two days a date-only value can name without inventing a time of day. A backend
         // `LocalDate` carries no hour, so «منذ 15 ساعة» on it was never the upload time — it was
         // the time of day, counted backwards from midnight (see lib/datetime.js).
-        // The one thing every account-only control says when nobody is signed in. It is a title
-        // and an aria-label rather than visible copy: the controls are disabled, and a disabled
-        // control with no explanation is just a dead one (see LikeButton).
+        // The one thing every account-only control says when nobody is signed in, as its title and
+        // aria-label; the press itself opens the sign-in popup (`signInPrompt`).
         loginRequired: 'سجّل الدخول للقيام بهذا',
         today: 'اليوم',
         yesterday: 'أمس',
@@ -135,6 +134,39 @@ export const ar = {
         // The suffix appended to every page's own title. Kept next to the default so the two
         // cannot drift apart.
         titleSuffix: '{title} | أَبْصَرْنا',
+    },
+
+    /**
+     * The popup an account-only control opens for a reader who is not signed in
+     * (SignInPromptContext). One reason per action, because «سجّل الدخول» alone does not say what
+     * the press would have done.
+     */
+    signInPrompt: {
+        // The headline names what the reader was about to do; the sentence under it says why an
+        // account is needed for it.
+        headline: {
+            like: 'أعجبك هذا؟',
+            bookmark: 'احفظه لوقتٍ لاحق',
+            subscribe: 'تابِع هذه القناة',
+            report: 'بلّغ عن هذا المحتوى',
+            comment: 'شارِك برأيك',
+            goal: 'اجعله وِردًا',
+            generic: 'تحتاج إلى حساب',
+        },
+        reason: {
+            like: 'أنشئ حسابًا أو سجّل الدخول لتُبدي إعجابك به.',
+            bookmark: 'بحسابك تحفظه في قائمتك وتعود إليه متى شئت، من أي جهاز.',
+            subscribe: 'بحسابك تشترك في القناة ويظهر جديدها في صفحتك الرئيسية.',
+            report: 'نطلب حسابًا للإبلاغ، حتى يصل كل بلاغ من شخص حقيقي ويُراجَع بجدّية.',
+            comment: 'أنشئ حسابًا أو سجّل الدخول لتكتب تعليقًا أو تردّ على غيرك.',
+            goal: 'بحسابك تجعله وِردًا يوميًا وتتابع تقدّمك فيه يومًا بيوم.',
+            generic: 'سجّل الدخول للقيام بهذا.',
+        },
+        // Honest about the one step after signing up: the address has to be confirmed before any
+        // of these controls works (CurrentUser.requireVerifiedUserId on the backend).
+        free: 'الحساب مجاني، وبعد إنشائه نرسل إلى بريدك رابطًا لتأكيده.',
+        register: 'إنشاء حساب',
+        login: 'لديّ حساب — تسجيل الدخول',
     },
 
     nav: {
@@ -2283,8 +2315,7 @@ export const ar = {
         commentingAs: 'التعليق باسم',
         placeholder: 'اكتب تعليقك هنا...',
         submit: 'إرسال التعليق',
-        loginPrompt: 'سجّل الدخول',
-        loginPromptSuffix: 'لإضافة تعليق',
+        signedOutPlaceholder: 'سجّل الدخول لإضافة تعليق…',
         empty: 'لا توجد تعليقات بعد — كن أول من يعلق!',
         reply: 'رد',
         replyPlaceholder: 'اكتب ردك...',

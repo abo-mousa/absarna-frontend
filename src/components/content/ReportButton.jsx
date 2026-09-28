@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Flag } from 'lucide-react';
+import { Flag, Lock } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSignInPrompt } from '../../contexts/SignInPromptContext';
 import { useToast } from '../../contexts/ToastContext';
 import { Button, Modal } from '../ui';
 import { useReportReasons, useReportStatus, useSubmitReport } from '../../hooks/useReports';
@@ -12,11 +13,11 @@ import { t } from '@/i18n';
  * "Report this" — on a video, a book, an article, a post and every comment.
  *
  * <p>Built the same way as {@link BookmarkButton} and {@link LikeButton}: one component for every
- * place it appears, taking the app's ordinary `type` word, and DISABLED rather than hidden for a
+ * place it appears, taking the app's ordinary `type` word, and LOCKED rather than hidden for a
  * reader with no account. Hiding it would be the worse failure here — a reader who cannot see a
  * way to object concludes the platform does not take objections — so the flag stays on screen,
- * greyed, with «سجّل الدخول للقيام بهذا» on it: the way to object is visible, and so is what it
- * costs.
+ * muted with a small lock, and a press opens the sign-in popup: the way to object is visible, and
+ * so is what it costs.
  *
  * <h4>Why it needs a dialog at all, when a like does not</h4>
  *
@@ -56,6 +57,7 @@ import { t } from '@/i18n';
  */
 function ReportButton({ type, id, className = '', size = 16, labeled = false, trackStatus = true }) {
     const { token } = useAuth();
+    const { promptSignIn } = useSignInPrompt();
     const { showToast } = useToast();
     const { data: alreadyReported = false } = useReportStatus(type, id, trackStatus && !!token);
     const submitReport = useSubmitReport(type, id);
@@ -76,6 +78,10 @@ function ReportButton({ type, id, className = '', size = 16, labeled = false, tr
     const needsLogin = !token;
 
     const handleOpen = () => {
+        if (needsLogin) {
+            promptSignIn('report');
+            return;
+        }
         setReason('');
         setNote('');
         setOpen(true);
@@ -99,15 +105,18 @@ function ReportButton({ type, id, className = '', size = 16, labeled = false, tr
 
     const label = reported ? t('report.reported') : t('report.action');
     // A disabled control still matches `:hover`, so the red it turns on the way to being pressed
-    // has to go when pressing it stops being possible.
-    const tone = reported || needsLogin ? 'text-text-muted' : 'text-text-secondary hover:text-red-500';
+    // has to go when pressing it stops being possible — and signed out, the press opens the
+    // sign-in popup, not a report.
+    const tone = reported
+        ? 'text-text-muted'
+        : (needsLogin ? 'text-text-muted hover:text-text-secondary' : 'text-text-secondary hover:text-red-500');
 
     return (
         <>
             <button
                 type="button"
                 onClick={handleOpen}
-                disabled={reported || needsLogin}
+                disabled={reported}
                 title={needsLogin
                     ? t('common.loginRequired')
                     : (reported ? t('report.reportedHint') : label)}
@@ -118,6 +127,7 @@ function ReportButton({ type, id, className = '', size = 16, labeled = false, tr
                     disabled:cursor-default ${tone} ${className}`}
             >
                 <Flag size={size} fill={reported ? 'currentColor' : 'none'} />
+                {needsLogin && <Lock size={11} aria-hidden="true" className="-ms-1" />}
                 {labeled && <span>{label}</span>}
             </button>
 

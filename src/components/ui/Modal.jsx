@@ -9,7 +9,12 @@ import { t } from '@/i18n';
 // -invisible modal hanging around for a beat.
 const TRANSITION_MS = 200;
 
-function Modal({ open, onClose, title, children, maxWidth = '800px' }) {
+/**
+ * `bare` drops the title bar and the body padding, for a dialog that lays out its own heading
+ * (SignInPromptContext): `title` then names the dialog for assistive technology only, and the
+ * close button floats in the top corner.
+ */
+function Modal({ open, onClose, title, children, maxWidth = '800px', bare = false }) {
     // `open` turning false can't unmount immediately — there'd be nothing left to animate.
     // Stay mounted (`rendered`) through the exit transition, then unmount.
     const [rendered, setRendered] = useState(open);
@@ -60,23 +65,40 @@ function Modal({ open, onClose, title, children, maxWidth = '800px' }) {
                 ref={dialogRef}
                 role="dialog"
                 aria-modal="true"
-                aria-labelledby={titleId}
+                aria-labelledby={bare ? undefined : titleId}
+                aria-label={bare ? title : undefined}
                 tabIndex={-1}
-                className={`bg-surface rounded-xl w-full max-h-[90vh] overflow-auto shadow-lg outline-none
+                className={`relative bg-surface rounded-xl w-full max-h-[90vh] overflow-auto shadow-lg outline-none
                     transition-all duration-200 ${visible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
                 style={{ maxWidth }}
             >
-                <div className="flex justify-between items-center p-6 border-b border-border-light">
-                    <h3 id={titleId} className="m-0">{title}</h3>
-                    <button
-                        onClick={onClose}
-                        aria-label={t('common.close')}
-                        className="text-text-muted hover:text-text-primary transition-colors"
-                    >
-                        <X size={22} />
-                    </button>
-                </div>
-                <div className="p-6">{children}</div>
+                {bare ? (
+                    <>
+                        <button
+                            onClick={onClose}
+                            aria-label={t('common.close')}
+                            className="absolute top-3 end-3 z-10 p-1.5 rounded-full text-text-secondary
+                                hover:text-text-primary hover:bg-surface/70 transition-colors"
+                        >
+                            <X size={20} />
+                        </button>
+                        {children}
+                    </>
+                ) : (
+                    <>
+                        <div className="flex justify-between items-center p-6 border-b border-border-light">
+                            <h3 id={titleId} className="m-0">{title}</h3>
+                            <button
+                                onClick={onClose}
+                                aria-label={t('common.close')}
+                                className="text-text-muted hover:text-text-primary transition-colors"
+                            >
+                                <X size={22} />
+                            </button>
+                        </div>
+                        <div className="p-6">{children}</div>
+                    </>
+                )}
             </div>
         </div>
     ), document.body);
