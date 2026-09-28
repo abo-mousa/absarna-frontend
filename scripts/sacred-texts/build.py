@@ -20,6 +20,9 @@ for t in T:
         (only,) = t['sources'].values()
         assert t['ar'] in only['ar'], (t['id'], t['ar'])
         assert t['en'] in only['en'], (t['id'], t['en'])
+    # A quotation mark from the source's own punctuation is not part of the words (Bukhari 1970's
+    # English and 1968's Arabic both once ended on one).
+    assert '"' not in t['ar'] and '"' not in t['en'], (t['id'], 'stray quotation mark')
     if t['kind'] == 'HADITH':
         (only,) = t['sources'].values()
         assert t['en'] in only['en'], (t['id'], t['en'])

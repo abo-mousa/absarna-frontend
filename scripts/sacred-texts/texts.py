@@ -28,7 +28,7 @@ def entries():
              en='Allah does not require of any soul more than what it can afford.'),
         hadith('h-bukhari-1970', 'bukhari:1970', ['capacity'],
                ('خذوا من العمل', 'حتى تملوا'),
-               ('Do those deeds', 'performing religious deeds)."')),
+               ('Do those deeds', 'performing religious deeds)')),
         # ---- slots: the time step of the goal dialog
         ayah('q-qaf-39', ['50:39'], ['slots'], ar=words('50:39', 4, None),
              en='And glorify the praises of your Lord before sunrise and before sunset.'),
@@ -58,7 +58,8 @@ def entries():
         ayah('q-furqan-62', ['25:62'], ['qada']),
         hadith('h-muslim-747', 'muslim:747', ['qada'],
                ('من نام عن حزبه', 'من الليل'),
-               ('Should anyone fall asleep', 'during the night')),
+               ('Should anyone fall asleep', 'during the night'),
+               note='Said of one\'s night ḥizb of Qur\'an or prayer; followed here as a model for making up a portion. The wording beside it must not promise that reward for a missed lesson.'),
         # ---- fallback: a portion moved to its second time (first time in a week only)
         ayah('q-ankabut-69', ['29:69'], ['fallback'], ar=words('29:69', 0, 5),
              en='As for those who struggle in Our cause, We will surely guide them along Our Way.'),
@@ -67,21 +68,24 @@ def entries():
                ('when the Messenger of Allah', 'during the daytime')),
         # ---- rest: the days-a-week step; the first rest day of a week on Today
         ayah('q-taha-1-2', ['20:1', '20:2'], ['rest']),
-        hadith('h-bukhari-1968', 'bukhari:1968', ['rest'],
-               ('إن لربك عليك حقا', 'صدق سلمان'),
-               ('Your Lord has a right on you', 'Salman has spoken the truth')),
+        # The Prophet's ﷺ own words. Bukhari 1968 («إن لربك عليك حقا») stood here: Salmān's words,
+        # approved after, and its cut ran into the story that follows them.
+        hadith('h-bukhari-1975', 'bukhari:1975', ['rest'],
+               ('وقم ونم', 'لجسدك عليك حقا'),
+               ('offer prayers and also sleep at night', 'your body has a right on you')),
         # ---- lighten: two missed days; the delete-goal offer
         ayah('q-taghabun-16', ['64:16'], ['lighten'], ar=words('64:16', 0, 4),
              en='So be mindful of Allah to the best of your ability'),
-        hadith('h-bukhari-1152', 'bukhari:1152', ['lighten'],
-               ('يا عبد الله', 'فترك قيام الليل'),
-               ('O `Abdullah!', 'stopped the night prayer')),
+        # Mercy, not warning: Bukhari 1152 («لا تكن مثل فلان … فترك») stood here and told a reader
+        # already struggling not to be the one who quit.
+        hadith('h-bukhari-43', 'bukhari:43', ['lighten'],
+               ('عليكم بما تطيقون', 'حتى تملوا'),
+               ('Do (good) deeds which is within your capacity', 'you will get tired')),
         # ---- excuse: the pause dialog, and the return after a pause
         ayah('q-baqarah-185', ['2:185'], ['excuse'], ar=words('2:185', 30, 38),
              en='Allah intends ease for you, not hardship'),
-        hadith('h-bukhari-2996', 'bukhari:2996', ['excuse'],
-               ('إذا مرض العبد', 'مقيما صحيحا'),
-               ('When a slave falls ill', 'at home when in good health')),
+        # No hadith: Bukhari 2996 promises the reward of illness and travel, and the pause dialog
+        # takes any reason («لا نسألك عن السبب») — together they promised it for being busy.
         # ---- missed / returning: the after-noon line; the first visit after ≥3 idle days
         ayah('q-kahf-30', ['18:30'], ['returning'], ar=words('18:30', 5, None),
              en='We certainly never deny the reward of those who are best in deeds.'),

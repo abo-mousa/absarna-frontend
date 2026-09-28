@@ -105,7 +105,7 @@ function GoalBody({ goal }) {
     );
 }
 
-/** «عذر» — travel, illness, anything; no reason is asked (Bukhari 2996). A paused day counts for nothing either way. */
+/** «عذر» — travel, illness, anything; no reason is asked (al-Baqarah 185 beside it, not Bukhari 2996, whose promise is for illness and travel only). A paused day counts for nothing either way. */
 function ExcuseCard({ goal }) {
     const pause = usePauseGoal();
     const resume = useResumeGoal();
@@ -147,7 +147,7 @@ function ExcuseCard({ goal }) {
                     </div>
                 </>
             )}
-            <SacredText moment="excuse" kind="HADITH" size="sm" />
+            <SacredText moment="excuse" kind="AYAH" size="sm" />
         </section>
     );
 }

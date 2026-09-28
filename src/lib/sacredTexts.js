@@ -114,7 +114,7 @@ export const SACRED_TEXTS = [
             "en": "Sahih al-Bukhari 1970"
         },
         "ar": "خُذُوا مِنَ الْعَمَلِ مَا تُطِيقُونَ، فَإِنَّ اللَّهَ لاَ يَمَلُّ حَتَّى تَمَلُّوا",
-        "en": "Do those deeds which you can do easily, as Allah will not get tired (of giving rewards) till you get bored and tired (of performing religious deeds).\"",
+        "en": "Do those deeds which you can do easily, as Allah will not get tired (of giving rewards) till you get bored and tired (of performing religious deeds)",
         "partial": true,
         "translation": "Muhammad Muhsin Khan",
         "grading": [
@@ -392,6 +392,7 @@ export const SACRED_TEXTS = [
             "in the Sahih"
         ],
         "show": "reader",
+        "note": "Said of one's night ḥizb of Qur'an or prayer; followed here as a model for making up a portion. The wording beside it must not promise that reward for a missed lesson.",
         "reviewed": false,
         "sourceKeys": [
             "muslim:747"
@@ -479,21 +480,21 @@ export const SACRED_TEXTS = [
         ]
     },
     {
-        "id": "h-bukhari-1968",
+        "id": "h-bukhari-1975",
         "kind": "HADITH",
         "contexts": [
             "rest"
         ],
         "ref": {
             "collection": "bukhari",
-            "number": "1968"
+            "number": "1975"
         },
         "refLabel": {
-            "ar": "رواه البخاري (1968)",
-            "en": "Sahih al-Bukhari 1968"
+            "ar": "رواه البخاري (1975)",
+            "en": "Sahih al-Bukhari 1975"
         },
-        "ar": "إِنَّ لِرَبِّكَ عَلَيْكَ حَقًّا، وَلِنَفْسِكَ عَلَيْكَ حَقًّا، وَلأَهْلِكَ عَلَيْكَ حَقًّا، فَأَعْطِ كُلَّ ذِي حَقٍّ حَقَّهُ. فَأَتَى النَّبِيَّ صلى الله عليه وسلم فَذَكَرَ ذَلِكَ لَهُ، فَقَالَ النَّبِيُّ صلى الله عليه وسلم \" صَدَقَ سَلْمَانُ",
-        "en": "Your Lord has a right on you, your soul has a right on you, and your family has a right on you; so you should give the rights of all those who has a right on you.\" Abu Ad- Darda' came to the Prophet (ﷺ) and narrated the whole story. The Prophet (ﷺ) said, \"Salman has spoken the truth",
+        "ar": "وَقُمْ وَنَمْ، فَإِنَّ لِجَسَدِكَ عَلَيْكَ حَقًّا",
+        "en": "offer prayers and also sleep at night, as your body has a right on you",
         "partial": true,
         "translation": "Muhammad Muhsin Khan",
         "grading": [
@@ -502,7 +503,7 @@ export const SACRED_TEXTS = [
         "show": "reader",
         "reviewed": false,
         "sourceKeys": [
-            "bukhari:1968"
+            "bukhari:1975"
         ]
     },
     {
@@ -532,21 +533,21 @@ export const SACRED_TEXTS = [
         ]
     },
     {
-        "id": "h-bukhari-1152",
+        "id": "h-bukhari-43",
         "kind": "HADITH",
         "contexts": [
             "lighten"
         ],
         "ref": {
             "collection": "bukhari",
-            "number": "1152"
+            "number": "43"
         },
         "refLabel": {
-            "ar": "رواه البخاري (1152)",
-            "en": "Sahih al-Bukhari 1152"
+            "ar": "رواه البخاري (43)",
+            "en": "Sahih al-Bukhari 43"
         },
-        "ar": "يَا عَبْدَ اللَّهِ، لاَ تَكُنْ مِثْلَ فُلاَنٍ، كَانَ يَقُومُ اللَّيْلَ فَتَرَكَ قِيَامَ اللَّيْلِ",
-        "en": "O `Abdullah! Do not be like so and so who used to pray at night and then stopped the night prayer",
+        "ar": "عَلَيْكُمْ بِمَا تُطِيقُونَ، فَوَاللَّهِ لاَ يَمَلُّ اللَّهُ حَتَّى تَمَلُّوا",
+        "en": "Do (good) deeds which is within your capacity (without being overtaxed) as Allah does not get tired (of giving rewards) but (surely) you will get tired",
         "partial": true,
         "translation": "Muhammad Muhsin Khan",
         "grading": [
@@ -555,7 +556,7 @@ export const SACRED_TEXTS = [
         "show": "reader",
         "reviewed": false,
         "sourceKeys": [
-            "bukhari:1152"
+            "bukhari:43"
         ]
     },
     {
@@ -582,33 +583,6 @@ export const SACRED_TEXTS = [
         "show": "reader",
         "sourceKeys": [
             "quran:2:185"
-        ]
-    },
-    {
-        "id": "h-bukhari-2996",
-        "kind": "HADITH",
-        "contexts": [
-            "excuse"
-        ],
-        "ref": {
-            "collection": "bukhari",
-            "number": "2996"
-        },
-        "refLabel": {
-            "ar": "رواه البخاري (2996)",
-            "en": "Sahih al-Bukhari 2996"
-        },
-        "ar": "إِذَا مَرِضَ الْعَبْدُ أَوْ سَافَرَ، كُتِبَ لَهُ مِثْلُ مَا كَانَ يَعْمَلُ مُقِيمًا صَحِيحًا",
-        "en": "When a slave falls ill or travels, then he will get reward similar to that he gets for good deeds practiced at home when in good health",
-        "partial": true,
-        "translation": "Muhammad Muhsin Khan",
-        "grading": [
-            "in the Sahih"
-        ],
-        "show": "reader",
-        "reviewed": false,
-        "sourceKeys": [
-            "bukhari:2996"
         ]
     },
     {
