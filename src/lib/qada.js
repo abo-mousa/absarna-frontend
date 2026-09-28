@@ -1,7 +1,7 @@
 import { safeSessionStorage } from './safeStorage';
 
 /**
- * The make-up in progress: after «تداركه», the progress reports for that goal's programme or book
+ * The make-up in progress: after «أتمِمه الآن», the progress reports for that goal's programme or book
  * carry `creditDay` (yesterday) until noon, so the backend credits them to the missed day
  * (PROGRESS-AND-GOALS.md §6.5, after Muslim 747). The backend re-checks the window on every report,
  * so this is only a hint of which reports to mark — a stale one costs nothing.

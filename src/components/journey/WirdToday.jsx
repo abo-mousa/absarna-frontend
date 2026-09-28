@@ -19,7 +19,7 @@ const FIRST_HIDDEN_MS = 14 * 86_400_000;
 
 /**
  * Yesterday's missed portion, before noon — first on Today, above the day's own portions
- * (PROGRESS-AND-GOALS.md §7.7). «تداركه» marks this tab's reports about the goal's programme or book
+ * (PROGRESS-AND-GOALS.md §7.7). «أتمِمه الآن» marks this tab's reports about the goal's programme or book
  * as yesterday's until noon, and takes the reader to where it resumes.
  */
 export function QadaCards({ goals, now }) {

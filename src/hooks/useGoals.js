@@ -60,7 +60,7 @@ export const useResumeGoal = () => useGoalMutation(async (id) =>
     (await api.delete(`/user/goals/${id}/pause`, withZone())).data);
 
 /**
- * «تداركه»: asks the backend for the day to credit, then marks this tab's reports about the
+ * «أتمِمه الآن»: asks the backend for the day to credit, then marks this tab's reports about the
  * goal's programme or book with it until noon (lib/qada.js). Resolves to the credit day.
  */
 export const useStartQada = () => useGoalMutation(async (goal) => {
