@@ -106,10 +106,15 @@ function Journey() {
                             </section>
                         )}
 
-                        <section>
-                            <Cartouche title={t('journey.steadyTitle')} />
-                            <WeekFlags weeks={data.weeks12} />
-                        </section>
+                        {/* Only once a week has learning in it, as the month below hides its zeros: twelve empty
+                            stars over «٠ من آخر ١٢» greet a reader who has not started with a verdict. Not
+                            tied to goals — it counts any learning, with or without one. */}
+                        {data.weeks12.some((week) => week.active) && (
+                            <section>
+                                <Cartouche title={t('journey.steadyTitle')} />
+                                <WeekFlags weeks={data.weeks12} />
+                            </section>
+                        )}
 
                         {data.month && <MonthNumbers month={data.month} />}
 
