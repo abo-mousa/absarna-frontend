@@ -1,17 +1,15 @@
 import { ViewTabs } from '../ui';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSubscriptions } from '@/hooks/useChannels';
 import { t } from '@/i18n';
 
 /**
- * «من قنواتك | كل القنوات» over a listing — the Posts page's switch, for Books and Articles. Only
- * for a signed-in reader who follows a channel: for anyone else «من قنواتك» is a tab that can only
- * ever be empty. The narrowing is the backend's (`?followed=true`).
+ * «من قنواتك | كل القنوات» over a listing — the Posts page's switch, for Books and Articles, and
+ * shown as Posts shows it: to every signed-in reader. One who follows nothing gets the empty
+ * state's way back to «كل القنوات». The narrowing is the backend's (`?followed=true`).
  */
 function ChannelScopeTabs({ followed, onChange }) {
     const { token } = useAuth();
-    const { data: subscriptions = [] } = useSubscriptions(!!token);
-    if (!token || subscriptions.length === 0) return null;
+    if (!token) return null;
     return (
         <div className="border-b border-border mb-6">
             <ViewTabs
