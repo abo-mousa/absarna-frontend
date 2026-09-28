@@ -130,7 +130,7 @@ function ExcuseCard({ goal }) {
                 <>
                     <p className="text-sm text-text-secondary">{t('journey.excuse.text')}</p>
                     <div className="flex flex-wrap gap-2">
-                        {[3, 7, 14].map((days) => (
+                        {[1, 3, 7, 14].map((days) => (
                             <Button key={days} variant="outline" size="sm" disabled={busy}
                                     onClick={() => pause.mutate({ id: goal.id, days }, {
                                         onSuccess: () => showToast(t('journey.excuse.paused'), 'success'), onError,
