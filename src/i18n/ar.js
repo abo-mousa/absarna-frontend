@@ -1110,10 +1110,13 @@ export const ar = {
             EPISODES: 'حلقات من العلم',
             PAGES: 'صفحات من القراءة',
         },
+        // Plain words a reader of any dialect knows (product owner, 2026-09-28). The codes keep the
+        // hadith's own names, and the goal dialog's time step quotes it (Bukhari 39), so the source
+        // stays where the choice is made. Not «بعد الظهر» / «بعد العصر»: those are prayer anchors.
         slots: {
-            GHADWA: 'الغَدوة',
-            RAWHA: 'الرَّوحة',
-            DULJA: 'الدُّلجة',
+            GHADWA: 'الصباح',
+            RAWHA: 'العصرية',
+            DULJA: 'المساء',
         },
         slotHours: {
             GHADWA: 'من الفجر إلى الظهر',
