@@ -279,6 +279,10 @@ function AlmostDoneCard({ item }) {
 /** Twelve weeks, oldest first, each a star filled if anything was learned in it — never a streak. */
 function WeekFlags({ weeks }) {
     const active = weeks.filter((week) => week.active).length;
+    // Fewer than twelve for a reader who joined lately: the backend starts at the week they joined.
+    // One week, shown only when it has learning in it, is the reader's first.
+    const text = weeks.length === 1 ? t('journey.steadyFirst')
+        : t('journey.steadyText', { count: formatCount(active), weeks: countOf('journey.units.WEEKS', weeks.length, { oblique: true }) });
     return (
         <div>
             <ul className="flex flex-wrap gap-2 sm:gap-3" aria-label={t('journey.steadyAria', { count: active, total: weeks.length })}>
@@ -289,7 +293,7 @@ function WeekFlags({ weeks }) {
                     </li>
                 ))}
             </ul>
-            <p className="text-sm text-text-secondary mt-3">{t('journey.steadyText', { count: active, total: weeks.length })}</p>
+            <p className="text-sm text-text-secondary mt-3">{text}</p>
         </div>
     );
 }
