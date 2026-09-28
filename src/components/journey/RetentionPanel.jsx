@@ -7,6 +7,8 @@ import { describeError } from '@/lib/describeError';
 import { t } from '@/i18n';
 
 const RETENTIONS = ['FOREVER', 'YEAR', 'QUARTER', 'MONTH'];
+// Longest first: a move to the right shortens what is kept.
+const shorter = (next, current) => RETENTIONS.indexOf(next) > RETENTIONS.indexOf(current);
 
 /**
  * The reader's control over their record (PROGRESS-AND-GOALS.md §6.6): how long it is kept, a
@@ -27,7 +29,7 @@ function RetentionPanel() {
         onError: (error) => showToast(describeError(error, t('journey.record.saveFailed')), 'error'),
     });
     return (
-        <section id="recording" className="flex flex-col gap-6 p-5 rounded-lg border border-border-light bg-surface scroll-mt-24">
+        <section className="flex flex-col gap-6 p-5 rounded-lg border border-border-light bg-surface">
             <div>
                 <h2 className="font-serif text-[1.5rem] font-semibold">{t('journey.record.controlTitle')}</h2>
                 <p className="text-sm text-text-secondary mt-1">{t('journey.record.controlText')}</p>
@@ -36,7 +38,17 @@ function RetentionPanel() {
                 <Chips
                     label={t('journey.record.retentionLabel')}
                     value={data.retention}
-                    onChange={(retention) => retention !== data.retention && save({ retention }, t('journey.record.retentionSaved'))}
+                    // A shorter retention takes effect at the nightly sweep and cannot be undone after
+                    // it — the toast says so, and stays long enough to be read, while the choice can
+                    // still be taken back.
+                    onChange={(retention) => retention !== data.retention && (shorter(retention, data.retention)
+                        ? update.mutate({ retention }, {
+                            onSuccess: () => showToast(t('journey.record.retentionShortened', {
+                                period: t(`journey.record.retentionPeriod.${retention}`),
+                            }), 'info', 9000),
+                            onError: (error) => showToast(describeError(error, t('journey.record.saveFailed')), 'error'),
+                        })
+                        : save({ retention }, t('journey.record.retentionSaved')))}
                     options={RETENTIONS.map((retention) => ({ value: retention, label: t(`journey.record.retention.${retention}`) }))}
                 />
                 <p className="text-xs text-text-muted mt-2">{t('journey.record.retentionHint')}</p>
@@ -69,12 +81,21 @@ function RetentionPanel() {
     );
 }
 
+/** Each opening starts unticked: an erase must never inherit a choice made the last time. */
 function EraseDialog({ open, onClose }) {
+    return (
+        <Modal open={open} onClose={onClose} title={t('journey.record.eraseTitle')} maxWidth="480px">
+            {open && <EraseForm onClose={onClose} />}
+        </Modal>
+    );
+}
+
+function EraseForm({ onClose }) {
     const [counts, setCounts] = useState(false);
     const erase = useEraseProgress();
     const { showToast } = useToast();
     return (
-        <Modal open={open} onClose={onClose} title={t('journey.record.eraseTitle')} maxWidth="480px">
+        <>
             <div className="flex flex-col gap-5">
                 <p className="text-sm text-text-secondary">{t('journey.record.eraseText')}</p>
                 <label className="flex items-start gap-3 text-sm">
@@ -98,7 +119,7 @@ function EraseDialog({ open, onClose }) {
                     </Button>
                 </div>
             </div>
-        </Modal>
+        </>
     );
 }
 

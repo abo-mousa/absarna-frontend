@@ -30,7 +30,7 @@ function CumulativeLine({ points, measure, total = null }) {
     });
     return (
         <figure className="relative">
-            <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto" role="img" aria-label={summary}>
+            <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto" role="group" aria-label={summary}>
                 {total && (
                     <line x1={pad.x} x2={width - pad.x} y1={y(total)} y2={y(total)} className="stroke-border" strokeDasharray="4 4" />
                 )}

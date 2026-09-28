@@ -1,7 +1,7 @@
 import { Target } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
 import { PageHeader, QueryState, Button } from '../components/ui';
-import { GoalRow, JourneyNav, useJourney } from '../components/journey';
+import { GoalRow, JourneyNav, PausedLine, useJourney } from '../components/journey';
 import { useGoals } from '../hooks/useGoals';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { t } from '@/i18n';
@@ -14,6 +14,7 @@ function JourneyGoals() {
     return (
         <PageShell tab>
             <PageHeader title={t('journey.nav.goals')} action={<JourneyNav />} tabs />
+            <PausedLine where="journey" className="mb-6" />
             <QueryState
                 isLoading={goals.isLoading}
                 isError={goals.isError}

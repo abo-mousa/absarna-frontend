@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowBack } from '@/components/ui/DirectionalIcon';
 import PageShell from '../components/layout/PageShell';
 import { QueryState, Cartouche, KhatamProgress, Button, Modal } from '../components/ui';
-import { CumulativeLine, DayStars, PaceBar, SacredText, useJourney } from '../components/journey';
+import { CumulativeLine, DayStars, PaceBar, PausedLine, SacredText, useJourney } from '../components/journey';
 import { useArchiveGoal, useGoal, usePauseGoal, useResumeGoal, useUpdateGoal } from '../hooks/useGoals';
 import { useToast } from '../contexts/ToastContext';
 import { usePageMeta } from '../hooks/usePageMeta';
@@ -47,6 +47,7 @@ function GoalBody({ goal }) {
     const measure = measureOf(goal);
     return (
         <div className="flex flex-col gap-10">
+            <PausedLine where="journey" />
             <header className="flex flex-col gap-3">
                 <h1 dir="auto" className="font-serif text-[2rem] sm:text-[2.4rem] font-semibold leading-tight">{goalTitle(goal)}</h1>
                 {goal.intentionText && (

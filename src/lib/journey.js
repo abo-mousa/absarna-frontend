@@ -3,6 +3,9 @@ import { slotIndex, slotOf } from './slots';
 /** Day states that count as kept — the backend's `DayState.kept()`. */
 export const KEPT = new Set(['FULL', 'MINIMUM', 'MADE_UP']);
 
+/** Milestones Today has already announced, in this browser — cleared when the reader erases the counts. */
+export const MILESTONES_SEEN_KEY = 'absarna.milestonesSeen';
+
 /**
  * Where one daily portion stands on Today, right now (PROGRESS-AND-GOALS.md §7.7). The server
  * sends the day's state; the clock decides the rest here, because Today is cached until the day

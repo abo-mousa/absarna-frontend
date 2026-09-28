@@ -1,6 +1,6 @@
 import PageShell from '../components/layout/PageShell';
 import { PageHeader, QueryState, KhatamStar } from '../components/ui';
-import { JourneyNav, SacredText } from '../components/journey';
+import { JourneyNav, PausedLine, SacredText } from '../components/journey';
 import { useMilestones } from '../hooks/useProgress';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { formatCount } from '@/lib/numbers';
@@ -17,6 +17,7 @@ function JourneyMilestones() {
     return (
         <PageShell tab>
             <PageHeader title={t('journey.nav.milestones')} action={<JourneyNav />} tabs />
+            <PausedLine where="journey" className="mb-6" />
             <QueryState
                 isLoading={milestones.isLoading}
                 isError={milestones.isError}

@@ -1,5 +1,3 @@
-import { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
 import PageShell from '../components/layout/PageShell';
 import { PageHeader, QueryState, Cartouche } from '../components/ui';
 import {
@@ -26,12 +24,6 @@ function JourneyRecord() {
     const year = useProgressYear();
     const weeks = useProgressWeeks(12);
     const slots = useProgressSlots(SLOT_DAYS);
-    const { hash } = useLocation();
-
-    // The paused line everywhere links to the control panel; land on it once the page has laid out.
-    useEffect(() => {
-        if (hash === '#recording') document.getElementById('recording')?.scrollIntoView({ block: 'start' });
-    }, [hash, year.isSuccess]);
 
     return (
         <PageShell tab>

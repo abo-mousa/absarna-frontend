@@ -1289,6 +1289,8 @@ export const ar = {
             retention: { FOREVER: 'دائمًا', YEAR: 'سنة', QUARTER: 'ثلاثة أشهر', MONTH: 'شهرًا' },
             retentionHint: 'ما هو أقدم من ذلك يُحذف كل ليلة. أعدادك — الأسابيع والختمات والمنازل — تبقى، فهي أرقام لا قائمة بما شاهدت.',
             retentionSaved: 'حُفظ اختيارك',
+            retentionShortened: 'حُفظ. ما هو أقدم من {period} يُحذف الليلة ولا رجعة فيه — لك أن تغيّر رأيك قبل ذلك.',
+            retentionPeriod: { YEAR: 'سنة', QUARTER: 'ثلاثة أشهر', MONTH: 'شهر' },
             recordingTitle: 'التسجيل يعمل',
             recordingText: 'يُحفظ موضعك في كل حلقة وكتاب، ويُحسب ما تتعلّمه.',
             pausedTitle: 'التسجيل متوقّف',

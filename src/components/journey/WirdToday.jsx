@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Cartouche, KhatamProgress, KhatamStar, Button } from '../ui';
 import SacredText from './SacredText';
+import PausedLine from './PausedLine';
 import { useJourney } from './journeyContext';
 import { useCarry, useStartQada, useUpdateGoal } from '@/hooks/useGoals';
 import { useToast } from '@/contexts/ToastContext';
-import { orderPortions, shownSlot } from '@/lib/journey';
+import { MILESTONES_SEEN_KEY, orderPortions, shownSlot } from '@/lib/journey';
 import { beforeNoon, slotOf } from '@/lib/slots';
 import { amountText, anchorName, goalTitle, isolate, measureOf, resumeHref, slotName, tomorrowText } from '@/lib/goalText';
 import { safeStorage } from '@/lib/safeStorage';
@@ -14,7 +15,6 @@ import { t } from '@/i18n';
 
 const FIRST_HIDDEN_KEY = 'absarna.firstWirdHiddenAt';
 const FIRST_HIDDEN_MS = 14 * 86_400_000;
-const MILESTONES_SEEN_KEY = 'absarna.milestonesSeen';
 
 /**
  * Yesterday's missed portion, before noon — first on Today, above the day's own portions
@@ -82,6 +82,8 @@ function WirdToday({ wird, reviewOpen, recentMilestones, now, hasQada }) {
         <section>
             <Cartouche title={t('journey.today.title')} action={<Link to="/journey">{t('journey.today.toJourney')}</Link>} />
             <div className="flex flex-col gap-4">
+                {/* A paused reader's portions cannot fill; say why before they wonder. */}
+                <PausedLine where="journey" />
                 {portions.length > 0 && (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                         {portions.map(({ goal, view }) => <PortionCard key={goal.id} goal={goal} view={view} />)}

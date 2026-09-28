@@ -1063,6 +1063,8 @@ export const en = {
             retention: { FOREVER: 'Always', YEAR: 'A year', QUARTER: 'Three months', MONTH: 'A month' },
             retentionHint: 'Anything older is deleted each night. Your counts — weeks, finished, milestones — stay: they are numbers, not a list of what you watched.',
             retentionSaved: 'Your choice is saved',
+            retentionShortened: 'Saved. Anything older than {period} is deleted tonight, for good — you can change your mind before then.',
+            retentionPeriod: { YEAR: 'a year', QUARTER: 'three months', MONTH: 'a month' },
             recordingTitle: 'Recording is on',
             recordingText: 'Your place in every episode and book is kept, and what you learn is counted.',
             pausedTitle: 'Recording is paused',

@@ -4,6 +4,8 @@ import { STANDARD } from '@/lib/queryCache';
 import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/contexts/AuthContext';
 import { invalidateProgress } from './useGoals';
+import { MILESTONES_SEEN_KEY } from '@/lib/journey';
+import { safeStorage } from '@/lib/safeStorage';
 import { useUserScope } from './useUserScope';
 
 /**
@@ -40,7 +42,9 @@ export const useEraseProgress = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: ({ counts = false } = {}) => api.delete('/user/progress', { params: counts ? { include: 'counts' } : {} }),
-        onSuccess: () => {
+        onSuccess: (_, { counts = false } = {}) => {
+            // Milestones erased can be reached again, and must then be announced again.
+            if (counts) safeStorage.removeItem(MILESTONES_SEEN_KEY);
             invalidateProgress(queryClient);
             queryClient.invalidateQueries({ queryKey: ['watch-history'] });
             queryClient.invalidateQueries({ queryKey: ['reading-history'] });

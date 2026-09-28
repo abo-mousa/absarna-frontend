@@ -19,7 +19,7 @@ function WeekBars({ weeks, goalMinutes = null }) {
     const tallest = weeks.reduce((best, week, index) => (week.minutes > weeks[best].minutes ? index : best), 0);
     return (
         <figure className="relative">
-            <div className="relative flex items-end gap-1.5 sm:gap-2.5" style={{ height }} role="img" aria-label={summary}>
+            <div className="relative flex items-end gap-1.5 sm:gap-2.5" style={{ height }} role="group" aria-label={summary}>
                 {goalMinutes > 0 && (
                     <span aria-hidden="true" className="absolute inset-x-0 border-t border-dashed border-gold-ink/60"
                           style={{ bottom: (goalMinutes / max) * height }}>

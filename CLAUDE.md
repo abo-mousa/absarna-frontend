@@ -440,8 +440,8 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   - **«السجل» (`/journey/record`) is where history lives now** — `/history` redirects there. The
     list, the year's stars, the weeks, the time of day, and the reader's control (retention, pause,
     erase with or without the counts) are one page; the old per-list "clear" is gone. While
-    recording is paused, `PausedLine` shows under the player, in the book reader and on the journey
-    pages, linking to that control.
+    recording is paused, `PausedLine` shows under the player, in the book reader, on Today's portions
+    and on every journey page, and resumes recording in place with one tap.
   - Pages outside the tab import `journey/MakeWird` and `journey/PausedLine` by file, not through
     the barrel, so the texts chunk stays lazy.
 - **Progress reporting has three layers** (`lib/api/beacon.js`): a throttled checkpoint, a flush on
