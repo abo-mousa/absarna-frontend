@@ -125,10 +125,8 @@ def entries():
              en='and pray, “My Lord! Increase me in knowledge.”'),
         # ---- benefits: «فوائدي»
         ayah('q-alaq-4', ['96:4'], ['benefits']),
-        hadith('h-abudawud-3646', 'abudawud:3646', ['benefits'],
-               ('اكتب فوالذي', 'إلا حق'),
-               ('Write, by Him', 'only right comes out from it'),
-               note='Said of writing down the Prophet\'s own words; applied here to recording what one learned.'),
+        # No hadith here: Abu Dawud 3646 («اكتب … ما يخرج منه إلا حق») is about writing down the
+        # Prophet's ﷺ own words, and over a reader's notes it would lend them that guarantee.
         # ---- internal: design principles, never rendered to readers
         hadith('h-bukhari-69', 'bukhari:69', ['principle'],
                ('يسروا ولا تعسروا', 'ولا تنفروا'),

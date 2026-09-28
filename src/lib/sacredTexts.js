@@ -14,7 +14,7 @@
  * (PROGRESS-AND-GOALS.md §8), and the translations' licences are cleared (§8.3).
  *
  * <p>`show: 'internal'` entries are design principles recorded beside the rest; nothing renders
- * them. `partial` marks a clause cut from a longer verse; the renderer prefixes the English with an
+ * them. `partial` marks a clause cut from a longer verse or hadith; the renderer prefixes the English with an
  * ellipsis and never adds or removes words.
  */
 
@@ -61,6 +61,7 @@ export const SACRED_TEXTS = [
         },
         "ar": "أَحَبُّ الأَعْمَالِ إِلَى اللَّهِ تَعَالَى أَدْوَمُهَا وَإِنْ قَلَّ",
         "en": "The acts most pleasing to Allah are those which are done continuously, even if they are small.",
+        "partial": true,
         "translation": "Abdul Hamid Siddiqui",
         "grading": [
             "in the Sahih"
@@ -114,6 +115,7 @@ export const SACRED_TEXTS = [
         },
         "ar": "خُذُوا مِنَ الْعَمَلِ مَا تُطِيقُونَ، فَإِنَّ اللَّهَ لاَ يَمَلُّ حَتَّى تَمَلُّوا",
         "en": "Do those deeds which you can do easily, as Allah will not get tired (of giving rewards) till you get bored and tired (of performing religious deeds).\"",
+        "partial": true,
         "translation": "Muhammad Muhsin Khan",
         "grading": [
             "in the Sahih"
@@ -166,6 +168,7 @@ export const SACRED_TEXTS = [
         },
         "ar": "إِنَّ الدِّينَ يُسْرٌ، وَلَنْ يُشَادَّ الدِّينَ أَحَدٌ إِلاَّ غَلَبَهُ، فَسَدِّدُوا وَقَارِبُوا وَأَبْشِرُوا، وَاسْتَعِينُوا بِالْغَدْوَةِ وَالرَّوْحَةِ وَشَىْءٍ مِنَ الدُّلْجَةِ",
         "en": "Religion is very easy and whoever overburdens himself in his religion will not be able to continue in that way. So you should not be extremists, but try to be near to perfection and receive the good tidings that you will be rewarded; and gain strength by worshipping in the mornings, the afternoons, and during the last hours of the nights.",
+        "partial": true,
         "translation": "Muhammad Muhsin Khan",
         "grading": [
             "in the Sahih"
@@ -192,6 +195,7 @@ export const SACRED_TEXTS = [
         },
         "ar": "اللَّهُمَّ بَارِكْ لأُمَّتِي فِي بُكُورِهَا",
         "en": "O Allah, bless my people in their early mornings.",
+        "partial": true,
         "translation": "Ahmad Hasan",
         "grading": [
             "Al-Albani: Sahih",
@@ -247,6 +251,7 @@ export const SACRED_TEXTS = [
         },
         "ar": "إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ، وَإِنَّمَا لِكُلِّ امْرِئٍ مَا نَوَى",
         "en": "The reward of deeds depends upon the intentions and every person will get the reward according to what he has intended.",
+        "partial": true,
         "translation": "Muhammad Muhsin Khan",
         "grading": [
             "in the Sahih"
@@ -273,6 +278,7 @@ export const SACRED_TEXTS = [
         },
         "ar": "احْرِصْ عَلَى مَا يَنْفَعُكَ وَاسْتَعِنْ بِاللَّهِ وَلاَ تَعْجِزْ",
         "en": "cherish that which gives you benefit (in the Hereafter) and seek help from Allah and do not lose heart",
+        "partial": true,
         "translation": "Abdul Hamid Siddiqui",
         "grading": [
             "in the Sahih"
@@ -325,6 +331,7 @@ export const SACRED_TEXTS = [
         },
         "ar": "اللَّهُمَّ إِنِّي أَسْأَلُكَ عِلْمًا نَافِعًا، وَرِزْقًا طَيِّبًا، وَعَمَلاً مُتَقَبَّلاً",
         "en": "O Allah, I ask You for beneficial knowledge, goodly provision and acceptable deeds",
+        "partial": true,
         "translation": "Darussalam (Nasiruddin al-Khattab)",
         "grading": [
             "Al-Albani: Sahih",
@@ -379,6 +386,7 @@ export const SACRED_TEXTS = [
         },
         "ar": "مَنْ نَامَ عَنْ حِزْبِهِ أَوْ عَنْ شَىْءٍ مِنْهُ فَقَرَأَهُ فِيمَا بَيْنَ صَلاَةِ الْفَجْرِ وَصَلاَةِ الظُّهْرِ كُتِبَ لَهُ كَأَنَّمَا قَرَأَهُ مِنَ اللَّيْلِ",
         "en": "Should anyone fall asleep and fail to recite his portion of the Qur'an, or a part of it, if he recites it between the dawn prayer and the noon prayer, it will be recorded for him as though he had recited it during the night",
+        "partial": true,
         "translation": "Abdul Hamid Siddiqui",
         "grading": [
             "in the Sahih"
@@ -431,6 +439,7 @@ export const SACRED_TEXTS = [
         },
         "ar": "كَانَ رَسُولُ اللَّهِ صلى الله عليه وسلم إِذَا عَمِلَ عَمَلاً أَثْبَتَهُ وَكَانَ إِذَا نَامَ مِنَ اللَّيْلِ أَوْ مَرِضَ صَلَّى مِنَ النَّهَارِ ثِنْتَىْ عَشْرَةَ رَكْعَةً",
         "en": "when the Messenger of Allah (ﷺ) decided upon doing any act, he continued to do it, and when he slept at night or fell sick he observed twelve rak'ahs during the daytime",
+        "partial": true,
         "translation": "Abdul Hamid Siddiqui",
         "grading": [
             "in the Sahih"
@@ -485,6 +494,7 @@ export const SACRED_TEXTS = [
         },
         "ar": "إِنَّ لِرَبِّكَ عَلَيْكَ حَقًّا، وَلِنَفْسِكَ عَلَيْكَ حَقًّا، وَلأَهْلِكَ عَلَيْكَ حَقًّا، فَأَعْطِ كُلَّ ذِي حَقٍّ حَقَّهُ. فَأَتَى النَّبِيَّ صلى الله عليه وسلم فَذَكَرَ ذَلِكَ لَهُ، فَقَالَ النَّبِيُّ صلى الله عليه وسلم \" صَدَقَ سَلْمَانُ",
         "en": "Your Lord has a right on you, your soul has a right on you, and your family has a right on you; so you should give the rights of all those who has a right on you.\" Abu Ad- Darda' came to the Prophet (ﷺ) and narrated the whole story. The Prophet (ﷺ) said, \"Salman has spoken the truth",
+        "partial": true,
         "translation": "Muhammad Muhsin Khan",
         "grading": [
             "in the Sahih"
@@ -537,6 +547,7 @@ export const SACRED_TEXTS = [
         },
         "ar": "يَا عَبْدَ اللَّهِ، لاَ تَكُنْ مِثْلَ فُلاَنٍ، كَانَ يَقُومُ اللَّيْلَ فَتَرَكَ قِيَامَ اللَّيْلِ",
         "en": "O `Abdullah! Do not be like so and so who used to pray at night and then stopped the night prayer",
+        "partial": true,
         "translation": "Muhammad Muhsin Khan",
         "grading": [
             "in the Sahih"
@@ -589,6 +600,7 @@ export const SACRED_TEXTS = [
         },
         "ar": "إِذَا مَرِضَ الْعَبْدُ أَوْ سَافَرَ، كُتِبَ لَهُ مِثْلُ مَا كَانَ يَعْمَلُ مُقِيمًا صَحِيحًا",
         "en": "When a slave falls ill or travels, then he will get reward similar to that he gets for good deeds practiced at home when in good health",
+        "partial": true,
         "translation": "Muhammad Muhsin Khan",
         "grading": [
             "in the Sahih"
@@ -641,6 +653,7 @@ export const SACRED_TEXTS = [
         },
         "ar": "فَمَنْ هَمَّ بِحَسَنَةٍ فَلَمْ يَعْمَلْهَا كَتَبَهَا اللَّهُ لَهُ عِنْدَهُ حَسَنَةً كَامِلَةً",
         "en": "If somebody intends to do a good deed and he does not do it, then Allah will write for him a full good deed (in his account with Him)",
+        "partial": true,
         "translation": "Muhammad Muhsin Khan",
         "grading": [
             "in the Sahih"
@@ -668,6 +681,7 @@ export const SACRED_TEXTS = [
         },
         "ar": "الْحَمْدُ لِلَّهِ الَّذِي بِنِعْمَتِهِ تَتِمُّ الصَّالِحَاتُ",
         "en": "Praise is to Allah by Whose grace good deeds are completed",
+        "partial": true,
         "translation": "Darussalam (Nasiruddin al-Khattab)",
         "grading": [
             "Al-Albani: Hasan",
@@ -749,6 +763,7 @@ export const SACRED_TEXTS = [
         },
         "ar": "إِنَّمَا نَزَلَ أَوَّلَ مَا نَزَلَ مِنْهُ سُورَةٌ مِنَ الْمُفَصَّلِ فِيهَا ذِكْرُ الْجَنَّةِ وَالنَّارِ حَتَّى إِذَا ثَابَ النَّاسُ إِلَى الإِسْلاَمِ نَزَلَ الْحَلاَلُ وَالْحَرَامُ",
         "en": "the first thing that was revealed thereof was a Sura from Al-Mufassal, and in it was mentioned Paradise and the Fire. When the people embraced Islam, the Verses regarding legal and illegal things were revealed.",
+        "partial": true,
         "translation": "Muhammad Muhsin Khan",
         "grading": [
             "in the Sahih"
@@ -801,6 +816,7 @@ export const SACRED_TEXTS = [
         },
         "ar": "فَسَدِّدُوا وَقَارِبُوا وَأَبْشِرُوا",
         "en": "So you should not be extremists, but try to be near to perfection and receive the good tidings that you will be rewarded",
+        "partial": true,
         "translation": "Muhammad Muhsin Khan",
         "grading": [
             "in the Sahih"
@@ -855,6 +871,7 @@ export const SACRED_TEXTS = [
         },
         "ar": "اللَّهُمَّ انْفَعْنِي بِمَا عَلَّمْتَنِي وَعَلِّمْنِي مَا يَنْفَعُنِي وَزِدْنِي عِلْمًا",
         "en": "O Allah, benefit me with that which You have taught me, and teach me that which will benefit me, and increase me in knowledge.",
+        "partial": true,
         "translation": "Darussalam (Abu Khaliyl)",
         "grading": [
             "Ahmad Muhammad Shakir: Sahih",
@@ -909,6 +926,7 @@ export const SACRED_TEXTS = [
         },
         "ar": "وَمَنْ سَلَكَ طَرِيقًا يَلْتَمِسُ فِيهِ عِلْمًا سَهَّلَ اللَّهُ لَهُ بِهِ طَرِيقًا إِلَى الْجَنَّةِ",
         "en": "he who treads the path in search of knowledge, Allah would make that path easy, leading to Paradise for him",
+        "partial": true,
         "translation": "Abdul Hamid Siddiqui",
         "grading": [
             "in the Sahih"
@@ -998,35 +1016,6 @@ export const SACRED_TEXTS = [
         ]
     },
     {
-        "id": "h-abudawud-3646",
-        "kind": "HADITH",
-        "contexts": [
-            "benefits"
-        ],
-        "ref": {
-            "collection": "abudawud",
-            "number": "3646"
-        },
-        "refLabel": {
-            "ar": "رواه أبو داود (3646)",
-            "en": "Sunan Abi Dawud 3646"
-        },
-        "ar": "اكْتُبْ فَوَالَّذِي نَفْسِي بِيَدِهِ مَا يَخْرُجُ مِنْهُ إِلاَّ حَقٌّ",
-        "en": "Write, by Him in Whose hand my soul lies, only right comes out from it",
-        "translation": "Ahmad Hasan",
-        "grading": [
-            "Al-Albani: Sahih",
-            "Muhammad Muhyi Al-Din Abdul Hamid: Sahih",
-            "Zubair Ali Zai: Isnaad Sahih"
-        ],
-        "show": "reader",
-        "note": "Said of writing down the Prophet's own words; applied here to recording what one learned.",
-        "reviewed": false,
-        "sourceKeys": [
-            "abudawud:3646"
-        ]
-    },
-    {
         "id": "h-bukhari-69",
         "kind": "HADITH",
         "contexts": [
@@ -1042,6 +1031,7 @@ export const SACRED_TEXTS = [
         },
         "ar": "يَسِّرُوا وَلاَ تُعَسِّرُوا، وَبَشِّرُوا وَلاَ تُنَفِّرُوا",
         "en": "Facilitate things to people (concerning religious matters), and do not make it hard for them and give them good tidings and do not make them run away (from Islam)",
+        "partial": true,
         "translation": "Muhammad Muhsin Khan",
         "grading": [
             "in the Sahih"
@@ -1068,6 +1058,7 @@ export const SACRED_TEXTS = [
         },
         "ar": "الرَّجُلُ عَلَى دِينِ خَلِيلِهِ فَلْيَنْظُرْ أَحَدُكُمْ مَنْ يُخَالِلُ",
         "en": "A man follows the religion of his friend; so each one should consider whom he makes his friend",
+        "partial": true,
         "translation": "Ahmad Hasan",
         "grading": [
             "Al-Albani: Hasan",

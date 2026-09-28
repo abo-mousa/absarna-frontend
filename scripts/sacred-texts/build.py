@@ -50,7 +50,7 @@ js.append("""/**
  * (PROGRESS-AND-GOALS.md §8), and the translations' licences are cleared (§8.3).
  *
  * <p>`show: 'internal'` entries are design principles recorded beside the rest; nothing renders
- * them. `partial` marks a clause cut from a longer verse; the renderer prefixes the English with an
+ * them. `partial` marks a clause cut from a longer verse or hadith; the renderer prefixes the English with an
  * ellipsis and never adds or removes words.
  */
 """)

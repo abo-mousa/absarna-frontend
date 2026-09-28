@@ -119,12 +119,16 @@ def hadith(id, ref, contexts, ar, en, show='reader', note=None):
     col, num = ref.split(':')
     src = H[ref]
     grades = [f"{g['name']}: {g['grade']}" for g in src.get('grades', [])]
+    text_ar = cut_arabic(src['ar'], *ar)
+    text_en = cut_english(src['en'], *en)
     entry = {
         'id': id, 'kind': 'HADITH', 'contexts': contexts,
         'ref': {'collection': col, 'number': num.split('.')[0]},
         'refLabel': {'ar': f'رواه {COLLECTION[col][0]} ({num.split(".")[0]})',
                      'en': f'{COLLECTION[col][1]} {num.split(".")[0]}'},
-        'ar': cut_arabic(src['ar'], *ar), 'en': cut_english(src['en'], *en),
+        'ar': text_ar, 'en': text_en,
+        # A hadith is quoted by its clause, as a verse is: an excerpt gets the renderer's ellipsis.
+        'partial': text_ar != clean(src['ar']) or text_en != clean(src['en']),
         'translation': COLLECTION[col][2],
         'grading': grades or ['in the Sahih'],
         'show': show,

@@ -91,7 +91,6 @@ function JourneyReflections() {
                         </div>
                     )}
                 </QueryState>
-                <SacredText moment="benefits" kind="HADITH" size="sm" />
             </div>
         </PageShell>
     );
