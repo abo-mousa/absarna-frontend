@@ -37,7 +37,8 @@ function reachedNote(milestone) {
 
 function MilestoneThread({ milestones }) {
     const host = useRef(null);
-    const [narrow, setNarrow] = useState(false);
+    // A first guess from the window, so a phone does not draw the wide thread first and then redraw.
+    const [narrow, setNarrow] = useState(() => typeof window !== 'undefined' && window.innerWidth < NARROW);
     useEffect(() => {
         const element = host.current;
         if (!element || typeof ResizeObserver === 'undefined') return undefined;

@@ -67,7 +67,13 @@ export function QadaCards({ goals, now }) {
 function WirdToday({ wird, reviewOpen, recentMilestones, now, hasQada }) {
     const goals = wird?.goals || [];
     if (!goals.length) {
-        return <FirstWird proposals={wird?.firstWird || []} />;
+        // A reader with no portion reaches manzilat too; the line is not the portions' to gate.
+        return (
+            <>
+                <FirstWird proposals={wird?.firstWird || []} />
+                <MilestoneLine codes={recentMilestones} />
+            </>
+        );
     }
     const portions = orderPortions(goals, now);
     const weekly = goals.filter((goal) => goal.period === 'WEEK');
@@ -265,11 +271,15 @@ function MilestoneLine({ codes }) {
         safeStorage.setItem(MILESTONES_SEEN_KEY, JSON.stringify([...new Set([...seen, code])]));
     }, [code]);
     if (!code) return null;
+    // The line is shown once per manzila, and its verse with it (§8.2: `milestoneReached` once).
     return (
-        <Link to="/journey/milestones" className="flex items-center gap-2 text-sm font-semibold text-gold-ink hover:no-underline">
-            <KhatamStar className="w-4 h-4 text-gold" />
-            {t('journey.today.milestone', { name: t(`journey.milestones.names.${code}`) })}
-        </Link>
+        <div className="flex flex-col gap-2">
+            <Link to="/journey/milestones" className="flex items-center gap-2 text-sm font-semibold text-gold-ink hover:no-underline">
+                <KhatamStar className="w-4 h-4 text-gold" />
+                {t('journey.today.milestone', { name: t(`journey.milestones.names.${code}`) })}
+            </Link>
+            <SacredText moment="milestoneReached" kind="AYAH" size="sm" />
+        </div>
     );
 }
 
