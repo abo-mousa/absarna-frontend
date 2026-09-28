@@ -1,7 +1,7 @@
 import { Target } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
 import { PageHeader, QueryState, Button } from '../components/ui';
-import { GoalRow, JourneyNav, PausedLine, useJourney } from '../components/journey';
+import { DayLegend, GoalRow, JourneyNav, PausedLine, useJourney } from '../components/journey';
 import { useGoals } from '../hooks/useGoals';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { t } from '@/i18n';
@@ -27,7 +27,8 @@ function JourneyGoals() {
                 emptyDescription={t('journey.noGoalsText')}
                 emptyAction={<Button onClick={() => openGoal()}>{t('journey.startFirst')}</Button>}
             >
-                <div className="flex justify-end mb-4">
+                <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+                    <DayLegend className="flex-1 min-w-[16rem]" />
                     <Button onClick={() => openGoal()}>{t('journey.newGoal')}</Button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

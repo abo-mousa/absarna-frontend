@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api/client';
 import { STANDARD } from '@/lib/queryCache';
 import { queryKeys } from '@/lib/queryKeys';
@@ -83,4 +83,6 @@ export const useGoalPreview = (body, enabled) => useQuery({
     enabled,
     staleTime: 60 * 1000,
     retry: false,
+    // The last answer stays up while the next loads, so the box does not blink on every tap.
+    placeholderData: keepPreviousData,
 });

@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Target } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
 import { PageHeader, QueryState, Cartouche, KhatamProgress, KhatamStar, EmptyState, Button } from '../components/ui';
-import { GoalRow, JourneyNav, PausedLine, ReviewSheet, SacredText, useJourney } from '../components/journey';
+import { DayLegend, GoalRow, JourneyNav, PausedLine, ReviewSheet, SacredText, useJourney } from '../components/journey';
 import { useProgressOverview, useWeeklyReview } from '../hooks/useProgress';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { amountText } from '@/lib/goalText';
@@ -81,6 +81,7 @@ function Journey() {
                                     </button>
                                 )}
                             />
+                            {data.goals.length > 0 && <DayLegend className="mb-4" />}
                             {data.goals.length ? (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {data.goals.map((goal) => <GoalRow key={goal.id} goal={goal} />)}

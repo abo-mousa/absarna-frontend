@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { KhatamStar } from '../ui';
+import { safeStorage } from '@/lib/safeStorage';
 import { weekdayName } from '@/lib/dayFormat';
 import { t } from '@/i18n';
 
@@ -57,6 +59,42 @@ function DayStars({ days, weekly = false, size = 'md' }) {
                 </li>
             ))}
         </ul>
+    );
+}
+
+const LEGEND_HIDDEN_KEY = 'absarna.dayLegendHidden';
+const LEGEND = ['FULL', 'MINIMUM', 'MADE_UP', 'REST', 'EXCUSED', 'PENDING'];
+
+/**
+ * What the day symbols mean, in view rather than behind a hover (product owner, 2026-09-28: the
+ * stars read as decoration until explained). Put away with «إخفاء» once learned; «ما معنى الرموز؟»
+ * brings it back. Remembered per browser.
+ */
+export function DayLegend({ className = '' }) {
+    const [hidden, setHidden] = useState(() => safeStorage.getItem(LEGEND_HIDDEN_KEY) === '1');
+    const toggle = (value) => {
+        safeStorage.setItem(LEGEND_HIDDEN_KEY, value ? '1' : '0');
+        setHidden(value);
+    };
+    if (hidden) {
+        return (
+            <button type="button" onClick={() => toggle(false)} className={`text-xs font-semibold text-primary hover:underline ${className}`}>
+                {t('journey.legend.show')}
+            </button>
+        );
+    }
+    return (
+        <div className={`flex flex-wrap items-center gap-x-4 gap-y-2 px-3 py-2 rounded-md border border-border-light bg-surface text-xs text-text-secondary ${className}`}>
+            {LEGEND.map((state) => (
+                <span key={state} className="inline-flex items-center gap-1.5">
+                    <DayStar state={state} className="w-4 h-4" />
+                    {t(`journey.legend.${state}`)}
+                </span>
+            ))}
+            <button type="button" onClick={() => toggle(true)} className="ms-auto text-text-muted hover:text-text-primary">
+                {t('journey.legend.hide')}
+            </button>
+        </div>
     );
 }
 

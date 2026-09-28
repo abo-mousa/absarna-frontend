@@ -6,7 +6,7 @@ import PageShell from '../components/layout/PageShell';
 import { QueryState, Avatar, Spinner, LinkifiedText, ExpandableText, KhatamStar, MetaDivider } from '../components/ui';
 import { VideoPlayer, CommentsSection, VideoCard, BookmarkButton, LikeButton, ReportButton, ShareButton, SourceBadge, SubscribeButton } from '../components/content';
 import PausedLine from '../components/journey/PausedLine';
-import ReflectionPrompt from '../components/journey/ReflectionPrompt';
+import VideoReflections from '../components/journey/VideoReflections';
 import { useVideo, useRelatedVideo, useWatchProgressMap, useWatchHistory } from '../hooks/useVideos';
 import { useChannel } from '../hooks/useChannels';
 import { useSeriesDetail, useSeriesNeighbours } from '../hooks/useSeries';
@@ -226,13 +226,12 @@ function VideoDetail() {
                 {/* «ما الذي بقي معك؟»: the question opens by itself when the episode is finished
                     during this visit (the backend's "finished", for either player); for one finished
                     before, a quiet link to the same form. */}
-                <ReflectionPrompt
+                <VideoReflections
                     key={video.id}
-                    kind="VIDEO"
-                    itemId={video.id}
-                    position={watchProgress[video.id]?.seconds}
+                    videoId={video.id}
+                    getCurrentTime={() => playerRef.current?.getCurrentTime() || 0}
+                    seekTo={(seconds) => playerRef.current?.seekTo(seconds)}
                     invite={finishedNow && openedFinished.id === video.id && !openedFinished.finished}
-                    available={finishedNow}
                     className="mb-6"
                 />
 

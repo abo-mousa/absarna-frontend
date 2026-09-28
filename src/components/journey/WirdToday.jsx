@@ -10,6 +10,7 @@ import { MILESTONES_SEEN_KEY, orderPortions, shownSlot } from '@/lib/journey';
 import { beforeNoon, slotOf } from '@/lib/slots';
 import { amountText, anchorName, goalTitle, isolate, measureOf, resumeHref, slotName, tomorrowText } from '@/lib/goalText';
 import { safeStorage } from '@/lib/safeStorage';
+import { localDay } from '@/lib/dayFormat';
 import { describeError } from '@/lib/describeError';
 import { t } from '@/i18n';
 
@@ -189,10 +190,20 @@ function CarryLine({ goal }) {
     const carry = useCarry();
     const { showToast } = useToast();
     const measure = measureOf(goal);
+    // «لا، أبدأ من اليوم» puts the offer away for today in this browser; it would go at the day's
+    // end anyway. Nothing is owed either way — the offer is a kindness, not a debt.
+    const declineKey = `absarna.carryDeclined:${goal.id}:${localDay()}`;
+    const [declined, setDeclined] = useState(() => safeStorage.getItem(declineKey) === '1');
+    if (declined) return null;
+    const today = goal.today?.target || goal.amount;
     return (
         <div className="flex flex-wrap items-center gap-3 px-4 py-3 rounded-md border border-dashed border-border text-sm text-text-secondary">
             <p className="flex-1 min-w-[14rem]">
-                {t('journey.today.carryText', { title: isolate(goalTitle(goal)), amount: amountText(measure, goal.carryAmount, true) })}
+                {t('journey.today.carryText', {
+                    title: isolate(goalTitle(goal)),
+                    amount: amountText(measure, goal.carryAmount),
+                    total: amountText(measure, today + goal.carryAmount),
+                })}
             </p>
             <button
                 type="button"
@@ -204,6 +215,13 @@ function CarryLine({ goal }) {
                 className="font-semibold text-primary hover:underline disabled:opacity-50"
             >
                 {t('journey.today.carryAction')}
+            </button>
+            <button
+                type="button"
+                onClick={() => { safeStorage.setItem(declineKey, '1'); setDeclined(true); }}
+                className="text-text-muted hover:text-text-primary"
+            >
+                {t('journey.today.carryDecline')}
             </button>
         </div>
     );

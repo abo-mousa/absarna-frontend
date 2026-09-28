@@ -1,4 +1,5 @@
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api/client';
 import { STANDARD } from '@/lib/queryCache';
 import { queryKeys } from '@/lib/queryKeys';
@@ -18,6 +19,18 @@ export const useReflections = () => {
         initialPageParam: 0,
         // The endpoint answers a plain list: a full page means there may be more.
         getNextPageParam: (last, pages) => (last.length === PAGE ? pages.length : undefined),
+        ...STANDARD,
+    });
+};
+
+/** The reader's reflections on one video or book, in the order they sit in it. */
+export const useItemReflections = (kind, itemId) => {
+    const { token } = useAuth();
+    const scope = useUserScope();
+    return useQuery({
+        queryKey: [...queryKeys.reflections(scope), 'item', kind, itemId],
+        queryFn: async () => (await api.get('/user/reflections', { params: { kind, itemId } })).data,
+        enabled: !!token && !!itemId,
         ...STANDARD,
     });
 };

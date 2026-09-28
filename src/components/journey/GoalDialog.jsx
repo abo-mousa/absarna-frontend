@@ -1,4 +1,8 @@
 import { useMemo, useState } from 'react';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { Search } from 'lucide-react';
+import api from '@/lib/api/client';
+import { bookPortion } from '@/lib/journey';
 import { Modal, Button } from '../ui';
 import { EmailVerificationNotice } from '../auth';
 import { Chips, Stepper } from './controls';
@@ -98,6 +102,22 @@ function GoalForm({ goal, prefill, onDone }) {
     const { showToast } = useToast();
     const saving = create.isPending || update.isPending;
 
+    // The preview belongs to the dialog, not to one step: fetched once per change of the numbers,
+    // kept while the next answer loads, and not thrown away when the reader moves between steps —
+    // which is what made it look slow and "refresh".
+    const daily = form.period === 'DAY';
+    const body = useDebouncedValue(useMemo(() => ({
+        kind: form.kind,
+        targetId: form.kind === 'HABIT' ? undefined : form.targetId,
+        measure: form.kind === 'HABIT' ? form.measure : undefined,
+        period: form.period,
+        amount: form.amount,
+        minimumAmount: daily ? Math.min(form.minimumAmount, form.amount) : undefined,
+        daysPerWeek: daily ? form.daysPerWeek : undefined,
+        deadline: form.deadline || undefined,
+    }), [form.kind, form.targetId, form.measure, form.period, form.amount, form.minimumAmount, form.daysPerWeek, form.deadline, daily]), 300);
+    const preview = useGoalPreview(body, !!body.kind);
+
     const canContinue = step !== 'target' || !!form.kind;
 
     const submit = () => {
@@ -155,7 +175,7 @@ function GoalForm({ goal, prefill, onDone }) {
             </ol>
 
             {step === 'target' && <TargetStep form={form} set={set} />}
-            {step === 'amount' && <AmountStep form={form} set={set} editing={editing} />}
+            {step === 'amount' && <AmountStep form={form} set={set} editing={editing} preview={preview} />}
             {step === 'time' && <TimeStep form={form} set={set} editing={editing} originalSlot={goal?.slot} />}
             {step === 'intention' && <IntentionStep form={form} set={set} />}
 
@@ -181,6 +201,38 @@ function GoalForm({ goal, prefill, onDone }) {
 /** What the goal is for: a programme or book the reader has started, or a habit of learning. */
 function TargetStep({ form, set }) {
     const today = useToday();
+    const [query, setQuery] = useState('');
+    const q = useDebouncedValue(query.trim(), 300);
+    // Any programme or book on the site, not only what the reader started (product owner,
+    // 2026-09-28). Programmes come from the site's own search — its visibility rules included —
+    // grouped by series; books from the books listing's search.
+    const found = useQuery({
+        queryKey: ['goal-target-search', q],
+        enabled: q.length >= 2,
+        staleTime: 60_000,
+        placeholderData: keepPreviousData,
+        queryFn: async () => {
+            const [videos, books] = await Promise.all([
+                api.get('/search', { params: { q, size: 24 } }).then((res) => res.data?.content || []),
+                api.get('/books', { params: { search: q, size: 6 } }).then((res) => res.data?.content || []),
+            ]);
+            const series = new Map();
+            for (const video of videos) {
+                if (video.seriesId && !series.has(video.seriesId)) {
+                    series.set(video.seriesId, {
+                        kind: 'FINISH_SERIES', targetId: video.seriesId, title: video.seriesTitle || video.title,
+                        channel: video.channelName, amount: 1,
+                    });
+                }
+            }
+            return [
+                ...[...series.values()].slice(0, 8),
+                ...books.map((book) => ({
+                    kind: 'FINISH_BOOK', targetId: book.id, title: book.title, amount: bookPortion(book.pages, 0),
+                })),
+            ];
+        },
+    });
     const started = [
         ...(today.data?.continueWatching || [])
             .filter((item) => item.next?.seriesId)
@@ -219,8 +271,32 @@ function TargetStep({ form, set }) {
             <span className="block text-xs text-text-muted mt-0.5">{hint}</span>
         </button>
     );
+    const searching = q.length >= 2;
+    const results = found.data || [];
     return (
         <div className="flex flex-col gap-5">
+            <label className="flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-bg focus-within:border-primary">
+                <Search size={16} aria-hidden="true" className="text-text-muted flex-shrink-0" />
+                <input
+                    type="search"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder={t('journey.dialog.searchTarget')}
+                    aria-label={t('journey.dialog.searchTarget')}
+                    className="flex-1 bg-transparent outline-none text-text-primary"
+                />
+            </label>
+            {searching ? (
+                <div role="radiogroup" className="flex flex-col gap-2">
+                    {found.isFetching && !results.length && <p className="text-sm text-text-muted">{t('common.loading')}</p>}
+                    {!found.isFetching && !results.length && <p className="text-sm text-text-muted">{t('journey.dialog.noTargets')}</p>}
+                    {results.map((option) => card(option, option.title, [
+                        t(option.kind === 'FINISH_SERIES' ? 'journey.dialog.finishProgramme' : 'journey.dialog.finishBook'),
+                        option.channel,
+                    ].filter(Boolean).join(' · ')))}
+                </div>
+            ) : (
+            <>
             {started.length > 0 && (
                 <div>
                     <p className="text-sm font-semibold mb-2">{t('journey.dialog.startedTitle')}</p>
@@ -237,27 +313,17 @@ function TargetStep({ form, set }) {
                         t('journey.dialog.habitHint', { amount: amountText(option.measure, option.amount) })))}
                 </div>
             </div>
-            <p className="text-xs text-text-muted">{t('journey.dialog.otherTarget')}</p>
+            </>
+            )}
         </div>
     );
 }
 
 /** How much, how often, and by when — with the preview answering where that leads. */
-function AmountStep({ form, set, editing }) {
+function AmountStep({ form, set, editing, preview }) {
     const daily = form.period === 'DAY';
     const finishing = form.kind !== 'HABIT';
     const seasons = useMemo(() => (finishing ? hijriDeadlines() : []), [finishing]);
-    const body = useDebouncedValue(useMemo(() => ({
-        kind: form.kind,
-        targetId: form.kind === 'HABIT' ? undefined : form.targetId,
-        measure: form.kind === 'HABIT' ? form.measure : undefined,
-        period: form.period,
-        amount: form.amount,
-        minimumAmount: daily ? Math.min(form.minimumAmount, form.amount) : undefined,
-        daysPerWeek: daily ? form.daysPerWeek : undefined,
-        deadline: form.deadline || undefined,
-    }), [form.kind, form.targetId, form.measure, form.period, form.amount, form.minimumAmount, form.daysPerWeek, form.deadline, daily]), 400);
-    const preview = useGoalPreview(body, !!body.kind);
     const advice = preview.data?.sizeAdvice;
     const unit = (count) => amountText(form.measure, count);
 
@@ -340,8 +406,7 @@ function AmountStep({ form, set, editing }) {
 }
 
 function Preview({ preview, form, unit, onAccept }) {
-    const data = preview.data;
-    if (!data) return null;
+    const data = preview.data || {};
     const pace = data.pace;
     const lines = [];
     if (pace?.remaining === 0) {
@@ -356,14 +421,7 @@ function Preview({ preview, form, unit, onAccept }) {
             lines.push(t('journey.preview.beforeDeadline'));
         }
     }
-    if (form.kind === 'HABIT' && data.yearlyTotal) {
-        // Minutes by the thousand say nothing; a year of them is hours.
-        lines.push(t('journey.preview.yearly', {
-            amount: form.measure === 'MINUTES' && data.yearlyTotal >= 120
-                ? countOf('journey.units.HOURS', Math.round(data.yearlyTotal / 60))
-                : unit(data.yearlyTotal),
-        }));
-    }
+    if (form.kind === 'HABIT') lines.push(yearlyLine(form, unit));
     const advice = data.sizeAdvice;
     if (!lines.length && !advice) return null;
     return (
@@ -379,6 +437,24 @@ function Preview({ preview, form, unit, onAccept }) {
             )}
         </div>
     );
+}
+
+/**
+ * «١٥ دقيقة كل يوم تصير في سنة ٩١ ساعة» — what a small portion adds up to, which is the reason to
+ * keep a small one. Worked out here rather than asked for: it is arithmetic (the amount, the days a
+ * week, fifty-two weeks) and it should change the moment the stepper does.
+ */
+function yearlyLine(form, unit) {
+    const daily = form.period === 'DAY';
+    const days = daily ? form.daysPerWeek || 7 : 1;
+    const total = form.amount * days * 52;
+    const cadence = !daily ? t('journey.preview.everyWeek')
+        : days === 7 ? t('journey.preview.everyDay') : t('journey.preview.daysAWeek', { days });
+    // Minutes by the thousand say nothing; a year of them is hours.
+    const inAYear = form.measure === 'MINUTES' && total >= 120
+        ? countOf('journey.units.HOURS', Math.round(total / 60))
+        : unit(total);
+    return t('journey.preview.yearly', { amount: unit(form.amount), cadence, total: inAYear });
 }
 
 function TimeStep({ form, set, editing, originalSlot }) {

@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowBack } from '@/components/ui/DirectionalIcon';
 import PageShell from '../components/layout/PageShell';
 import { QueryState, Cartouche, KhatamProgress, Button, Modal } from '../components/ui';
-import { CumulativeLine, DayStars, PaceBar, PausedLine, SacredText, useJourney } from '../components/journey';
+import { CumulativeLine, DayLegend, DayStars, PaceBar, PausedLine, SacredText, useJourney } from '../components/journey';
 import { useArchiveGoal, useGoal, usePauseGoal, useResumeGoal, useUpdateGoal } from '../hooks/useGoals';
 import { useToast } from '../contexts/ToastContext';
 import { usePageMeta } from '../hooks/usePageMeta';
@@ -89,7 +89,7 @@ function GoalBody({ goal }) {
                         <DayStars days={goal.lastWeek} weekly={goal.period === 'WEEK'} size="sm" />
                     </div>
                 )}
-                <p className="text-xs text-text-muted mt-3">{t('journey.goal.legend')}</p>
+                <DayLegend className="mt-4" />
             </section>
 
             {goal.cumulative?.length > 1 && (
