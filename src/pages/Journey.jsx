@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Target } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
 import { PageHeader, QueryState, Cartouche, KhatamProgress, KhatamStar, EmptyState, Button } from '../components/ui';
-import { GoalRow, JourneyNav, ReviewSheet, SacredText, useJourney } from '../components/journey';
+import { GoalRow, JourneyNav, PausedLine, ReviewSheet, SacredText, useJourney } from '../components/journey';
 import { useProgressOverview, useWeeklyReview } from '../hooks/useProgress';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { amountText } from '@/lib/goalText';
@@ -49,6 +49,7 @@ function Journey() {
             >
                 {data && (
                     <div className="flex flex-col gap-10">
+                        <PausedLine where="journey" />
                         {review.data?.open && (
                             <section className="flex flex-wrap items-center gap-4 p-5 rounded-lg border border-gold/50 bg-gold-light/40">
                                 <KhatamStar className="w-6 h-6 text-gold flex-shrink-0" />

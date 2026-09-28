@@ -94,3 +94,8 @@ export function paceText(goal) {
     return pace.finishDate ? t('journey.pace.finishOn', { date: formatDay(pace.finishDate) }) : null;
 }
 
+
+/** An amount of learning time, read at a glance: minutes under two hours, whole hours above. */
+export const learningTime = (minutes, oblique = false) => (minutes >= 120
+    ? countOf('journey.units.HOURS', Math.round(minutes / 60), { oblique })
+    : countOf('journey.units.MINUTES', Math.round(minutes), { oblique }));

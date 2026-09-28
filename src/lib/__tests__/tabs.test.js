@@ -34,6 +34,7 @@ describe('activeTab', () => {
 
     it('puts the journey and its pages under «مسيرتي» on a wide screen, and under nothing in the phone bar', () => {
         expect(activeTab('/journey/goals/4')).toBe('journey');
+        expect(activeTab('/history')).toBe('journey');
         expect(activeTab('/journey', { phone: true })).toBeNull();
         expect(activeTab('/journeyman')).toBeNull();
     });

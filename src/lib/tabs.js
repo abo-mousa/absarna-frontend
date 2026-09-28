@@ -40,7 +40,8 @@ export function activeTab(pathname, { phone = false } = {}) {
     if (startsWith(path, '/books')) return phone ? 'read' : 'books';
     if (startsWith(path, '/articles')) return phone ? 'read' : 'articles';
     if (startsWith(path, '/posts')) return 'posts';
-    if (startsWith(path, '/journey')) return phone ? null : 'journey';
+    // The record (and /history, which redirects to it) is the journey's.
+    if (startsWith(path, '/journey') || startsWith(path, '/history')) return phone ? null : 'journey';
     if (startsWith(path, '/channels') || startsWith(path, '/channel') || startsWith(path, '/subscriptions')
         || startsWith(path, '/series')) {
         return 'channels';

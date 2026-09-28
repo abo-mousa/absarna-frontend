@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { setActiveLocale } from '@/i18n';
 import { countOf } from '@/lib/plural';
-import { commitmentSentence, paceText } from '@/lib/goalText';
+import { commitmentSentence, learningTime, paceText } from '@/lib/goalText';
 import { hijriDeadlines, hasHijriCalendar } from '@/lib/hijriSeasons';
 import { bookPortion } from '@/lib/journey';
 import { creditDayFor, endQada, startQada } from '@/lib/qada';
@@ -83,5 +83,16 @@ describe('hijriDeadlines', () => {
         expect([...dates].sort()).toEqual(dates);
         // Ramadan 1448 begins on 8 February 2027 (Umm al-Qura); the day before is the deadline.
         expect(seasons.find((season) => season.key === 'ramadan').date).toBe('2027-02-07');
+    });
+});
+
+describe('learningTime', () => {
+    it('reads minutes under two hours and whole hours above', () => {
+        setActiveLocale('en');
+        expect(learningTime(45)).toBe('45 minutes');
+        expect(learningTime(119)).toBe('119 minutes');
+        expect(learningTime(150)).toBe('3 hours');
+        setActiveLocale('ar');
+        expect(learningTime(120)).toBe('ساعتان');
     });
 });

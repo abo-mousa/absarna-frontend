@@ -437,7 +437,13 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
     of the other script is `isolate()`d. Goal wording lives once, in `lib/goalText.js`.
   - **A text from the Qur'an or Sunnah is `<SacredText moment=…>`**, never typed: at most one of
     each on a screen, the action-bound moment winning over the ambient one (§8.2).
-  - «السجل» links to `/history` until the record tab (Phase 6) exists.
+  - **«السجل» (`/journey/record`) is where history lives now** — `/history` redirects there. The
+    list, the year's stars, the weeks, the time of day, and the reader's control (retention, pause,
+    erase with or without the counts) are one page; the old per-list "clear" is gone. While
+    recording is paused, `PausedLine` shows under the player, in the book reader and on the journey
+    pages, linking to that control.
+  - Pages outside the tab import `journey/MakeWird` and `journey/PausedLine` by file, not through
+    the barrel, so the texts chunk stays lazy.
 - **Progress reporting has three layers** (`lib/api/beacon.js`): a throttled checkpoint, a flush on
   React unmount (SPA navigation), and a `pagehide` listener using `fetch(..., {keepalive:true})` —
   React never unmounts on a hard refresh, and a normal XHR is cancelled mid-flight.

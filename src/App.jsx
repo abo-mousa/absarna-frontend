@@ -29,11 +29,11 @@ const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const UserProfile = lazy(() => import('./pages/UserProfile'));
 const Subscriptions = lazy(() => import('./pages/Subscriptions'));
-const History = lazy(() => import('./pages/History'));
 const Journey = lazy(() => import('./pages/Journey'));
 const JourneyGoals = lazy(() => import('./pages/JourneyGoals'));
 const JourneyGoal = lazy(() => import('./pages/JourneyGoal'));
 const JourneyMilestones = lazy(() => import('./pages/JourneyMilestones'));
+const JourneyRecord = lazy(() => import('./pages/JourneyRecord'));
 const Bookmarks = lazy(() => import('./pages/Bookmarks'));
 const SearchPage = lazy(() => import('./pages/SearchPage'));
 const Books = lazy(() => import('./pages/Books'));
@@ -262,9 +262,9 @@ function AppRoutes() {
                 <Route path="/journey/goals" element={<ProtectedRoute><JourneyGoals /></ProtectedRoute>} />
                 <Route path="/journey/goals/:id" element={<ProtectedRoute><JourneyGoal /></ProtectedRoute>} />
                 <Route path="/journey/milestones" element={<ProtectedRoute><JourneyMilestones /></ProtectedRoute>} />
-                <Route path="/history" element={
-                    <ProtectedRoute><History /></ProtectedRoute>
-                } />
+                <Route path="/journey/record" element={<ProtectedRoute><JourneyRecord /></ProtectedRoute>} />
+                {/* The History page folded into the record; the old path is kept for bookmarks. */}
+                <Route path="/history" element={<Navigate to="/journey/record" replace />} />
                 <Route path="/bookmarks" element={
                     <ProtectedRoute><Bookmarks /></ProtectedRoute>
                 } />

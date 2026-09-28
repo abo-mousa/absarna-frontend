@@ -5,8 +5,7 @@ const ITEMS = [
     { key: 'overview', to: '/journey', exact: true },
     { key: 'goals', to: '/journey/goals' },
     { key: 'milestones', to: '/journey/milestones' },
-    // The record tab is Phase 6; until then the history page is the record.
-    { key: 'record', to: '/history' },
+    { key: 'record', to: '/journey/record' },
 ];
 
 /**

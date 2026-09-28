@@ -13,7 +13,8 @@ import { QueryState, ExpandableText, KhatamStar } from '../components/ui';
 import { CommentsSection, BookmarkButton, LikeButton, ReportButton, ShareButton, BookDownloadButton, BookCover } from '../components/content';
 import { useBook, useBookReadProgress, useSaveReadProgress } from '../hooks/useBooks';
 import { usePageMeta } from '../hooks/usePageMeta';
-import { MakeWird } from '../components/journey';
+import MakeWird from '../components/journey/MakeWird';
+import PausedLine from '../components/journey/PausedLine';
 import { t } from '@/i18n';
 import { formatCompactCount } from '@/lib/numbers';
 
@@ -183,6 +184,7 @@ function BookDetail() {
                                 <X size={20} />
                             </button>
                         </div>
+                        <PausedLine className="px-5 pt-3" />
                         <div className="flex-1 overflow-auto p-4">
                             <Suspense fallback={<div className="py-16 text-center text-text-muted">{t('common.loading')}</div>}>
                                 <PdfReader

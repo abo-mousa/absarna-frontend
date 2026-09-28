@@ -180,7 +180,7 @@ function AccountMenu({ attentionCount = 0 }) {
                                 );
                             case 'history':
                                 return (
-                                    <Link key={action} role="menuitem" to="/history" className={itemClass}>
+                                    <Link key={action} role="menuitem" to="/journey/record" className={itemClass}>
                                         <History size={18} />
                                         {t('nav.history')}
                                     </Link>

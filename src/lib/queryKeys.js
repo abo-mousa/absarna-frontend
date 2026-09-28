@@ -63,6 +63,10 @@ export const queryKeys = {
     progressOverview: (scope) => ['progress', 'overview', scope],
     progressMilestones: (scope) => ['progress', 'milestones', scope],
     progressCompletions: (scope) => ['progress', 'completions', scope],
+    progressYear: (scope) => ['progress', 'year', scope],
+    progressWeeks: (count, scope) => ['progress', 'weeks', count, scope],
+    progressSlots: (days, scope) => ['progress', 'slots', days, scope],
+    historySettings: (scope) => ['history-settings', scope],
     weeklyReview: (scope) => ['weekly-review', scope],
     watchHistory: (scope) => ['watch-history', scope],
     // Under the same prefix, so every invalidation of ['watch-history'] reaches it too.

@@ -54,3 +54,31 @@ export const useSaveReview = () => {
         onSuccess: () => invalidateProgress(queryClient),
     });
 };
+
+/** The record tab's charts: the year as 52 week-stars, the last weeks' minutes, the time of day. */
+export const useProgressYear = () => {
+    const scope = useUserScope();
+    return useQuery({
+        queryKey: queryKeys.progressYear(scope),
+        queryFn: async () => (await api.get('/user/progress/year', withZone())).data,
+        ...STANDARD,
+    });
+};
+
+export const useProgressWeeks = (count = 12) => {
+    const scope = useUserScope();
+    return useQuery({
+        queryKey: queryKeys.progressWeeks(count, scope),
+        queryFn: async () => (await api.get('/user/progress/weeks', withZone({ count }))).data,
+        ...STANDARD,
+    });
+};
+
+export const useProgressSlots = (days = 30) => {
+    const scope = useUserScope();
+    return useQuery({
+        queryKey: queryKeys.progressSlots(days, scope),
+        queryFn: async () => (await api.get('/user/progress/slots', withZone({ days }))).data,
+        ...STANDARD,
+    });
+};

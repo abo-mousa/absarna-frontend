@@ -5,6 +5,7 @@ import { ArrowBack, ChevronBack, ChevronForward } from '@/components/ui/Directio
 import PageShell from '../components/layout/PageShell';
 import { QueryState, Avatar, Spinner, LinkifiedText, ExpandableText, KhatamStar, MetaDivider } from '../components/ui';
 import { VideoPlayer, CommentsSection, VideoCard, BookmarkButton, LikeButton, ReportButton, ShareButton, SourceBadge, SubscribeButton } from '../components/content';
+import PausedLine from '../components/journey/PausedLine';
 import { useVideo, useRelatedVideo, useWatchProgressMap, useWatchHistory } from '../hooks/useVideos';
 import { useChannel } from '../hooks/useChannels';
 import { useSeriesDetail, useSeriesNeighbours } from '../hooks/useSeries';
@@ -211,6 +212,8 @@ function VideoDetail() {
                         />
                     )}
                 </div>
+                {/* Recording paused: the place is not being kept, and the reader should know before leaving. */}
+                <PausedLine className="mb-4" />
 
                 {/* The video's details as the book page draws its own: no panel, a serif title, a
                     hairline under the block. */}

@@ -10,7 +10,7 @@ import { useChannel } from '../hooks/useChannels';
 import { useAuth } from '../contexts/AuthContext';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { channelTabPath } from '@/lib/navigation';
-import { MakeWird } from '../components/journey';
+import MakeWird from '../components/journey/MakeWird';
 import { t } from '@/i18n';
 
 function SeriesDetail() {
