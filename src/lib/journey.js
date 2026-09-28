@@ -1,4 +1,8 @@
 import { slotIndex, slotOf } from './slots';
+import { amountText } from './goalText';
+import { formatDay } from './dayFormat';
+import { hasHijriCalendar } from './hijriSeasons';
+import { t } from '@/i18n';
 
 /** Day states that count as kept — the backend's `DayState.kept()`. */
 export const KEPT = new Set(['FULL', 'MINIMUM', 'MADE_UP']);
@@ -62,3 +66,32 @@ export function goalFor(goals, { seriesId = null, bookId = null }) {
 /** The proposed portion for a book: the pages that finish it in thirty days (PROGRESS-AND-GOALS.md §7.10). */
 export const bookPortion = (pages, currentPage = 0) =>
     pages && pages > currentPage ? Math.max(1, Math.ceil((pages - (currentPage || 0)) / 30)) : 2;
+
+/**
+ * The weeks grouped into months, oldest first. A week (Saturday to Friday) belongs WHOLE to the
+ * month holding most of its days — the month of its Tuesday, its fourth day — so a month has four
+ * weeks or five and no week of one or two days is ever drawn (product owner, 2026-09-28). Hijri
+ * months where the runtime has the calendar, the reader's own otherwise.
+ */
+export function groupByMonth(weeks, calendar = hasHijriCalendar() ? 'islamic-umalqura' : 'gregory', months = 12) {
+    const groups = [];
+    for (const week of weeks) {
+        const [year, month, day] = week.weekStart.split('-').map(Number);
+        const middle = new Date(Date.UTC(year, month - 1, day + 3, 12)).toISOString().slice(0, 10);
+        const key = formatDay(middle, { year: 'numeric', month: 'numeric' }, calendar);
+        const last = groups[groups.length - 1];
+        if (last?.key === key) {
+            last.weeks.push(week);
+        } else {
+            groups.push({ key, name: formatDay(middle, { month: 'long' }, calendar), weeks: [week] });
+        }
+    }
+    return groups.slice(-months);
+}
+
+/** A milestone step as its small star names it — «ربع ختمة», «٢٥٠ صفحة», «ختمتان». */
+export function stepLabel(step) {
+    if (step.measure === 'FURTHEST_PERCENT') return t(`journey.milestones.steps.FURTHEST_PERCENT.${step.value}`);
+    if (step.measure === 'COMPLETIONS') return amountText('KHATMAT', step.value);
+    return amountText(step.measure, step.value);
+}

@@ -3,13 +3,14 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Target } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
 import { PageHeader, QueryState, Cartouche, KhatamProgress, KhatamStar, EmptyState, Button } from '../components/ui';
-import { DayLegend, GoalRow, JourneyNav, PausedLine, ReviewSheet, SacredText, useJourney } from '../components/journey';
+import { DayLegend, DayStar, GoalRow, JourneyNav, PausedLine, ReviewSheet, SacredText, useJourney } from '../components/journey';
 import { useProgressOverview, useWeeklyReview } from '../hooks/useProgress';
 import { usePageMeta } from '../hooks/usePageMeta';
-import { amountText } from '@/lib/goalText';
+import { amountText, goalTitle, isolate } from '@/lib/goalText';
 import { countOf } from '@/lib/plural';
-import { formatDay } from '@/lib/dayFormat';
+import { formatDay, localDay, weekdayName } from '@/lib/dayFormat';
 import { formatCount } from '@/lib/numbers';
+import { KEPT } from '@/lib/journey';
 import { t } from '@/i18n';
 
 /**
@@ -66,7 +67,7 @@ function Journey() {
                         )}
 
                         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] gap-5">
-                            <WeekIntention intention={data.weekIntention} onStart={() => openGoal()} />
+                            <WeekIntention intention={data.weekIntention} goal={data.goals.find((goal) => goal.id === data.weekIntention?.goalId)} onStart={() => openGoal()} />
                             <div className="p-5 rounded-lg border border-border-light bg-surface flex flex-col justify-center">
                                 <SacredText moment={stateMoment(data)} kind="AYAH" />
                             </div>
@@ -158,8 +159,12 @@ function stateMoment(data) {
     return 'dailyVerse';
 }
 
-/** The primary goal's week as the large star — days kept against days a week, or the week's amount. */
-function WeekIntention({ intention, onStart }) {
+/**
+ * The primary goal's week. A daily portion is its seven days, Saturday to Friday, each a star, with
+ * today marked and one sentence either side — what was intended, and how it stands (product owner,
+ * 2026-09-28: the single large star read as decoration). A weekly amount keeps the large star.
+ */
+function WeekIntention({ intention, goal, onStart }) {
     if (!intention) {
         return (
             <div className="p-5 rounded-lg border border-border-light bg-surface flex flex-col items-start gap-3">
@@ -172,6 +177,63 @@ function WeekIntention({ intention, onStart }) {
     const unit = (count, oblique = false) => (intention.days
         ? countOf('journey.units.DAYS', count, { oblique }) : amountText(intention.measure, count, oblique));
     const met = intention.done >= intention.amount;
+    if (intention.days && goal?.week?.length) {
+        // The learning day turns at 03:00 (LearningDay), so the small hours still belong to yesterday.
+        const today = localDay(new Date(Date.now() - 3 * 3_600_000));
+        // The goal's week runs only to today; the days after it are still to come, drawn as open stars.
+        const [year, month, date] = goal.week[0].day.split('-').map(Number);
+        const week = Array.from({ length: 7 }, (_, index) => {
+            const day = new Date(Date.UTC(year, month - 1, date + index, 12)).toISOString().slice(0, 10);
+            return goal.week.find((entry) => entry.day === day) || { day, state: 'PENDING' };
+        });
+        const left = week.filter((day) => day.day >= today && !KEPT.has(day.state)).length;
+        const needed = Math.max(0, intention.amount - intention.done);
+        return (
+            <Link to={`/journey/goals/${intention.goalId}`}
+                  className="p-5 rounded-lg border border-border-light bg-surface flex flex-col gap-4 text-text-primary hover:no-underline hover:border-border">
+                <h2 className="font-serif text-[1.5rem] font-semibold">{t('journey.intention.title')}</h2>
+                <p className="text-sm text-text-secondary">
+                    {t('journey.intention.days', {
+                        what: `«${isolate(goalTitle(goal))}»`,
+                        days: countOf('journey.units.DAYS', intention.amount, { oblique: true }),
+                    })}
+                </p>
+                <ul className="grid grid-cols-7 gap-1" aria-hidden="true">
+                    {week.map((day) => {
+                        const isToday = day.day === today;
+                        return (
+                            <li key={day.day}
+                                className={`flex flex-col items-center gap-1 py-1.5 rounded-md text-[0.7rem] ${isToday ? 'bg-primary-light text-primary font-bold' : 'text-text-muted'}`}>
+                                <DayStar state={day.state} className="w-6 h-6" />
+                                <span>{isToday ? t('journey.intention.today') : weekdayName(day.day)}</span>
+                            </li>
+                        );
+                    })}
+                </ul>
+                <p className="text-sm">
+                    {met ? t('journey.today.intentionMet') : (
+                        <>
+                            {intention.done > 0
+                                ? t('journey.intention.kept', {
+                                    done: countOf('journey.units.DAYS', intention.done),
+                                    amount: formatCount(intention.amount),
+                                })
+                                : t('journey.intention.keptNone', { amount: formatCount(intention.amount) })}{' '}
+                            {needed <= left
+                                ? t('journey.intention.left', {
+                                    left: countOf('journey.units.DAYS', left),
+                                    needed: countOf('journey.units.DAYS', needed),
+                                })
+                                : t('journey.intention.leftShort', { left: countOf('journey.units.DAYS', left) })}
+                        </>
+                    )}
+                </p>
+                <span className="sr-only">
+                    {week.map((day) => `${weekdayName(day.day, 'long')}: ${t(`journey.states.${day.state}`)}`).join('، ')}
+                </span>
+            </Link>
+        );
+    }
     return (
         <Link to={`/journey/goals/${intention.goalId}`}
               className="p-5 rounded-lg border border-border-light bg-surface flex items-center gap-5 text-text-primary hover:no-underline hover:border-border">

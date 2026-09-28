@@ -95,7 +95,7 @@ function GoalBody({ goal }) {
             {goal.cumulative?.length > 1 && (
                 <section>
                     <Cartouche title={t('journey.cumulative.title')} />
-                    <CumulativeLine points={goal.cumulative} measure={measure} total={goal.pace?.total} />
+                    <CumulativeLine points={goal.cumulative} measure={measure} total={goal.pace?.total} finishDate={goal.pace?.finishDate} />
                 </section>
             )}
 

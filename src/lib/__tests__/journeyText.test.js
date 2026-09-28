@@ -3,7 +3,7 @@ import { setActiveLocale } from '@/i18n';
 import { countOf } from '@/lib/plural';
 import { commitmentSentence, learningTime, paceText } from '@/lib/goalText';
 import { hijriDeadlines, hasHijriCalendar } from '@/lib/hijriSeasons';
-import { bookPortion } from '@/lib/journey';
+import { bookPortion, groupByMonth, stepLabel } from '@/lib/journey';
 import { creditDayFor, endQada, startQada } from '@/lib/qada';
 
 afterEach(() => setActiveLocale('ar'));
@@ -100,5 +100,46 @@ describe('learningTime', () => {
         expect(learningTime(150)).toBe('3 hours');
         setActiveLocale('ar');
         expect(learningTime(120)).toBe('ساعتان');
+    });
+});
+
+describe('stepLabel', () => {
+    it('names a step in what was learned', () => {
+        setActiveLocale('ar');
+        expect(stepLabel({ measure: 'FURTHEST_PERCENT', value: 25 })).toBe('ربع ختمة');
+        expect(stepLabel({ measure: 'PAGES', value: 250 })).toBe('٢٥٠ صفحة');
+        expect(stepLabel({ measure: 'EPISODES', value: 10 })).toBe('١٠ حلقات');
+        expect(stepLabel({ measure: 'COMPLETIONS', value: 2 })).toBe('ختمتان');
+        expect(stepLabel({ measure: 'COMPLETIONS', value: 5 })).toBe('٥ ختمات');
+    });
+});
+
+describe('groupByMonth', () => {
+    // 52 Saturdays ending on 2026-09-26.
+    const weeks = Array.from({ length: 52 }, (_, i) => ({
+        weekStart: new Date(Date.UTC(2026, 8, 26 - 7 * (51 - i), 12)).toISOString().slice(0, 10),
+        level: 1,
+    }));
+    const check = (calendar) => {
+        const months = groupByMonth(weeks, calendar);
+        expect(months.length).toBeLessThanOrEqual(12);
+        // Every week lands in exactly one month, in order. The oldest month may be cut by the window
+        // and the newest is still running, so only the ones between are whole.
+        const flat = months.flatMap((month) => month.weeks.map((week) => week.weekStart));
+        expect(flat).toEqual(weeks.slice(-flat.length).map((week) => week.weekStart));
+        for (const month of months.slice(1, -1)) {
+            expect(month.weeks.length).toBeGreaterThanOrEqual(4);
+            expect(month.weeks.length).toBeLessThanOrEqual(5);
+        }
+    };
+    it('gives each whole week to one month, four or five to a month', () => check('gregory'));
+    it('does the same in Hijri months', () => {
+        if (!hasHijriCalendar()) return;
+        check('islamic-umalqura');
+    });
+    it('puts a week in the month of its Tuesday', () => {
+        // Saturday 2026-08-29 to Friday 2026-09-04: three days in August, four in September.
+        const [month] = groupByMonth([{ weekStart: '2026-08-29', level: 0 }], 'gregory');
+        expect(month.key).toBe(groupByMonth([{ weekStart: '2026-09-05', level: 0 }], 'gregory')[0].key);
     });
 });

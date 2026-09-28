@@ -9,6 +9,7 @@ export { default as CumulativeLine } from './CumulativeLine';
 export { default as JourneyNav } from './JourneyNav';
 export { default as ReviewSheet } from './ReviewSheet';
 export { default as YearStars } from './YearStars';
+export { default as MilestoneThread } from './MilestoneThread';
 export { default as WeekBars } from './WeekBars';
 export { default as SlotSplit } from './SlotSplit';
 export { default as FieldsChart } from './FieldsChart';
