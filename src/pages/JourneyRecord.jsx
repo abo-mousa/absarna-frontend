@@ -69,7 +69,8 @@ function JourneyRecord() {
                 {fields.data?.shown && (
                     <section>
                         <Cartouche title={t('journey.record.fieldsTitle')} />
-                        <p className="text-sm text-text-secondary mb-4">{t('journey.record.fieldsText', { days: FIELD_DAYS })}</p>
+                        {/* The backend's span: shorter than asked when the reader keeps less history than that. */}
+                        <p className="text-sm text-text-secondary mb-4">{t('journey.record.fieldsText', { days: fields.data.days })}</p>
                         <FieldsChart minutes={fields.data.minutes} />
                     </section>
                 )}

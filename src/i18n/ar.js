@@ -987,7 +987,8 @@ export const ar = {
             placeholder: 'اختر المجال والموضوع',
             placeholderHint: 'مثلاً: العلوم الشرعية ‹ الفقه',
             wholeField: 'المجال كلّه',
-            wholeFieldOf: '{field} كلّه',
+            // «كلّ …» rather than «… كلّه»: the pronoun would have to agree with each field's gender and number.
+            wholeFieldOf: 'كلّ {field}',
             inheritedFrom: {
                 series: 'من السلسلة — اضغط لتغييره لهذا وحده',
                 channel: 'من إعداد القناة — اضغط لتغييره لهذا وحده',
