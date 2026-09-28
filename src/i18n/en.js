@@ -1172,6 +1172,8 @@ export const en = {
             episodes: 'episodes finished',
             completions: 'finished',
             weeksTitle: 'Your weeks',
+            axisHours: 'Hours',
+            axisMinutes: 'Minutes',
             weeksAria: 'Learning time over the last {count} weeks',
             minutesHeading: 'Time',
             goalLine: 'Your goal',

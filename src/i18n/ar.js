@@ -1402,6 +1402,8 @@ export const ar = {
             episodes: 'حلقات أتممتها',
             completions: 'ختمات',
             weeksTitle: 'أسابيعك',
+            axisHours: 'بالساعات',
+            axisMinutes: 'بالدقائق',
             weeksAria: 'وقت التعلّم في آخر {count} أسبوعًا',
             minutesHeading: 'الوقت',
             goalLine: 'هدفك',

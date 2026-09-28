@@ -108,3 +108,15 @@ export function fullWeek(days) {
         return days.find((entry) => entry.day === day) || { day, state: 'PENDING', units: 0, target: null };
     });
 }
+
+/** The weeks chart's axis: round steps in hours (minutes under two hours), four steps above zero at most. */
+export function weekAxis(max) {
+    const hours = max >= 120;
+    // The smallest round step that keeps the axis to four steps above zero at most.
+    const steps = hours ? [60, 120, 300, 600, 1200, 3000] : [10, 15, 30, 60];
+    const step = steps.find((candidate) => Math.ceil(max / candidate) <= 4) || steps[steps.length - 1];
+    const top = Math.max(step, Math.ceil(max / step) * step);
+    const ticks = [];
+    for (let value = 0; value <= top; value += step) ticks.push(value);
+    return { hours, top, ticks };
+}

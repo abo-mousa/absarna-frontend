@@ -3,7 +3,7 @@ import { setActiveLocale } from '@/i18n';
 import { countOf } from '@/lib/plural';
 import { commitmentSentence, learningTime, paceText } from '@/lib/goalText';
 import { hijriDeadlines, hasHijriCalendar } from '@/lib/hijriSeasons';
-import { bookPortion, fullWeek, groupByMonth, stepLabel } from '@/lib/journey';
+import { bookPortion, fullWeek, groupByMonth, stepLabel, weekAxis } from '@/lib/journey';
 import { creditDayFor, endQada, startQada } from '@/lib/qada';
 
 afterEach(() => setActiveLocale('ar'));
@@ -150,5 +150,16 @@ describe('fullWeek', () => {
         expect(week.map((day) => day.day)).toEqual(['2026-09-26', '2026-09-27', '2026-09-28', '2026-09-29', '2026-09-30', '2026-10-01', '2026-10-02']);
         expect(week[1].state).toBe('FULL');
         expect(week[6].state).toBe('PENDING');
+    });
+});
+
+describe('weekAxis', () => {
+    it('steps in whole hours, four lines at most, above the tallest week', () => {
+        expect(weekAxis(17 * 60)).toEqual({ hours: true, top: 20 * 60, ticks: [0, 300, 600, 900, 1200] });
+        expect(weekAxis(150)).toEqual({ hours: true, top: 180, ticks: [0, 60, 120, 180] });
+    });
+    it('uses minutes for a light stretch', () => {
+        expect(weekAxis(40)).toEqual({ hours: false, top: 40, ticks: [0, 10, 20, 30, 40] });
+        expect(weekAxis(50)).toEqual({ hours: false, top: 60, ticks: [0, 15, 30, 45, 60] });
     });
 });
