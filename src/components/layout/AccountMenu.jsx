@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { User, Upload, Shield, LogOut, Sun, Moon, LogIn, UserPlus, History, Bookmark, Compass } from 'lucide-react';
+import { User, Upload, Shield, LogOut, Sun, Moon, LogIn, UserPlus, History, Bookmark, Compass, Sparkles } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useOutsideClick } from '@/hooks/useOutsideClick';
@@ -23,6 +23,8 @@ export function accountMenuActions(user, signedIn = true) {
     if (!signedIn) return ['login', 'register', 'guide', 'theme', 'language'];
     return [
         'profile',
+        // «مسيرتي»: a tab from `lg` up, and only here below it — the phone's bar holds five.
+        'journey',
         // What the sidebar used to hold for an account, now that there is no sidebar.
         'history',
         'bookmarks',
@@ -167,6 +169,13 @@ function AccountMenu({ attentionCount = 0 }) {
                                     <Link key={action} role="menuitem" to="/profile" className={itemClass}>
                                         <User size={18} />
                                         {t('nav.profile')}
+                                    </Link>
+                                );
+                            case 'journey':
+                                return (
+                                    <Link key={action} role="menuitem" to="/journey" className={`lg:hidden ${itemClass}`}>
+                                        <Sparkles size={18} />
+                                        {t('nav.journey')}
                                     </Link>
                                 );
                             case 'history':

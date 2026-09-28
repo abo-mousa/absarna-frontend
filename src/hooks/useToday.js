@@ -3,6 +3,7 @@ import api from '@/lib/api/client';
 import { UNTIL_DAY_ENDS } from '@/lib/queryCache';
 import { queryKeys } from '@/lib/queryKeys';
 import { useUserScope } from './useUserScope';
+import { readerTimeZone } from '@/lib/timeZone';
 
 /**
  * The Today page's data (`GET /api/today`): the week, what to continue, the news and the feed's
@@ -14,13 +15,6 @@ import { useUserScope } from './useUserScope';
  * episode still shows the next one, because the watch report invalidates ['today']
  * (`useWatchProgress`), as do reading, hiding, following and clearing history.
  */
-const readerTimeZone = () => {
-    try {
-        return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined;
-    } catch {
-        return undefined;
-    }
-};
 
 export const useToday = () => {
     const scope = useUserScope();

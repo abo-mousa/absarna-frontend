@@ -10,6 +10,7 @@ import { safeSessionStorage } from '@/lib/safeStorage';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import { PRELOAD_RELOAD_FLAG, mayReloadAfterPreloadError } from '@/lib/preloadReload';
 import ErrorBoundary from './components/ErrorBoundary';
+import { JourneyProvider } from './components/journey/JourneyProvider';
 import { Spinner, DrawnScrollbar } from './components/ui';
 import { t } from '@/i18n';
 
@@ -29,6 +30,10 @@ const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const UserProfile = lazy(() => import('./pages/UserProfile'));
 const Subscriptions = lazy(() => import('./pages/Subscriptions'));
 const History = lazy(() => import('./pages/History'));
+const Journey = lazy(() => import('./pages/Journey'));
+const JourneyGoals = lazy(() => import('./pages/JourneyGoals'));
+const JourneyGoal = lazy(() => import('./pages/JourneyGoal'));
+const JourneyMilestones = lazy(() => import('./pages/JourneyMilestones'));
 const Bookmarks = lazy(() => import('./pages/Bookmarks'));
 const SearchPage = lazy(() => import('./pages/SearchPage'));
 const Books = lazy(() => import('./pages/Books'));
@@ -252,6 +257,11 @@ function AppRoutes() {
                 <Route path="/subscriptions" element={
                     <ProtectedRoute><Subscriptions /></ProtectedRoute>
                 } />
+                {/* «مسيرتي», the progress tab (PROGRESS-AND-GOALS.md §7.1). */}
+                <Route path="/journey" element={<ProtectedRoute><Journey /></ProtectedRoute>} />
+                <Route path="/journey/goals" element={<ProtectedRoute><JourneyGoals /></ProtectedRoute>} />
+                <Route path="/journey/goals/:id" element={<ProtectedRoute><JourneyGoal /></ProtectedRoute>} />
+                <Route path="/journey/milestones" element={<ProtectedRoute><JourneyMilestones /></ProtectedRoute>} />
                 <Route path="/history" element={
                     <ProtectedRoute><History /></ProtectedRoute>
                 } />
@@ -313,7 +323,11 @@ function App() {
                     <BrowserRouter>
                         <ToastProvider>
                             <AuthProvider>
-                                <AppRoutes />
+                                {/* The goal dialog every «اجعله وِردًا» opens, and the finishing
+                                    moment a progress report can trigger from any page. */}
+                                <JourneyProvider>
+                                    <AppRoutes />
+                                </JourneyProvider>
                             </AuthProvider>
                         </ToastProvider>
                     </BrowserRouter>

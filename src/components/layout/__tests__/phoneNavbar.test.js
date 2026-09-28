@@ -22,15 +22,15 @@ const viewer = { role: 'USER', platformAdmin: false, canUpload: false };
 
 describe('accountMenuActions', () => {
     it('gives a platform admin every account control', () => {
-        expect(accountMenuActions(admin)).toEqual(['profile', 'history', 'bookmarks', 'upload', 'admin', 'guide', 'theme', 'language', 'logout']);
+        expect(accountMenuActions(admin)).toEqual(['profile', 'journey', 'history', 'bookmarks', 'upload', 'admin', 'guide', 'theme', 'language', 'logout']);
     });
 
     it('offers upload to a creator and not the admin panel', () => {
-        expect(accountMenuActions(creator)).toEqual(['profile', 'history', 'bookmarks', 'upload', 'guide', 'theme', 'language', 'logout']);
+        expect(accountMenuActions(creator)).toEqual(['profile', 'journey', 'history', 'bookmarks', 'upload', 'guide', 'theme', 'language', 'logout']);
     });
 
     it('offers a plain account its profile, the settings and sign-out', () => {
-        expect(accountMenuActions(viewer)).toEqual(['profile', 'history', 'bookmarks', 'guide', 'theme', 'language', 'logout']);
+        expect(accountMenuActions(viewer)).toEqual(['profile', 'journey', 'history', 'bookmarks', 'guide', 'theme', 'language', 'logout']);
     });
 
     it('offers a visitor sign-in first, then registration and the settings', () => {

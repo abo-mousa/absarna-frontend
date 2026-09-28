@@ -64,6 +64,10 @@ export default {
         reading: ['Noto Naskh Arabic', 'Amiri', 'serif'],
         // The progress stars' numbers only — see index.html, which loads just those characters.
         numeral: ['Amiri', 'Noto Naskh Arabic', 'serif'],
+        // The Qur'an and hadith texts of the progress tab (components/journey/SacredText): Amiri
+        // Quran draws the Uthmani marks a verse needs, Amiri the hadith. Loaded on first use only.
+        quran: ['Amiri Quran', 'Amiri', 'serif'],
+        sacred: ['Amiri', 'Noto Naskh Arabic', 'serif'],
       },
       // Near-square, like a page or a tile, not an app's rounded pill. The redesign's one
       // ornament is the eight-pointed star, and 16px corners on every card read as a video site

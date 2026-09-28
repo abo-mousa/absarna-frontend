@@ -46,7 +46,7 @@ import VideoControlBar, {
  * written a handful of times per review.
  */
 const VideoPlayer = forwardRef(function VideoPlayer(
-    { videoId, sourceType, sourceUrl, title, poster, duration, startTime = 0 }, ref,
+    { videoId, seriesId = null, sourceType, sourceUrl, title, poster, duration, startTime = 0 }, ref,
 ) {
     // Our own uploads are fetched through a URL the backend mints after running its visibility
     // check. Anything hosted elsewhere never touches this. The check runs on every playback, not
@@ -89,7 +89,7 @@ const VideoPlayer = forwardRef(function VideoPlayer(
         return videoRef.current?.currentTime ?? null;
     }, [isYouTube]);
 
-    const { report, durationRef } = useWatchProgress(videoId, playhead);
+    const { report, durationRef } = useWatchProgress(videoId, playhead, seriesId);
     // NOTHING FROM GOOGLE UNTIL THE READER HAS AGREED. `enabled` false means the iframe API
     // script is never injected and no player is constructed, so a refusing reader's browser makes
     // no request at all — which is the requirement, since consent has to precede the loading

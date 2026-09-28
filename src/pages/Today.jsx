@@ -18,6 +18,11 @@ import { formatCount } from '@/lib/numbers';
 import { resolveMediaUrl } from '@/lib/media';
 import { formatDigits, t } from '@/i18n';
 import { describeError } from '@/lib/describeError';
+import { WirdToday, QadaCards, MakeWird } from '../components/journey';
+import { useNow } from '../hooks/useNow';
+import { amountText } from '@/lib/goalText';
+import { countOf } from '@/lib/plural';
+import { beforeNoon } from '@/lib/slots';
 
 const GRID = 'grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-8';
 
@@ -52,6 +57,9 @@ function Today() {
     });
     const watchProgress = useWatchProgressMap(!!token);
     const data = today.data;
+    // Re-read every minute: the day's portions change time of day under a page cached until it ends.
+    const now = useNow();
+    const wirdGoals = data?.wird?.goals || [];
 
     const openVideo = (video) => navigate(`/video/${video.id}`);
     const cardProps = (video) => ({
@@ -107,6 +115,20 @@ function Today() {
                     {invitations.map((invitation) => <ChannelWaiting key={invitation.slug} invitation={invitation} />)}
                     {welcome && <WelcomeHero signedIn={!!token} />}
 
+                    {/* The day's portions (PROGRESS-AND-GOALS.md §7.7): yesterday's to make up before
+                        noon first, then every portion of today. A newcomer's welcome is enough on
+                        its own, so the first-portion invitation waits for their second visit. */}
+                    <QadaCards goals={wirdGoals} now={now} />
+                    {data?.wird && (wirdGoals.length > 0 || !welcome) && (
+                        <WirdToday
+                            wird={data.wird}
+                            reviewOpen={data.reviewOpen}
+                            recentMilestones={data.recentMilestones}
+                            now={now}
+                            hasQada={beforeNoon(now) && wirdGoals.some((goal) => goal.qadaCreditDay)}
+                        />
+                    )}
+
                     {data?.week && <WeekStrip week={data.week} />}
 
                     {hasContinue && (
@@ -114,10 +136,10 @@ function Today() {
                             <Cartouche title={t('today.continueTitle')} />
                             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                 {data.continueWatching.map((item) => (
-                                    <ContinueVideo key={item.next.id} item={item} onHide={() => hide({ type: 'SERIES', id: item.next.seriesId })} />
+                                    <ContinueVideo key={item.next.id} item={item} onHide={() => hide({ type: 'SERIES', id: item.next.seriesId })} wird={!!token} />
                                 ))}
                                 {data.continueReading.map((entry) => (
-                                    <ContinueBook key={entry.bookId} entry={entry} onHide={() => hide({ type: 'BOOK', id: entry.bookId })} />
+                                    <ContinueBook key={entry.bookId} entry={entry} onHide={() => hide({ type: 'BOOK', id: entry.bookId })} wird={!!token} />
                                 ))}
                             </div>
                         </section>
@@ -131,7 +153,7 @@ function Today() {
                             <Cartouche title={t('today.startTitle')} />
                             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                 {data.startProgrammes.map((video) => (
-                                    <ContinueVideo key={video.id} item={{ next: video, progress: 0 }} starting />
+                                    <ContinueVideo key={video.id} item={{ next: video, progress: 0 }} starting wird={!!token} />
                                 ))}
                             </div>
                         </section>
@@ -142,7 +164,7 @@ function Today() {
                             <Cartouche title={t('today.welcome.programmesTitle')} />
                             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                 {welcome.programmes.map((video) => (
-                                    <ContinueVideo key={video.id} item={{ next: video, progress: 0 }} starting />
+                                    <ContinueVideo key={video.id} item={{ next: video, progress: 0 }} starting wird={!!token} />
                                 ))}
                             </div>
                         </section>
@@ -216,7 +238,7 @@ function Today() {
 }
 
 // Static class names for Tailwind: the strip has as many columns as it has cells, from `md`.
-const WEEK_COLUMNS = { 1: 'md:grid-cols-1', 2: 'md:grid-cols-2', 3: 'md:grid-cols-3', 4: 'md:grid-cols-4', 5: 'md:grid-cols-5', 6: 'md:grid-cols-6' };
+const WEEK_COLUMNS = { 1: 'md:grid-cols-1', 2: 'md:grid-cols-2', 3: 'md:grid-cols-3', 4: 'md:grid-cols-4', 5: 'md:grid-cols-5', 6: 'md:grid-cols-6', 7: 'md:grid-cols-7' };
 
 /**
  * The week, counted. The backend sends no week at all when there is nothing to count, so a new
@@ -233,7 +255,9 @@ function WeekStrip({ week }) {
         { value: week.booksRead, label: t('today.booksRead') },
         { value: week.programmesCompleted, label: t('today.programmesCompleted') },
     ].filter((count) => Number(count.value) > 0);
-    const cells = 1 + counts.length + (week.closest ? 1 : 0);
+    const intention = week.intention;
+    const cells = 1 + (intention ? 1 : 0) + counts.length + (week.closest ? 1 : 0);
+    const first = intention ? 2 : 1;
     const spanLast = (index) => (index === cells - 1 && cells % 2 === 1 ? 'col-span-2 md:col-span-1' : '');
     return (
         <section className={`grid grid-cols-2 ${WEEK_COLUMNS[cells]} gap-px bg-border-light border border-border-light rounded-lg overflow-hidden`}>
@@ -241,8 +265,9 @@ function WeekStrip({ week }) {
                 <h2 className="font-serif text-[1.6rem] font-semibold leading-none">{t('today.weekTitle')}</h2>
                 <p className="text-xs text-text-muted mt-1">{t('today.weekSpan')}</p>
             </div>
+            {intention && <IntentionCell intention={intention} className={spanLast(1)} />}
             {counts.map((count, index) => (
-                <div key={count.label} className={`bg-surface p-4 ${spanLast(index + 1)}`}>
+                <div key={count.label} className={`bg-surface p-4 ${spanLast(index + first)}`}>
                     <strong className="block font-serif text-[2rem] leading-none text-primary font-semibold">
                         {formatCount(count.value)}
                     </strong>
@@ -263,6 +288,34 @@ function WeekStrip({ week }) {
                 </Link>
             )}
         </section>
+    );
+}
+
+/**
+ * The week's intention — the primary goal's week, beside what the week counted (§7.7): a daily
+ * portion counts days kept against its days a week, a weekly goal its amount. The star fills as the
+ * week does; nothing marks a shortfall.
+ */
+function IntentionCell({ intention, className }) {
+    const unit = (count, oblique = false) => (intention.days
+        ? countOf('journey.units.DAYS', count, { oblique }) : amountText(intention.measure, count, oblique));
+    const done = Math.min(intention.done, intention.amount);
+    return (
+        <Link to="/journey" className={`bg-surface p-4 flex items-center gap-3 text-text-primary hover:no-underline ${className}`}>
+            <KhatamProgress
+                value={intention.amount ? done / intention.amount : 0}
+                title={t('journey.today.intentionAria', { done: intention.done, amount: unit(intention.amount, true) })}
+                className="w-11 h-11 flex-shrink-0"
+            />
+            <span className="min-w-0">
+                <strong className="block text-sm font-semibold">{t('journey.today.intentionTitle')}</strong>
+                <span className="text-xs text-text-secondary">
+                    {intention.done >= intention.amount
+                        ? t('journey.today.intentionMet')
+                        : t('journey.today.intentionProgress', { done: intention.done, amount: unit(intention.amount, true) })}
+                </span>
+            </span>
+        </Link>
     );
 }
 
@@ -336,16 +389,16 @@ function WelcomeHero({ signedIn }) {
  * A programme in progress: the star traced as far as the reader has come, and what is next.
  * `starting` is the welcome's case — a programme offered from its first episode, nothing traced.
  */
-function ContinueVideo({ item, starting = false, onHide = null }) {
+function ContinueVideo({ item, starting = false, onHide = null, wird = false }) {
     const video = item.next;
     const position = video.seriesPosition;
     const total = video.seriesLength;
     const href = `/video/${video.id}${item.resumeSeconds ? `?t=${item.resumeSeconds}` : ''}`;
     return (
-        <div className="relative group/card">
+        <div className={CARD}>
         <Link
             to={href}
-            className={`flex items-center gap-4 p-3.5 ${onHide ? 'pe-10' : ''} bg-surface border border-border-light rounded-lg text-text-primary hover:no-underline hover:border-border transition-colors`}
+            className={`flex items-center gap-4 p-3.5 ${onHide ? 'pe-10' : ''} text-text-primary hover:no-underline`}
         >
             <KhatamProgress
                 value={item.progress || 0}
@@ -365,18 +418,29 @@ function ContinueVideo({ item, starting = false, onHide = null }) {
                 </div>
             </div>
         </Link>
+        {wird && video.seriesId && (
+            <div className={CARD_ACTION}>
+                <MakeWird seriesId={video.seriesId} title={video.seriesTitle || video.title} />
+            </div>
+        )}
         {onHide && <HideButton onHide={onHide} />}
         </div>
     );
 }
 
+// The card's frame is the wrapper, so the link and the «اجعله وِردًا» line under it — two controls,
+// never one inside the other — read as one card.
+const CARD = 'relative group/card flex flex-col bg-surface border border-border-light rounded-lg hover:border-border transition-colors';
+// Lined up under the title: past the 4rem star and its gap.
+const CARD_ACTION = 'ps-[5.875rem] pe-3.5 pb-3 -mt-2';
+
 /** A book in progress, traced in teal to tell it from a programme at a glance. */
-function ContinueBook({ entry, onHide = null }) {
+function ContinueBook({ entry, onHide = null, wird = false }) {
     return (
-        <div className="relative group/card">
+        <div className={CARD}>
         <Link
             to={`/books/${entry.bookId}`}
-            className={`flex items-center gap-4 p-3.5 ${onHide ? 'pe-10' : ''} bg-surface border border-border-light rounded-lg text-text-primary hover:no-underline hover:border-border transition-colors`}
+            className={`flex items-center gap-4 p-3.5 ${onHide ? 'pe-10' : ''} text-text-primary hover:no-underline`}
         >
             <KhatamProgress
                 value={entry.progress || 0}
@@ -390,6 +454,11 @@ function ContinueBook({ entry, onHide = null }) {
                 <div className="text-xs font-bold text-primary mt-1">{t('today.readFrom', { page: entry.currentPage })}</div>
             </div>
         </Link>
+        {wird && (
+            <div className={CARD_ACTION}>
+                <MakeWird bookId={entry.bookId} title={entry.book?.title} pages={entry.book?.pages} currentPage={entry.currentPage} />
+            </div>
+        )}
         {onHide && <HideButton onHide={onHide} />}
         </div>
     );

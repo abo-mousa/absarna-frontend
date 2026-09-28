@@ -56,6 +56,14 @@ export const queryKeys = {
     feed: (scope) => ['feed', scope],
     channel: (slug, scope) => ['channel', slug, scope],
     today: (scope) => ['today', scope],
+    // The progress tab. Goals, the tab's reads and the review each under their own prefix, so a
+    // progress report or a goal change invalidates exactly what it moves.
+    goals: (scope) => ['goals', scope],
+    goal: (id, scope) => ['goals', 'one', id, scope],
+    progressOverview: (scope) => ['progress', 'overview', scope],
+    progressMilestones: (scope) => ['progress', 'milestones', scope],
+    progressCompletions: (scope) => ['progress', 'completions', scope],
+    weeklyReview: (scope) => ['weekly-review', scope],
     watchHistory: (scope) => ['watch-history', scope],
     // Under the same prefix, so every invalidation of ['watch-history'] reaches it too.
     groupedWatchHistory: (scope) => ['watch-history', scope, 'grouped'],

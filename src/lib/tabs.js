@@ -1,5 +1,5 @@
 /**
- * The app's six places, and which one a URL belongs to — shared by the desktop tab strip in the
+ * The app's places, and which one a URL belongs to — shared by the desktop tab strip in the
  * navbar and the phone's bottom tab bar, so the two can never disagree about where the reader is.
  *
  * <p>Six on a wide screen; five on a phone, where Books and Articles are one «اقرأ» tab (a phone
@@ -14,6 +14,9 @@ export const TABS = [
     { key: 'articles', to: '/articles' },
     { key: 'posts', to: '/posts' },
     { key: 'channels', to: '/channels' },
+    // «مسيرتي» — a seventh place on a wide screen; on a phone the bar is full, so it is in the
+    // account menu and on Today (PROGRESS-AND-GOALS.md D1's default).
+    { key: 'journey', to: '/journey' },
 ];
 
 export const PHONE_TABS = [
@@ -37,6 +40,7 @@ export function activeTab(pathname, { phone = false } = {}) {
     if (startsWith(path, '/books')) return phone ? 'read' : 'books';
     if (startsWith(path, '/articles')) return phone ? 'read' : 'articles';
     if (startsWith(path, '/posts')) return 'posts';
+    if (startsWith(path, '/journey')) return phone ? null : 'journey';
     if (startsWith(path, '/channels') || startsWith(path, '/channel') || startsWith(path, '/subscriptions')
         || startsWith(path, '/series')) {
         return 'channels';

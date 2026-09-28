@@ -32,8 +32,14 @@ describe('activeTab', () => {
         expect(activeTab('/booksmith')).toBeNull();
     });
 
-    it('offers six places on a wide screen and five on a phone, every one of them reachable', () => {
-        expect(TABS).toHaveLength(6);
+    it('puts the journey and its pages under «مسيرتي» on a wide screen, and under nothing in the phone bar', () => {
+        expect(activeTab('/journey/goals/4')).toBe('journey');
+        expect(activeTab('/journey', { phone: true })).toBeNull();
+        expect(activeTab('/journeyman')).toBeNull();
+    });
+
+    it('offers seven places on a wide screen and five on a phone, every one of them reachable', () => {
+        expect(TABS).toHaveLength(7);
         expect(PHONE_TABS).toHaveLength(5);
         for (const tab of [...TABS]) expect(activeTab(tab.to)).toBe(tab.key);
         for (const tab of PHONE_TABS) expect(activeTab(tab.to, { phone: true })).toBe(tab.key);

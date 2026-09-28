@@ -10,6 +10,7 @@ import { useChannel } from '../hooks/useChannels';
 import { useAuth } from '../contexts/AuthContext';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { channelTabPath } from '@/lib/navigation';
+import { MakeWird } from '../components/journey';
 import { t } from '@/i18n';
 
 function SeriesDetail() {
@@ -85,6 +86,7 @@ function SeriesDetail() {
                         <p className="text-text-secondary leading-relaxed mb-2">{series.description}</p>
                     )}
                     <p className="text-sm text-text-muted">{t('common.videoCount', { count: series.contentCount ?? content.length })}</p>
+                    <MakeWird seriesId={series.id} title={series.title} variant="button" className="mt-4" />
                 </div>
 
                 <QueryState

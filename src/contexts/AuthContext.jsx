@@ -3,7 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api/client';
 import { clearSession, isRemembered, readToken, storeSession } from '@/lib/authStorage';
-import { login as loginRequest, register as registerRequest, updateLocale } from '@/lib/api/auth';
+import { login as loginRequest, register as registerRequest, updateLocale, updateTimeZone } from '@/lib/api/auth';
+import { readerTimeZone } from '@/lib/timeZone';
 import { authFailureMessage } from '@/lib/authErrors';
 import { isProtectedPath } from '@/lib/navigation';
 import { useToast } from './ToastContext';
@@ -37,6 +38,18 @@ function syncAccountLocale(profile) {
     const active = currentLocale();
     if (!profile || profile.locale === active) return;
     updateLocale(active).catch(() => { /* one mail in the other language; not worth saying */ });
+}
+
+/**
+ * Keeps the account's time zone in step with this browser's, as `syncAccountLocale` does the
+ * language and for the same reasons: the backend's nightly work (the week's rollup, the slot of the
+ * day) has no request to read a zone from. Fire and forget; a stale zone files a morning's reading
+ * under the wrong slot and nothing else.
+ */
+function syncAccountTimeZone(profile) {
+    const zone = readerTimeZone();
+    if (!profile || !zone || profile.timeZone === zone) return;
+    updateTimeZone(zone).catch(() => { /* the slot of a day may be off; not worth saying */ });
 }
 
 export const AuthProvider = ({ children }) => {
@@ -103,6 +116,7 @@ export const AuthProvider = ({ children }) => {
                     const res = await api.get('/user/profile');
                     setUser(res.data);
                     syncAccountLocale(res.data);
+                    syncAccountTimeZone(res.data);
                     return;
                 } catch (err) {
                     // Status only, never the axios error object: its `config.headers.Authorization`

@@ -6,12 +6,14 @@ import { resolveMediaUrl } from '@/lib/media';
 import { formatPublishDate, displayDate } from '@/lib/datetime';
 import { useBookReadUrl } from '@/hooks/useMediaUrl';
 import { flushOnUnload } from '@/lib/api/beacon';
+import { reportQuery } from '@/lib/reportParams';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
 import { QueryState, ExpandableText, KhatamStar } from '../components/ui';
 import { CommentsSection, BookmarkButton, LikeButton, ReportButton, ShareButton, BookDownloadButton, BookCover } from '../components/content';
 import { useBook, useBookReadProgress, useSaveReadProgress } from '../hooks/useBooks';
 import { usePageMeta } from '../hooks/usePageMeta';
+import { MakeWird } from '../components/journey';
 import { t } from '@/i18n';
 import { formatCompactCount } from '@/lib/numbers';
 
@@ -78,7 +80,7 @@ function BookDetail() {
     useEffect(() => {
         const handlePageHide = () => {
             if (!token || !lastPageRef.current) return;
-            flushOnUnload(`/books/${id}/read`, { currentPage: lastPageRef.current });
+            flushOnUnload(`/books/${id}/read${reportQuery({ bookId: Number(id) })}`, { currentPage: lastPageRef.current });
         };
         window.addEventListener('pagehide', handlePageHide);
         return () => window.removeEventListener('pagehide', handlePageHide);
@@ -150,6 +152,7 @@ function BookDetail() {
                                         >
                                             {t('books.download')}
                                         </BookDownloadButton>
+                                        <MakeWird bookId={book.id} title={book.title} pages={book.pages} currentPage={savedPage || 0} variant="button" />
                                     </>
                                 )}
                                 <div className="flex items-center gap-3 ms-1">

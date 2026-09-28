@@ -51,6 +51,7 @@ export const getProfile = () => api.get('/user/profile');
  * signed in from a second device where nobody touched the toggle.
  */
 export const updateLocale = (locale) => api.put('/user/locale', { locale });
+export const updateTimeZone = (timeZone) => api.put('/user/time-zone', { timeZone });
 
 export const updateProfile = (profile) => api.put('/user/profile', profile);
 

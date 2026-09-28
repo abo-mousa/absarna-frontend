@@ -2,6 +2,8 @@ import { keepPreviousData, useInfiniteQuery, useQuery, useMutation, useQueryClie
 import api from '@/lib/api/client';
 import { queryKeys } from '@/lib/queryKeys';
 import { useUserScope } from './useUserScope';
+import { reportParams } from '@/lib/reportParams';
+import { emitProgressReport } from '@/lib/progressEvents';
 
 // "Load more" pagination, same accumulating-pages shape as useInfiniteContents/
 // useChannelContents — GET /api/books used to return the whole table in one unpaginated
@@ -86,7 +88,9 @@ export const useSaveReadProgress = (id) => {
 
     return useMutation({
         mutationFn: async (currentPage) => {
-            await api.post(`/books/${id}/read`, { currentPage });
+            const res = await api.post(`/books/${id}/read`, { currentPage }, { params: reportParams({ bookId: Number(id) }) });
+            // A finished book, a filled portion: the app shell shows them.
+            emitProgressReport(res?.data);
             return currentPage;
         },
         onMutate: (currentPage) => {
@@ -102,6 +106,8 @@ export const useSaveReadProgress = (id) => {
             queryClient.invalidateQueries({ queryKey: ['reading-history'] });
             // Today's «تكملة ما بدأته» and its week's pages come from the same history.
             queryClient.invalidateQueries({ queryKey: ['today'] });
+            queryClient.invalidateQueries({ queryKey: ['goals'] });
+            queryClient.invalidateQueries({ queryKey: ['progress'] });
         },
     });
 };

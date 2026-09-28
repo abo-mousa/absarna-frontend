@@ -4,6 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api/client';
 import { flushOnUnload } from '@/lib/api/beacon';
 import { isDuplicateReport, watchThreshold } from '@/lib/player/playback';
+import { reportParams, reportQuery } from '@/lib/reportParams';
+import { emitProgressReport } from '@/lib/progressEvents';
 
 /**
  * Records how far into a video the viewer got.
@@ -21,9 +23,11 @@ import { isDuplicateReport, watchThreshold } from '@/lib/player/playback';
  *
  * @param videoId    the row to write against
  * @param positionOf returns the playhead in seconds, or null when there is nothing to read
+ * @param seriesId   the video's programme, if any — a make-up in progress for it marks the
+ *                   reports with the day they are credited to (lib/qada.js)
  * @returns report(seconds), duration setter/reader, and the pagehide binding
  */
-export function useWatchProgress(videoId, positionOf) {
+export function useWatchProgress(videoId, positionOf, seriesId = null) {
     const { token } = useAuth();
     const queryClient = useQueryClient();
 
@@ -31,8 +35,8 @@ export function useWatchProgress(videoId, positionOf) {
     const durationRef = useRef(NaN);
     // Mirrors token/videoId into a ref so the unmount effect always reports against the latest
     // values without re-subscribing (and re-flushing) on every render.
-    const authRef = useRef({ token, videoId });
-    authRef.current = { token, videoId };
+    const authRef = useRef({ token, videoId, seriesId });
+    authRef.current = { token, videoId, seriesId };
     // Kept in a ref for the same reason: the mount-only effects below must not be torn down when
     // the caller's closure changes identity.
     const positionRef = useRef(positionOf);
@@ -43,7 +47,7 @@ export function useWatchProgress(videoId, positionOf) {
     const inFlightRef = useRef(null);
 
     const report = useCallback((seconds, auth = authRef.current) => {
-        const { token: authToken, videoId: authVideoId } = auth;
+        const { token: authToken, videoId: authVideoId, seriesId: authSeriesId } = auth;
         if (!authToken || !authVideoId) return;
         const progressSeconds = Math.floor(seconds);
         if (progressSeconds < watchThreshold(durationRef.current)) return;
@@ -69,9 +73,14 @@ export function useWatchProgress(videoId, positionOf) {
         // refetch of it that answers identically: the card the viewer just clicked is still
         // where they left it. Adding the feed here would spend a request to redraw a row nobody asked to have
         // redrawn, and on a slower response it would do it while they were reading it.
+        //
+        // ['goals'] and ['progress'] for the same reason as Today: a watch fills portions and moves
+        // the tab's numbers. Marking them stale costs nothing while they are not on screen.
         const invalidate = () => {
             queryClient.invalidateQueries({ queryKey: ['watch-history'] });
             queryClient.invalidateQueries({ queryKey: ['today'] });
+            queryClient.invalidateQueries({ queryKey: ['goals'] });
+            queryClient.invalidateQueries({ queryKey: ['progress'] });
         };
 
         // A hidden page is a page that may never get another turn: the tab is closing, or the
@@ -80,14 +89,18 @@ export function useWatchProgress(videoId, positionOf) {
         // takes the same keepalive path `pagehide` does — which is also what lets that listener
         // recognise this report as already sent instead of sending it a second time.
         if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
-            flushOnUnload(`/videos/${authVideoId}/watch`, { progressSeconds });
+            flushOnUnload(`/videos/${authVideoId}/watch${reportQuery({ seriesId: authSeriesId })}`, { progressSeconds });
             invalidate();
             return;
         }
 
         inFlightRef.current = pending;
-        api.post(`/videos/${authVideoId}/watch`, { progressSeconds })
-            .then(invalidate)
+        api.post(`/videos/${authVideoId}/watch`, { progressSeconds }, { params: reportParams({ seriesId: authSeriesId }) })
+            .then((res) => {
+                invalidate();
+                // A finished programme, a filled portion: the app shell shows them.
+                emitProgressReport(res?.data);
+            })
             .catch(() => {
                 // Best-effort: never let a failed watch-history write disrupt playback. Forgetting
                 // it is what lets the same position be sent again rather than deduped against a
@@ -119,7 +132,7 @@ export function useWatchProgress(videoId, positionOf) {
     // so this uses a `keepalive` fetch instead — see lib/api/beacon.js.
     useEffect(() => {
         const handlePageHide = () => {
-            const { videoId: id } = authRef.current;
+            const { videoId: id, seriesId: series } = authRef.current;
             const seconds = positionRef.current?.() ?? 0;
             const progressSeconds = Math.floor(seconds);
             if (!id || progressSeconds < watchThreshold(durationRef.current)) return;
@@ -131,7 +144,7 @@ export function useWatchProgress(videoId, positionOf) {
             // unload is about to cancel it, so this is the only copy that will arrive.
             if (!inFlightRef.current && isDuplicateReport(sentRef.current, pending)) return;
             sentRef.current = pending;
-            flushOnUnload(`/videos/${id}/watch`, { progressSeconds });
+            flushOnUnload(`/videos/${id}/watch${reportQuery({ seriesId: series })}`, { progressSeconds });
         };
         window.addEventListener('pagehide', handlePageHide);
         return () => window.removeEventListener('pagehide', handlePageHide);

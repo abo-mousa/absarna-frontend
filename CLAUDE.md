@@ -210,7 +210,7 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   the `<nav>` for exactly that reason. The `60px` the old sidebars hardcoded was a pixel short of the
   bar plus its border — and it cannot be a constant anyway: the logo and wordmark change size at
   `sm`, and the Arabic webfont arrives after first paint (`display=swap`) and re-lays the line box.
-- **There is no sidebar, on purpose.** The places are six tabs (`lib/tabs`): a strip in the navbar
+- **There is no sidebar, on purpose.** The places are six tabs (`lib/tabs`), seven from `lg` with «مسيرتي»: a strip in the navbar
   from `lg`, a five-tab bar fixed to the bottom below it (Books and Articles fold into «اقرأ»,
   which opens Books — so below `lg` both pages carry `layout/ReadSwitch` in a `PageHeader belowLg`,
   or the Articles list has no way in at all), and `PageShell` gives every page bottom room for that bar plus the safe-area inset. History and
@@ -419,6 +419,25 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
 - **Playback speed and volume persist across videos** (`safeStorage`), and the rate is re-applied on
   every `loadedmetadata`: the media load algorithm resets it to `defaultPlaybackRate`, and a rung
   swap is a load, so without that a quality change silently dropped a 1.5× lecture to 1×.
+- **«مسيرتي», the progress tab, is `components/journey` + `pages/Journey*.jsx`** (the plan is the
+  backend's `PROGRESS-AND-GOALS.md` §7). What is easy to get wrong:
+  - **Today decides current / later / passed / kept from the LOCAL clock** (`lib/journey.js`,
+    `lib/slots.js`, `useNow`): Today is cached until the day ends and the slot moves under it. A
+    portion at its **minimum is `kept`, not `done`** — the day counts and the rest is still offered;
+    only `FULL`/`MADE_UP` is done. Nothing a reader still has to do disappears, and nothing is red.
+  - **One goal dialog for the whole app** (`JourneyProvider`, `useJourney().openGoal(prefill)`),
+    which also listens for what a progress report answers (`lib/progressEvents.js`): the finishing
+    moment once per completion (ids remembered in `safeStorage`) and a toast per filled portion.
+    The dialog and the moment are **lazy** — they carry `lib/sacredTexts.js`, which must stay out
+    of the entry bundle.
+  - **Every progress report sends `tz` and, while making up yesterday before noon, `creditDay`**
+    (`lib/reportParams.js`, `lib/qada.js`); a habit's make-up credits any report.
+  - **Counts go through `lib/plural.js`** — Arabic has six forms, and after «من»/«إلى» or as an
+    object the dual changes (`amountText(measure, n, true)` → «حلقتين»). A title inside a sentence
+    of the other script is `isolate()`d. Goal wording lives once, in `lib/goalText.js`.
+  - **A text from the Qur'an or Sunnah is `<SacredText moment=…>`**, never typed: at most one of
+    each on a screen, the action-bound moment winning over the ambient one (§8.2).
+  - «السجل» links to `/history` until the record tab (Phase 6) exists.
 - **Progress reporting has three layers** (`lib/api/beacon.js`): a throttled checkpoint, a flush on
   React unmount (SPA navigation), and a `pagehide` listener using `fetch(..., {keepalive:true})` —
   React never unmounts on a hard refresh, and a normal XHR is cancelled mid-flight.

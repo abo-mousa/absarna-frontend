@@ -201,6 +201,7 @@ function VideoDetail() {
                             key={video.id}
                             ref={playerRef}
                             videoId={video.id}
+                            seriesId={video.seriesId}
                             sourceType={video.sourceType}
                             sourceUrl={video.sourceUrl}
                             title={video.title}
