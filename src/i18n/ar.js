@@ -1273,6 +1273,8 @@ export const ar = {
             notNow: 'ليس الآن',
             saveFailed: 'تعذّر الحفظ، حاول مرة أخرى',
             delete: 'احذف هذه الخاطرة',
+            confirmDelete: 'احذفها',
+            write: 'اكتب ما بقي معك',
             deleted: 'حُذفت',
             more: 'المزيد',
         },

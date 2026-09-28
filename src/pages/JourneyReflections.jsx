@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { NotebookPen, Trash2 } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
@@ -21,6 +22,8 @@ function JourneyReflections() {
     const remove = useDeleteReflection();
     const { showToast } = useToast();
     const rows = reflections.data?.pages.flat() || [];
+    // Which line is asking "delete?" — a written thought takes a second tap, never one.
+    const [confirming, setConfirming] = useState(null);
     const dateOf = (iso) => new Intl.DateTimeFormat(currentLocaleInfo().numberFormat, { day: 'numeric', month: 'long', year: 'numeric' })
         .format(new Date(iso));
 
@@ -67,21 +70,15 @@ function JourneyReflections() {
                                             </>
                                         )}
                                     </p>
-                                    <button
-                                        type="button"
-                                        onClick={() => remove.mutate(row.id, {
-                                            onSuccess: () => showToast(t('journey.reflections.deleted'), 'success'),
+                                    <DeleteButton
+                                        confirming={confirming === row.id}
+                                        onAsk={() => setConfirming(row.id)}
+                                        onCancel={() => setConfirming(null)}
+                                        onConfirm={() => remove.mutate(row.id, {
+                                            onSuccess: () => { setConfirming(null); showToast(t('journey.reflections.deleted'), 'success'); },
                                             onError: (error) => showToast(describeError(error, t('journey.today.actionFailed')), 'error'),
                                         })}
-                                        aria-label={t('journey.reflections.delete')}
-                                        title={t('journey.reflections.delete')}
-                                        className="absolute top-3 end-3 flex items-center justify-center w-8 h-8 rounded-full text-text-muted
-                                            hover:text-text-primary hover:bg-surface-hover
-                                            [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100
-                                            [@media(hover:hover)]:focus-visible:opacity-100 transition-opacity"
-                                    >
-                                        <Trash2 size={15} aria-hidden="true" />
-                                    </button>
+                                    />
                                 </li>
                             );
                         })}
@@ -97,6 +94,39 @@ function JourneyReflections() {
                 <SacredText moment="benefits" kind="HADITH" size="sm" />
             </div>
         </PageShell>
+    );
+}
+
+/**
+ * The trash icon asks before it deletes: on a phone it is always visible and a stray tap would
+ * take a line the reader cannot get back. Quiet until the card is hovered on a pointer screen.
+ */
+function DeleteButton({ confirming, onAsk, onCancel, onConfirm }) {
+    if (confirming) {
+        return (
+            <span className="absolute top-3 end-3 flex items-center gap-2 text-xs">
+                <button type="button" onClick={onConfirm} className="font-semibold text-red-600 dark:text-red-400 hover:underline">
+                    {t('journey.reflections.confirmDelete')}
+                </button>
+                <button type="button" onClick={onCancel} className="text-text-muted hover:text-text-primary">
+                    {t('common.cancel')}
+                </button>
+            </span>
+        );
+    }
+    return (
+        <button
+            type="button"
+            onClick={onAsk}
+            aria-label={t('journey.reflections.delete')}
+            title={t('journey.reflections.delete')}
+            className="absolute top-3 end-3 flex items-center justify-center w-8 h-8 rounded-full text-text-muted
+                hover:text-text-primary hover:bg-surface-hover
+                [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100
+                [@media(hover:hover)]:focus-visible:opacity-100 transition-opacity"
+        >
+            <Trash2 size={15} aria-hidden="true" />
+        </button>
     );
 }
 

@@ -40,6 +40,14 @@ function VideoDetail() {
     // again here only for its `isLoading`, to gate mounting the player below (React Query
     // dedupes by key, so this isn't a second request).
     const { isLoading: historyLoading } = useWatchHistory(!!token);
+    // Whether this episode was already finished when the page opened — so the reflection prompt
+    // invites only when it is finished DURING the visit, never on reopening an old one. Recorded
+    // per video id: the page is reused when moving to a related video.
+    const finishedNow = !!watchProgress[video?.id]?.finished;
+    const [openedFinished, setOpenedFinished] = useState({ id: null, finished: false });
+    if (video?.id && !historyLoading && openedFinished.id !== video.id) {
+        setOpenedFinished({ id: video.id, finished: finishedNow });
+    }
     // An explicit `?t=` (share-at-timestamp) always wins; otherwise resume from this video's
     // own saved watch progress — the same `watchProgress` map already used below for the
     // related-videos row's progress bars, just never consulted for the player's own start
@@ -215,13 +223,16 @@ function VideoDetail() {
                 </div>
                 {/* Recording paused: the place is not being kept, and the reader should know before leaving. */}
                 <PausedLine className="mb-4" />
-                {/* «ما الذي بقي معك؟» once the backend counts this episode as finished — the same
-                    reading of "finished" the history and the portions use, for either player. */}
+                {/* «ما الذي بقي معك؟»: the question opens by itself when the episode is finished
+                    during this visit (the backend's "finished", for either player); for one finished
+                    before, a quiet link to the same form. */}
                 <ReflectionPrompt
+                    key={video.id}
                     kind="VIDEO"
                     itemId={video.id}
                     position={watchProgress[video.id]?.seconds}
-                    show={!!watchProgress[video.id]?.finished}
+                    invite={finishedNow && openedFinished.id === video.id && !openedFinished.finished}
+                    available={finishedNow}
                     className="mb-6"
                 />
 

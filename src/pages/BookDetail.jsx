@@ -211,10 +211,12 @@ function BookDetail() {
                 )}
 
                 <ReflectionPrompt
+                    key={book.id}
                     kind="BOOK"
                     itemId={book.id}
                     position={pageNow}
-                    show={readThisVisit >= READ_BEFORE_PROMPT}
+                    invite={readThisVisit >= READ_BEFORE_PROMPT}
+                    available={!!savedPage}
                     className="mb-6"
                 />
 

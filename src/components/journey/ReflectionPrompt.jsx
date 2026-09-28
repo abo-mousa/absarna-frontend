@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { X } from 'lucide-react';
+import { PenLine, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCreateReflection } from '@/hooks/useReflections';
 import { useToast } from '@/contexts/ToastContext';
@@ -22,42 +22,66 @@ function readPrompted() {
 }
 
 /**
- * «ما الذي بقي معك؟» — one optional line after an episode is finished or a stretch of a book is
- * read (PROGRESS-AND-GOALS.md §6.12). Dismissable, never required, and never shown twice for the
- * same item on the same day: answering or closing it puts it away until tomorrow, in this
- * browser. Signed in and verified only — keeping a line is "keeping", and a prompt whose save is
- * refused would be a promise the page cannot keep.
+ * «ما الذي بقي معك؟» — one optional line about an episode or a book (PROGRESS-AND-GOALS.md §6.12).
  *
- * <p>No text from the catalogue here, on purpose (§8.1): the prompt is a question, and the verse
- * and the hadith for this practice belong to the «خواطري» page.
+ * <p>Two strengths, and the difference is timing. `invite` opens the question by itself, and is
+ * set only at the moment something was just done — an episode finished <b>during this visit</b>, a
+ * few pages turned in this one — never on opening a page about something finished months ago,
+ * which asked about "this lesson" before the reader had watched a second of it. `available` is the
+ * quiet version: a small «اكتب ما بقي معك» that opens the same form on a tap, for anything the reader
+ * has finished or read, whenever they come back to it.
+ *
+ * <p>The invitation is dismissable and never repeats for the same item on the same day: answering
+ * or closing it puts it away until tomorrow, in this browser. The quiet link stays. Signed in and
+ * verified only — keeping a line is "keeping", and a form whose save is refused would be a promise
+ * the page cannot keep. No catalogue text here (§8.1): the question is enough.
+ *
+ * <p>Callers key it by item: a page that moves to another video reuses its component, and this
+ * one's state (typed text, "saved", "put away") belongs to one item.
  */
-function ReflectionPrompt({ kind, itemId, position = null, show, className = '' }) {
+function ReflectionPrompt({ kind, itemId, position = null, invite = false, available = false, className = '' }) {
     const { token, user } = useAuth();
     const key = `${kind}:${itemId}`;
-    const [done, setDone] = useState(() => readPrompted()[key] === localDay());
+    const [putAwayToday, setPutAwayToday] = useState(() => readPrompted()[key] === localDay());
+    const [opened, setOpened] = useState(false);
     const [saved, setSaved] = useState(false);
     const [text, setText] = useState('');
     const create = useCreateReflection();
     const { showToast } = useToast();
 
-    if (!token || user?.emailVerified === false || !show || (done && !saved)) return null;
+    if (!token || user?.emailVerified === false) return null;
 
     const putAway = () => {
-        const prompted = readPrompted();
         const today = localDay();
         // Only today's entries are worth keeping; yesterday's say nothing any more.
-        const kept = Object.fromEntries(Object.entries(prompted).filter(([, day]) => day === today));
+        const kept = Object.fromEntries(Object.entries(readPrompted()).filter(([, day]) => day === today));
         safeStorage.setItem(PROMPTED_KEY, JSON.stringify({ ...kept, [key]: today }));
-        setDone(true);
+        setPutAwayToday(true);
+        setOpened(false);
     };
 
     if (saved) {
         return (
-            <p className={`flex items-center gap-2 text-sm text-gold-ink ${className}`}>
+            <p className={`flex flex-wrap items-center gap-2 text-sm text-gold-ink ${className}`}>
                 <KhatamStar className="w-3.5 h-3.5 text-gold" />
                 {t('journey.reflections.saved')}
                 <Link to="/journey/reflections" className="font-semibold">{t('journey.reflections.seeAll')}</Link>
             </p>
+        );
+    }
+
+    const showForm = opened || (invite && !putAwayToday);
+    if (!showForm) {
+        if (!available && !invite) return null;
+        return (
+            <button
+                type="button"
+                onClick={() => setOpened(true)}
+                className={`inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline ${className}`}
+            >
+                <PenLine size={15} aria-hidden="true" />
+                {t('journey.reflections.write')}
+            </button>
         );
     }
 
@@ -94,6 +118,8 @@ function ReflectionPrompt({ kind, itemId, position = null, show, className = '' 
                     dir={text ? 'auto' : undefined}
                     maxLength={LIMIT}
                     value={text}
+                    // A tap on the quiet link means "I want to write": the field is ready for it.
+                    autoFocus={opened}
                     onChange={(e) => setText(e.target.value)}
                     placeholder={t('journey.reflections.placeholder')}
                     className="flex-1 min-w-[14rem] px-3 py-2 rounded-md border border-border bg-surface font-reading"

@@ -1047,6 +1047,8 @@ export const en = {
             notNow: 'Not now',
             saveFailed: 'Could not save, please try again',
             delete: 'Delete this reflection',
+            confirmDelete: 'Delete it',
+            write: 'Write what stayed with you',
             deleted: 'Deleted',
             more: 'More',
         },
