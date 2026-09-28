@@ -69,7 +69,7 @@ function ReviewForm({ review, goals, onDone }) {
             {review.week?.length > 0 && (
                 <div>
                     <p className="text-sm font-semibold mb-2">{t('journey.review.yourWeek')}</p>
-                    <DayStars days={review.week} />
+                    <DayStars days={review.week} weekly={review.weekly} />
                 </div>
             )}
             {review.reflections?.length > 0 && (

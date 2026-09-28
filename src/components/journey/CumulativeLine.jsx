@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { KHATAM_POINTS } from '@/lib/khatam';
-import { formatDay } from '@/lib/dayFormat';
+import { daysBetween, formatDay } from '@/lib/dayFormat';
 import { amountText } from '@/lib/goalText';
 import { countOf } from '@/lib/plural';
 import { formatCount } from '@/lib/numbers';
@@ -24,9 +24,13 @@ function CumulativeLine({ points, measure, total = null, finishDate = null }) {
     const last = points[lastIndex];
     const perWeek = (last.total - points[0].total) / lastIndex;
     const open = total != null && last.total < total;
-    // Where the estimate lands, in weeks from the first point — drawn only when it lands within
-    // the chart's reach (three times the weeks so far), since a line to a far horizon says nothing.
-    const finishAt = open && perWeek > 0 ? lastIndex + (total - last.total) / perWeek : null;
+    // Where the estimate lands, in weeks from the first point: the goal's own pace (its portion,
+    // its days a week) when the goal has one — the same date the pace bar above names — else the
+    // weekly average. Drawn only within the chart's reach (three times the weeks so far), since a
+    // line to a far horizon says nothing.
+    const finishAt = !open ? null
+        : finishDate ? lastIndex + Math.max(0, daysBetween(last.weekStart, finishDate)) / 7
+            : perWeek > 0 ? lastIndex + (total - last.total) / perWeek : null;
     const span = finishAt != null && finishAt <= lastIndex * 3 ? Math.max(lastIndex + 1, finishAt) : lastIndex + (open ? 1 : 0);
 
     const width = 640;
@@ -50,7 +54,8 @@ function CumulativeLine({ points, measure, total = null, finishDate = null }) {
                 return i - 1 + (gain > 0 ? (value - before) / gain : 1);
             }
         }
-        return perWeek > 0 ? lastIndex + (value - last.total) / perWeek : null;
+        // Past the last point the line is the dotted estimate, so the mark sits on it.
+        return finishAt != null ? lastIndex + (value - last.total) / (total - last.total) * (finishAt - lastIndex) : null;
     };
     // Text anchors below are the same in both directions: SVG text inherits the page's direction,
     // so «end» is the side away from the reading start in Arabic and in English alike.
@@ -58,6 +63,8 @@ function CumulativeLine({ points, measure, total = null, finishDate = null }) {
         <polygon points={KHATAM_POINTS} className={className} strokeWidth={strokeWidth}
                  transform={`translate(${cx - r},${cy - r}) scale(${r / 50})`} />
     );
+    // A week's hover strip is at most the distance between two weeks, so neighbours never overlap.
+    const hit = Math.min(36, (width - pad.start - pad.end) / span);
     const grid = total ? [0, ...QUARTERS.map((q) => Math.round(total * q / 100)), total] : [0, max];
     const summary = t('journey.cumulative.aria', {
         weeks: countOf('journey.units.WEEKS', points.length, { oblique: true }),
@@ -74,7 +81,7 @@ function CumulativeLine({ points, measure, total = null, finishDate = null }) {
                         {formatCount(last.total)}{total != null && <span className="text-xs font-normal text-text-muted ms-1">{t('journey.cumulative.of', { total: formatCount(total) })}</span>}
                     </dd>
                 </div>
-                {perWeek > 0 && (
+                {Math.round(perWeek) >= 1 && (
                     <div className="flex flex-col-reverse">
                         <dt className="text-xs text-text-muted">{t('journey.cumulative.average')}</dt>
                         <dd className="text-xl font-bold">{amountText(measure, Math.round(perWeek))}</dd>
@@ -143,7 +150,7 @@ function CumulativeLine({ points, measure, total = null, finishDate = null }) {
                     {points.map((point, index) => index > 0 && (
                         <rect
                             key={point.weekStart}
-                            x={x(index) - 18} y={pad.top} width="36" height={y(0) - pad.top} fill="transparent"
+                            x={x(index) - hit / 2} y={pad.top} width={hit} height={y(0) - pad.top} fill="transparent"
                             tabIndex={0}
                             aria-label={`${weekName(index)}: ${amountText(measure, point.total - points[index - 1].total)} — ${amountText(measure, point.total)}`}
                             onMouseEnter={() => setActive(index)} onMouseLeave={() => setActive(null)}

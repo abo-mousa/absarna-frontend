@@ -814,7 +814,7 @@ export const en = {
             title: 'This week’s intention',
             none: 'Once you start a daily portion, your week’s intention appears here.',
             projected: 'At this pace you reach it on {day}',
-            days: 'To keep your {what} portion on {days}, Saturday to Friday.',
+            days: 'To keep your “{what}” portion on {days}, Saturday to Friday.',
             kept: 'You have kept {done} of {amount}.',
             keptNone: 'None of the {amount} kept yet.',
             left: '{left} remain, and {needed} of them are enough.',
@@ -1074,7 +1074,7 @@ export const en = {
             here: 'You are here: {current}',
             khatma: 'The finish',
             quarters: { 25: 'A quarter', 50: 'Half', 75: 'Three quarters' },
-            estimate: 'The dotted line is an estimate from your weekly average, not a promise you owe. A light week shows as a calmer line, nothing more.',
+            estimate: 'The dotted line is what remains if you keep your portion as intended — an estimate, not a promise you owe. A light week shows as a calmer line, nothing more.',
         },
         excuse: {
             title: 'An excuse',

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { KhatamStar } from '../ui';
 import { safeStorage } from '@/lib/safeStorage';
 import { weekdayName } from '@/lib/dayFormat';
+import { fullWeek } from '@/lib/journey';
 import { t } from '@/i18n';
 
 /**
@@ -40,8 +41,9 @@ export function DayStar({ state, className = 'w-6 h-6' }) {
 }
 
 /** A row of days (or weeks, for a weekly goal): each star over its name, and a sentence for a screen reader. */
-function DayStars({ days, weekly = false, size = 'md' }) {
-    if (!days?.length) return null;
+function DayStars({ days: given, weekly = false, size = 'md' }) {
+    if (!given?.length) return null;
+    const days = weekly ? given : fullWeek(given);
     const star = size === 'sm' ? 'w-4 h-4' : 'w-6 h-6';
     return (
         <ul className="flex items-end gap-2 sm:gap-3">

@@ -10,7 +10,7 @@ import { amountText, goalTitle, isolate } from '@/lib/goalText';
 import { countOf } from '@/lib/plural';
 import { formatDay, localDay, weekdayName } from '@/lib/dayFormat';
 import { formatCount } from '@/lib/numbers';
-import { KEPT } from '@/lib/journey';
+import { KEPT, fullWeek } from '@/lib/journey';
 import { t } from '@/i18n';
 
 /**
@@ -180,12 +180,7 @@ function WeekIntention({ intention, goal, onStart }) {
     if (intention.days && goal?.week?.length) {
         // The learning day turns at 03:00 (LearningDay), so the small hours still belong to yesterday.
         const today = localDay(new Date(Date.now() - 3 * 3_600_000));
-        // The goal's week runs only to today; the days after it are still to come, drawn as open stars.
-        const [year, month, date] = goal.week[0].day.split('-').map(Number);
-        const week = Array.from({ length: 7 }, (_, index) => {
-            const day = new Date(Date.UTC(year, month - 1, date + index, 12)).toISOString().slice(0, 10);
-            return goal.week.find((entry) => entry.day === day) || { day, state: 'PENDING' };
-        });
+        const week = fullWeek(goal.week);
         const left = week.filter((day) => day.day >= today && !KEPT.has(day.state)).length;
         const needed = Math.max(0, intention.amount - intention.done);
         return (
@@ -194,7 +189,7 @@ function WeekIntention({ intention, goal, onStart }) {
                 <h2 className="font-serif text-[1.5rem] font-semibold">{t('journey.intention.title')}</h2>
                 <p className="text-sm text-text-secondary">
                     {t('journey.intention.days', {
-                        what: `«${isolate(goalTitle(goal))}»`,
+                        what: isolate(goalTitle(goal)),
                         days: countOf('journey.units.DAYS', intention.amount, { oblique: true }),
                     })}
                 </p>
@@ -215,7 +210,7 @@ function WeekIntention({ intention, goal, onStart }) {
                         <>
                             {intention.done > 0
                                 ? t('journey.intention.kept', {
-                                    done: countOf('journey.units.DAYS', intention.done),
+                                    done: countOf('journey.units.DAYS', intention.done, { oblique: true }),
                                     amount: formatCount(intention.amount),
                                 })
                                 : t('journey.intention.keptNone', { amount: formatCount(intention.amount) })}{' '}

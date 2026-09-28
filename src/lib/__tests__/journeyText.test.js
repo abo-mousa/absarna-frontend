@@ -3,7 +3,7 @@ import { setActiveLocale } from '@/i18n';
 import { countOf } from '@/lib/plural';
 import { commitmentSentence, learningTime, paceText } from '@/lib/goalText';
 import { hijriDeadlines, hasHijriCalendar } from '@/lib/hijriSeasons';
-import { bookPortion, groupByMonth, stepLabel } from '@/lib/journey';
+import { bookPortion, fullWeek, groupByMonth, stepLabel } from '@/lib/journey';
 import { creditDayFor, endQada, startQada } from '@/lib/qada';
 
 afterEach(() => setActiveLocale('ar'));
@@ -141,5 +141,14 @@ describe('groupByMonth', () => {
         // Saturday 2026-08-29 to Friday 2026-09-04: three days in August, four in September.
         const [month] = groupByMonth([{ weekStart: '2026-08-29', level: 0 }], 'gregory');
         expect(month.key).toBe(groupByMonth([{ weekStart: '2026-09-05', level: 0 }], 'gregory')[0].key);
+    });
+});
+
+describe('fullWeek', () => {
+    it('runs Saturday to Friday, the days to come open', () => {
+        const week = fullWeek([{ day: '2026-09-26', state: 'REST' }, { day: '2026-09-27', state: 'FULL' }]);
+        expect(week.map((day) => day.day)).toEqual(['2026-09-26', '2026-09-27', '2026-09-28', '2026-09-29', '2026-09-30', '2026-10-01', '2026-10-02']);
+        expect(week[1].state).toBe('FULL');
+        expect(week[6].state).toBe('PENDING');
     });
 });

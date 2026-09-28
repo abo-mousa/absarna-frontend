@@ -95,3 +95,16 @@ export function stepLabel(step) {
     if (step.measure === 'COMPLETIONS') return amountText('KHATMAT', step.value);
     return amountText(step.measure, step.value);
 }
+
+/**
+ * A daily goal's week as the server sends it runs from Saturday to today; the reader's week runs to
+ * Friday. The days still to come are filled in as open days, so every row of days is the same seven.
+ */
+export function fullWeek(days) {
+    if (!days?.length) return days;
+    const [year, month, date] = days[0].day.split('-').map(Number);
+    return Array.from({ length: 7 }, (_, index) => {
+        const day = new Date(Date.UTC(year, month - 1, date + index, 12)).toISOString().slice(0, 10);
+        return days.find((entry) => entry.day === day) || { day, state: 'PENDING', units: 0, target: null };
+    });
+}

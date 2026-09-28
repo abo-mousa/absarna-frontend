@@ -19,9 +19,12 @@ const NARROW = 560;
 
 function reachedNote(milestone) {
     if (milestone.reachedAt) {
+        const date = new Date(milestone.reachedAt);
+        // The year only when it is not this one: «١١ مايو» is enough for this year's.
+        const options = date.getFullYear() === new Date().getFullYear()
+            ? { day: 'numeric', month: 'long' } : { day: 'numeric', month: 'long', year: 'numeric' };
         return t('journey.milestones.reachedOn', {
-            date: new Intl.DateTimeFormat(currentLocaleInfo().numberFormat, { day: 'numeric', month: 'long' })
-                .format(new Date(milestone.reachedAt)),
+            date: new Intl.DateTimeFormat(currentLocaleInfo().numberFormat, options).format(date),
         });
     }
     // A manzila reached in one move has no «٠ من ١» to show; it says what it is instead.
