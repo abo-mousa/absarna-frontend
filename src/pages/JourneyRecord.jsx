@@ -29,11 +29,11 @@ function JourneyRecord() {
 
     return (
         <PageShell tab>
-            <PageHeader title={t('journey.nav.record')} action={<JourneyNav />} tabs />
+            <PageHeader title={t('journey.nav.record')} action={<JourneyNav />} tabs guide="journeyRecord" />
             <div className="flex flex-col gap-10">
                 <PausedLine where="journey" />
 
-                <section>
+                <section data-guide="year">
                     <Cartouche title={t('journey.record.yearTitle')} />
                     <QueryState
                         isLoading={year.isLoading}
@@ -47,7 +47,7 @@ function JourneyRecord() {
                 </section>
 
                 {weeks.data?.weeks?.some((week) => week.minutes > 0) && (
-                    <section>
+                    <section data-guide="weeks">
                         <Cartouche title={t('journey.record.weeksTitle')} />
                         <div className="max-w-[720px] pt-6">
                             <WeekBars weeks={weeks.data.weeks} goalMinutes={weeks.data.goalMinutes} />
@@ -56,7 +56,7 @@ function JourneyRecord() {
                 )}
 
                 {slots.data && Object.values(slots.data.seconds || {}).some((value) => value > 0) && (
-                    <section>
+                    <section data-guide="slots">
                         <Cartouche title={t('journey.record.slotsTitle')} />
                         <p className="text-sm text-text-secondary mb-4">{t('journey.record.slotsText', { days: SLOT_DAYS })}</p>
                         <SlotSplit seconds={slots.data.seconds} />
@@ -67,7 +67,7 @@ function JourneyRecord() {
                 {/* Only once most of the time is filed: below that it would chart the catalogue's gaps
                     rather than the reader (the backend's `shown`). */}
                 {fields.data?.shown && (
-                    <section>
+                    <section data-guide="fields">
                         <Cartouche title={t('journey.record.fieldsTitle')} />
                         {/* The backend's span: shorter than asked when the reader keeps less history than that. */}
                         <p className="text-sm text-text-secondary mb-4">{t('journey.record.fieldsText', { days: fields.data.days })}</p>
@@ -75,7 +75,7 @@ function JourneyRecord() {
                     </section>
                 )}
 
-                <section>
+                <section data-guide="history">
                     <Cartouche title={t('journey.record.historyTitle')} />
                     <HistoryList />
                 </section>

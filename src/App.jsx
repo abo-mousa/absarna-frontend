@@ -20,6 +20,7 @@ const Discover = lazy(() => import('./pages/Discover'));
 const Posts = lazy(() => import('./pages/Posts'));
 const Channels = lazy(() => import('./pages/Channels'));
 const Guide = lazy(() => import('./pages/Guide'));
+const GuidePage = lazy(() => import('./pages/GuidePage'));
 const ChannelPage = lazy(() => import('./pages/ChannelPage'));
 const Admin = lazy(() => import('./pages/Admin'));
 const Login = lazy(() => import('./pages/Login'));
@@ -227,6 +228,7 @@ function AppRoutes() {
                 <Route path="/channels" element={<Channels />} />
                 <Route path="/guide" element={<Guide />} />
                 <Route path="/search" element={<SearchPage />} />
+                <Route path="/guide/:slug" element={<GuidePage />} />
                 <Route path="/channel/:slug" element={<ChannelPage />} />
                 <Route path="/video/:id" element={<VideoDetail />} />
                 <Route path="/books" element={<Books />} />

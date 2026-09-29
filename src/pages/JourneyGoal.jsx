@@ -5,6 +5,7 @@ import PageShell from '../components/layout/PageShell';
 import { QueryState, Cartouche, KhatamProgress, Button, Modal } from '../components/ui';
 import { CumulativeLine, DayLegend, DayStars, PaceBar, PausedLine, SacredText, useJourney } from '../components/journey';
 import { useArchiveGoal, useGoal, usePauseGoal, useResumeGoal, useUpdateGoal } from '../hooks/useGoals';
+import PageGuideButton from '../components/guide/PageGuideButton';
 import { useToast } from '../contexts/ToastContext';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { amountText, commitmentSentence, goalTitle, measureOf, resumeHref } from '@/lib/goalText';
@@ -25,9 +26,12 @@ function JourneyGoal() {
     usePageMeta({ title: data ? goalTitle(data) : t('journey.nav.goals') });
     return (
         <PageShell tab>
-            <Link to="/journey/goals" className="inline-flex items-center gap-1.5 text-sm font-semibold mb-5">
-                <ArrowBack size={16} /> {t('journey.goal.back')}
-            </Link>
+            <div className="flex items-center justify-between gap-3 mb-5">
+                <Link to="/journey/goals" className="inline-flex items-center gap-1.5 text-sm font-semibold">
+                    <ArrowBack size={16} /> {t('journey.goal.back')}
+                </Link>
+                <PageGuideButton id="journeyGoal" />
+            </div>
             <QueryState
                 isLoading={goal.isLoading}
                 isError={goal.isError}
@@ -48,7 +52,7 @@ function GoalBody({ goal }) {
     return (
         <div className="flex flex-col gap-10">
             <PausedLine where="journey" />
-            <header className="flex flex-col gap-3">
+            <header data-guide="goal-head" className="flex flex-col gap-3">
                 <h1 dir="auto" className="font-serif text-[2rem] sm:text-[2.4rem] font-semibold leading-tight">{goalTitle(goal)}</h1>
                 {goal.intentionText && (
                     <p dir="auto" className="font-reading text-text-secondary">
@@ -70,7 +74,7 @@ function GoalBody({ goal }) {
             </header>
 
             {goal.pace?.total != null && (
-                <section className="flex items-center gap-5 p-5 rounded-lg border border-border-light bg-surface">
+                <section data-guide="goal-pace" className="flex items-center gap-5 p-5 rounded-lg border border-border-light bg-surface">
                     <KhatamProgress
                         value={goal.pace.total ? goal.pace.current / goal.pace.total : 0}
                         title={t('journey.pace.barAria', { current: goal.pace.current, total: amountText(measure, goal.pace.total, true) })}
@@ -80,7 +84,7 @@ function GoalBody({ goal }) {
                 </section>
             )}
 
-            <section>
+            <section data-guide="goal-week">
                 <Cartouche title={goal.period === 'WEEK' ? t('journey.goal.weeks') : t('journey.goal.thisWeek')} />
                 <DayStars days={goal.week} weekly={goal.period === 'WEEK'} />
                 {goal.lastWeek?.some((day) => day.state !== 'NOT_DUE') && (
@@ -93,7 +97,7 @@ function GoalBody({ goal }) {
             </section>
 
             {goal.cumulative?.length > 1 && (
-                <section>
+                <section data-guide="goal-cumulative">
                     <Cartouche title={t('journey.cumulative.title')} />
                     <CumulativeLine points={goal.cumulative} measure={measure} total={goal.pace?.total} finishDate={goal.pace?.finishDate} />
                 </section>
@@ -113,7 +117,7 @@ function ExcuseCard({ goal }) {
     const onError = (error) => showToast(describeError(error, t('journey.today.actionFailed')), 'error');
     const busy = pause.isPending || resume.isPending;
     return (
-        <section className="p-5 rounded-lg border border-border-light bg-surface flex flex-col gap-4">
+        <section data-guide="goal-excuse" className="p-5 rounded-lg border border-border-light bg-surface flex flex-col gap-4">
             <h2 className="font-serif text-[1.5rem] font-semibold">{t('journey.excuse.title')}</h2>
             {goal.paused ? (
                 <>
@@ -163,7 +167,7 @@ function ArchiveArea({ goal }) {
     const canLighten = goal.period === 'DAY' && goal.minimumAmount < goal.amount;
     const onError = (error) => showToast(describeError(error, t('journey.today.actionFailed')), 'error');
     return (
-        <section className="pt-6 border-t border-border-light">
+        <section data-guide="goal-end" className="pt-6 border-t border-border-light">
             <button type="button" onClick={() => setConfirming(true)} className="text-sm text-text-muted hover:text-text-primary underline">
                 {t('journey.archive.open')}
             </button>

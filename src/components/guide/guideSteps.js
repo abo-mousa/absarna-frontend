@@ -1,9 +1,10 @@
-import { CalendarCheck, Compass, BookOpen, MessageSquareText, Users, Megaphone } from 'lucide-react';
+import { CalendarCheck, Compass, BookOpen, MessageSquareText, Users, Megaphone, Route } from 'lucide-react';
 
 /**
  * The guide's steps, in the order a newcomer meets them: what Absarna is for, then each place in
  * the tab bar, then the marks a video can carry. Wording is `guide.steps.<key>.*`; `to` is the
- * place the step describes, for the full page's "open" link. Shared by the first-visit dialog and
+ * place the step describes, for the full page's "open" link; `guide` is its illustrated page guide
+ * (`pageGuides.js`), when it has one. Shared by the first-visit dialog and
  * the /guide page so the two can never describe different sites.
  */
 export const GUIDE_STEPS = [
@@ -13,6 +14,7 @@ export const GUIDE_STEPS = [
     { key: 'read', icon: BookOpen, to: '/books' },
     { key: 'posts', icon: MessageSquareText, to: '/posts' },
     { key: 'channels', icon: Users, to: '/channels' },
+    { key: 'journey', icon: Route, to: '/journey', guide: 'journey' },
     { key: 'voice', icon: Megaphone },
 ];
 

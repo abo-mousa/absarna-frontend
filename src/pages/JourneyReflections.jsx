@@ -29,7 +29,7 @@ function JourneyReflections() {
 
     return (
         <PageShell tab>
-            <PageHeader title={t('journey.nav.reflections')} action={<JourneyNav />} tabs />
+            <PageHeader title={t('journey.nav.reflections')} action={<JourneyNav />} tabs guide="journeyReflections" />
             <div className="flex flex-col gap-8 max-w-[760px]">
                 <PausedLine where="journey" />
                 <div className="flex flex-col gap-4">
@@ -47,7 +47,7 @@ function JourneyReflections() {
                     emptyTitle={t('journey.reflections.emptyTitle')}
                     emptyDescription={t('journey.reflections.emptyText')}
                 >
-                    <ol className="flex flex-col gap-4">
+                    <ol data-guide="reflections" className="flex flex-col gap-4">
                         {rows.map((row) => {
                             const href = row.kind === 'BOOK'
                                 ? `/books/${row.itemId}`

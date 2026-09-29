@@ -89,7 +89,7 @@ function MilestoneThread({ milestones }) {
     const reachedCount = milestones.filter((milestone) => milestone.reachedAt).length;
 
     return (
-        <figure ref={host} className="w-full">
+        <figure ref={host} data-guide="thread" className="w-full">
             <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto" aria-hidden="true" focusable="false">
                 <defs>
                     <symbol id="milestone-star" viewBox="6 6 88 88"><polygon points={KHATAM_POINTS} /></symbol>

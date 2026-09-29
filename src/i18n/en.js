@@ -760,6 +760,398 @@ export const en = {
         names: {
             ISLAMIC: 'Islamic sciences', QURAN: 'The Qur’an and its sciences', HADITH: 'Hadith and its sciences',
             AQEEDAH: 'Creed', FIQH: 'Fiqh and its principles', SEERAH: 'The Prophet’s biography',
+            journey: {
+                title: 'My journey',
+                text: 'Your goals and daily portion, your steadiness week by week, and what you have finished — yours alone, and we send you nothing. Each of its pages has an illustrated guide behind its “Page guide” button.',
+            },
+        },
+        sheet: {
+            button: 'Page guide',
+            buttonAria: 'How does this page work?',
+            kicker: 'Page guide',
+            close: 'Close the guide',
+            contents: 'In this guide',
+            showMe: 'Show me on the page',
+            notYet: 'Not on your page yet',
+            example: 'From a demo account',
+            questions: 'Questions',
+            fullGuide: 'Open the guide as a full page',
+            tour: 'A tour of the site',
+            stepOf: 'Step {step} of {total}',
+            previous: 'Previous',
+            next: 'Next',
+            mark: 'Point {n}',
+            gotIt: 'Got it',
+            pagesTitle: 'Illustrated guides to “My journey”',
+            pagesText: 'Pictures of the pages themselves, numbered where they point. Each of these pages has a “Page guide” button that opens its guide right there.',
+            openPage: 'Open the page',
+            pageTitle: 'Guide to “{page}”',
+            otherGuides: 'More guides in “My journey”',
+        },
+        pages: {
+            journey: {
+                title: 'My journey',
+                lede: 'Here you plan your portion and look back on what you have done; the portion itself you do on Today. Everything on this page is for you alone.',
+                blocks: {
+                    intention: {
+                        title: 'This week’s intention',
+                        text: 'What you intended for this week, Saturday to Friday.',
+                        marks: {
+                            '1': 'Your intention: on how many days you keep your portion this week.',
+                            '2': 'Today is marked, and each star is a day of the week — its colour says how it went.',
+                            '3': 'Where you stand, and how many of the remaining days are enough.',
+                        },
+                    },
+                    goals: {
+                        title: 'Your goals',
+                        text: 'Each goal is a card; press it to open its page.',
+                        marks: {
+                            '1': 'The goal, its portion, and its time of day.',
+                            '2': '“Week’s intention”: the goal your week is built on.',
+                            '3': 'This week’s days, one by one.',
+                            '4': 'How much of the whole you have finished.',
+                            '5': 'The gold tick: where a steady pace to your date would be today.',
+                            '6': 'Ahead or behind — or when you finish at this pace.',
+                        },
+                    },
+                    symbols: {
+                        title: 'What the stars mean',
+                        text: 'A star for each day, and none of them says “failed”: a day not done stays an intention written down.',
+                        states: {
+                            FULL: 'You kept the day’s portion in full.',
+                            MINIMUM: 'You kept its minimum — the day is kept.',
+                            MADE_UP: 'Missed, then finished before noon the next day, so it counts for its own day.',
+                            REST: 'One of the rest days you allowed in your week.',
+                            EXCUSED: 'An excused day: it counts neither for you nor against you.',
+                            PENDING: 'Not done yet, and the day is still yours.',
+                        },
+                    },
+                    today: {
+                        title: 'Your portion is done on Today',
+                        text: 'Today reminds you of your portion whenever you come — and we send you nothing.',
+                        marks: {
+                            '1': 'The star fills with what you have done today.',
+                            '2': 'Your portion, and its time of day.',
+                            '3': 'Start, or continue from where you stopped.',
+                            '4': 'On a hard day, the minimum is enough.',
+                        },
+                    },
+                    almost: {
+                        title: 'Nearly finished',
+                        text: 'Programmes and books you are more than halfway through.',
+                        appears: 'Appears once you are halfway through a programme or book.',
+                        marks: {
+                            '1': 'The star fills as far as you have gone.',
+                            '2': 'What is left until you finish.',
+                        },
+                    },
+                    steady: {
+                        title: 'Your steadiness',
+                        text: 'The last twelve weeks, week by week.',
+                        appears: 'Appears after your first week with learning in it.',
+                        marks: {
+                            '1': 'A filled star: a week with learning in it, however much.',
+                            '2': 'Not a streak that breaks: a week you missed does not erase the ones before it.',
+                        },
+                    },
+                    month: {
+                        title: 'Your Hijri month',
+                        text: 'What you have done since the Hijri month began.',
+                        appears: 'Appears once your month has something in it.',
+                        marks: {
+                            '1': 'Episodes, pages, hours and completions — a zero is never shown.',
+                        },
+                    },
+                    shelf: {
+                        title: 'What you finished',
+                        text: 'Every programme or book you have finished.',
+                        appears: 'Appears once you finish your first programme or book.',
+                        marks: {
+                            '1': 'Press any of them to go back to it.',
+                        },
+                    },
+                    review: {
+                        title: 'The week’s review',
+                        text: 'Every Friday after Jumu’ah, a minute’s review of the week appears at the top of the page: what helped, what got in the way, and whether to keep your portion, lighten it or move it to another time.',
+                        appears: 'Appears on Friday, and stays until the week ends.',
+                    },
+                },
+                faq: {
+                    miss: {
+                        q: 'What if I miss a day?',
+                        a: 'Nothing is lost. Before noon the next day you can make it up and it counts for its own day; after noon we offer to add it to today’s portion. If two days running were hard, we suggest lightening the portion.',
+                    },
+                    rest: {
+                        q: 'How are rest days chosen?',
+                        a: 'If you intended six days a week or five, the rest are rest days, chosen after the fact: the earliest days you did not keep, within what you allowed. You never schedule them, and they never show as a gap.',
+                    },
+                    day: {
+                        q: 'When does my day end?',
+                        a: 'A learning day ends at 3 am your time, so an episode finished at 1 am counts for the evening that started it.',
+                    },
+                    private: {
+                        q: 'Who sees this?',
+                        a: 'You alone. It is compared with no one, nothing is suggested to you from it, and we send you no reminders.',
+                    },
+                },
+            },
+            journeyGoals: {
+                title: 'My goals',
+                lede: 'All your goals in one place — and where a new one begins.',
+                blocks: {
+                    create: {
+                        title: 'Start a goal in four steps',
+                        text: 'Press “New goal”, then answer four short questions.',
+                        steps: {
+                            '1': {
+                                title: 'What',
+                                text: 'A programme you started, to finish it; a book; or a habit of learning — time, episodes or pages.',
+                            },
+                            '2': {
+                                title: 'How much',
+                                text: 'Your portion each day or each week, its minimum for a hard day, and how many days a week — and we show you when you would finish.',
+                            },
+                            '3': {
+                                title: 'When',
+                                text: 'After a prayer, at an hour you choose, or at a time of your day: morning, afternoon or evening. And a second time if the first one passes.',
+                            },
+                            '4': {
+                                title: 'Why',
+                                text: 'Your intention in your own words, seen by nobody else. Then “Bismillah — begin”.',
+                            },
+                        },
+                    },
+                    makeWird: {
+                        title: 'Or from a programme’s or book’s page',
+                        text: 'Every programme and book has a button that makes it your portion straight away.',
+                        marks: {
+                            '1': '“Make it a daily portion” — opens the same steps with the programme or book already chosen.',
+                        },
+                    },
+                },
+                faq: {
+                    period: {
+                        q: 'A daily portion or a weekly amount?',
+                        a: 'A daily portion is counted day by day, a star for each day. A weekly amount is a total you reach whenever you like in the week — two hours of learning, say.',
+                    },
+                    minimum: {
+                        q: 'What is the minimum for?',
+                        a: 'On a hard day the smaller amount is enough and the day is kept. A little that lasts is better than a lot that stops.',
+                    },
+                    slots: {
+                        q: 'Why morning, afternoon and evening?',
+                        a: 'They are the three times of day in the hadith — al-ghadwa from dawn to noon, al-rawha from noon to evening, and al-dulja the evening and the night.',
+                    },
+                    many: {
+                        q: 'How many goals can I have?',
+                        a: 'As many as you like. But one small goal you keep does more than many you leave.',
+                    },
+                },
+            },
+            journeyGoal: {
+                title: 'A goal’s page',
+                lede: 'Everything about one goal: your intention, where you stand, your week, and the road to the finish.',
+                blocks: {
+                    head: {
+                        title: 'The goal and your intention',
+                        text: 'At the top, what you resolved, in your own words.',
+                        marks: {
+                            '1': 'Your intention, as you wrote it.',
+                            '2': 'Your resolve in one sentence: the amount, the days, the time and the minimum.',
+                            '3': '“Continue” takes you straight to the next episode or page.',
+                            '4': 'Change the amount, the time or the intention whenever you like.',
+                        },
+                    },
+                    pace: {
+                        title: 'Where you stand',
+                        text: 'What you have finished so far, and how that sits with your date.',
+                        marks: {
+                            '1': 'The star fills up to the finish.',
+                            '2': 'How much of the whole you have finished.',
+                            '3': 'The gold tick is where a steady pace to your date would be — a distance to see, not a verdict.',
+                            '4': 'Ahead or behind, or how much a day gets you there on time.',
+                        },
+                    },
+                    week: {
+                        title: 'This week and the last',
+                        text: 'Your days, star by star.',
+                        marks: {
+                            '1': 'This week.',
+                            '2': 'Last week.',
+                            '3': 'What each star means — put it away with “Hide” once you know.',
+                        },
+                    },
+                    cumulative: {
+                        title: 'A little that lasts',
+                        text: 'What you have gathered, week after week.',
+                        appears: 'Appears after your second week with the goal.',
+                        marks: {
+                            '1': 'What you have finished, your weekly average, and when you reach the finish.',
+                            '2': 'You are here.',
+                            '3': 'The dotted line is what remains if you keep your portion as intended — an estimate, not a promise you owe.',
+                            '4': 'The finish.',
+                        },
+                    },
+                    excuse: {
+                        title: 'An excuse',
+                        text: 'Travel, illness, work — we do not ask why.',
+                        marks: {
+                            '1': 'Excused days count neither for you nor against you.',
+                            '2': 'Choose how long, or “Until I am back”.',
+                        },
+                    },
+                    end: {
+                        title: 'Ending the goal',
+                        text: 'At the bottom of the page. Before it ends we offer to keep only its minimum, and what you learned stays counted in your journey.',
+                    },
+                },
+                faq: {
+                    behind: {
+                        q: 'I am behind my date — what now?',
+                        a: 'Nothing is owed. We show how much a day gets you there on time, and you can change the date or the amount from “Edit”.',
+                    },
+                    excused: {
+                        q: 'Does an excuse spoil my week?',
+                        a: 'No. Excused days are outside every count, so they take nothing from your week or your steadiness.',
+                    },
+                    edit: {
+                        q: 'Do I lose the past if I edit a goal?',
+                        a: 'No. A change applies from that day on; what you did before stays as it was.',
+                    },
+                },
+            },
+            journeyMilestones: {
+                title: 'Milestones',
+                lede: 'Stations on your road of learning: reached once, and yours to keep.',
+                blocks: {
+                    thread: {
+                        title: 'Your road',
+                        text: 'One thread of stations, from the first step on.',
+                        marks: {
+                            '1': 'A station you reached, and the day you reached it.',
+                            '2': 'The small stars are steps along the way to the next station.',
+                        },
+                    },
+                    ahead: {
+                        title: 'What lies ahead',
+                        text: 'At the end of the thread, what you have not reached yet.',
+                        marks: {
+                            '1': '“You are here”: your next step on the road.',
+                            '2': 'A station ahead, and how far along the road to it you are.',
+                        },
+                    },
+                },
+                faq: {
+                    lose: {
+                        q: 'Can I lose a station if I stop?',
+                        a: 'No. What you reached stays yours, and no gap resets it.',
+                    },
+                    compare: {
+                        q: 'Does anyone see my milestones?',
+                        a: 'No. No ranking and no comparison with anyone — the road is yours alone.',
+                    },
+                },
+            },
+            journeyReflections: {
+                title: 'My reflections',
+                lede: 'A line you write after a lesson or a book: what stayed with you.',
+                blocks: {
+                    list: {
+                        title: 'What you wrote',
+                        text: 'Your reflections, newest first.',
+                        appears: 'Your first reflection appears here once you write it.',
+                        marks: {
+                            '1': 'What you wrote, in your words.',
+                            '2': 'The lesson or book it was about — press it to go back.',
+                        },
+                    },
+                    write: {
+                        title: 'How to write one',
+                        text: 'When you finish an episode or read a few pages of a book, we ask: what stayed with you? While watching, you can also note a reflection at a particular moment and come back to that moment from this page.',
+                    },
+                },
+                faq: {
+                    who: {
+                        q: 'Who reads my reflections?',
+                        a: 'You alone.',
+                    },
+                    removed: {
+                        q: 'What if the lesson is removed?',
+                        a: 'Your reflection stays, even if what it was about is hidden.',
+                    },
+                    delete: {
+                        q: 'How do I delete one?',
+                        a: 'With the delete button beside it. All of them go if you erase your record.',
+                    },
+                },
+            },
+            journeyRecord: {
+                title: 'Record',
+                lede: 'Your year, your weeks, your times of day and your fields — a mirror for you alone, and nothing is suggested to you from it.',
+                blocks: {
+                    year: {
+                        title: 'Your year',
+                        text: 'The last year, month by month.',
+                        marks: {
+                            '1': 'Each column is a month, and each star a week in it.',
+                            '2': 'A star’s shade compares your own weeks, never anyone else’s.',
+                            '3': 'Your year in numbers.',
+                        },
+                    },
+                    weeks: {
+                        title: 'Your weeks',
+                        text: 'Learning time in each of the last twelve weeks.',
+                        appears: 'Appears once your weeks have learning time in them.',
+                        marks: {
+                            '1': 'Each bar is a week; the newest is “This week”.',
+                        },
+                    },
+                    slots: {
+                        title: 'When you learn',
+                        text: 'Which times of your day you learn in.',
+                        appears: 'Appears once the last thirty days have learning time in them.',
+                        marks: {
+                            '1': 'Morning, afternoon and evening, and your hours in each.',
+                            '2': 'The span it counts: the last thirty days.',
+                        },
+                    },
+                    fields: {
+                        title: 'Your fields',
+                        text: 'Where your learning time went: Islamic sciences, history, thought…',
+                        appears: 'Appears once most of your time has a known field.',
+                        marks: {
+                            '1': 'The span it counts, with the fields beneath by your time in each.',
+                        },
+                    },
+                    history: {
+                        title: 'What you watched and read',
+                        text: 'The list of what you watched and read, where you can go back to your place in every episode and book.',
+                    },
+                    control: {
+                        title: 'Your record is yours',
+                        text: 'You decide what is kept, and for how long.',
+                        marks: {
+                            '1': 'How long we keep your record: always, a year, three months or a month.',
+                            '2': 'Pause recording whenever you like: nothing you watch is kept, nor your place in it.',
+                            '3': 'Erase your whole record — and your counts too, if you choose.',
+                        },
+                    },
+                },
+                faq: {
+                    erase: {
+                        q: 'What stays if I erase my record?',
+                        a: 'Your counts — weeks, completions and milestones — unless you choose to erase them too. What you watched, your places, your days, your reviews and your reflections are erased, for good.',
+                    },
+                    pause: {
+                        q: 'What does pausing do?',
+                        a: 'Nothing you watch or read is kept, nor your place in it, and it is not counted in your journey — until you resume.',
+                    },
+                    keep: {
+                        q: 'Why do the counts outlive the retention?',
+                        a: 'Because they are numbers, not a list of what you watched: weeks, completions and milestones.',
+                    },
+                },
+            },
             TAZKIYAH: 'Purification of the soul', DAWAH: 'Da’wah',
             HISTORY: 'History & civilisation', ISLAMIC_HISTORY: 'Islamic history', WORLD_HISTORY: 'World history',
             BIOGRAPHIES: 'Biographies', CIVILISATION: 'Civilisation & heritage',

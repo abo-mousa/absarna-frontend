@@ -80,13 +80,13 @@ export function DayLegend({ className = '' }) {
     };
     if (hidden) {
         return (
-            <button type="button" onClick={() => toggle(false)} className={`text-xs font-semibold text-primary hover:underline ${className}`}>
+            <button type="button" data-guide="legend" onClick={() => toggle(false)} className={`text-xs font-semibold text-primary hover:underline ${className}`}>
                 {t('journey.legend.show')}
             </button>
         );
     }
     return (
-        <div className={`flex flex-wrap items-center gap-x-4 gap-y-2 px-3 py-2 rounded-md border border-border-light bg-surface text-xs text-text-secondary ${className}`}>
+        <div data-guide="legend" className={`flex flex-wrap items-center gap-x-4 gap-y-2 px-3 py-2 rounded-md border border-border-light bg-surface text-xs text-text-secondary ${className}`}>
             {LEGEND.map((state) => (
                 <span key={state} className="inline-flex items-center gap-1.5">
                     <DayStar state={state} className="w-4 h-4" />

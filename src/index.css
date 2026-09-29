@@ -379,3 +379,10 @@ html::-webkit-scrollbar,
   border-inline: 1px solid rgb(var(--color-gold) / 0.5);
   background: rgb(var(--color-gold) / 0.08);
 }
+
+/* The page guide's numbered marks arrive one after another, so the eye is led through them in
+   order (components/guide). `motion-safe:` keeps them still for anyone who asked for less motion. */
+@keyframes guide-pop {
+  from { opacity: 0; transform: translate(var(--tw-translate-x, 0), var(--tw-translate-y, 0)) scale(0.6); }
+  to { opacity: 1; transform: translate(var(--tw-translate-x, 0), var(--tw-translate-y, 0)) scale(1); }
+}

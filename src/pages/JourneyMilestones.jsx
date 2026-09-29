@@ -15,7 +15,7 @@ function JourneyMilestones() {
     const milestones = useMilestones();
     return (
         <PageShell tab>
-            <PageHeader title={t('journey.nav.milestones')} action={<JourneyNav />} tabs />
+            <PageHeader title={t('journey.nav.milestones')} action={<JourneyNav />} tabs guide="journeyMilestones" />
             <PausedLine where="journey" className="mb-6" />
             <QueryState
                 isLoading={milestones.isLoading}

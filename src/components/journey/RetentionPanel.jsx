@@ -29,7 +29,7 @@ function RetentionPanel() {
         onError: (error) => showToast(describeError(error, t('journey.record.saveFailed')), 'error'),
     });
     return (
-        <section className="flex flex-col gap-6 p-5 rounded-lg border border-border-light bg-surface">
+        <section data-guide="control" className="flex flex-col gap-6 p-5 rounded-lg border border-border-light bg-surface">
             <div>
                 <h2 className="font-serif text-[1.5rem] font-semibold">{t('journey.record.controlTitle')}</h2>
                 <p className="text-sm text-text-secondary mt-1">{t('journey.record.controlText')}</p>

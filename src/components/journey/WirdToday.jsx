@@ -86,7 +86,7 @@ function WirdToday({ wird, reviewOpen, recentMilestones, now, hasQada }) {
             : !hasQada && slotOf(now) === 'GHADWA' ? { moment: 'morning' } : null;
 
     return (
-        <section>
+        <section data-guide="wird">
             <Cartouche title={t('journey.today.title')} action={<Link to="/journey">{t('journey.today.toJourney')}</Link>} />
             <div className="flex flex-col gap-4">
                 {/* A paused reader's portions cannot fill; say why before they wonder. */}

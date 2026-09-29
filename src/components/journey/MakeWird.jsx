@@ -26,7 +26,7 @@ function MakeWird({ seriesId = null, bookId = null, title, pages = null, current
     const star = <KhatamStar filled={!!existing} strokeWidth={10} className={`${variant === 'button' ? 'w-4 h-4' : 'w-3 h-3'} text-gold flex-shrink-0`} />;
     if (existing) {
         return (
-            <Link to={`/journey/goals/${existing.id}`} className={`${button} ${className}`}>
+            <Link to={`/journey/goals/${existing.id}`} data-guide="make-wird" className={`${button} ${className}`}>
                 {star}{t('journey.inWird')}
             </Link>
         );
@@ -34,6 +34,7 @@ function MakeWird({ seriesId = null, bookId = null, title, pages = null, current
     return (
         <button
             type="button"
+            data-guide="make-wird"
             className={`${button} ${className}`}
             onClick={() => openGoal(seriesId != null
                 ? { kind: 'FINISH_SERIES', targetId: seriesId, title, amount: 1 }

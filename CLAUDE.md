@@ -131,6 +131,18 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   that opens by itself on Today once — only when the backend sent a `welcome` (it decides who is
   new) and until `absarna.guideSeen` is set — and the full page, linked from the welcome and the
   account menu. A new tab means a new step in `GUIDE_STEPS`.
+- **A page guide is pictures of the page, and it opens only when asked** (`components/guide/
+  pageGuides.js`). «دليل الصفحة» at the end of `PageHeader`'s line (`guide="<id>"`, or a
+  `PageGuideButton` where a page has no header) opens a sheet (`?guide=1`, so Back closes it) of
+  real screenshots with numbered marks, a stepped dialog, the live day-symbol key, and questions;
+  `/guide/:slug` shows the same blocks as a page, and `/guide` lists them. **The screenshots are
+  taken, never drawn or placed by hand**: `npm run guide:shots` (the backend's
+  `seed-journey-demo.sh` first, the SPA on :5173) crops each `data-guide` element at phone width
+  per locale and theme into `public/guide/`, and measures every mark into `guideShots.json` — so a
+  layout change is a rerun, and a mark moves with what it points at. `data-guide` is also what
+  «أرِني في الصفحة» spotlights; where a section is hidden until it has something in it, the block
+  says when it appears instead. `pageGuides.test.js` pins registry ↔ marks ↔ both catalogs ↔
+  files ↔ anchors. Every «مسيرتي» page has one; a new page gets one the same way.
 - **Every tab is laid out the same**: `<PageShell tab>` (one column, `TAB_COLUMN`: 1200px, 1400px from `2xl`, 1640px from `3xl`) and
   `ui/PageHeader`, which shows **no visible title** — the lit tab already names the page, and a
   large «الكتب» under a lit «الكتب» said it twice. The title stays as a visually hidden `<h1>` for

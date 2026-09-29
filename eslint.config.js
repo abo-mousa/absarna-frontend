@@ -86,6 +86,16 @@ export default [
         },
     },
     {
+        // Scripts run by hand under Node — and `guide-shots` also hands functions to a browser page
+        // (`page.evaluate`), so both sets of names are real there.
+        files: ['scripts/**/*.mjs'],
+        languageOptions: {
+            ecmaVersion: 2023,
+            sourceType: 'module',
+            globals: { ...globals.node, ...globals.browser },
+        },
+    },
+    {
         files: ['**/__tests__/**/*.{js,jsx}', '**/*.test.{js,jsx}'],
         languageOptions: {
             globals: { ...globals.node },

@@ -40,7 +40,7 @@ function Journey() {
 
     return (
         <PageShell tab>
-            <PageHeader title={t('journey.title')} action={<JourneyNav />} tabs />
+            <PageHeader title={t('journey.title')} action={<JourneyNav />} tabs guide="journey" />
             <QueryState
                 isLoading={overview.isLoading}
                 isError={overview.isError}
@@ -52,7 +52,7 @@ function Journey() {
                     <div className="flex flex-col gap-10">
                         <PausedLine where="journey" />
                         {review.data?.open && (
-                            <section className="flex flex-wrap items-center gap-4 p-5 rounded-lg border border-gold/50 bg-gold-light/40">
+                            <section data-guide="review" className="flex flex-wrap items-center gap-4 p-5 rounded-lg border border-gold/50 bg-gold-light/40">
                                 <KhatamStar className="w-6 h-6 text-gold flex-shrink-0" />
                                 <div className="flex-1 min-w-[14rem]">
                                     <h2 className="font-serif text-[1.5rem] font-semibold leading-tight">{t('journey.review.bannerTitle')}</h2>
@@ -73,7 +73,7 @@ function Journey() {
                             </div>
                         </div>
 
-                        <section>
+                        <section data-guide="goals">
                             <Cartouche
                                 title={t('journey.goalsTitle')}
                                 action={data.goals.length > 0 && (
@@ -98,7 +98,7 @@ function Journey() {
                         </section>
 
                         {almostDone.length > 0 && (
-                            <section>
+                            <section data-guide="almost">
                                 <Cartouche title={t('journey.almostDoneTitle')} />
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                     {almostDone.map((item) => <AlmostDoneCard key={`${item.kind}-${item.id}`} item={item} />)}
@@ -110,7 +110,7 @@ function Journey() {
                             stars over «٠ من آخر ١٢» greet a reader who has not started with a verdict. Not
                             tied to goals — it counts any learning, with or without one. */}
                         {data.weeks12.some((week) => week.active) && (
-                            <section>
+                            <section data-guide="steady">
                                 <Cartouche title={t('journey.steadyTitle')} />
                                 <WeekFlags weeks={data.weeks12} />
                             </section>
@@ -119,7 +119,7 @@ function Journey() {
                         {data.month && <MonthNumbers month={data.month} />}
 
                         {data.recentCompletions.length > 0 && (
-                            <section>
+                            <section data-guide="shelf">
                                 <Cartouche title={t('journey.shelfTitle')} />
                                 <ul className="flex flex-wrap gap-3">
                                     {data.recentCompletions.map((completion) => (
@@ -172,7 +172,7 @@ function stateMoment(data) {
 function WeekIntention({ intention, goal, onStart }) {
     if (!intention) {
         return (
-            <div className="p-5 rounded-lg border border-border-light bg-surface flex flex-col items-start gap-3">
+            <div data-guide="intention" className="p-5 rounded-lg border border-border-light bg-surface flex flex-col items-start gap-3">
                 <h2 className="font-serif text-[1.5rem] font-semibold">{t('journey.intention.title')}</h2>
                 <p className="text-sm text-text-secondary">{t('journey.intention.none')}</p>
                 <Button variant="outline" size="sm" onClick={onStart}>{t('journey.startFirst')}</Button>
@@ -189,7 +189,7 @@ function WeekIntention({ intention, goal, onStart }) {
         const left = week.filter((day) => day.day >= today && !KEPT.has(day.state)).length;
         const needed = Math.max(0, intention.amount - intention.done);
         return (
-            <Link to={`/journey/goals/${intention.goalId}`}
+            <Link to={`/journey/goals/${intention.goalId}`} data-guide="intention"
                   className="p-5 rounded-lg border border-border-light bg-surface flex flex-col gap-4 text-text-primary hover:no-underline hover:border-border">
                 <h2 className="font-serif text-[1.5rem] font-semibold">{t('journey.intention.title')}</h2>
                 <p className="text-sm text-text-secondary">
@@ -235,7 +235,7 @@ function WeekIntention({ intention, goal, onStart }) {
         );
     }
     return (
-        <Link to={`/journey/goals/${intention.goalId}`}
+        <Link to={`/journey/goals/${intention.goalId}`} data-guide="intention"
               className="p-5 rounded-lg border border-border-light bg-surface flex items-center gap-5 text-text-primary hover:no-underline hover:border-border">
             <KhatamProgress
                 value={intention.amount ? Math.min(1, intention.done / intention.amount) : 0}
@@ -310,7 +310,7 @@ function MonthNumbers({ month }) {
     // Only what is not zero, as on Today's week: «٠ ختمات» beside a month of reading reads as a verdict.
     if (!cells.length) return null;
     return (
-        <section>
+        <section data-guide="month">
             <Cartouche title={t('journey.month.title', { month: formatDay(month.start, { month: 'long' }, 'islamic-umalqura') })} />
             <div className={`grid grid-cols-2 ${MONTH_COLUMNS[cells.length]} gap-px bg-border-light border border-border-light rounded-lg overflow-hidden`}>
                 {cells.map((cell, index) => (
