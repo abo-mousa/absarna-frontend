@@ -1651,6 +1651,9 @@ export const ar = {
             DAYS_OBL: { two: 'يومين' },
             WEEKS_OBL: { two: 'أسبوعين' },
             KHATMAT: { zero: 'لا ختمة', one: 'ختمة واحدة', two: 'ختمتان', few: '{count} ختمات', many: '{count} ختمة', other: '{count} ختمة' },
+            LONG_PROGRAMMES: { zero: 'لا برنامج طويل', one: 'برنامج طويل واحد', two: 'برنامجان طويلان', few: '{count} برامج طويلة', many: '{count} برنامجًا طويلًا', other: '{count} برنامج طويل' },
+            KHATMAT_OBL: { two: 'ختمتين' },
+            LONG_PROGRAMMES_OBL: { two: 'برنامجين طويلين' },
         },
         habit: {
             // No frequency in the name: the goal's own period says daily or weekly.
@@ -2076,9 +2079,9 @@ export const ar = {
                 FIVE_HUNDRED_HOURS: 'خمسمئة ساعة',
                 THOUSAND_HOURS: 'ألف ساعة في العلم',
                 TWO_THOUSAND_FIVE_HUNDRED_HOURS: 'ألفان وخمسمئة ساعة',
-                STEADY_YEAR: 'عامٌ من الأسابيع',
-                THREE_STEADY_YEARS: 'ثلاثة أعوام من الأسابيع',
-                FIVE_STEADY_YEARS: 'خمسة أعوام من الأسابيع',
+                STEADY_YEAR: 'عامٌ من الثبات',
+                THREE_STEADY_YEARS: 'ثلاثة أعوام من الثبات',
+                FIVE_STEADY_YEARS: 'خمسة أعوام من الثبات',
                 FIVE_LONG_PROGRAMMES: 'نفَسٌ بعد نفَس',
                 LONGEST_PROGRAMME: 'النفَس الأطول',
             },

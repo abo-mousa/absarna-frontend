@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { KHATAM_POINTS } from '@/lib/khatam';
 import { stepLabel } from '@/lib/journey';
 import { formatCount } from '@/lib/numbers';
+import { countOf } from '@/lib/plural';
 import { currentLocaleInfo, isRtl, t } from '@/i18n';
 
 /**
@@ -17,6 +18,16 @@ import { currentLocaleInfo, isRtl, t } from '@/i18n';
  */
 const NARROW = 560;
 
+/** The unit a manzila counts in, by the backend's `measure` — «٠ من ٥٢» alone left it to guesswork. */
+const UNIT_OF = {
+    EPISODES: 'EPISODES',
+    PAGES: 'PAGES',
+    HOURS: 'HOURS',
+    ACTIVE_WEEKS: 'WEEKS',
+    COMPLETIONS: 'KHATMAT',
+    LONG_PROGRAMMES: 'LONG_PROGRAMMES',
+};
+
 function reachedNote(milestone) {
     if (milestone.reachedAt) {
         const date = new Date(milestone.reachedAt);
@@ -29,9 +40,11 @@ function reachedNote(milestone) {
     }
     // A manzila reached in one move has no «٠ من ١» to show; it says what it is instead.
     if (milestone.threshold === 1) return t(`journey.milestones.about.${milestone.code}`);
+    const unit = UNIT_OF[milestone.measure];
     return t('journey.milestones.along', {
         current: formatCount(Math.min(milestone.current, milestone.threshold)),
-        threshold: formatCount(milestone.threshold),
+        // After «من», so the oblique forms; a backend from before `measure` gets the bare number.
+        threshold: unit ? countOf(`journey.units.${unit}`, milestone.threshold, { oblique: true }) : formatCount(milestone.threshold),
     });
 }
 
