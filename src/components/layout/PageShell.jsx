@@ -8,7 +8,7 @@ import PageGuideLink from '../guide/PageGuideLink';
 import { t } from '@/i18n';
 
 /**
- * The frame every page sits in: the navbar (with the six places as a strip on a wide screen), the
+ * The frame every page sits in: the navbar (with the five places as a strip on a wide screen), the
  * page, the footer — and on a phone a tab bar fixed to the bottom.
  *
  * <p><b>There is no sidebar any more, on purpose.</b> A column of links down one side, and a

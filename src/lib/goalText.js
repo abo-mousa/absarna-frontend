@@ -82,7 +82,7 @@ export function resumeHref(goal) {
         return `/series/${goal.targetId}`;
     }
     if (goal.kind === 'FINISH_BOOK') return `/books/${goal.targetId}`;
-    return measureOf(goal) === 'PAGES' ? '/books' : '/discover';
+    return measureOf(goal) === 'PAGES' ? '/books' : '/watch';
 }
 
 /** «غدًا: من ص ٢٢٢» — where tomorrow's portion begins, when the goal knows. */

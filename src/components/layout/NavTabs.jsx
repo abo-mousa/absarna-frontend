@@ -3,7 +3,7 @@ import { TABS, activeTab } from '@/lib/tabs';
 import { t } from '@/i18n';
 
 /**
- * The six places, as a strip under the navbar's main row on a wide screen — what replaced the
+ * The five places (`lib/tabs`), as a strip under the navbar's main row on a wide screen — what replaced the
  * sidebar's column of links, which was the plainest YouTube mark on the page.
  *
  * <p>Inside the `<nav>` rather than beside it, so `Navbar`'s measurement of its own height into

@@ -232,10 +232,15 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   the `<nav>` for exactly that reason. The `60px` the old sidebars hardcoded was a pixel short of the
   bar plus its border — and it cannot be a constant anyway: the logo and wordmark change size at
   `sm`, and the Arabic webfont arrives after first paint (`display=swap`) and re-lays the line box.
-- **There is no sidebar, on purpose.** The places are six tabs (`lib/tabs`), seven from `lg` with «طريقي»: a strip in the navbar
-  from `lg`, a five-tab bar fixed to the bottom below it (Books and Articles fold into «اقرأ»,
-  which opens Books — so below `lg` both pages carry `layout/ReadSwitch` in a `PageHeader belowLg`,
-  or the Articles list has no way in at all), and `PageShell` gives every page bottom room for that bar plus the safe-area inset. History and
+- **There is no sidebar, on purpose.** The places are five tabs (`lib/tabs`), **the same five at
+  every width** (product owner, 2026-09-29): اليوم · شاهد · اقرأ · القنوات · طريقي («شاهد» was
+  «اكتشف», at `/discover`; it is `/watch` now and `/discover` redirects there with its query, since
+  links to it are out in the world — the code still calls it `discover`) — a strip in
+  the navbar from `lg`, a bar fixed to the bottom below it. «اقرأ» holds Books, Articles and Posts
+  as three separate pages behind `layout/ReadSwitch` (never one mixed list); the wide strip used
+  to name all three while the phone folded them, so a reader learned the site twice, and folding
+  Posts in is what gave «طريقي» a slot on a phone. «طريقي» is a tab for everyone: signed out,
+  `/journey` shows `JourneyIntro` rather than the login form. `PageShell` gives every page bottom room for that bar plus the safe-area inset. History and
   saved items are in the account menu; the channel lists are the Channels page. A column of links
   on every page and a hamburger drawer were the plainest YouTube marks the app had — don't bring
   either back. **The browsing tabs have a side column; Today and Channels do not** (product owner, 2026-09-25):

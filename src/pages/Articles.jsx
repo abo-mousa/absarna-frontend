@@ -50,7 +50,7 @@ function Articles() {
 
     return (
         <PageShell tab sidebar={<ArticlesRail categories={categories} category={category} onCategory={setCategory} />}>
-            <PageHeader title={t('nav.tabs.articles')} action={<ReadSwitch />} tabs belowLg />
+            <PageHeader title={t('nav.tabs.articles')} action={<ReadSwitch />} tabs />
             <ChannelScopeTabs followed={followed} onChange={setFollowed} />
 
             {/* Shown whenever there is anything to narrow OR a narrowing is active: a search

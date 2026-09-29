@@ -221,8 +221,8 @@ function Discover() {
         );
     };
 
+    // No `key` in here: React reads a key only when it is written on the element, never spread.
     const videoCardProps = (video) => ({
-        key: video.id,
         video,
         onClick: () => navigate(`/video/${video.id}`),
         isOwner: !!mySlugByChannelId[video.channelId],
@@ -308,7 +308,7 @@ function Discover() {
                                     {shownSections > 1 && <Cartouche title={section.title} />}
                                     <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 3xl:grid-cols-5 gap-x-5 gap-y-8">
                                         {items.map((video) => (
-                                            <VideoCard {...videoCardProps(video)} />
+                                            <VideoCard key={video.id} {...videoCardProps(video)} />
                                         ))}
                                     </div>
                                 </div>
@@ -321,7 +321,7 @@ function Discover() {
                             <Cartouche title={t('home.more')} />
                             <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 3xl:grid-cols-5 gap-x-5 gap-y-8">
                                 {fitted.tail.map((video) => (
-                                    <VideoCard {...videoCardProps(video)} />
+                                    <VideoCard key={video.id} {...videoCardProps(video)} />
                                 ))}
                             </div>
 
@@ -353,7 +353,7 @@ function Discover() {
                     >
                         <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 3xl:grid-cols-5 gap-x-5 gap-y-8">
                             {infiniteData?.pages.flatMap((page) => page.content).map((video) => (
-                                <VideoCard {...videoCardProps(video)} />
+                                <VideoCard key={video.id} {...videoCardProps(video)} />
                             ))}
                         </div>
 

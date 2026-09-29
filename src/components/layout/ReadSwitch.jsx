@@ -1,22 +1,18 @@
 import { Link, useLocation } from 'react-router-dom';
-import { activeTab } from '@/lib/tabs';
+import { READ_SECTIONS, readSection } from '@/lib/tabs';
 import { t } from '@/i18n';
 
 /**
- * «الكتب | المقالات» at the top of both pages, below `lg`.
+ * «الكتب | المقالات | المنشورات» at the top of all three pages, at every width.
  *
- * <p>The phone's bottom bar folds Books and Articles into one «اقرأ» item that opens Books, and
- * the navbar strip that names both is `lg`-only — so on a phone or a tablet the Articles list had
- * no way in at all. This is that way in, drawn as ViewTabs are (words, a gold underline on the
+ * <p>«اقرأ» is one tab that opens Books (`lib/tabs`), so this is the only way to Articles and
+ * Posts — three separate pages, never one mixed list. This is that way in, drawn as ViewTabs are (words, a gold underline on the
  * header's hairline), but as links: each is a page with its own address, not a view of one.
  */
 function ReadSwitch() {
     const { pathname } = useLocation();
-    const current = activeTab(pathname);
-    const items = [
-        { key: 'books', to: '/books' },
-        { key: 'articles', to: '/articles' },
-    ];
+    const current = readSection(pathname);
+    const items = READ_SECTIONS;
     return (
         <nav className="flex items-end gap-5" aria-label={t('nav.tabs.read')}>
             {items.map((item) => {

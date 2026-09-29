@@ -28,7 +28,7 @@ const GRID = 'grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-
  * <p>What the reader started and can finish, what they finished this week, the news, one row
  * from their channels or the feed's suggestions — and then a last
  * line that says they are done, with the way on to Discover for anyone who wants to browse. The
- * endless feed moved to Discover (/discover) on purpose: here the first thing is accomplishing
+ * endless feed moved to «شاهد» (/watch) on purpose: here the first thing is accomplishing
  * something, not scrolling.
  *
  * <p>Everything personal comes from `GET /api/today` in one response; an anonymous reader gets the
@@ -58,8 +58,8 @@ function Today() {
     const wirdGoals = data?.wird?.goals || [];
 
     const openVideo = (video) => navigate(`/video/${video.id}`);
+    // No `key` in here: React reads a key only when it is written on the element, never spread.
     const cardProps = (video) => ({
-        key: video.id,
         video,
         onClick: openVideo,
         watch: watchProgress[video.id],
@@ -167,7 +167,7 @@ function Today() {
                     {data?.news?.length > 0 && (
                         <section>
                             <Cartouche title={t('today.newsTitle')} />
-                            <div className={GRID}>{data.news.map((video) => <VideoCard {...cardProps(video)} />)}</div>
+                            <div className={GRID}>{data.news.map((video) => <VideoCard key={video.id} {...cardProps(video)} />)}</div>
                         </section>
                     )}
 
@@ -209,9 +209,9 @@ function Today() {
                         <section>
                             <Cartouche
                                 title={feedRowTitle}
-                                action={<Link to="/discover">{t('today.toDiscover')}</Link>}
+                                action={<Link to="/watch">{t('today.toDiscover')}</Link>}
                             />
-                            <div className={GRID}>{feedRow.map((video) => <VideoCard {...cardProps(video)} />)}</div>
+                            <div className={GRID}>{feedRow.map((video) => <VideoCard key={video.id} {...cardProps(video)} />)}</div>
                         </section>
                     )}
 
@@ -485,7 +485,7 @@ function Colophon({ newcomer }) {
             </h2>
             <p className="text-sm text-text-muted mt-1">{t('today.colophonText')}</p>
             <Link
-                to="/discover"
+                to="/watch"
                 className="inline-block mt-4 px-5 py-2 border border-border rounded-md bg-surface font-semibold hover:no-underline hover:border-primary"
             >
                 {t('today.toDiscover')}

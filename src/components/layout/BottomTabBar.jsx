@@ -1,18 +1,18 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Compass, BookOpen, MessageSquareText, Users } from 'lucide-react';
+import { Compass, BookOpen, Route, Users } from 'lucide-react';
 import { KhatamStar } from '../ui';
-import { PHONE_TABS, activeTab } from '@/lib/tabs';
+import { TABS, activeTab } from '@/lib/tabs';
 import { t } from '@/i18n';
 
 const ICONS = {
     discover: <Compass size={20} />,
     read: <BookOpen size={20} />,
-    posts: <MessageSquareText size={20} />,
+    journey: <Route size={20} />,
     channels: <Users size={20} />,
 };
 
 /**
- * The phone's five places, at the bottom where a thumb reaches — in place of the hamburger drawer,
+ * The five places (`lib/tabs`, the same five the wide strip has), at the bottom where a thumb reaches — in place of the hamburger drawer,
  * which hid every place behind one button. Today's icon is the star, the one ornament.
  *
  * <p>Fixed to the bottom with the safe-area inset added to its own padding, so it clears the
@@ -21,7 +21,7 @@ const ICONS = {
  */
 function BottomTabBar() {
     const { pathname } = useLocation();
-    const current = activeTab(pathname, { phone: true });
+    const current = activeTab(pathname);
     return (
         <nav
             aria-label={t('nav.tabsLabel')}
@@ -29,7 +29,7 @@ function BottomTabBar() {
                 pb-[env(safe-area-inset-bottom,0px)]"
         >
             <div className="grid grid-cols-5">
-                {PHONE_TABS.map((tab) => {
+                {TABS.map((tab) => {
                     const active = current === tab.key;
                     return (
                         <Link

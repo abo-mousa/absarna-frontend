@@ -285,7 +285,7 @@ function Navbar() {
                 </div>
             </div>
 
-            {/* The six places, on a wide screen. Inside the <nav>, so the height measured into
+            {/* The five places, on a wide screen. Inside the <nav>, so the height measured into
                 --navbar-h includes the strip. */}
             <NavTabs />
 

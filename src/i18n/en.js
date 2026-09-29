@@ -172,7 +172,7 @@ export const en = {
         tabsLabel: 'Sections',
         tabs: {
             today: 'Today',
-            discover: 'Discover',
+            discover: 'Watch',
             books: 'Books',
             articles: 'Articles',
             posts: 'Posts',
@@ -180,7 +180,6 @@ export const en = {
             journey: 'My path',
             read: 'Read',
         },
-        journey: 'My path',
         history: 'Watch history',
         bookmarks: 'Saved',
         guide: 'How Absarna works',
@@ -748,20 +747,16 @@ export const en = {
                 text: 'Your first page, and it ends: what you started — programmes and books — what you finished this week, and the latest news. You are done when you reach the bottom; it never pulls you into endless scrolling.',
             },
             discover: {
-                title: 'Discover',
+                title: 'Watch',
                 text: 'For browsing: what is new from the channels you follow, and suggestions from channels you have not met yet. You can narrow it by format — reports, documentaries, lectures — if you like.',
             },
             read: {
-                title: 'Books and articles',
-                text: 'A library you read right here. Your place is kept, and Today takes you back to it.',
-            },
-            posts: {
-                title: 'Posts',
-                text: 'Short words from channels: an announcement, a comment on the news, a heads-up about a new episode.',
+                title: 'Read',
+                text: 'Books and articles are a library you read right here; your place is kept, and Today takes you back to it. Posts are short words from channels: an announcement, a comment on the news, a heads-up about a new episode. Each has its own page, switched between at the top.',
             },
             channels: {
                 title: 'Channels',
-                text: 'When you follow channels you trust, what they publish comes to Today and Discover. You can also create a channel of your own and publish in it.',
+                text: 'When you follow channels you trust, what they publish comes to Today and Watch. You can also create a channel of your own and publish in it.',
             },
             voice: {
                 title: 'A voice for the silenced',
@@ -1354,6 +1349,16 @@ export const en = {
     journey: {
         title: 'My path',
         navLabel: 'My path sections',
+        intro: {
+            title: 'Your path in seeking knowledge',
+            text: '“Whoever takes a path seeking knowledge, God makes easy for him a path to Paradise.” Here you set yourself a daily portion from a programme or a book, and see how far you have come.',
+            points: {
+                wird: 'A daily or weekly portion, its amount and time chosen by you, with a minimum that keeps a hard day.',
+                road: 'Milestones along the way, and a record of your weeks and of the programmes and books you have finished.',
+                private: 'All of it is yours alone: no one else sees it, and we send you nothing.',
+            },
+            guide: 'Read the guide to My path',
+        },
         nav: {
             overview: 'Overview',
             goals: 'My goals',
@@ -1897,8 +1902,8 @@ export const en = {
         readingAria: '{title}: page {page}',
         newsTitle: 'Latest news',
         colophonTitle: 'You are up to date, and what you started is waiting',
-        colophonText: 'That is today’s page. Everything else is in Discover.',
-        toDiscover: 'Discover',
+        colophonText: 'That is today’s page. Everything else is in Watch and Read.',
+        toDiscover: 'Go to Watch',
         signInPrompt: 'Sign in to see what you started and what you finished this week here.',
         loadFailed: 'Today’s page could not be loaded',
         channelWaiting: {
@@ -3398,7 +3403,7 @@ export const en = {
                     heading: 'Your activity on the platform',
                     paragraphs: [
                         'If you are signed in, the following is stored against your account. Your watch and reading histories are yours, not tracking logs: you choose how long they are kept — forever, a year, three months or a month — and anything older is deleted each night; you can pause recording at any time, and nothing of your history is kept, not even where you stopped, until you resume (view counting is described below); and you can clear both in full with one press, together with the list of what you hid from “Continue what you started”.',
-                        'They are also what the Today page is built from: the next episode of a programme you started, your place in a book, and what you finished this week. Nothing on the Today page is suggested to you because of what you watched. From them too, and from the channels you follow, come the topics you care about: books and articles on them come first on the Books and Articles pages, and channels publishing on them come first in the side columns, with the reason given where it is shown. The videos on Discover are not ordered by them at all; Discover only leaves out what you have already watched.',
+                        'They are also what the Today page is built from: the next episode of a programme you started, your place in a book, and what you finished this week. Nothing on the Today page is suggested to you because of what you watched. From them too, and from the channels you follow, come the topics you care about: books and articles on them come first on the Books and Articles pages, and channels publishing on them come first in the side columns, with the reason given where it is shown. The videos on Watch are not ordered by them at all; Watch only leaves out what you have already watched.',
                     ],
                     bullets: [
                         'Watch history — the videos you watched and where you stopped in each, so that "continue watching" works.',

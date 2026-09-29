@@ -1,4 +1,4 @@
-import { CalendarCheck, Compass, BookOpen, MessageSquareText, Users, Megaphone, Route } from 'lucide-react';
+import { CalendarCheck, Compass, BookOpen, Users, Megaphone, Route } from 'lucide-react';
 
 /**
  * The guide's steps, in the order a newcomer meets them: what Absarna is for, then each place in
@@ -9,9 +9,8 @@ import { CalendarCheck, Compass, BookOpen, MessageSquareText, Users, Megaphone, 
 export const GUIDE_STEPS = [
     { key: 'welcome', icon: null },
     { key: 'today', icon: CalendarCheck, to: '/' },
-    { key: 'discover', icon: Compass, to: '/discover' },
+    { key: 'discover', icon: Compass, to: '/watch' },
     { key: 'read', icon: BookOpen, to: '/books' },
-    { key: 'posts', icon: MessageSquareText, to: '/posts' },
     { key: 'channels', icon: Users, to: '/channels' },
     { key: 'journey', icon: Route, to: '/journey', guide: 'journey' },
     { key: 'voice', icon: Megaphone },

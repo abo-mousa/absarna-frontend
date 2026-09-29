@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { MessageSquareText } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
+import ReadSwitch from '../components/layout/ReadSwitch';
 import { QueryState, KhatamStar, PageHeader, ViewTabs } from '../components/ui';
 import { PostCard } from '../components/content';
 import { usePostsFeed } from '../hooks/usePosts';
@@ -28,6 +29,11 @@ function Posts() {
     return (
         <PageShell tab sidebar={<PostsRail selected={channel} onSelect={setChannel} />}>
             <div>
+                {/* Posts are the third of «اقرأ» (lib/tabs), so the way to its two siblings sits
+                    above the page's own followed/all switch. */}
+                <div className="flex items-end mb-4 border-b border-border">
+                    <ReadSwitch />
+                </div>
                 <PageHeader
                     title={t('nav.tabs.posts')}
                     tabs

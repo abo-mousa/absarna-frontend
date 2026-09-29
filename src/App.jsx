@@ -32,6 +32,7 @@ const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const UserProfile = lazy(() => import('./pages/UserProfile'));
 const Subscriptions = lazy(() => import('./pages/Subscriptions'));
 const Journey = lazy(() => import('./pages/Journey'));
+const JourneyIntro = lazy(() => import('./components/journey/JourneyIntro'));
 const JourneyGoals = lazy(() => import('./pages/JourneyGoals'));
 const JourneyGoal = lazy(() => import('./pages/JourneyGoal'));
 const JourneyMilestones = lazy(() => import('./pages/JourneyMilestones'));
@@ -130,6 +131,31 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
     return children;
 };
 
+/**
+ * «طريقي» is a tab for everyone, so a visitor who presses it is shown what it is (JourneyIntro)
+ * rather than bounced to the login form. Its inner pages stay behind `ProtectedRoute`.
+ */
+const JourneyEntry = () => {
+    const { token, loading } = useAuth();
+    if (loading) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-bg">
+                <Spinner />
+            </div>
+        );
+    }
+    return token ? <Journey /> : <JourneyIntro />;
+};
+
+/**
+ * «اكتشف» became «شاهد» (2026-09-29) and its address `/watch`. Links to `/discover` are out in the
+ * world — shared, bookmarked — so it stays, forwarding with its query (`?view=`, `?category=`).
+ */
+const DiscoverMoved = () => {
+    const { search } = useLocation();
+    return <Navigate to={`/watch${search}`} replace />;
+};
+
 const RouteFallback = () => (
     <div className="flex min-h-screen items-center justify-center bg-bg">
         <Spinner />
@@ -225,7 +251,8 @@ function AppRoutes() {
                 {/* Today, the dashboard that ends, is the home page; the feed that keeps loading
                     is Discover, one tab over. */}
                 <Route path="/" element={<Today />} />
-                <Route path="/discover" element={<Discover />} />
+                <Route path="/watch" element={<Discover />} />
+                <Route path="/discover" element={<DiscoverMoved />} />
                 <Route path="/posts" element={<Posts />} />
                 <Route path="/channels" element={<Channels />} />
                 <Route path="/guide" element={<Guide />} />
@@ -264,7 +291,7 @@ function AppRoutes() {
                     <ProtectedRoute><Subscriptions /></ProtectedRoute>
                 } />
                 {/* «طريقي», the progress tab (PROGRESS-AND-GOALS.md §7.1). */}
-                <Route path="/journey" element={<ProtectedRoute><Journey /></ProtectedRoute>} />
+                <Route path="/journey" element={<JourneyEntry />} />
                 <Route path="/journey/goals" element={<ProtectedRoute><JourneyGoals /></ProtectedRoute>} />
                 <Route path="/journey/goals/:id" element={<ProtectedRoute><JourneyGoal /></ProtectedRoute>} />
                 <Route path="/journey/milestones" element={<ProtectedRoute><JourneyMilestones /></ProtectedRoute>} />

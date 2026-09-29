@@ -70,7 +70,7 @@ function Books() {
 
     return (
         <PageShell tab sidebar={<BooksRail shelves={shelves ? shelfList : []} />}>
-            <PageHeader title={t('nav.tabs.books')} action={<ReadSwitch />} tabs belowLg />
+            <PageHeader title={t('nav.tabs.books')} action={<ReadSwitch />} tabs />
             <ChannelScopeTabs followed={followed} onChange={setFollowed} />
 
             {/* Shown whenever there is anything to narrow OR a narrowing is active: a search
