@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Ban, Mail, UserCheck } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
 import AdminNav from '../components/admin/AdminNav';
@@ -16,6 +16,7 @@ import {
     useOutreachStarters,
     useRemoveDoNotContact,
     useSendOutreach,
+    useSendOutreachTest,
 } from '../hooks/useOutreach';
 import { describeError } from '@/lib/describeError';
 import { dateLocale, parseTimestamp } from '@/lib/datetime';
@@ -74,8 +75,8 @@ export default function AdminOutreach() {
     const seededFrom = useRef(null);
 
     const starters = useOutreachStarters(locale);
-    const preview = useOutreachPreview();
     const send = useSendOutreach();
+    const sendTest = useSendOutreachTest();
 
     const list = starters.data?.starters ?? [];
     const edited = fields && !sameLetter(fields, seededFrom.current);
@@ -122,13 +123,16 @@ export default function AdminOutreach() {
     useEffect(() => setSendAgain(false), [lookupEmail]);
 
     const request = fields && { ...fields, name, locale };
+    // The preview follows the boxes a moment behind the typing — a query keyed by the letter, so
+    // it always shows the letter as it is now (useOutreachPreview). Debounced as a string: an
+    // object built here is new on every render and would never settle.
     const debounced = useDebouncedValue(JSON.stringify(request), 500);
-    const { mutate: renderPreview } = preview;
-    useEffect(() => {
-        const body = JSON.parse(debounced);
-        if (!body?.letter) return;
-        renderPreview(body);
-    }, [debounced, renderPreview]);
+    const previewBody = useMemo(() => JSON.parse(debounced), [debounced]);
+    const preview = useOutreachPreview(previewBody, !!previewBody?.letter);
+    const testCopy = () => sendTest.mutate(request, {
+        onSuccess: () => showToast(t('admin.invite.testCopySent'), 'success'),
+        onError: (error) => showToast(describeError(error, t('admin.invite.testCopyFailed')), 'error'),
+    });
 
     const blocked = !!known?.doNotContact;
     const needsConfirm = previous.length > 0 && !sendAgain;
@@ -282,6 +286,8 @@ export default function AdminOutreach() {
                             preview={preview}
                             onReset={() => { setFields(seededFrom.current); }}
                             canReset={!!edited}
+                            onSendTest={testCopy}
+                            sendingTest={sendTest.isPending}
                             error={send.error}
                         >
                             <div className="grid gap-3 sm:grid-cols-2">

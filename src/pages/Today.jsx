@@ -99,10 +99,13 @@ function Today() {
 
     return (
         <PageShell tab>
+            {/* Its guide is the portion's: Today is where the portion is done, and its states
+                (now, later, passed, done, kept) are what a new reader asks about. */}
             <PageHeader
                 title={t('nav.tabs.today')}
                 action={<DatePair />}
                 rule={false}
+                guide="today"
             />
             <QueryState
                 isLoading={today.isLoading}

@@ -317,6 +317,13 @@ export const en = {
             OUTREACH_DO_NOT_CONTACT: 'This address asked us not to write to them, and is on the do-not-contact list.',
             OUTREACH_ALREADY_SENT: 'This address has been written to before. Confirm to write again.',
             OUTREACH_PATH_INVALID: 'The button must lead to a page of this site, such as /register.',
+            OUTREACH_DAILY_CAP: 'This account has sent today’s allowance of letters; tomorrow it can send again.',
+            OUTREACH_LINK_MISSING: 'The letter must keep {{link}} — it is the button that takes them to the page you chose.',
+            OUTREACH_TEST_NO_ADDRESS: 'Your account has no email address to send the test copy to.',
+            INVITATION_SUBJECT_LINK: 'The subject cannot carry {{link}}; put it in the letter.',
+            GOAL_DEADLINE_PAST: 'The date has to be after today.',
+            GOAL_MINIMUM_ABOVE_AMOUNT: 'The minimum cannot be more than the portion.',
+            GOAL_FALLBACK_SAME_SLOT: 'The second time has to be a different part of the day from the first.',
             INVITATION_LINK_MISSING: 'The letter must keep {{link}} — it is the button that takes them to the channel page.',
             INVITATION_UNKNOWN_PLACEHOLDER: 'The letter names a placeholder that does not exist. Use only the ones listed under it.',
             INVITATION_LETTER_EMPTY: 'The letter is empty.',
@@ -787,13 +794,94 @@ export const en = {
             next: 'Next',
             mark: 'Point {n}',
             gotIt: 'Got it',
-            pagesTitle: 'Illustrated guides to “My journey”',
+            pagesTitle: 'Illustrated page guides',
             pagesText: 'Pictures of the pages themselves, numbered where they point. Each of these pages has a “Page guide” button that opens its guide right there.',
             openPage: 'Open the page',
             pageTitle: 'Guide to “{page}”',
-            otherGuides: 'More guides in “My journey”',
+            otherGuides: 'More page guides',
         },
         pages: {
+            today: {
+                title: 'Today',
+                lede: 'Where your portion is done: every visit shows the whole day — what is due now, what comes later, what was missed — and nothing is hidden or shown in red.',
+                blocks: {
+                    portions: {
+                        title: 'Your portions today',
+                        text: 'One card per daily portion, in the order the day meets them: the one whose time is now comes first.',
+                        marks: {
+                            '1': 'Its time is now: the emphasised card, with “Start” or “Continue”.',
+                            '2': 'Kept at its minimum: the day counts, and the rest is still offered.',
+                            '3': 'An excused day: nothing is owed.',
+                            '4': 'Done: it stays on the page, with where tomorrow starts under it.',
+                        },
+                    },
+                    evening: {
+                        title: 'When its time has passed',
+                        text: 'A portion whose time went by is not hidden. With a second time it moves there; without one it stays, open until the day ends.',
+                        marks: {
+                            '1': '“Not missed yet”: moved to its second time.',
+                            '2': 'The evening portion: kept at its minimum earlier, the rest still open now that its time has come.',
+                        },
+                    },
+                    qada: {
+                        title: 'Making up yesterday',
+                        text: 'Missed yesterday? Before noon you can make it up, and it counts for its own day.',
+                        appears: 'Appears in the morning after a day you missed.',
+                        marks: {
+                            '1': 'What was missed, and until when it can be made up.',
+                            '2': '“Finish it now” takes you where it stopped; what you do until noon counts for yesterday, until that portion is full.',
+                        },
+                    },
+                    carry: {
+                        title: 'After noon',
+                        text: 'Past noon the missed portion is offered as an extra for today — no credit to yesterday, and nothing owed.',
+                        appears: 'Appears after noon, after a day you missed.',
+                        marks: {
+                            '1': 'What today’s portion would become with it.',
+                            '2': '“Yes, add it” — or start today afresh.',
+                        },
+                    },
+                    weekly: {
+                        title: 'A weekly amount',
+                        text: 'A goal counted by the week is one line under the cards, with where the week stands.',
+                        appears: 'Appears once you have a weekly goal.',
+                        marks: {
+                            '1': 'The week’s total against the amount.',
+                        },
+                    },
+                    first: {
+                        title: 'Before your first portion',
+                        text: 'A reader with no portion yet is offered a few small ones, built from what they already started.',
+                        appears: 'Appears once you have watched or read something, until you start a portion.',
+                        marks: {
+                            '1': 'One tap opens the goal steps with that programme or book already chosen.',
+                            '2': '“Or choose yourself” — and “Not now” puts the card away for two weeks.',
+                        },
+                    },
+                    milestone: {
+                        title: 'A milestone reached',
+                        text: 'When you reach a station on your road, Today says so once.',
+                        appears: 'Appears the week you reach one.',
+                        marks: {
+                            '1': 'Press it to see the road.',
+                        },
+                    },
+                },
+                faq: {
+                    hidden: {
+                        q: 'Does a portion disappear when its time passes?',
+                        a: 'Never. It moves to its second time if it has one, and otherwise stays on the page, open until your day ends at 3 am.',
+                    },
+                    order: {
+                        q: 'Why are the cards in this order?',
+                        a: 'The one whose time is now comes first, then the later ones by time, then the passed, then the done — so what is to be done now is at the top.',
+                    },
+                    remind: {
+                        q: 'Will you remind me?',
+                        a: 'No. Today reminds you when you come to it, and nothing is sent to you.',
+                    },
+                },
+            },
             journey: {
                 title: 'My journey',
                 lede: 'Here you plan your portion and look back on what you have done; the portion itself you do on Today. Everything on this page is for you alone.',
@@ -883,6 +971,15 @@ export const en = {
                             '2': 'Open it to answer three questions: what helped, what got in the way, and whether to keep your portion, lighten it or move it to another time.',
                         },
                         appears: 'Appears on Friday, and stays until the week ends.',
+                    },
+                    reviewSheet: {
+                        title: 'Inside the review',
+                        text: 'Three questions and one decision, in a minute.',
+                        appears: 'Opens from the banner on Friday afternoon.',
+                        marks: {
+                            '1': 'Your week, star by star, and what you wrote this week.',
+                            '2': 'What helped and what got in the way — pick any — and under them the decision: keep the portion, move it, lighten it, or, after two full weeks, one unit more.',
+                        },
                     },
                 },
                 faq: {
@@ -1029,7 +1126,7 @@ export const en = {
                     },
                     edit: {
                         q: 'Do I lose the past if I edit a goal?',
-                        a: 'No. A change applies from that day on; what you did before stays as it was.',
+                        a: 'Your days are counted again with the new amount, the ones before the change included: a day that was full at one episode reads as its minimum at two. What you learned is never lost — only what it is measured against changes. To keep the past exactly as it was, end the goal and start a new one.',
                     },
                 },
             },
@@ -1166,6 +1263,22 @@ export const en = {
                             '1': 'How long we keep your record: always, a year, three months or a month.',
                             '2': 'Pause recording whenever you like: nothing you watch is kept, nor your place in it.',
                             '3': 'Erase your whole record — and your counts too, if you choose.',
+                        },
+                    },
+                    erase: {
+                        title: 'Erasing your record',
+                        text: 'Erase asks first, and asks whether the counts go too.',
+                        marks: {
+                            '1': 'Tick it to erase the counts too — weeks, completions and milestones.',
+                            '2': 'The button says exactly what it will erase.',
+                        },
+                    },
+                    paused: {
+                        title: 'While recording is paused',
+                        text: 'One quiet line on every page of your journey, and under the player, says nothing is being kept.',
+                        appears: 'Appears while you have paused recording.',
+                        marks: {
+                            '1': 'Resume with one tap, right there.',
                         },
                     },
                 },
@@ -1422,6 +1535,8 @@ export const en = {
             pickDate: 'Or pick a day:',
             whenLabel: 'When will you keep it?',
             atHour: 'At an hour I choose',
+            refineLabel: 'Tie it to something?',
+            refineNone: 'No, that is enough',
             partOfDay: 'At a time of my day',
             hourLabel: 'The hour',
             hourSlot: 'That is in your {slot}.',
@@ -2773,6 +2888,9 @@ export const en = {
             reset: 'Back to the default letter',
             preview: 'Preview',
             previewFailed: 'Could not render the preview',
+            testCopy: 'Send me a test copy',
+            testCopySent: 'A copy is on its way to your own address.',
+            testCopyFailed: 'Could not send the test copy',
             draftFailed: 'Could not load the letter',
             send: 'Send the invitation',
             sent: 'The invitation has been sent and recorded on the channel.',
@@ -3272,6 +3390,7 @@ export const en = {
                         'A verification link is valid for ten minutes, and a password-reset link for one hour and a single use. The brevity is deliberate: whoever holds the link holds the account.',
                         'Mail is sent through a specialist outside provider that handles delivery on our behalf, which receives your address, your display name and the text of the message. Nothing else about your account or your activity reaches it.',
                         'The number of requests is limited: three verification messages an hour, and three password-reset requests an hour.',
+                        'Administrators can also write one personal letter to somebody who has no account — a scholar, a public speaker, a reader — to tell them about the platform. So that nobody is written to twice by mistake, we keep a record of the address written to, when, by whom and in which language (not the letter), and a list of the addresses that asked us not to write, which every such letter and every channel invitation refuses. Both are seen by the platform’s administrators alone. Every such letter says how to stop it: reply, and we do not write again.',
                     ],
                 },
                 {

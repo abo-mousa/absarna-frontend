@@ -1,4 +1,4 @@
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw, SendHorizontal } from 'lucide-react';
 import { Input, Button, RejectedFields } from '@/components/ui';
 import { describeError } from '@/lib/describeError';
 import { LOCALES } from '@/i18n/locales';
@@ -17,7 +17,9 @@ import { t } from '@/i18n';
  * no script and needs none, and a preview must not be able to navigate the admin's tab.
  *
  * <p>`children` renders between the subject and the letter — the outreach page puts the button's
- * words and destination there, which the invitation does not have.
+ * words and destination there, which the invitation does not have. `onSendTest` mails the letter
+ * to the admin's own inbox: a preview pane cannot show what Gmail or Outlook will do to it, and
+ * these are the letters that go to strangers.
  */
 export default function LetterEditor({
     subject,
@@ -31,6 +33,8 @@ export default function LetterEditor({
     preview,
     onReset,
     canReset = false,
+    onSendTest = null,
+    sendingTest = false,
     error = null,
     children,
 }) {
@@ -60,7 +64,9 @@ export default function LetterEditor({
                         textarea
                         rows={18}
                         maxLength={20000}
-                        className="font-mono text-sm"
+                        // The reading face, not a monospace one: the letter is Arabic prose most
+                        // of the time, and a monospace font has no Arabic of its own to draw it in.
+                        className="font-reading text-[0.95rem] leading-relaxed"
                         field="letter"
                     />
                 </RejectedFields>
@@ -68,11 +74,19 @@ export default function LetterEditor({
                 <p className="text-text-muted text-xs" dir="ltr">
                     {placeholders.map((name) => `{{${name}}}`).join('  ')}
                 </p>
-                {onReset && (
-                    <div>
-                        <Button variant="ghost" onClick={onReset} disabled={!canReset} icon={<RotateCcw size={14} />}>
-                            {t('admin.invite.reset')}
-                        </Button>
+                {(onReset || onSendTest) && (
+                    <div className="flex flex-wrap gap-2">
+                        {onReset && (
+                            <Button variant="ghost" onClick={onReset} disabled={!canReset} icon={<RotateCcw size={14} />}>
+                                {t('admin.invite.reset')}
+                            </Button>
+                        )}
+                        {onSendTest && (
+                            <Button variant="ghost" onClick={onSendTest} disabled={sendingTest || !letter?.trim()}
+                                    icon={<SendHorizontal size={14} />}>
+                                {t('admin.invite.testCopy')}
+                            </Button>
+                        )}
                     </div>
                 )}
             </div>

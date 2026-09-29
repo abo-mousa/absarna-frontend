@@ -64,7 +64,7 @@ function ReviewForm({ review, goals, onDone }) {
     });
 
     return (
-        <div className="flex flex-col gap-6">
+        <div data-guide="review-sheet" className="flex flex-col gap-6">
             <SacredText moment="review" kind="AYAH" />
             {review.week?.length > 0 && (
                 <div>

@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { Mail, Link2, PenLine } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Mail, Link2, PenLine, Ban } from 'lucide-react';
 import { Modal, Input, Button, RejectedFields } from '@/components/ui';
 import { useToast } from '@/contexts/ToastContext';
 import { describeError } from '@/lib/describeError';
@@ -9,7 +9,9 @@ import {
     useChannelClaimLink,
     useInvitationDraft,
     useInvitationPreview,
+    useInvitationTestCopy,
 } from '@/hooks/useChannels';
+import { useOutreachLookup } from '@/hooks/useOutreach';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { LOCALES, DEFAULT_LOCALE } from '@/i18n/locales';
 import { t } from '@/i18n';
@@ -59,7 +61,7 @@ export default function ChannelInviteDialog({ channel, open, onClose }) {
     // edited: a language switch may refill them, and the send carries no edit.
     const seededFrom = useRef(null);
     const draft = useInvitationDraft(channel?.id, locale, open && editing);
-    const preview = useInvitationPreview();
+    const testCopy = useInvitationTestCopy();
 
     // Re-seeded on OPENING and on nothing else, the same rule ReviewExemptionDialog follows: a
     // refetch while the dialog is open must not clear an address somebody is part way through
@@ -94,26 +96,41 @@ export default function ChannelInviteDialog({ channel, open, onClose }) {
         setLetter(draft.data.letter);
     };
 
-    // The preview follows the boxes, a moment behind the typing. Debounced as a string: an object
-    // built here is new on every render, so it would never settle and would re-render the preview
-    // on a loop.
-    const debounced = useDebouncedValue(JSON.stringify({ subject, letter, locale }), 500);
-    const { mutate: renderPreview } = preview;
-    useEffect(() => {
-        const request = JSON.parse(debounced);
-        if (!open || !editing || !channel?.id || !request.letter) return;
-        renderPreview({ channelId: channel.id, ...request });
-    }, [open, editing, channel?.id, debounced, renderPreview]);
+    // What the send carries: each field only if changed — an edited subject alone keeps the
+    // hand-built mail. The preview and the test copy carry exactly the same, so all three are
+    // one letter: a preview that always sent the letter rendered every untouched invitation
+    // through the editor's frame while the send went out as the hand-built mail.
+    const edits = {
+        ...(edited && subject !== seededFrom.current.subject ? { subject } : {}),
+        ...(edited && letter !== seededFrom.current.letter ? { letter } : {}),
+    };
+    // The preview follows the boxes a moment behind the typing — a query keyed by the letter, so
+    // it shows the letter as it is now. Debounced as a string: an object built here is new on
+    // every render and would never settle.
+    const debounced = useDebouncedValue(JSON.stringify({ locale, ...edits }), 500);
+    const previewBody = useMemo(() => JSON.parse(debounced), [debounced]);
+    const preview = useInvitationPreview(channel?.id, previewBody, open && editing && !!draft.data);
+    const sendTestCopy = () => testCopy.mutate({ channelId: channel.id, locale, ...edits }, {
+        onSuccess: () => showToast(t('admin.invite.testCopySent'), 'success'),
+        onError: (error) => showToast(describeError(error, t('admin.invite.testCopyFailed')), 'error'),
+    });
+
+    // What the platform already knows about the address, before the press: on the do-not-contact
+    // list, the send is refused, and the dialog says so here rather than after the button.
+    const trimmedEmail = email.trim();
+    const validAddress = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail);
+    const lookupEmail = useDebouncedValue(open && validAddress ? trimmedEmail.toLowerCase() : '', 400);
+    const lookup = useOutreachLookup(lookupEmail);
+    const known = lookup.data && lookupEmail === trimmedEmail.toLowerCase() ? lookup.data : null;
+    const blocked = !!known?.doNotContact;
 
     const send = () => {
         invite.mutate(
             {
                 channelId: channel.id,
-                email: email.trim(),
+                email: trimmedEmail,
                 locale,
-                // Each only if changed: an edited subject alone keeps the hand-built mail.
-                ...(edited && subject !== seededFrom.current.subject ? { subject } : {}),
-                ...(edited && letter !== seededFrom.current.letter ? { letter } : {}),
+                ...edits,
             },
             {
                 onSuccess: () => {
@@ -147,7 +164,7 @@ export default function ChannelInviteDialog({ channel, open, onClose }) {
         }
     };
 
-    const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+    const valid = validAddress && !blocked;
 
     return (
         <Modal
@@ -175,6 +192,15 @@ export default function ChannelInviteDialog({ channel, open, onClose }) {
             {channel?.claimInvitation?.email && (
                 <p className="text-text-muted text-xs mt-1">
                     {t('admin.invite.previousAddress')}
+                </p>
+            )}
+            {blocked && (
+                <p className="flex gap-2 items-start text-sm text-red-600 dark:text-red-400 mt-2">
+                    <Ban size={16} className="flex-shrink-0 mt-0.5" />
+                    <span>
+                        {t('adminOutreach.onDoNotContact')}
+                        {known.doNotContactNote ? ` — ${known.doNotContactNote}` : ''}
+                    </span>
                 </p>
             )}
 
@@ -231,6 +257,8 @@ export default function ChannelInviteDialog({ channel, open, onClose }) {
                         preview={preview}
                         onReset={resetToDefault}
                         canReset={edited && !!draft.data}
+                        onSendTest={sendTestCopy}
+                        sendingTest={testCopy.isPending}
                         error={invite.error}
                     />
                 </div>

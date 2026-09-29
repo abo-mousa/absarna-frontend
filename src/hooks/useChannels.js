@@ -750,10 +750,23 @@ export const useInvitationDraft = (channelId, locale, enabled) =>
  * The invitation rendered exactly as it would be sent, and not sent. The preview comes from the
  * backend rather than a second renderer here, so what the admin sees is what the scholar gets.
  */
-export const useInvitationPreview = () =>
+export const useInvitationPreview = (channelId, body, enabled) =>
+    useQuery({
+        // A query keyed by the letter, not a mutation per change: renders in flight would land in
+        // network order and an older one could overwrite the newer (see useOutreachPreview).
+        queryKey: ['invitation-preview', channelId, body],
+        queryFn: async () => (await api.post(`/channels/admin/${channelId}/invite/preview`, body)).data,
+        enabled: Boolean(channelId) && enabled,
+        staleTime: 60_000,
+        retry: false,
+        placeholderData: keepPreviousData,
+    });
+
+/** The invitation to the admin's own inbox with a stand-in link — unrecorded, to read in a real client. */
+export const useInvitationTestCopy = () =>
     useMutation({
-        mutationFn: async ({ channelId, locale, subject, letter }) =>
-            (await api.post(`/channels/admin/${channelId}/invite/preview`, { locale, subject, letter })).data,
+        mutationFn: ({ channelId, locale, subject, letter }) =>
+            api.post(`/channels/admin/${channelId}/invite/test`, { locale, subject, letter }),
     });
 
 export const useDeleteChannel = () => {

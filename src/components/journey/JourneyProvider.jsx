@@ -6,6 +6,7 @@ import { useToast } from '@/contexts/ToastContext';
 import { useSignInPrompt } from '@/contexts/SignInPromptContext';
 import { useUserScope } from '@/hooks/useUserScope';
 import { onProgressReport } from '@/lib/progressEvents';
+import { activeQadaGoalId, endQada } from '@/lib/qada';
 import { queryKeys } from '@/lib/queryKeys';
 import { safeStorage } from '@/lib/safeStorage';
 import { goalTitle, isolate } from '@/lib/goalText';
@@ -86,6 +87,9 @@ function ProgressMoments({ onNextGoal }) {
             setCompletion(answer.completion);
             return;
         }
+        // The make-up ends the moment yesterday's portion is done: every report after it is
+        // today's (the backend stops crediting too, so this only keeps the tab honest).
+        if (answer.portionsCompleted.some((done) => done.goalId === activeQadaGoalId())) endQada();
         // One word per filled portion, named — never a count, never a streak.
         const goals = queryClient.getQueryData(queryKeys.goals(scope)) || [];
         answer.portionsCompleted.forEach((done) => {

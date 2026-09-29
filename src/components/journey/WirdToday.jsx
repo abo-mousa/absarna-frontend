@@ -29,7 +29,7 @@ export function QadaCards({ goals, now }) {
     const due = beforeNoon(now) ? goals.filter((goal) => goal.qadaCreditDay) : [];
     if (!due.length) return null;
     return (
-        <section className="flex flex-col gap-3 p-5 rounded-lg border border-gold/50 bg-gold-light/40" aria-labelledby="qada-title">
+        <section data-guide="qada" className="flex flex-col gap-3 p-5 rounded-lg border border-gold/50 bg-gold-light/40" aria-labelledby="qada-title">
             <h2 id="qada-title" className="font-serif text-[1.5rem] font-semibold leading-tight">{t('journey.today.qadaTitle')}</h2>
             {due.map((goal) => (
                 <div key={goal.id} className="flex flex-wrap items-center gap-3">
@@ -92,12 +92,12 @@ function WirdToday({ wird, reviewOpen, recentMilestones, now, hasQada }) {
                 {/* A paused reader's portions cannot fill; say why before they wonder. */}
                 <PausedLine where="journey" />
                 {portions.length > 0 && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    <div data-guide="wird-cards" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                         {portions.map(({ goal, view }) => <PortionCard key={goal.id} goal={goal} view={view} />)}
                     </div>
                 )}
                 {weekly.map((goal) => (
-                    <p key={goal.id} className="text-sm text-text-secondary">
+                    <p key={goal.id} data-guide="wird-weekly" className="text-sm text-text-secondary">
                         <Link to={`/journey/goals/${goal.id}`} dir="auto" className="font-semibold">{goalTitle(goal)}</Link>
                         {' — '}{t('journey.today.weekly', {
                             done: goal.today?.units || 0,
@@ -203,7 +203,7 @@ function CarryLine({ goal }) {
     if (declined) return null;
     const today = goal.today?.target || goal.amount;
     return (
-        <div className="flex flex-wrap items-center gap-3 px-4 py-3 rounded-md border border-dashed border-border text-sm text-text-secondary">
+        <div data-guide="carry" className="flex flex-wrap items-center gap-3 px-4 py-3 rounded-md border border-dashed border-border text-sm text-text-secondary">
             <p className="flex-1 min-w-[14rem]">
                 {t('journey.today.carryText', {
                     title: isolate(goalTitle(goal)),
@@ -240,7 +240,7 @@ function LightenLine({ goal }) {
     const measure = measureOf(goal);
     if (goal.minimumAmount >= goal.amount) return null;
     return (
-        <div className="flex flex-wrap items-center gap-3 px-4 py-3 rounded-md bg-surface border border-border-light text-sm text-text-secondary">
+        <div data-guide="lighten" className="flex flex-wrap items-center gap-3 px-4 py-3 rounded-md bg-surface border border-border-light text-sm text-text-secondary">
             <p className="flex-1 min-w-[14rem]">
                 {t('journey.today.lightenText', { title: isolate(goalTitle(goal)), amount: amountText(measure, goal.minimumAmount, true) })}
             </p>
@@ -273,7 +273,7 @@ function MilestoneLine({ codes }) {
     if (!code) return null;
     // The line is shown once per manzila, and its verse with it (§8.2: `milestoneReached` once).
     return (
-        <div className="flex flex-col gap-2">
+        <div data-guide="milestone" className="flex flex-col gap-2">
             <Link to="/journey/milestones" className="flex items-center gap-2 text-sm font-semibold text-gold-ink hover:no-underline">
                 <KhatamStar className="w-4 h-4 text-gold" />
                 {t('journey.today.milestone', { name: t(`journey.milestones.names.${code}`) })}
@@ -306,7 +306,7 @@ function FirstWird({ proposals }) {
         setHidden(true);
     };
     return (
-        <section className="flex flex-col gap-4 p-5 rounded-lg border border-border-light bg-surface">
+        <section data-guide="first-wird" className="flex flex-col gap-4 p-5 rounded-lg border border-border-light bg-surface">
             <div className="flex items-start gap-3">
                 <KhatamStar filled={false} strokeWidth={8} className="w-7 h-7 flex-shrink-0 text-gold mt-1" />
                 <div>

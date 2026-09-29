@@ -96,7 +96,7 @@ function EraseForm({ onClose }) {
     const { showToast } = useToast();
     return (
         <>
-            <div className="flex flex-col gap-5">
+            <div data-guide="erase" className="flex flex-col gap-5">
                 <p className="text-sm text-text-secondary">{t('journey.record.eraseText')}</p>
                 <label className="flex items-start gap-3 text-sm">
                     <input type="checkbox" checked={counts} onChange={(e) => setCounts(e.target.checked)} className="mt-1 accent-primary" />

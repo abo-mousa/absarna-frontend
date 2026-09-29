@@ -142,7 +142,14 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   layout change is a rerun, and a mark moves with what it points at. `data-guide` is also what
   «أرِني في الصفحة» spotlights; where a section is hidden until it has something in it, the block
   says when it appears instead. `pageGuides.test.js` pins registry ↔ marks ↔ both catalogs ↔
-  files ↔ anchors. Every «مسيرتي» page has one; a new page gets one the same way.
+  files ↔ anchors. Every «مسيرتي» page has one, and so does Today (the portion's states are what
+  a new reader asks about); a new page gets one the same way. **A shot that needs a time of day
+  names it** (`part: 'morning' | 'afternoon' | 'evening'`): the backend decides Today's states
+  from the zone the SPA sends, not from any clock a browser could fake, so the script takes it in
+  a fixed-offset zone (`Etc/GMT-3`) where it *is* that time now, on this machine's date — run it
+  between 06:00 and 21:00. A state the seed cannot hold (no goals, paused, the review open) is
+  answered by intercepting the one request that decides it; a line said once per browser gets a
+  browser of its own (`fresh`). The seed's states are relative to today, whatever the weekday.
 - **Every tab is laid out the same**: `<PageShell tab>` (one column, `TAB_COLUMN`: 1200px, 1400px from `2xl`, 1640px from `3xl`) and
   `ui/PageHeader`, which shows **no visible title** — the lit tab already names the page, and a
   large «الكتب» under a lit «الكتب» said it twice. The title stays as a visually hidden `<h1>` for

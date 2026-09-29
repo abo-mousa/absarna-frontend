@@ -15,7 +15,7 @@ import { hijriDeadlines } from '@/lib/hijriSeasons';
 import { amountText, commitmentSentence, goalTitle, measureOf } from '@/lib/goalText';
 import { SLOTS, slotOfTime } from '@/lib/slots';
 import { describeError } from '@/lib/describeError';
-import { formatDay } from '@/lib/dayFormat';
+import { formatDay, localDay } from '@/lib/dayFormat';
 import { countOf } from '@/lib/plural';
 import { t } from '@/i18n';
 
@@ -27,9 +27,8 @@ const ANCHORS = ['FAJR', 'DHUHR', 'ASR', 'MAGHRIB', 'ISHA', 'MORNING_ADHKAR', 'C
  * slot is all Today, the fallback and the review read; the anchor and the hour only describe it.
  */
 const PRAYER_SLOT = { FAJR: 'GHADWA', MORNING_ADHKAR: 'GHADWA', DHUHR: 'RAWHA', ASR: 'RAWHA', MAGHRIB: 'DULJA', ISHA: 'DULJA' };
-/** The time step's first question: nothing, a prayer or habit to follow, an hour, or a part of the day. */
-const whenOf = (form) => (form.atTime ? 'HOUR' : form.anchor || (form.slot ? 'PART' : null));
-const IDENTITIES = ['FINISHES_WHAT_HE_STARTS', 'READS_EVERY_DAY', 'TEACHES_HIS_FAMILY'];
+/** How the time step refines a part of the day: after a prayer or a habit, at an hour, or not at all. */
+const whenOf = (form) => (form.atTime ? 'HOUR' : form.anchor || null);
 const HABITS = [
     { kind: 'HABIT', measure: 'MINUTES', amount: 15 },
     { kind: 'HABIT', measure: 'EPISODES', amount: 1 },
@@ -155,6 +154,8 @@ function GoalForm({ goal, prefill, onDone }) {
                 ...shared,
                 deadline: form.deadline || undefined,
                 clearDeadline: goal.deadline && !form.deadline ? true : undefined,
+                // "Any time" again: the backend drops the fallback, the hour and the anchor with it.
+                clearSlot: goal.slot && !shared.slot ? true : undefined,
                 clearFallbackSlot: goal.fallbackSlot && !shared.fallbackSlot ? true : undefined,
                 clearAtTime: goal.atTime && !shared.atTime ? true : undefined,
                 clearAnchor: goal.anchor && !shared.anchor ? true : undefined,
@@ -192,7 +193,7 @@ function GoalForm({ goal, prefill, onDone }) {
 
             {step === 'target' && <TargetStep form={form} set={set} />}
             {step === 'amount' && <AmountStep form={form} set={set} editing={editing} preview={preview} />}
-            {step === 'time' && <TimeStep form={form} set={set} editing={editing} originalSlot={goal?.slot} />}
+            {step === 'time' && <TimeStep form={form} set={set} />}
             {step === 'intention' && <IntentionStep form={form} set={set} />}
 
             {error && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error}</p>}
@@ -407,7 +408,9 @@ function AmountStep({ form, set, editing, preview }) {
                             type="date"
                             dir="ltr"
                             value={form.deadline || ''}
-                            min={new Date().toISOString().slice(0, 10)}
+                            // Tomorrow, on the reader's clock: the backend refuses today, and the UTC
+                            // date is yesterday's for an evening in Riyadh.
+                            min={localDay(new Date(Date.now() + 86_400_000))}
                             onChange={(e) => set({ deadline: e.target.value || null })}
                             className="px-2 py-1.5 rounded-md border border-border bg-surface text-text-primary"
                         />
@@ -473,25 +476,48 @@ function yearlyLine(form, unit) {
     return t('journey.preview.yearly', { amount: unit(form.amount), cadence, total: inAYear });
 }
 
-function TimeStep({ form, set, editing, originalSlot }) {
+/**
+ * When: first the part of the day — or none — with its hours beside it, then, once one is chosen,
+ * how the reader would describe it: after a prayer or a habit, or at an hour. Two short rows
+ * rather than one wall of eleven chips (product owner's review, 2026-09-29). A prayer moves the
+ * part of the day to its usual one (PRAYER_SLOT), which the reader may move back; an hour decides
+ * it outright, as the backend does.
+ */
+function TimeStep({ form, set }) {
     const { when } = form;
-    const choose = (value) => {
-        if (value === null) set({ when: null, slot: null, fallbackSlot: null, anchor: null, atTime: '' });
-        else if (value === 'HOUR') set({ when: value, anchor: null });
-        else if (value === 'PART') set({ when: value, anchor: null, atTime: '', slot: form.slot || 'GHADWA' });
-        else set({ when: value, anchor: value, atTime: '', slot: PRAYER_SLOT[value] || form.slot || 'GHADWA' });
+    const chooseSlot = (slot) => {
+        if (slot === null) set({ when: null, slot: null, fallbackSlot: null, anchor: null, atTime: '', anchorText: '' });
+        else set({ slot, fallbackSlot: form.fallbackSlot === slot ? null : form.fallbackSlot, ...(form.atTime ? { when: null, atTime: '' } : {}) });
     };
-    const setSlot = (slot) => set({ slot, fallbackSlot: form.fallbackSlot === slot ? null : form.fallbackSlot });
-    const whenOptions = [
-        // A slot cannot be taken away in an edit (there is nothing to send that means "none").
-        ...(editing && originalSlot ? [] : [{ value: null, label: t('journey.dialog.anyTime') }]),
+    const refine = (value) => {
+        if (value === null) set({ when: null, anchor: null, atTime: '', anchorText: '' });
+        else if (value === 'HOUR') set({ when: value, anchor: null, anchorText: '' });
+        else {
+            const slot = PRAYER_SLOT[value] || form.slot;
+            set({ when: value, anchor: value, atTime: '', slot, fallbackSlot: form.fallbackSlot === slot ? null : form.fallbackSlot });
+        }
+    };
+    const slotOptions = [
+        { value: null, label: t('journey.dialog.anyTime') },
+        ...SLOTS.map((slot) => ({ value: slot, label: t(`journey.slots.${slot}`), hint: t(`journey.slotHours.${slot}`) })),
+    ];
+    const refineOptions = [
+        { value: null, label: t('journey.dialog.refineNone') },
         ...ANCHORS.map((anchor) => ({ value: anchor, label: t(`journey.anchors.${anchor}`) })),
         { value: 'HOUR', label: t('journey.dialog.atHour') },
-        { value: 'PART', label: t('journey.dialog.partOfDay') },
     ];
     return (
         <div className="flex flex-col gap-6">
-            <Chips label={t('journey.dialog.whenLabel')} value={when} onChange={choose} options={whenOptions} />
+            <div>
+                <Chips label={t('journey.dialog.whenLabel')} value={form.slot} onChange={chooseSlot} options={slotOptions} />
+                <p className="text-xs text-text-muted mt-2">{t('journey.dialog.slotsExplain')}</p>
+            </div>
+            {form.slot && (
+                <div>
+                    <Chips label={t('journey.dialog.refineLabel')} value={when} onChange={refine} options={refineOptions} />
+                    {PRAYER_SLOT[when] && <p className="text-xs text-text-muted mt-2">{t('journey.dialog.prayerSlotHint')}</p>}
+                </div>
+            )}
             {form.anchor === 'CUSTOM' && (
                 <input
                     type="text"
@@ -524,19 +550,6 @@ function TimeStep({ form, set, editing, originalSlot }) {
                     )}
                 </label>
             )}
-            {when && when !== 'HOUR' && (
-                <div>
-                    <Chips
-                        label={t('journey.dialog.slotLabel')}
-                        value={form.slot}
-                        onChange={setSlot}
-                        options={SLOTS.map((slot) => ({ value: slot, label: t(`journey.slots.${slot}`), hint: t(`journey.slotHours.${slot}`) }))}
-                    />
-                    <p className="text-xs text-text-muted mt-2">
-                        {PRAYER_SLOT[when] ? t('journey.dialog.prayerSlotHint') : t('journey.dialog.slotsExplain')}
-                    </p>
-                </div>
-            )}
             {form.slot && (
                 <div>
                     <Chips
@@ -554,16 +567,15 @@ function TimeStep({ form, set, editing, originalSlot }) {
     );
 }
 
+/**
+ * Why: the reader's own words, and nothing to pick from. The three ready-made sentences
+ * («أنا ممّن يُتمّ ما بدأه»…) stood here and were dropped (product owner's review, 2026-09-29):
+ * a canned identity is the one habit-book mechanic on the page, and a reader's intention says
+ * more than a label they chose. A goal that already carries one keeps it; nothing new is offered.
+ */
 function IntentionStep({ form, set }) {
     return (
         <div className="flex flex-col gap-6">
-            <Chips
-                label={t('journey.dialog.identityLabel')}
-                value={form.identityPreset}
-                onChange={(identityPreset) => set({ identityPreset })}
-                options={[{ value: null, label: t('journey.dialog.noIdentity') },
-                    ...IDENTITIES.map((code) => ({ value: code, label: t(`journey.identity.${code}`) }))]}
-            />
             <label className="block">
                 <span className="block text-sm font-semibold mb-2">{t('journey.dialog.intentionLabel')}</span>
                 <textarea

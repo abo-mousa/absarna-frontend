@@ -39,6 +39,11 @@ export function creditDayFor({ seriesId = null, bookId = null }, now = new Date(
     return undefined;
 }
 
+/** The goal being made up in this tab, or null — so the "done" answer for it can end the make-up. */
+export function activeQadaGoalId(now = new Date()) {
+    return read(now)?.goalId ?? null;
+}
+
 export function endQada() {
     safeSessionStorage.removeItem(KEY);
 }

@@ -1,4 +1,4 @@
-import { Milestone, NotebookPen, Route, ScrollText, Target } from 'lucide-react';
+import { CalendarCheck, Milestone, NotebookPen, Route, ScrollText, Target } from 'lucide-react';
 
 /**
  * The page guides: what the «؟» on a page opens (`PageGuideSheet`) and what `/guide/:slug` shows
@@ -22,6 +22,21 @@ import { Milestone, NotebookPen, Route, ScrollText, Target } from 'lucide-react'
  * both pages show. Wording lives in `guide.pages.<id>.*`.
  */
 export const PAGE_GUIDES = {
+    today: {
+        slug: 'today',
+        icon: CalendarCheck,
+        to: '/',
+        blocks: [
+            { key: 'portions', type: 'shot', shot: 'wird-cards', marks: 4, anchor: 'wird-cards' },
+            { key: 'evening', type: 'shot', shot: 'wird-evening', marks: 2, anchor: 'wird-cards' },
+            { key: 'qada', type: 'shot', shot: 'qada', marks: 2, anchor: 'qada' },
+            { key: 'carry', type: 'shot', shot: 'carry', marks: 2, anchor: 'carry' },
+            { key: 'weekly', type: 'shot', shot: 'wird-weekly', marks: 1, anchor: 'wird-weekly' },
+            { key: 'first', type: 'shot', shot: 'first-wird', marks: 2, anchor: 'first-wird' },
+            { key: 'milestone', type: 'shot', shot: 'milestone', marks: 1, anchor: 'milestone' },
+        ],
+        faq: ['hidden', 'order', 'remind'],
+    },
     journey: {
         slug: 'journey',
         icon: Route,
@@ -36,6 +51,7 @@ export const PAGE_GUIDES = {
             { key: 'month', type: 'shot', shot: 'month', marks: 1, anchor: 'month' },
             { key: 'shelf', type: 'shot', shot: 'shelf', marks: 1, anchor: 'shelf' },
             { key: 'review', type: 'shot', shot: 'review', marks: 2, anchor: 'review' },
+            { key: 'reviewSheet', type: 'shot', shot: 'review-sheet', marks: 2, anchor: 'review-sheet' },
         ],
         faq: ['miss', 'rest', 'day', 'private'],
     },
@@ -98,13 +114,15 @@ export const PAGE_GUIDES = {
             { key: 'fields', type: 'shot', shot: 'fields', marks: 4, anchor: 'fields' },
             { key: 'history', type: 'shot', shot: 'history', marks: 3, anchor: 'history', cut: 'bottom' },
             { key: 'control', type: 'shot', shot: 'control', marks: 3, anchor: 'control' },
+            { key: 'erase', type: 'shot', shot: 'erase', marks: 2, anchor: 'erase' },
+            { key: 'paused', type: 'shot', shot: 'paused', marks: 1, anchor: 'paused' },
         ],
         faq: ['erase', 'pause', 'keep'],
     },
 };
 
 /** The guides in the order the full guide lists them. */
-export const PAGE_GUIDE_ORDER = ['journey', 'journeyGoals', 'journeyGoal', 'journeyMilestones', 'journeyReflections', 'journeyRecord'];
+export const PAGE_GUIDE_ORDER = ['today', 'journey', 'journeyGoals', 'journeyGoal', 'journeyMilestones', 'journeyReflections', 'journeyRecord'];
 
 export const guideBySlug = (slug) => PAGE_GUIDE_ORDER.find((id) => PAGE_GUIDES[id].slug === slug) || null;
 

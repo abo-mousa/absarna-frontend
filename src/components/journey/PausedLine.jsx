@@ -17,7 +17,7 @@ function PausedLine({ where = 'player', className = '' }) {
     const { showToast } = useToast();
     if (!settings.data?.paused) return null;
     return (
-        <p className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-text-muted ${className}`}>
+        <p data-guide="paused" className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-text-muted ${className}`}>
             <PauseCircle size={15} aria-hidden="true" className="flex-shrink-0" />
             <span>{where === 'journey' ? t('journey.paused.journey') : t('journey.paused.player')}</span>
             <button

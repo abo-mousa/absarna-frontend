@@ -17,10 +17,27 @@ export const useOutreachStarters = (locale) =>
         staleTime: Infinity,
     });
 
-/** The letter rendered exactly as it would be sent, and not sent. */
-export const useOutreachPreview = () =>
+/**
+ * The letter rendered exactly as it would be sent, and not sent. A query keyed by the letter
+ * rather than a mutation fired on each change: two renders in flight would land in whichever
+ * order the network chose, and the older one could overwrite the newer on screen. A query keyed
+ * by its body always shows the answer to the letter as it is now, and keeps the last one up
+ * while the next loads.
+ */
+export const useOutreachPreview = (letter, enabled) =>
+    useQuery({
+        queryKey: ['outreach-preview', letter],
+        queryFn: async () => (await api.post('/admin/outreach/preview', letter)).data,
+        enabled,
+        staleTime: 60_000,
+        retry: false,
+        placeholderData: keepPreviousData,
+    });
+
+/** The letter to the admin's own inbox — unlogged, outside the daily cap, to read in a real client. */
+export const useSendOutreachTest = () =>
     useMutation({
-        mutationFn: async (letter) => (await api.post('/admin/outreach/preview', letter)).data,
+        mutationFn: (letter) => api.post('/admin/outreach/test', letter),
     });
 
 /**

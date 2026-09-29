@@ -35,6 +35,56 @@ const LOCALES = { ar, en };
 const THEMES = ['light', 'dark'];
 const VIEWPORT = { width: 420, height: 900 };
 const only = process.argv.slice(2);
+/** The zone the shots are taken in unless a shot names a part of the day. */
+const HOME_ZONE = 'Asia/Riyadh';
+
+/**
+ * Today's portions change state with the clock — a make-up card before noon, «أضِفه إلى يومك» after
+ * it, a portion moved to its evening time — and the backend decides those states from the zone the
+ * SPA sends, not from any clock a browser could fake. So a shot that needs a time of day is taken
+ * in a zone where it IS that time of day now: one of the fixed-offset zones (`Etc/GMT-3` is UTC+3;
+ * the sign is POSIX's, reversed), which every browser and the backend both accept, on the same
+ * calendar date as this machine, since the seed wrote the reader's days against its date. Run it
+ * between 06:00 and 21:00 local: in the small hours no zone is in a morning of today's date.
+ */
+const OFFSET_ZONES = Array.from({ length: 27 }, (_, i) => {
+    const offset = i - 12;
+    return offset === 0 ? 'Etc/GMT' : `Etc/GMT${offset > 0 ? '-' : '+'}${Math.abs(offset)}`;
+});
+const PARTS = { morning: [4, 12], afternoon: [12, 18], evening: [18, 24] };
+function dateAndHour(zone) {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hourCycle: 'h23',
+    }).formatToParts(new Date());
+    const get = (type) => parts.find((part) => part.type === type).value;
+    return { date: `${get('year')}-${get('month')}-${get('day')}`, hour: Number(get('hour')) };
+}
+function zoneWhere(part) {
+    const [from, to] = PARTS[part];
+    const today = dateAndHour(Intl.DateTimeFormat().resolvedOptions().timeZone).date;
+    const zone = OFFSET_ZONES.find((candidate) => {
+        const { date, hour } = dateAndHour(candidate);
+        return date === today && hour >= from && hour < to;
+    });
+    if (!zone) throw new Error(`No zone is in the ${part} of ${today} right now; run the shots between 06:00 and 21:00`);
+    return zone;
+}
+
+/** A first-portion card for a reader with no goal, built as TodayProgress#firstWird builds it. */
+function withoutGoals(today) {
+    const proposals = [];
+    const watching = (today.continueWatching || []).find((item) => item.next?.seriesId);
+    if (watching) {
+        proposals.push({ kind: 'FINISH_SERIES', targetId: watching.next.seriesId, title: watching.next.seriesTitle, amount: 1, measure: 'EPISODES' });
+    }
+    const reading = (today.continueReading || []).find((entry) => entry.book?.pages > (entry.currentPage || 0));
+    if (reading) {
+        proposals.push({ kind: 'FINISH_BOOK', targetId: reading.bookId, title: reading.book.title,
+            amount: Math.max(1, Math.ceil((reading.book.pages - (reading.currentPage || 0)) / 30)), measure: 'PAGES' });
+    }
+    proposals.push({ kind: 'HABIT', targetId: null, title: null, amount: 15, measure: 'MINUTES' });
+    return { ...today, wird: { goals: [], firstWird: proposals }, recentMilestones: [] };
+}
 
 /**
  * The shots. `anchor` is the element's `data-guide` (or `crop`, a selector); `marks` are selectors
@@ -66,7 +116,65 @@ const SHOTS = [
             route.fulfill({ response, json: { ...(await response.json()), open: true, savedAt: null } });
         }),
     },
-    { name: 'wird', path: '/', anchor: 'wird', until: 'article', marks: ['article svg', 'article a.font-bold', 'article a.rounded-md', 'article span.text-xs'] },
+    // Today's portion states are the clock's: each of these is taken in a zone where it is that
+    // time of day now (`part`), and the seed's reader has one portion in each state.
+    { name: 'wird', path: '/', part: 'morning', anchor: 'wird', until: 'article', marks: ['article svg', 'article a.font-bold', 'article a.rounded-md', 'article span.text-xs'] },
+    {
+        // Morning: the morning portion is current, the book was kept at its minimum, the paused
+        // habit is excused, and the reading habit is done — in that order (orderPortions).
+        name: 'wird-cards', path: '/', part: 'morning', anchor: 'wird-cards',
+        marks: [{ sel: 'article', nth: 0 }, 'article:nth-of-type(2) > p.flex', { sel: 'article', nth: 2 }, 'article:nth-of-type(4) > p.flex'],
+    },
+    {
+        // Evening: the morning portion, unmet, has moved to its second time («لم يفتك بعد»).
+        name: 'wird-evening', path: '/', part: 'evening', anchor: 'wird-cards', until: 'article:nth-of-type(2)',
+        marks: ['article:nth-of-type(1) > p.flex', 'article:nth-of-type(2) > p.flex'],
+    },
+    { name: 'qada', path: '/', part: 'morning', anchor: 'qada', marks: ['h2', 'button'] },
+    { name: 'carry', path: '/', part: 'afternoon', anchor: 'carry', marks: [':scope > p', 'button.text-primary'] },
+    { name: 'wird-weekly', path: '/', part: 'morning', anchor: 'wird-weekly', marks: [':scope'] },
+    {
+        // The demo reader has goals; Today is answered as if they had none, with the proposals the
+        // backend would build from what they started.
+        name: 'first-wird', path: '/', part: 'morning', fresh: true, anchor: 'first-wird', marks: [':scope > div.flex-wrap.gap-2', ':scope > div.gap-4'],
+        before: (page) => page.route('**/api/today**', async (route) => {
+            const response = await route.fetch();
+            route.fulfill({ response, json: withoutGoals(await response.json()) });
+        }),
+    },
+    // Said once per browser, so this shot gets a browser of its own (`fresh`).
+    { name: 'milestone', path: '/', part: 'morning', fresh: true, anchor: 'milestone', marks: ['a'] },
+    {
+        // The review's own questions: opened from its banner, told it is Friday afternoon.
+        name: 'review-sheet', path: '/journey', crop: '[role="dialog"]', pad: 0, fixed: true,
+        marks: ['[data-guide="review-sheet"] ul.flex', { sel: '[data-guide="review-sheet"] [role="group"]', nth: 0 }],
+        before: (page) => page.route('**/api/user/review/current**', async (route) => {
+            const response = await route.fetch();
+            route.fulfill({ response, json: { ...(await response.json()), open: true, savedAt: null } });
+        }),
+        prepare: async (page) => {
+            await page.locator('[data-guide="review"] button').click();
+            await page.waitForTimeout(500);
+        },
+    },
+    {
+        // Opened, never confirmed.
+        name: 'erase', path: '/journey/record', crop: '[role="dialog"]', pad: 0, fixed: true,
+        marks: ['[data-guide="erase"] label', { sel: '[data-guide="erase"] button', nth: -1 }],
+        prepare: async (page) => {
+            await page.locator('[data-guide="control"] button.underline').click();
+            await page.waitForTimeout(500);
+        },
+    },
+    {
+        // The reader is told recording is paused, in this browser only.
+        name: 'paused', path: '/journey', anchor: 'paused', marks: ['button'],
+        before: (page) => page.route('**/api/user/history/settings**', async (route) => {
+            if (route.request().method() !== 'GET') return route.continue();
+            const response = await route.fetch();
+            return route.fulfill({ response, json: { ...(await response.json()), paused: true } });
+        }),
+    },
     // A programme the demo reader has no goal for, or the button reads «في وِردك» instead.
     { name: 'make-wird', path: '/series/10', crop: 'div.bg-surface:has(> [data-guide="make-wird"])', marks: ['[data-guide="make-wird"]'] },
     ...['target', 'amount', 'time', 'intention'].map((step, index) => ({
@@ -87,17 +195,17 @@ const SHOTS = [
             }
         },
     })),
-    { name: 'goal-head', path: '/journey/goals/10', anchor: 'goal-head', marks: ['p.font-reading', 'p[dir="auto"].text-text-primary', 'a.bg-primary', 'button'] },
-    { name: 'goal-pace', path: '/journey/goals/10', anchor: 'goal-pace', marks: [{ sel: '[role="img"]', nth: 0 }, { sel: '[role="img"]', nth: 1 }, 'span[title]', 'p.justify-between > span:last-child'] },
-    { name: 'goal-week', path: '/journey/goals/10', anchor: 'goal-week', marks: ['ul', 'div.mt-5', '[data-guide="legend"]'] },
+    { name: 'goal-head', path: '/journey/goals/PRIMARY', anchor: 'goal-head', marks: ['p.font-reading', 'p[dir="auto"].text-text-primary', 'a.bg-primary', 'button'] },
+    { name: 'goal-pace', path: '/journey/goals/PRIMARY', anchor: 'goal-pace', marks: [{ sel: '[role="img"]', nth: 0 }, { sel: '[role="img"]', nth: 1 }, 'span[title]', 'p.justify-between > span:last-child'] },
+    { name: 'goal-week', path: '/journey/goals/PRIMARY', anchor: 'goal-week', marks: ['ul', 'div.mt-5', '[data-guide="legend"]'] },
     {
-        name: 'goal-cumulative', path: '/journey/goals/10', anchor: 'goal-cumulative',
+        name: 'goal-cumulative', path: '/journey/goals/PRIMARY', anchor: 'goal-cumulative',
         marks: ['dl', { sel: 'svg text[font-size="12"]', nth: 1 }, 'svg path[stroke-dasharray]', { sel: 'svg text[font-size="12"]', nth: 0 }],
     },
-    { name: 'goal-excuse', path: '/journey/goals/10', anchor: 'goal-excuse', marks: [':scope > p', 'div.flex-wrap'] },
+    { name: 'goal-excuse', path: '/journey/goals/PRIMARY', anchor: 'goal-excuse', marks: [':scope > p', 'div.flex-wrap'] },
     {
         // Opened, never confirmed.
-        name: 'goal-end', path: '/journey/goals/10', crop: '[role="dialog"]', pad: 0, fixed: true,
+        name: 'goal-end', path: '/journey/goals/PRIMARY', crop: '[role="dialog"]', pad: 0, fixed: true,
         marks: ['div.gap-5 > div[class*="border-gold"]', 'div.gap-5 > p'],
         prepare: async (page) => {
             await page.locator('[data-guide="goal-end"] > button').click();
@@ -142,6 +250,16 @@ const SHOTS = [
     { name: 'history', path: '/journey/record', anchor: 'history', maxHeight: 540, jpeg: true, marks: [':scope div.mb-5', { sel: '.grid > :first-child [class*="h-[3px]"]', box: true }, '.grid > :first-child > button'] },
     { name: 'control', path: '/journey/record', anchor: 'control', marks: [{ sel: ':scope > div', nth: 1 }, { sel: ':scope button', nth: -2 }, { sel: ':scope button', nth: -1 }] },
 ];
+
+/** The demo reader's primary goal — the goal page's shots are of it, whatever id the seed gave it. */
+async function primaryGoalId(token) {
+    const res = await fetch(`${API}/api/user/goals`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) throw new Error(`Could not list the demo reader's goals (${res.status})`);
+    const goals = await res.json();
+    const primary = goals.find((goal) => goal.primary) || goals[0];
+    if (!primary) throw new Error('The demo reader has no goal — has seed-journey-demo.sh run?');
+    return primary.id;
+}
 
 async function signIn() {
     const res = await fetch(`${API}/api/auth/login`, {
@@ -220,37 +338,49 @@ async function measure(page, shot) {
 
 async function main() {
     const { token, refreshToken } = await signIn();
+    const goalId = await primaryGoalId(token);
+    const pathOf = (shot) => shot.path.replace('/journey/goals/PRIMARY', `/journey/goals/${goalId}`);
     const browser = await chromium.launch();
     const manifest = {};
     let failed = 0;
     for (const [locale, catalog] of Object.entries(LOCALES)) {
         for (const theme of THEMES) {
-            const context = await browser.newContext({
-                viewport: VIEWPORT, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale, timezoneId: 'Asia/Riyadh',
-            });
-            await context.addInitScript(([values]) => {
-                for (const [key, value] of Object.entries(values)) localStorage.setItem(key, value);
-            }, [{
-                token, refreshToken, locale, theme,
-                'consent.youtube.v1': 'granted', 'consent.views.v1': 'denied',
-                'absarna.guideSeen': '1', 'absarna.dayLegendHidden': '0',
-            }]);
-            const page = await context.newPage();
-            page.catalog = catalog;
+            // One browser context per zone the shots need — the zone is fixed when a context is
+            // made — and a throwaway one for a shot that must be the first visit in its browser.
+            const contexts = new Map();
+            const open = async (zone, fresh) => {
+                const key = fresh ? `fresh:${Math.random()}` : zone;
+                if (contexts.has(key)) return contexts.get(key);
+                const context = await browser.newContext({
+                    viewport: VIEWPORT, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale, timezoneId: zone,
+                });
+                await context.addInitScript(([values]) => {
+                    for (const [key, value] of Object.entries(values)) localStorage.setItem(key, value);
+                }, [{
+                    token, refreshToken, locale, theme,
+                    'consent.youtube.v1': 'granted', 'consent.views.v1': 'denied',
+                    'absarna.guideSeen': '1', 'absarna.dayLegendHidden': '0',
+                }]);
+                const page = await context.newPage();
+                page.catalog = catalog;
+                contexts.set(key, page);
+                return page;
+            };
             for (const shot of SHOTS) {
                 if (only.length && !only.includes(shot.name)) continue;
-                await page.unrouteAll({ behavior: 'ignoreErrors' });
-                if (shot.before) await shot.before(page);
-                await page.goto(SPA + shot.path, { waitUntil: 'networkidle' });
-                // What is pinned to the screen would be drawn across a crop further down the page: the
-                // phone's tab bar, the sticky navbar (unpinned — it keeps its place in the flow), and the
-                // drawn scrollbar at the page's edge.
-                await page.addStyleTag({
-                    content: '[class*="fixed"][class*="bottom-0"], .drawn-track { display: none !important; }'
-                        + ' nav.sticky { position: static !important; }',
-                });
-                await page.waitForTimeout(700);
                 try {
+                    const page = await open(shot.part ? zoneWhere(shot.part) : HOME_ZONE, shot.fresh);
+                    await page.unrouteAll({ behavior: 'ignoreErrors' });
+                    if (shot.before) await shot.before(page);
+                    await page.goto(SPA + pathOf(shot), { waitUntil: 'networkidle' });
+                    // What is pinned to the screen would be drawn across a crop further down the page: the
+                    // phone's tab bar, the sticky navbar (unpinned — it keeps its place in the flow), and the
+                    // drawn scrollbar at the page's edge.
+                    await page.addStyleTag({
+                        content: '[class*="fixed"][class*="bottom-0"], .drawn-track { display: none !important; }'
+                            + ' nav.sticky { position: static !important; }',
+                    });
+                    await page.waitForTimeout(700);
                     if (shot.prepare) await shot.prepare(page);
                     const target = shot.crop ? page.locator(shot.crop) : page.locator(`[data-guide="${shot.anchor}"]`);
                     await target.first().scrollIntoViewIfNeeded();
@@ -270,12 +400,15 @@ async function main() {
                         ...(shot.jpeg ? { ext: 'jpg' } : {}),
                     };
                     console.log(`✓ ${locale}/${theme}/${shot.name}`);
+                    if (shot.fresh) await page.context().close();
                 } catch (error) {
                     failed++;
                     console.error(`✗ ${locale}/${theme}/${shot.name}: ${error.message.split('\n')[0]}`);
                 }
             }
-            await context.close();
+            for (const page of contexts.values()) {
+                await page.context().close().catch(() => {});
+            }
         }
     }
     await browser.close();
