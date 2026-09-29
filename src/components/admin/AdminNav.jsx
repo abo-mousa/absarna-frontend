@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom';
-import { LayoutDashboard, ShieldCheck, Flag, Tv } from 'lucide-react';
+import { LayoutDashboard, ShieldCheck, Flag, Tv, Send } from 'lucide-react';
 import { useAdminAttention, badgeText } from '@/hooks/useAdminAttention';
 import { t } from '@/i18n';
 
 /**
- * The four admin screens, on every one of them.
+ * The admin screens, on every one of them.
  *
  * <p><b>This row used to exist only on `/admin`.</b> The links to the review queue, the reports
  * queue and channel management were rendered beside that page's heading, and the three pages they
@@ -33,6 +33,7 @@ export const SECTIONS = [
     { id: 'review', to: '/admin/review', icon: ShieldCheck, labelKey: 'admin.review.title', countKey: 'reviewBacklog' },
     { id: 'reports', to: '/admin/reports', icon: Flag, labelKey: 'adminReports.title', countKey: 'openReports' },
     { id: 'channels', to: '/admin/channels', icon: Tv, labelKey: 'admin.manageChannels', countKey: 'pendingChannels' },
+    { id: 'outreach', to: '/admin/outreach', icon: Send, labelKey: 'adminOutreach.title' },
 ];
 
 function AdminNav({ current }) {

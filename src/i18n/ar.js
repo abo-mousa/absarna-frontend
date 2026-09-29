@@ -338,6 +338,12 @@ export const ar = {
             // a channel with none makes it read "أعددنا لقناتكم صفحةً وفيها ٠ محاضرة" — which is
             // why the backend refuses rather than sending it. Worded as "not yet", because that
             // is what it is: the import has not run or it failed.
+            OUTREACH_DO_NOT_CONTACT: 'طلب صاحب هذا العنوان ألّا نكتب إليه، وهو في قائمة «لا تراسل».',
+            OUTREACH_ALREADY_SENT: 'كُتب إلى هذا العنوان من قبل. أكّد لتكتب إليه مرّةً أخرى.',
+            OUTREACH_PATH_INVALID: 'يجب أن يؤدّي الزرّ إلى صفحةٍ من هذا الموقع، مثل /register.',
+            INVITATION_LINK_MISSING: 'يجب أن تبقى {{link}} في الرسالة، فهي الزرّ الذي يوصله إلى صفحة القناة.',
+            INVITATION_UNKNOWN_PLACEHOLDER: 'في الرسالة عنصرٌ متغيّر غير معروف. استعمل ما هو مذكور تحتها فقط.',
+            INVITATION_LETTER_EMPTY: 'الرسالة فارغة.',
             CHANNEL_HAS_NO_CONTENT: 'لا توجد محاضرات على هذه القناة بعد، والدعوة تبدأ بذكر عددها. شغّل الاستيراد أولاً ثم أرسل الدعوة.',
 
             // YouTube ownership. The two are separated because the remedy is completely different:
@@ -3081,6 +3087,14 @@ export const ar = {
             previousAddress: 'هذا هو العنوان الذي أُرسلت إليه الدعوة السابقة.',
             localeLabel: 'لغة الرسالة',
             localeHint: 'لا حساب هنا تُقرأ منه اللغة، فالاختيار اختيارك، ويُسجَّل مع الإرسال.',
+            edit: 'حرّر الرسالة',
+            subjectLabel: 'العنوان',
+            letterLabel: 'نصّ الرسالة',
+            marksHint: 'السطر الفارغ يبدأ فقرة، و«# » يبدأ عنواناً، و«- » نقطة في قائمة، و{{link}} وحده على سطر هو الزرّ، وسطر فيه «—» وحده يبدأ الحاشية. تُملأ هذه العناصر عند الإرسال:',
+            reset: 'العودة إلى الرسالة الأصلية',
+            preview: 'المعاينة',
+            previewFailed: 'تعذّر عرض المعاينة',
+            draftFailed: 'تعذّر تحميل الرسالة',
             send: 'أرسل الدعوة',
             sent: 'أُرسلت الدعوة وسُجّلت على القناة.',
             sendFailed: 'تعذر إرسال الدعوة',
@@ -3312,6 +3326,44 @@ export const ar = {
      * the single worst thing this screen could be wrong about — so it is said at the top of the
      * page and again beside the buttons.
      */
+    adminOutreach: {
+        title: 'المراسلات',
+        intro: 'رسالةٌ شخصية من المنصّة إلى شخصٍ واحد ليس له حساب: صاحب جمهور، أو عالم ليست له قناة على يوتيوب، أو قارئ. ابدأ من قالب وغيّر ما شئت. وتنتهي كلّ رسالة بسطرٍ يقول إنّ الردّ يكفي لنكفّ عن مراسلته؛ فإن ردّ أحدٌ بذلك فأضِفه إلى قائمة «لا تراسل» أدناه.',
+        emailLabel: 'البريد الإلكتروني',
+        nameLabel: 'اسمه (اختياري، يملأ {{name}})',
+        starterLabel: 'ابدأ من',
+        starters: {
+            PROMOTER: 'صاحب جمهور',
+            SCHOLAR: 'عالم بلا قناة على يوتيوب',
+            READER: 'قارئ',
+        },
+        edited: 'عُدّل عن القالب. تغيير اللغة يُبقي نصّك.',
+        replaceConfirm: 'أتستبدل هذا القالبَ برسالتك المعدّلة؟',
+        buttonLabel: 'نصّ الزرّ',
+        pathLabel: 'يؤدّي الزرّ إلى',
+        pathHint: 'صفحةٌ من هذا الموقع، مثل / أو /register. لا يُسمح بروابط إلى مواقع أخرى.',
+        send: 'أرسل الرسالة',
+        sent: 'أُرسلت الرسالة وسُجّلت.',
+        sendFailed: 'تعذّر إرسال الرسالة',
+        onDoNotContact: 'هذا العنوان في قائمة «لا تراسل»، فلا يُرسَل إليه شيء.',
+        registered: 'لهذا العنوان حسابٌ على المنصّة من قبل.',
+        alreadyWritten: 'كُتب إلى هذا العنوان من قبل:',
+        previousRow: '{when}، كتبها {by}: {subject}',
+        sendAgain: 'اطّلعت على ذلك، أرسل مرّةً أخرى',
+        logTitle: 'الرسائل المرسلة',
+        logEmpty: 'لم تُرسل رسائل بعد.',
+        logMeta: '{when} · أرسلها {by} · {locale}',
+        dncTitle: 'لا تراسل',
+        dncIntro: 'عناوين طلب أصحابها ألّا نكتب إليهم. ترفضها المراسلات ودعوات القنوات كلتاهما.',
+        dncNote: 'ملاحظة (مثل: ردّ في ٣ أكتوبر يطلب التوقّف)',
+        dncAdd: 'أضِف إلى القائمة',
+        dncAdded: 'أُضيف إلى قائمة «لا تراسل».',
+        dncFailed: 'تعذّر تحديث قائمة «لا تراسل»',
+        dncEmpty: 'لا أحد في القائمة.',
+        dncMeta: 'أُضيف {when}، أضافه {by}',
+        dncRemove: 'أزِل',
+        dncRemoveConfirm: 'أتزيل هذا العنوان من قائمة «لا تراسل»؟ لا تفعل ذلك إلا إن أُضيف خطأً.',
+    },
     adminReports: {
         priority: {
             urgent: 'عاجل',

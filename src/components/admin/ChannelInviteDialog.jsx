@@ -1,9 +1,16 @@
-import { useEffect, useState } from 'react';
-import { Mail, Link2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Mail, Link2, PenLine } from 'lucide-react';
 import { Modal, Input, Button, RejectedFields } from '@/components/ui';
 import { useToast } from '@/contexts/ToastContext';
 import { describeError } from '@/lib/describeError';
-import { useInviteChannelOwner, useChannelClaimLink } from '@/hooks/useChannels';
+import LetterEditor from './LetterEditor';
+import {
+    useInviteChannelOwner,
+    useChannelClaimLink,
+    useInvitationDraft,
+    useInvitationPreview,
+} from '@/hooks/useChannels';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { LOCALES, DEFAULT_LOCALE } from '@/i18n/locales';
 import { t } from '@/i18n';
 
@@ -29,6 +36,15 @@ import { t } from '@/i18n';
  * The admin is the sender and the letter is not one they wrote. It states that we built the page
  * without asking, and offers to delete it on a reply — so the dialog says so before the press,
  * rather than leaving an admin to discover the wording from a scholar's reply.
+ *
+ * <h2>Editing the letter</h2>
+ * "Edit the letter" loads the default subject and letter from the backend, placeholders left in,
+ * and shows a preview the backend renders — never a second renderer here, so the preview is the
+ * mail. The admin edits WORDS: the markup is a handful of line marks the backend turns into the
+ * invitation's own frame, and everything typed is escaped. Only a letter that differs from the
+ * default is sent as an edit; one opened and left alone goes out as the hand-built mail it always
+ * was. Switching the language reloads the default only while nothing has been changed, so an edit
+ * is never silently thrown away.
  */
 export default function ChannelInviteDialog({ channel, open, onClose }) {
     const { showToast } = useToast();
@@ -36,6 +52,14 @@ export default function ChannelInviteDialog({ channel, open, onClose }) {
     const claimLink = useChannelClaimLink();
     const [email, setEmail] = useState('');
     const [locale, setLocale] = useState(DEFAULT_LOCALE);
+    const [editing, setEditing] = useState(false);
+    const [subject, setSubject] = useState('');
+    const [letter, setLetter] = useState('');
+    // The draft the boxes were last filled from. While they still equal it, nothing has been
+    // edited: a language switch may refill them, and the send carries no edit.
+    const seededFrom = useRef(null);
+    const draft = useInvitationDraft(channel?.id, locale, open && editing);
+    const preview = useInvitationPreview();
 
     // Re-seeded on OPENING and on nothing else, the same rule ReviewExemptionDialog follows: a
     // refetch while the dialog is open must not clear an address somebody is part way through
@@ -45,11 +69,52 @@ export default function ChannelInviteDialog({ channel, open, onClose }) {
         if (!open) return;
         setEmail(channel?.claimInvitation?.email ?? '');
         setLocale(channel?.claimInvitation?.locale ?? DEFAULT_LOCALE);
+        setEditing(false);
+        seededFrom.current = null;
     }, [open, channel?.id, channel?.claimInvitation?.email, channel?.claimInvitation?.locale]);
+
+    const untouched = !seededFrom.current
+        || (subject === seededFrom.current.subject && letter === seededFrom.current.letter);
+    const edited = editing && !untouched;
+
+    // Fill the boxes from the draft — on first load, and on a language switch while untouched.
+    useEffect(() => {
+        if (!draft.data || !untouched) return;
+        if (seededFrom.current === draft.data) return;
+        seededFrom.current = draft.data;
+        setSubject(draft.data.subject);
+        setLetter(draft.data.letter);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [draft.data]);
+
+    const resetToDefault = () => {
+        if (!draft.data) return;
+        seededFrom.current = draft.data;
+        setSubject(draft.data.subject);
+        setLetter(draft.data.letter);
+    };
+
+    // The preview follows the boxes, a moment behind the typing. Debounced as a string: an object
+    // built here is new on every render, so it would never settle and would re-render the preview
+    // on a loop.
+    const debounced = useDebouncedValue(JSON.stringify({ subject, letter, locale }), 500);
+    const { mutate: renderPreview } = preview;
+    useEffect(() => {
+        const request = JSON.parse(debounced);
+        if (!open || !editing || !channel?.id || !request.letter) return;
+        renderPreview({ channelId: channel.id, ...request });
+    }, [open, editing, channel?.id, debounced, renderPreview]);
 
     const send = () => {
         invite.mutate(
-            { channelId: channel.id, email: email.trim(), locale },
+            {
+                channelId: channel.id,
+                email: email.trim(),
+                locale,
+                // Each only if changed: an edited subject alone keeps the hand-built mail.
+                ...(edited && subject !== seededFrom.current.subject ? { subject } : {}),
+                ...(edited && letter !== seededFrom.current.letter ? { letter } : {}),
+            },
             {
                 onSuccess: () => {
                     showToast(t('admin.invite.sent'), 'success');
@@ -89,7 +154,7 @@ export default function ChannelInviteDialog({ channel, open, onClose }) {
             open={open}
             onClose={onClose}
             title={t('admin.invite.title', { name: channel?.name })}
-            maxWidth="520px"
+            maxWidth={editing ? '1100px' : '520px'}
         >
             <p className="text-text-secondary mb-2">{t('admin.invite.intro')}</p>
             {/* What the letter actually says. The admin is the sender and did not write it. */}
@@ -142,6 +207,34 @@ export default function ChannelInviteDialog({ channel, open, onClose }) {
                 </div>
             </fieldset>
             <p className="text-text-muted text-xs mt-2">{t('admin.invite.localeHint')}</p>
+
+            {!editing ? (
+                <Button
+                    variant="ghost"
+                    className="mt-3"
+                    onClick={() => setEditing(true)}
+                    icon={<PenLine size={14} />}
+                >
+                    {t('admin.invite.edit')}
+                </Button>
+            ) : (
+                <div className="mt-5">
+                    <LetterEditor
+                        subject={subject}
+                        onSubjectChange={setSubject}
+                        letter={letter}
+                        onLetterChange={setLetter}
+                        locale={locale}
+                        placeholders={draft.data?.placeholders}
+                        loading={draft.isLoading}
+                        loadError={draft.isError ? draft.error : null}
+                        preview={preview}
+                        onReset={resetToDefault}
+                        canReset={edited && !!draft.data}
+                        error={invite.error}
+                    />
+                </div>
+            )}
 
             <div className="flex gap-2 justify-between items-center mt-5 flex-wrap">
                 {/* The other route, kept visible rather than hidden behind the send: an address is

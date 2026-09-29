@@ -308,6 +308,13 @@ export const en = {
 
             // See the note on the Arabic entry: the invitation letter opens with the number of
             // lectures, so there is nothing to send until there are some.
+            // An edited invitation letter the backend would not send.
+            OUTREACH_DO_NOT_CONTACT: 'This address asked us not to write to them, and is on the do-not-contact list.',
+            OUTREACH_ALREADY_SENT: 'This address has been written to before. Confirm to write again.',
+            OUTREACH_PATH_INVALID: 'The button must lead to a page of this site, such as /register.',
+            INVITATION_LINK_MISSING: 'The letter must keep {{link}} — it is the button that takes them to the channel page.',
+            INVITATION_UNKNOWN_PLACEHOLDER: 'The letter names a placeholder that does not exist. Use only the ones listed under it.',
+            INVITATION_LETTER_EMPTY: 'The letter is empty.',
             CHANNEL_HAS_NO_CONTENT: 'This channel has no lectures yet, and the invitation opens by naming how many there are. Run the import first, then send it.',
 
             YOUTUBE_NOT_VERIFIED: 'You have not proved ownership of the YouTube channel yet. Sign in with the Google account that manages it, from the YouTube tab.',
@@ -2627,6 +2634,14 @@ export const en = {
             previousAddress: 'This is the address the last invitation went to.',
             localeLabel: 'Write in',
             localeHint: 'There is no account to read a language from, so this is your choice — and it is recorded with the send.',
+            edit: 'Edit the letter',
+            subjectLabel: 'Subject',
+            letterLabel: 'Letter',
+            marksHint: 'A blank line starts a paragraph. "# " starts a heading, "- " a bullet. {{link}} on its own line is the button. A line with only "—" starts the small print. Placeholders are filled in when it is sent:',
+            reset: 'Back to the default letter',
+            preview: 'Preview',
+            previewFailed: 'Could not render the preview',
+            draftFailed: 'Could not load the letter',
             send: 'Send the invitation',
             sent: 'The invitation has been sent and recorded on the channel.',
             // Never "delivered": nothing here consumes the provider's bounce webhook, so a hard
@@ -2765,6 +2780,44 @@ export const en = {
      * worst thing this screen could be wrong about \u2014 so it is said at the top of the page and
      * again beside the buttons.
      */
+    adminOutreach: {
+        title: 'Outreach',
+        intro: 'A personal letter from the platform to one person without an account: someone with an audience, a scholar with no YouTube channel, a reader. Start from a template and change anything. Every letter ends with a line saying a reply is enough to stop us writing; when someone replies that way, add them to the do-not-contact list below.',
+        emailLabel: 'Email address',
+        nameLabel: 'Their name (optional, fills {{name}})',
+        starterLabel: 'Start from',
+        starters: {
+            PROMOTER: 'Someone with an audience',
+            SCHOLAR: 'Scholar without YouTube',
+            READER: 'A reader',
+        },
+        edited: 'Edited from the template. Switching language keeps your text.',
+        replaceConfirm: 'Replace your edited letter with this template?',
+        buttonLabel: 'Button text',
+        pathLabel: 'Button leads to',
+        pathHint: 'A page of this site, such as / or /register. Links to other sites are not allowed.',
+        send: 'Send the letter',
+        sent: 'The letter has been sent and logged.',
+        sendFailed: 'Could not send the letter',
+        onDoNotContact: 'This address is on the do-not-contact list, so nothing can be sent to it.',
+        registered: 'This address already has an account on the platform.',
+        alreadyWritten: 'This address has been written to before:',
+        previousRow: '{when}, by {by}: {subject}',
+        sendAgain: 'I have seen this, send again anyway',
+        logTitle: 'Letters sent',
+        logEmpty: 'No letters sent yet.',
+        logMeta: '{when} · by {by} · {locale}',
+        dncTitle: 'Do not contact',
+        dncIntro: 'Addresses that asked us not to write. Outreach and channel invitations both refuse them.',
+        dncNote: 'Note (e.g. replied on 3 Oct asking us to stop)',
+        dncAdd: 'Add to the list',
+        dncAdded: 'Added to the do-not-contact list.',
+        dncFailed: 'Could not update the do-not-contact list',
+        dncEmpty: 'Nobody is on the list.',
+        dncMeta: 'Added {when} by {by}',
+        dncRemove: 'Remove',
+        dncRemoveConfirm: 'Remove this address from the do-not-contact list? Only do this if it was added by mistake.',
+    },
     adminReports: {
         priority: {
             urgent: 'Urgent',

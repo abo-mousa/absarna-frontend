@@ -694,14 +694,39 @@ export const useChannelClaimLink = () =>
 export const useInviteChannelOwner = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async ({ channelId, email, locale }) =>
-            (await api.post(`/channels/admin/${channelId}/invite`, { email, locale })).data,
+        // `subject` and `letter` are the admin's edits and are omitted when there are none, which
+        // sends the default mail exactly as before.
+        mutationFn: async ({ channelId, email, locale, subject, letter }) =>
+            (await api.post(`/channels/admin/${channelId}/invite`, { email, locale, subject, letter })).data,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-all-channels'] });
             queryClient.invalidateQueries({ queryKey: ['admin-pending-channels'] });
         },
     });
 };
+
+/**
+ * The default invitation subject and letter in `locale`, placeholders left in — what the invite
+ * dialog's editor starts from. Fetched only once the admin chooses to edit.
+ */
+export const useInvitationDraft = (channelId, locale, enabled) =>
+    useQuery({
+        queryKey: ['invitation-draft', channelId, locale],
+        queryFn: async () =>
+            (await api.get(`/channels/admin/${channelId}/invite/draft`, { params: { locale } })).data,
+        enabled: Boolean(channelId) && enabled,
+        staleTime: Infinity,
+    });
+
+/**
+ * The invitation rendered exactly as it would be sent, and not sent. The preview comes from the
+ * backend rather than a second renderer here, so what the admin sees is what the scholar gets.
+ */
+export const useInvitationPreview = () =>
+    useMutation({
+        mutationFn: async ({ channelId, locale, subject, letter }) =>
+            (await api.post(`/channels/admin/${channelId}/invite/preview`, { locale, subject, letter })).data,
+    });
 
 export const useDeleteChannel = () => {
     const queryClient = useQueryClient();
