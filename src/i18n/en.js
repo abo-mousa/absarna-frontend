@@ -775,7 +775,6 @@ export const en = {
             next: 'Next',
             mark: 'Point {n}',
             gotIt: 'Got it',
-            pointHint: 'Tap a line to see where it is in the picture.',
             pagesTitle: 'Illustrated guides to “My journey”',
             pagesText: 'Pictures of the pages themselves, numbered where they point. Each of these pages has a “Page guide” button that opens its guide right there.',
             openPage: 'Open the page',
@@ -1101,9 +1100,10 @@ export const en = {
                         title: 'Your year',
                         text: 'The last year, month by month.',
                         marks: {
-                            '1': 'Each column is a month, and each star a week in it.',
-                            '2': 'A star’s shade compares your own weeks, never anyone else’s.',
-                            '3': 'Your year in numbers.',
+                            '1': 'Each column is a Hijri month; “This month” is the last.',
+                            '2': 'Each row is a week of the month, and each star a week in it.',
+                            '3': 'A star’s shade is how much you learned that week — compared with your own weeks, never anyone else’s.',
+                            '4': 'Your year in numbers.',
                         },
                     },
                     weeks: {
@@ -1111,7 +1111,9 @@ export const en = {
                         text: 'Learning time in each of the last twelve weeks.',
                         appears: 'Appears once your weeks have learning time in them.',
                         marks: {
-                            '1': 'Each bar is a week; the newest is “This week”.',
+                            '1': 'The height is hours: how much you learned in the week.',
+                            '2': 'This week — lighter while it is still going.',
+                            '3': 'A date under every third week, counted back from this one.',
                         },
                     },
                     slots: {
@@ -1119,16 +1121,21 @@ export const en = {
                         text: 'Which times of your day you learn in.',
                         appears: 'Appears once the last thirty days have learning time in them.',
                         marks: {
-                            '1': 'Morning, afternoon and evening, and your hours in each.',
-                            '2': 'The span it counts: the last thirty days.',
+                            '1': 'The span it counts: the last thirty days.',
+                            '2': 'The three times of day: morning, afternoon and evening.',
+                            '3': 'The bar is your time in each.',
+                            '4': 'Your hours in it.',
                         },
                     },
                     fields: {
                         title: 'Your fields',
-                        text: 'Where your learning time went: Islamic sciences, history, thought…',
+                        text: 'Your learning time, split by field of knowledge.',
                         appears: 'Appears once most of your time has a known field.',
                         marks: {
-                            '1': 'The span it counts, with the fields beneath by your time in each.',
+                            '1': 'The span it counts: the last ninety days.',
+                            '2': 'Each line is a field of knowledge — Islamic sciences, history and civilisation, thought and society…',
+                            '3': 'The bar is your time in the field, against the largest.',
+                            '4': 'Your hours in it.',
                         },
                     },
                     history: {
@@ -1136,7 +1143,8 @@ export const en = {
                         text: 'Everything you watched and read, newest first.',
                         marks: {
                             '1': 'Videos and books, each in its own list.',
-                            '2': 'Each episode with how much of it you watched — press it to go back to your place.',
+                            '2': 'The gold bar under the picture: how much of the episode you watched. Press the card to go back to your place.',
+                            '3': 'In a programme: how many of its episodes you watched — press it to open the programme.',
                         },
                     },
                     control: {

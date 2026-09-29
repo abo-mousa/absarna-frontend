@@ -38,8 +38,10 @@ const only = process.argv.slice(2);
 
 /**
  * The shots. `anchor` is the element's `data-guide` (or `crop`, a selector); `marks` are selectors
- * inside it, in the order of the guide's numbered captions (`{ sel, nth }` for the nth match, or
- * `{ text }` for a catalog key's text before its first placeholder). `until` ends the crop at the
+ * inside it, in the order of the guide's captions (`{ sel, nth }` for the nth match, `all` for the
+ * union of every match — a column of names — and `box` for the element's box rather than what is
+ * drawn in it, for a bar whose fill is shorter than its track). Only matches on screen count: the
+ * phone and the wide layout of a chart are often both in the page, one of them hidden. `until` ends the crop at the
  * bottom of a child; `maxHeight` cuts a tall one (from its top, or centred on `around`);
  * `before` runs before the page loads (to intercept a request) and `prepare` before cropping; `jpeg`
  * is for a shot made mostly of photographs. `fixed` is for something pinned to the screen (a dialog): it is
@@ -115,12 +117,29 @@ const SHOTS = [
         },
     },
     { name: 'reflections', path: '/journey/reflections', anchor: 'reflections', until: 'li:nth-child(2)', marks: ['li:first-child blockquote', 'li:first-child p a'] },
-    { name: 'year', path: '/journey/record', anchor: 'year', marks: ['figure', 'figcaption', 'dl'] },
-    { name: 'weeks', path: '/journey/record', anchor: 'weeks', marks: [':scope > div svg'] },
-    { name: 'slots', path: '/journey/record', anchor: 'slots', marks: ['ul', ':scope > p'] },
-    { name: 'fields', path: '/journey/record', anchor: 'fields', marks: [':scope > p'] },
+    {
+        name: 'year', path: '/journey/record', anchor: 'year',
+        marks: ['figure span.text-primary.font-bold', { sel: 'figure > div > div:first-child > span.text-text-muted', all: true }, 'figcaption > span.inline-flex', 'dl'],
+    },
+    {
+        name: 'weeks', path: '/journey/record', anchor: 'weeks',
+        marks: [
+            { sel: 'figure > p, figure > div > div:first-child', all: true },
+            { sel: '[role="group"] > button:last-of-type', box: true },
+            { sel: 'div.h-4', box: true },
+        ],
+    },
+    {
+        name: 'slots', path: '/journey/record', anchor: 'slots',
+        marks: [':scope > p', { sel: 'ul li > span:first-child', all: true }, { sel: 'ul li:first-child > span:nth-child(2)', box: true }, 'ul li:first-child > span:last-child'],
+    },
+    {
+        // The field names are framed together: the point is that the time is split by kind of knowledge.
+        name: 'fields', path: '/journey/record', anchor: 'fields',
+        marks: [':scope > p', { sel: 'ul li > span:first-child', all: true }, { sel: 'ul li:first-child > span:nth-child(2)', box: true }, 'ul li:first-child > span:last-child'],
+    },
     // Thumbnails are photographs, so this one is a JPEG: as a PNG it weighed as much as ten others.
-    { name: 'history', path: '/journey/record', anchor: 'history', maxHeight: 540, jpeg: true, marks: [':scope div.mb-5', ':scope .grid > :first-child'] },
+    { name: 'history', path: '/journey/record', anchor: 'history', maxHeight: 540, jpeg: true, marks: [':scope div.mb-5', { sel: '.grid > :first-child [class*="h-[3px]"]', box: true }, '.grid > :first-child > button'] },
     { name: 'control', path: '/journey/record', anchor: 'control', marks: [{ sel: ':scope > div', nth: 1 }, { sel: ':scope button', nth: -2 }, { sel: ':scope button', nth: -1 }] },
 ];
 
@@ -173,10 +192,19 @@ async function measure(page, shot) {
         const marks = [];
         for (const mark of shot.marks) {
             const spec = typeof mark === 'string' ? { sel: mark, nth: 0 } : mark;
-            const all = spec.sel === ':scope' ? [element] : [...element.querySelectorAll(spec.sel)];
-            const target = all.at(spec.nth ?? 0);
-            if (!target) return { error: `mark not found: ${spec.sel}` };
-            const r = contentBox(target);
+            const shown = (node) => node.getBoundingClientRect().width > 0 && node.checkVisibility?.() !== false;
+            const matches = (spec.sel === ':scope' ? [element] : [...element.querySelectorAll(spec.sel)]).filter(shown);
+            const targets = spec.all ? matches : [matches.at(spec.nth ?? 0)].filter(Boolean);
+            if (!targets.length) return { error: `mark not found: ${spec.sel}` };
+            const boxes = targets.map((node) => (spec.box ? node.getBoundingClientRect() : contentBox(node)));
+            const left = Math.min(...boxes.map((b) => b.left));
+            const topmost = Math.min(...boxes.map((b) => b.top));
+            const r = {
+                left, top: topmost,
+                width: Math.max(...boxes.map((b) => b.right)) - left,
+                height: Math.max(...boxes.map((b) => b.bottom)) - topmost,
+                bottom: Math.max(...boxes.map((b) => b.bottom)),
+            };
             if (r.bottom < top || r.top > top + height) return { error: `mark outside the crop: ${spec.sel}` };
             const pct = (value, of) => Math.round((value / of) * 1000) / 10;
             marks.push([

@@ -87,9 +87,7 @@ function GuideShot({ name, captions = [], cut = null }) {
                 </div>
             </div>
             {captions.length > 0 && (
-                <>
-                    <p className="text-xs text-text-muted px-2">{t('guide.sheet.pointHint')}</p>
-                    <ul className="flex flex-col gap-1">
+                <ul className="flex flex-col gap-1">
                         {captions.map((caption, index) => {
                             const lit = active === index;
                             return (
@@ -116,8 +114,7 @@ function GuideShot({ name, captions = [], cut = null }) {
                                 </li>
                             );
                         })}
-                    </ul>
-                </>
+                </ul>
             )}
         </figure>
     );
