@@ -2049,11 +2049,13 @@ export const en = {
 
     consent: {
         bothTitle: 'Before you start',
-        bothBody: 'We need your agreement to two small things. You can refuse both or pick one, and the site works as usual either way. We show no ads, sell nothing about you, and do not track you for advertising.',
-        bothYoutube: 'YouTube videos: some videos play from YouTube, so Google sees that you watch them, as if you had opened YouTube yourself.',
-        bothViews: 'Counting views: a random number created in your browser, so your view is counted once and only once. It is made from nothing about you, we never link it to your name, email, account or device, and we keep only a scrambled form of it, so we have no way of knowing whose it is.',
-        privacy: 'Details in the privacy policy',
-        choose: 'Let me choose each',
+        short: 'Some videos play from YouTube, so Google sees that you watch them, and we count each of your views once. No ads, no tracking.',
+        shortYoutube: 'Some videos play from YouTube, so Google sees that you watch them, as if you had opened YouTube yourself.',
+        shortViews: 'So that each of your views is counted once, your browser keeps a random number made from nothing about you.',
+        details: 'More details',
+        detailsIntro: 'The choice is yours, and the site works as usual whatever you pick. We show no ads, sell nothing about you, and do not track you for advertising. You can change your mind at any time from “Your privacy choices” at the foot of every page.',
+        denyAll: 'Refuse all',
+        grantAll: 'Allow all',
         chooseYoutube: 'YouTube videos',
         chooseViews: 'Count my views',
         save: 'Save my choice',
