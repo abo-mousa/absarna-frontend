@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, Modal } from '@/components/ui';
 import { useConsent } from '@/contexts/ConsentContext';
@@ -25,22 +25,39 @@ import { t } from '@/i18n';
  *       side by side, the refusal first in the DOM. A solid «Allow» beside a grey link — or a
  *       refusal that lives only inside the dialog — is the most commonly fined pattern in Europe.
  *       The dialog repeats both, as «Refuse all» and «Allow all», for the same reason.</li>
- *   <li>Consent to one purpose is never consent to another: the dialog's switches are per purpose
- *       and both OFF until the reader turns one on (a pre-ticked box is not consent).</li>
+ *   <li>Consent to one purpose is never consent to another: the dialog's switches are per purpose,
+ *       and one the reader never said yes to is OFF (a pre-ticked box is not consent).</li>
  * </ul>
  *
  * <p>There is no × on the banner — dismissing is not an answer — and closing the dialog answers
  * nothing either: it returns to the banner. The page is never blocked: nothing either purpose
  * concerns loads while the question is open, and the site works the same whatever the answer.
- * Someone who has answered one of the two is asked only the other, in both layers.
+ * Someone who has answered one of the two is asked only the other, on the banner.
  *
- * <p>Rendered only while a question is open; the footer's link reopens or withdraws each.
+ * <h4>The dialog is also the footer's «Your privacy choices»</h4>
+ *
+ * <p>One dialog, opened from either place, and it always shows BOTH purposes, each switch starting
+ * from what the reader decided last — a reader who allowed both sees both on, and changes one
+ * without re-answering the other. A purpose never answered starts off, which is the no-pre-ticking
+ * rule and not an exception to it. Every button there records both choices; nothing changes until
+ * one is pressed. The banner renders only while a question is open; the dialog, whenever it is.
  */
 function ConsentBanner() {
-    const { asking, grant, deny, askingViews, grantViews, denyViews } = useConsent();
-    const [details, setDetails] = useState(false);
+    const {
+        asking, grant, deny, youtubeAllowed,
+        askingViews, grantViews, denyViews, viewsAllowed,
+        choicesOpen, openChoices, closeChoices,
+    } = useConsent();
     const [picks, setPicks] = useState({ youtube: false, views: false });
     const showing = asking || askingViews;
+
+    // Each time the dialog opens, its switches start from the choices as they stand: a stored
+    // «granted» is on, a refusal or no answer yet is off. Not while it is open — the reader's own
+    // flips are what «Save» records.
+    useEffect(() => {
+        if (choicesOpen) setPicks({ youtube: youtubeAllowed, views: viewsAllowed });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [choicesOpen]);
 
     // The banner is fixed, so it reserved no room: until it was answered it sat over the end of
     // every page — Today's last line and its way on to Discover, and the footer with the privacy
@@ -60,19 +77,17 @@ function ConsentBanner() {
         return () => observer.disconnect();
     }, [showing]);
 
-    if (!showing) return null;
-
     const both = asking && askingViews;
+    // The banner's two buttons answer only what it asked; an answered purpose stays as it was.
     const answer = (youtube, views) => {
-        setDetails(false);
         if (asking) (youtube ? grant : deny)();
         if (askingViews) (views ? grantViews : denyViews)();
     };
-    const openDetails = () => {
-        // Off every time it opens: a switch the reader turned on and then walked away from is not
-        // a standing answer.
-        setPicks({ youtube: false, views: false });
-        setDetails(true);
+    // The dialog's buttons record both, since it shows both.
+    const decide = (youtube, views) => {
+        (youtube ? grant : deny)();
+        (views ? grantViews : denyViews)();
+        closeChoices();
     };
 
     let title;
@@ -88,14 +103,16 @@ function ConsentBanner() {
         summary = t('consent.shortViews');
     }
 
-    // The purposes still open, each as the dialog shows it: its full account, where in the privacy
-    // policy it is set out, and — when there is more than one to choose between — its switch.
+    // Both purposes, each as the dialog shows it: its full account, where in the privacy policy it
+    // is set out, and its switch.
     const purposes = [
-        asking && { key: 'youtube', heading: t('consent.title'), body: t('consent.body'), more: t('consent.more'), href: '/privacy#youtube', label: t('consent.chooseYoutube') },
-        askingViews && { key: 'views', heading: t('consent.viewsTitle'), body: t('consent.viewsBody'), more: t('consent.viewsMore'), href: '/privacy#view-counts', label: t('consent.chooseViews') },
-    ].filter(Boolean);
+        { key: 'youtube', heading: t('consent.title'), body: t('consent.body'), more: t('consent.more'), href: '/privacy#youtube', label: t('consent.chooseYoutube') },
+        { key: 'views', heading: t('consent.viewsTitle'), body: t('consent.viewsBody'), more: t('consent.viewsMore'), href: '/privacy#view-counts', label: t('consent.chooseViews') },
+    ];
 
     return (
+        <>
+        {showing && (
         <>
         <div aria-hidden="true" style={{ height }} />
         <div
@@ -117,7 +134,7 @@ function ConsentBanner() {
                         {summary}{' '}
                         <button
                             type="button"
-                            onClick={openDetails}
+                            onClick={openChoices}
                             aria-haspopup="dialog"
                             className="text-primary font-semibold hover:underline"
                         >
@@ -138,49 +155,46 @@ function ConsentBanner() {
                 </div>
             </div>
         </div>
+        </>
+        )}
 
-        <Modal open={details} onClose={() => setDetails(false)} title={t('consent.label')} maxWidth="640px">
+        <Modal open={choicesOpen} onClose={closeChoices} title={t('consent.label')} maxWidth="640px">
             <div className="grid gap-5">
                 <p className="text-sm text-text-secondary leading-relaxed" dir="auto">{t('consent.detailsIntro')}</p>
                 {purposes.map((purpose) => (
                     <section key={purpose.key} className="grid gap-2 border-t border-border-light pt-4">
                         <div className="flex items-center justify-between gap-3">
                             <h4 className="m-0 text-base font-bold">{purpose.heading}</h4>
-                            {both && (
-                                <button
-                                    type="button"
-                                    role="switch"
-                                    aria-checked={picks[purpose.key]}
-                                    aria-label={purpose.label}
-                                    onClick={() => setPicks((p) => ({ ...p, [purpose.key]: !p[purpose.key] }))}
-                                    className={`relative flex-shrink-0 w-11 h-6 rounded-full transition-colors ${picks[purpose.key] ? 'bg-primary' : 'bg-border'}`}
-                                >
-                                    <span aria-hidden="true" className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all ${picks[purpose.key] ? 'start-[1.375rem]' : 'start-0.5'}`} />
-                                </button>
-                            )}
+                            <button
+                                type="button"
+                                role="switch"
+                                aria-checked={picks[purpose.key]}
+                                aria-label={purpose.label}
+                                onClick={() => setPicks((p) => ({ ...p, [purpose.key]: !p[purpose.key] }))}
+                                className={`relative flex-shrink-0 w-11 h-6 rounded-full transition-colors ${picks[purpose.key] ? 'bg-primary' : 'bg-border'}`}
+                            >
+                                <span aria-hidden="true" className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all ${picks[purpose.key] ? 'start-[1.375rem]' : 'start-0.5'}`} />
+                            </button>
                         </div>
                         <p className="text-sm text-text-secondary leading-loose" dir="auto">{purpose.body}</p>
                         {/* Closes the dialog on the way: left open, it would sit over the very
                             section of the policy it links to. */}
-                        <Link to={purpose.href} onClick={() => setDetails(false)} className="text-sm text-primary hover:underline w-fit">
+                        <Link to={purpose.href} onClick={closeChoices} className="text-sm text-primary hover:underline w-fit">
                             {purpose.more}
                         </Link>
                     </section>
                 ))}
-                {/* Refusing all is as near as allowing all, in both layers. With one purpose there
-                    is nothing to pick between, so the switch and «Save» would be a third way of
-                    saying the same two answers. */}
+                {/* Refusing all is as near as allowing all — and from the footer, «Refuse all» is
+                    the withdrawal, two presses from any page. */}
                 <div className="flex flex-wrap gap-2 justify-end border-t border-border-light pt-4">
-                    <Button variant="outline" onClick={() => answer(false, false)}>
-                        {both ? t('consent.denyAll') : t('consent.deny')}
+                    <Button variant="outline" onClick={() => decide(false, false)}>
+                        {t('consent.denyAll')}
                     </Button>
-                    {both && (
-                        <Button variant="outline" onClick={() => answer(picks.youtube, picks.views)}>
-                            {t('consent.save')}
-                        </Button>
-                    )}
-                    <Button variant="outline" onClick={() => answer(true, true)}>
-                        {both ? t('consent.grantAll') : t('consent.grant')}
+                    <Button variant="outline" onClick={() => decide(picks.youtube, picks.views)}>
+                        {t('consent.save')}
+                    </Button>
+                    <Button variant="outline" onClick={() => decide(true, true)}>
+                        {t('consent.grantAll')}
                     </Button>
                 </div>
             </div>

@@ -38,7 +38,7 @@ const footerLinkClass = 'text-text-muted hover:text-text-secondary hover:underli
  * it is a claim about when a human last read the text, which no clock knows.
  */
 function Footer() {
-    const { reset: resetConsent } = useConsent();
+    const { openChoices } = useConsent();
     const year = new Date().getFullYear();
 
     return (
@@ -62,13 +62,12 @@ function Footer() {
                     {/* WITHDRAWAL, and it is here because it has to be as easy as consenting was.
                         A decision that can only be undone by clearing site data is not a decision
                         that was freely given. ONE link for both choices — YouTube and counting
-                        views — because the banner asks them together: it brings the banner back
-                        with both questions and its «choose each» switches, so either can be
-                        changed alone, and until it is answered nothing loads from Google and no
-                        view is counted. A button rather than a Link: it changes state on this
-                        page, and navigating somewhere to find a toggle is the friction the rule is
-                        about. */}
-                    <button type="button" onClick={resetConsent} className={footerLinkClass}>
+                        views: it opens the banner's details dialog with each switch showing what
+                        the reader decided last, so either can be changed alone without answering
+                        the other again, and «Refuse all» withdraws both. A button rather than a
+                        Link: it changes state on this page, and navigating somewhere to find a
+                        toggle is the friction the rule is about. */}
+                    <button type="button" onClick={openChoices} aria-haspopup="dialog" className={footerLinkClass}>
                         {t('consent.footerLink')}
                     </button>
                 </nav>

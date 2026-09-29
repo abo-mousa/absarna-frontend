@@ -35,6 +35,9 @@ export function ConsentProvider({ children }) {
     // Google back. Failing closed is the correct direction for this particular question.
     const [consent, setConsent] = useState(() => readConsent());
     const [viewsConsent, setViewsConsent] = useState(() => readViewsConsent());
+    // Whether the details dialog is open — here rather than in the banner, because the footer
+    // opens it too, on a page where the banner itself has long been answered.
+    const [choicesOpen, setChoicesOpen] = useState(false);
 
     const value = useMemo(() => ({
         consent,
@@ -51,23 +54,19 @@ export function ConsentProvider({ children }) {
             setConsent(DENIED);
         },
         /**
-         * Clears BOTH decisions, which puts the banner back with both questions — the footer's one
-         * «خياراتك في الخصوصية», where the reader changes either choice the way they first made it.
+         * The footer's «خياراتك في الخصوصية»: opens the same details dialog the banner's «More
+         * details» does, showing each choice AS IT STANDS — a reader who allowed both sees both
+         * switches on — and changes nothing until they press a button there.
          *
          * <p>This is the withdrawal route, and it has to be as easy to reach as the banner was —
-         * so it is a footer link on every page rather than a control buried in the privacy policy.
-         * Clearing rather than setting DENIED on purpose: the reader asked to decide again, and
-         * silently recording a refusal on their behalf answers a question they reopened. Until they
-         * answer, both behave as refused — nothing loads from Google and no view is counted — and
-         * the view-counting id is deleted now rather than at the next request.
+         * so it is a footer link on every page rather than a control buried in the privacy policy,
+         * and «Refuse all» is on the dialog's first screen. It used to CLEAR both decisions and
+         * bring the banner back, which made changing one choice mean answering both again from
+         * switches that all started off.
          */
-        reset: () => {
-            writeConsent(null);
-            setConsent(null);
-            writeViewsConsent(null);
-            forgetViewerId();
-            setViewsConsent(null);
-        },
+        choicesOpen,
+        openChoices: () => setChoicesOpen(true),
+        closeChoices: () => setChoicesOpen(false),
 
         // The second, separate purpose: counting this visitor's views (lib/viewerId). Its own
         // answer, never inferred from YouTube's.
@@ -83,7 +82,7 @@ export function ConsentProvider({ children }) {
             forgetViewerId();
             setViewsConsent(DENIED);
         },
-    }), [consent, viewsConsent]);
+    }), [consent, viewsConsent, choicesOpen]);
 
     return <ConsentContext.Provider value={value}>{children}</ConsentContext.Provider>;
 }
@@ -101,7 +100,9 @@ export function useConsent() {
         asking: false,
         grant: () => {},
         deny: () => {},
-        reset: () => {},
+        choicesOpen: false,
+        openChoices: () => {},
+        closeChoices: () => {},
         viewsAllowed: false,
         askingViews: false,
         grantViews: () => {},
