@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useId, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import { useSearchSuggestions } from '@/hooks/useVideos';
@@ -50,6 +50,8 @@ function SearchBar({ autoFocus = false }) {
     const [query, setQuery] = useState(urlQuery);
     const [open, setOpen] = useState(false);
     const [highlightIndex, setHighlightIndex] = useState(-1);
+    const listId = useId();
+    const optionId = (index) => `${listId}-option-${index}`;
 
     // Adjusting state during render rather than in an effect: an effect would paint the stale
     // text first, and here that is the previous search flashing under the new results.
@@ -133,6 +135,15 @@ function SearchBar({ autoFocus = false }) {
                     }}
                     onFocus={() => setOpen(true)}
                     onKeyDown={handleKeyDown}
+                    // The combobox pattern, so the arrow-key highlight is announced: focus stays
+                    // in the box and aria-activedescendant names the option being pointed at.
+                    role="combobox"
+                    aria-label={t('searchBar.label')}
+                    aria-autocomplete="list"
+                    aria-expanded={open && suggestions.length > 0}
+                    aria-controls={listId}
+                    aria-activedescendant={open && highlightIndex >= 0 && suggestions[highlightIndex]
+                        ? optionId(highlightIndex) : undefined}
                     className="peer w-full ps-10 pe-4 py-2 rounded-full border border-border bg-surface text-sm outline-none focus:border-primary transition-colors"
                 />
                 <button
@@ -145,22 +156,28 @@ function SearchBar({ autoFocus = false }) {
             </form>
 
             {open && suggestions.length > 0 && (
-                <ul className="absolute top-[calc(100%+6px)] inset-x-0 bg-surface border border-border-light rounded-lg shadow-lg overflow-hidden z-[1001] max-h-[70vh] overflow-y-auto">
+                <ul
+                    id={listId}
+                    role="listbox"
+                    aria-label={t('searchBar.label')}
+                    className="absolute top-[calc(100%+6px)] inset-x-0 bg-surface border border-border-light rounded-lg shadow-lg overflow-hidden z-[1001] max-h-[70vh] overflow-y-auto"
+                >
                     {suggestions.map((item, index) => (
-                        <li key={item.id}>
-                            <button
-                                type="button"
-                                onMouseDown={(e) => {
-                                    e.preventDefault();
-                                    goToSuggestion(item);
-                                }}
-                                onMouseEnter={() => setHighlightIndex(index)}
-                                className={`w-full flex items-center gap-3 px-3 py-2.5 text-start text-sm transition-colors
-                                    ${index === highlightIndex ? 'bg-surface-hover' : 'hover:bg-surface-hover'}`}
-                            >
-                                <Search size={14} className="text-text-muted flex-shrink-0" />
-                                <span dir="auto" className="truncate text-text-primary">{item.title}</span>
-                            </button>
+                        <li
+                            key={item.id}
+                            id={optionId(index)}
+                            role="option"
+                            aria-selected={index === highlightIndex}
+                            onMouseDown={(e) => {
+                                e.preventDefault();
+                                goToSuggestion(item);
+                            }}
+                            onMouseEnter={() => setHighlightIndex(index)}
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 text-start text-sm transition-colors cursor-pointer
+                                ${index === highlightIndex ? 'bg-surface-hover' : 'hover:bg-surface-hover'}`}
+                        >
+                            <Search size={14} className="text-text-muted flex-shrink-0" aria-hidden="true" />
+                            <span dir="auto" className="truncate text-text-primary">{item.title}</span>
                         </li>
                     ))}
                 </ul>

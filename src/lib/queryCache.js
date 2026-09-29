@@ -61,11 +61,30 @@ const msUntilLocalMidnight = (fromMs) => {
 };
 
 /**
- * How long until either day ends — the backend's (UTC) or the reader's own. Today needs both: its
- * feed row is seeded by the backend's day, and «أسبوعك» and «برامج جديدة» turn over at the
- * reader's midnight (the SPA sends `?tz=`). Whichever comes first makes the copy wrong.
+ * How long until the reader's next local `hour:00` — the first one strictly after `fromMs`.
  */
-export const msUntilDayEnds = (fromMs) => Math.min(msUntilServerMidnight(fromMs), msUntilLocalMidnight(fromMs));
+const msUntilLocalHour = (fromMs, hour) => {
+    const next = new Date(fromMs);
+    next.setHours(hour, 0, 0, 0);
+    if (next.getTime() <= fromMs) next.setDate(next.getDate() + 1);
+    return next.getTime() - fromMs;
+};
+
+/**
+ * How long until any of Today's days ends — the backend's (UTC), the reader's calendar day, or the
+ * reader's LEARNING day. Today needs all of them: its feed row is seeded by the backend's day,
+ * «أسبوعك» and «برامج جديدة» turn over at the reader's midnight (the SPA sends `?tz=`), and every
+ * portion's state is decided by the learning day, which turns at 03:00 local (`LearningDay`) — a
+ * copy fetched at 01:30 still says last night's portion is done, and without this bound it stayed
+ * fresh until the next UTC midnight. Noon is the fourth edge: the make-up offer closes and the
+ * carry-over opens there (`GoalService.assemble`). Whichever comes first makes the copy wrong.
+ */
+export const msUntilDayEnds = (fromMs) => Math.min(
+    msUntilServerMidnight(fromMs),
+    msUntilLocalMidnight(fromMs),
+    msUntilLocalHour(fromMs, 3),
+    msUntilLocalHour(fromMs, 12),
+);
 
 /**
  * Good until the day ends — for per-reader responses the backend builds fresh on every request

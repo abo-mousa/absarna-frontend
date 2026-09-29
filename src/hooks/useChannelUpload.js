@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useConfirmation } from './useConfirmation';
 import { useToast } from '@/contexts/ToastContext';
 import { usePresignedUpload, ResumeUnavailableError } from '@/hooks/usePresignedUpload';
 import { rememberSession, forgetSession, resumableSessionId, rememberedSession }
@@ -61,11 +62,12 @@ export function useChannelUpload(slug, kind) {
      * quota counts open sessions, and a user who restarts three uploads by hand should not find
      * themselves locked out behind an error telling them to cancel something.
      */
+    const [ask, confirmDialog] = useConfirmation();
     const uploadResuming = useCallback(async (file) => {
         const resumeId = resumableSessionId(slug, kind, file);
         const remembered = rememberedSession(slug, kind);
 
-        if (resumeId && !window.confirm(t('channelManage.resumePrompt', { name: file.name }))) {
+        if (resumeId && !(await ask(t('channelManage.resumePrompt', { name: file.name })))) {
             forgetSession(slug, kind);
             await upload.discard(slug, kind, resumeId);
             return uploadFresh(file);
@@ -92,7 +94,7 @@ export function useChannelUpload(slug, kind) {
             forgetSession(slug, kind);
             return uploadFresh(file);
         }
-    }, [upload, uploadFresh, kind, slug]);
+    }, [upload, uploadFresh, kind, slug, ask]);
 
     /**
      * The `change` handler for the file input.
@@ -144,5 +146,6 @@ export function useChannelUpload(slug, kind) {
         setFileName(null);
     }, [slug, kind]);
 
-    return { selectFile, uploading, progress: upload.progress, forget, fileName };
+    // Rendered once by the tab as <ConfirmDialog {...upload.confirmDialog} />.
+    return { selectFile, uploading, progress: upload.progress, forget, fileName, confirmDialog };
 }

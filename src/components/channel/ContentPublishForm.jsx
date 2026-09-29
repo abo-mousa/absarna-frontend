@@ -1,6 +1,7 @@
 import { useId } from 'react';
 import { Button, FilePicker, RejectedFields, SwapLabel } from '@/components/ui';
 import { t } from '@/i18n';
+import { formatPercent } from '@/lib/numbers';
 
 /**
  * The shell every publish form on the channel dashboard shares: the card, its heading, the
@@ -71,7 +72,7 @@ function ContentPublishForm({ heading, onSubmit, file, submitLabel, submitIcon, 
                                     style={{ width: `${file.progress}%` }}
                                 />
                             </div>
-                            <p className="text-sm text-text-muted mt-1">{file.progress}%</p>
+                            <p className="text-sm text-text-muted mt-1">{formatPercent(file.progress)}</p>
                         </div>
                     )}
                 </div>

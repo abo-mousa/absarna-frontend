@@ -289,6 +289,7 @@ export const en = {
             STATUS_REASON_REQUIRED: 'A reject or a suspend must say why: the owner reads the reason on their dashboard.',
             INVALID_ROLE: 'That role does not exist.',
             CANNOT_DEMOTE_SELF: 'You cannot remove your own admin role. Ask another admin to do it.',
+            CANNOT_DEMOTE_SEEDED_ADMIN: 'The platform\'s first admin account cannot be demoted — it is the way back in.',
             // The channel's address (its slug), on creating one.
             // The progress tab's goals and the Friday review (backend content/goal, content/weeklyreview).
             GOAL_LIMIT_REACHED: 'You have as many goals as you can hold for now. Finish or archive one, then start another.',
@@ -2881,6 +2882,7 @@ export const en = {
             previousAddress: 'This is the address the last invitation went to.',
             localeLabel: 'Write in',
             localeHint: 'There is no account to read a language from, so this is your choice — and it is recorded with the send.',
+            localeLocked: 'The letter has been edited in this language. Reset it to the default to write in another.',
             edit: 'Edit the letter',
             subjectLabel: 'Subject',
             letterLabel: 'Letter',
@@ -3103,6 +3105,8 @@ export const en = {
         reports: 'Reports filed',
         reportsSummary: '{open} open · {actioned} actioned · {dismissed} dismissed',
         reportsDecided: 'decided {count} as a moderator',
+        roleChange: 'From {from} to {to}, by {by}',
+        roleChangeUnknownActor: 'an account since deleted',
         noReports: 'This account has filed no report.',
     },
 

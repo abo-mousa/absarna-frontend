@@ -315,6 +315,7 @@ export const ar = {
             STATUS_REASON_REQUIRED: 'لا بدّ من ذكر السبب عند الرفض أو الإيقاف؛ فصاحب القناة يقرؤه في لوحة قناته.',
             INVALID_ROLE: 'هذا الدور غير موجود.',
             CANNOT_DEMOTE_SELF: 'لا يمكنك إزالة صلاحية الإدارة عن نفسك. اطلب ذلك من مدير آخر.',
+            CANNOT_DEMOTE_SEEDED_ADMIN: 'لا يمكن سحب الإدارة من حساب المدير الأول للمنصّة؛ فهو طريق العودة إليها.',
             // The channel's address (its slug), on creating one.
             // The progress tab's goals and the Friday review (backend content/goal, content/weeklyreview).
             GOAL_LIMIT_REACHED: 'بلغتَ عدد الأهداف المتاح الآن. أتمِم هدفاً أو أرشِفه، ثم ابدأ غيره.',
@@ -3329,6 +3330,7 @@ export const ar = {
             previousAddress: 'هذا هو العنوان الذي أُرسلت إليه الدعوة السابقة.',
             localeLabel: 'لغة الرسالة',
             localeHint: 'لا حساب هنا تُقرأ منه اللغة، فالاختيار اختيارك، ويُسجَّل مع الإرسال.',
+            localeLocked: 'عُدِّلت الرسالة بهذه اللغة. أعِدها إلى النص الافتراضي لتكتب بلغة أخرى.',
             edit: 'حرّر الرسالة',
             subjectLabel: 'العنوان',
             letterLabel: 'نصّ الرسالة',
@@ -3639,6 +3641,8 @@ export const ar = {
         reports: 'البلاغات المقدَّمة',
         reportsSummary: '{open} مفتوحة · {actioned} تُصرِّف فيها · {dismissed} صُرفت',
         reportsDecided: 'قرّر في {count} بصفته مشرفًا',
+        roleChange: 'من {from} إلى {to}، بواسطة {by}',
+        roleChangeUnknownActor: 'حساب حُذف لاحقًا',
         noReports: 'لم يقدّم هذا الحساب أيّ بلاغ.',
     },
 

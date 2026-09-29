@@ -200,7 +200,7 @@ function Input({
                 <button
                     type="button"
                     onClick={() => setShowPassword((prev) => !prev)}
-                    tabIndex={-1}
+                    aria-pressed={showPassword}
                     aria-label={showPassword ? t('fields.hidePassword') : t('fields.showPassword')}
                     className="absolute inset-y-0 end-2.5 flex items-center text-text-muted hover:text-text-secondary"
                 >

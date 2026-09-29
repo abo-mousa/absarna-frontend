@@ -31,6 +31,20 @@ describe('msUntilDayEnds', () => {
         expect(msUntilDayEnds(from)).toBeLessThanOrEqual(local.getTime() - from);
     });
 
+    it('ends at the reader\'s 03:00, when the learning day turns', () => {
+        // 01:30 local, whatever zone the test runs in: last night's portion is still "today"
+        // for the backend until 03:00, so a copy fetched now must not outlive 03:00.
+        const from = new Date(2026, 8, 27, 1, 30, 0, 0).getTime();
+        const three = new Date(2026, 8, 27, 3, 0, 0, 0).getTime();
+        expect(msUntilDayEnds(from)).toBeLessThanOrEqual(three - from);
+    });
+
+    it('ends at the reader\'s noon, when the make-up offer turns into carry-over', () => {
+        const from = new Date(2026, 8, 27, 10, 0, 0, 0).getTime();
+        const noon = new Date(2026, 8, 27, 12, 0, 0, 0).getTime();
+        expect(msUntilDayEnds(from)).toBeLessThanOrEqual(noon - from);
+    });
+
     it('is always positive and at most a day', () => {
         for (const iso of ['2026-09-26T00:00:00Z', '2026-09-26T12:00:00Z', '2026-09-26T23:59:59Z']) {
             const ms = msUntilDayEnds(at(iso));

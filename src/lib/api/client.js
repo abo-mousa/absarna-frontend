@@ -49,10 +49,16 @@ api.interceptors.request.use(
 // that 401s while a refresh is already running awaits the same promise instead.
 let refreshPromise = null;
 
+const REFRESH_TIMEOUT_MS = 15000;
+
 const refreshAccessToken = (refreshToken) => {
     if (!refreshPromise) {
+        // Bare axios (the instance's interceptors would recurse), so the instance's timeout does
+        // not apply and must be stated: on a stalled connection every request that 401'd awaits
+        // this one promise, and with no timeout nothing on screen settled until the OS dropped
+        // the socket. A timeout has no response, so refreshFailureEndsSession keeps the session.
         refreshPromise = axios
-            .post(`${API_BASE_URL}/api/auth/refresh`, { refreshToken })
+            .post(`${API_BASE_URL}/api/auth/refresh`, { refreshToken }, { timeout: REFRESH_TIMEOUT_MS })
             .then((res) => {
                 // The backend ROTATES the refresh token on every call, which is what turns its
                 // expiry from a wall a fixed number of days after the login into a window

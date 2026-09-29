@@ -1,5 +1,5 @@
 import { Component } from 'react';
-import { t } from '@/i18n';
+import { isRtl, t } from '@/i18n';
 import { reportBoundaryError } from '@/lib/telemetry';
 
 /**
@@ -50,18 +50,21 @@ class ErrorBoundary extends Component {
                     textAlign: 'center',
                     padding: '40px',
                     fontFamily: 'Amiri, Inter, sans-serif',
-                    direction: 'rtl'
+                    // The active locale's direction and the palette's own tokens: this page is
+                    // drawn when the app has failed, but the English build is still English.
+                    direction: isRtl() ? 'rtl' : 'ltr',
+                    color: 'rgb(var(--color-text-primary, 30 41 59))',
                 }}>
                     <h2>{t('errorBoundary.title')}</h2>
                     {/* The catalog's own wording, never `error.message` — see the class doc. */}
-                    <p style={{ color: '#64748b' }}>{t('errorBoundary.fallback')}</p>
+                    <p style={{ color: 'rgb(var(--color-text-secondary, 100 116 139))' }}>{t('errorBoundary.fallback')}</p>
                     <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
                         {this.props.action}
                         <button
                             onClick={() => window.location.reload()}
                             style={{
                                 padding: '12px 24px',
-                                background: '#1a56db',
+                                background: 'rgb(var(--color-primary, 15 110 119))',
                                 color: 'white',
                                 border: 'none',
                                 borderRadius: '8px',

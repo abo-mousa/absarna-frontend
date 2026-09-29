@@ -63,7 +63,7 @@ function SeriesDetail() {
                     its list below is empty for the same reason — which, unexplained, reads to its
                     owner as a broken page. */}
                 {series.publiclyListed === false && (
-                    <div role="status" className="mb-6 rounded-lg border p-4 text-sm border-amber-300 bg-amber-50 text-amber-900">
+                    <div role="status" className="mb-6 rounded-lg border p-4 text-sm border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
                         <p className="font-semibold mb-1">{t('series.hiddenNoticeTitle')}</p>
                         <p className="leading-relaxed">{t('series.hiddenNoticeBody')}</p>
                         {channel && (
@@ -81,9 +81,9 @@ function SeriesDetail() {
                     <div className="flex items-center gap-2 text-primary font-semibold text-sm mb-2">
                         <Tv size={16} /> {t('series.badge')}
                     </div>
-                    <h1 className="text-xl sm:text-2xl font-bold mb-2">{series.title}</h1>
+                    <h1 dir="auto" className="text-xl sm:text-2xl font-bold mb-2">{series.title}</h1>
                     {series.description && (
-                        <p className="text-text-secondary leading-relaxed mb-2">{series.description}</p>
+                        <p dir="auto" className="text-text-secondary leading-relaxed mb-2">{series.description}</p>
                     )}
                     <p className="text-sm text-text-muted">{t('common.videoCount', { count: series.contentCount ?? content.length })}</p>
                     <MakeWird seriesId={series.id} title={series.title} variant="button" className="mt-4" />

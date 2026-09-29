@@ -204,18 +204,23 @@ function VideoManageStatus({ video, slug, isOwner }) {
             {/* One per FINDING, not one per video: a video can be held for music and noted for
                 explicit content at once, and those are two different things to do something
                 about. The tone is load-bearing — `warning` means nobody can see this video. */}
+            {/* The sentence is shown, not only put in `title=`: it is what says whether the video
+                is hidden or published, and a finger never sees a tooltip. */}
             {notices.map((notice) => (
-                <p
-                    key={notice.type}
-                    title={notice.body}
-                    className={`inline-flex w-fit items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded ${
-                        notice.tone === 'warning'
-                            ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/50 dark:text-amber-300'
-                            : 'bg-surface-hover text-text-secondary'
-                    }`}
-                >
-                    {notice.title}
-                </p>
+                <div key={notice.type} className="grid gap-0.5">
+                    <p
+                        className={`inline-flex w-fit items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded ${
+                            notice.tone === 'warning'
+                                ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/50 dark:text-amber-300'
+                                : 'bg-surface-hover text-text-secondary'
+                        }`}
+                    >
+                        {notice.title}
+                    </p>
+                    {notice.body && (
+                        <p className="text-xs text-text-muted leading-relaxed line-clamp-3">{notice.body}</p>
+                    )}
+                </div>
             ))}
         </div>
     );

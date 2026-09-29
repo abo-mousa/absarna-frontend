@@ -37,7 +37,10 @@ function ArticleCard({ article }) {
             </h3>
             {article.content && (
                 <p dir="auto" className="font-reading text-text-secondary text-[0.95rem] leading-loose line-clamp-3 mb-3">
-                    {article.content.substring(0, 150)}...
+                    {/* line-clamp does the cutting, with the script's own ellipsis; a fixed
+                        substring plus "..." put three Latin dots after Arabic text that was
+                        already being clipped. Capped only so a long article is not sent to layout. */}
+                    {article.content.slice(0, 600)}
                 </p>
             )}
             <div className="flex gap-3 text-xs text-text-muted">

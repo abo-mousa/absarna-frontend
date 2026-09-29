@@ -114,6 +114,21 @@ function UserDetail({ id }) {
                             </Button>
                             <p className="text-xs text-text-muted basis-full">{t('adminUsers.roleHint')}</p>
                         </div>
+                        {data.roleChanges?.length > 0 && (
+                            <ul className="grid gap-1 mt-3 text-xs text-text-secondary">
+                                {data.roleChanges.map((change, index) => (
+                                    <li key={`${change.changedAt}-${index}`}>
+                                        {t('adminUsers.roleChange', {
+                                            from: change.fromRole ? roleLabel(change.fromRole) : '—',
+                                            to: roleLabel(change.toRole),
+                                            by: change.actorUsername ?? t('adminUsers.roleChangeUnknownActor'),
+                                        })}
+                                        {' · '}
+                                        <span className="text-text-muted">{formatMoment(change.changedAt)}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
                     </section>
 
                     <section>

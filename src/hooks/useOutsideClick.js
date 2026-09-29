@@ -8,7 +8,9 @@ export function useOutsideClick(ref, onOutside) {
                 onOutside();
             }
         };
-        document.addEventListener('mousedown', handlePointerDown);
-        return () => document.removeEventListener('mousedown', handlePointerDown);
+        // pointerdown, not mousedown: iOS Safari synthesises mouse events only for targets it
+        // thinks are clickable, so a tap on the bare page background never closed a menu.
+        document.addEventListener('pointerdown', handlePointerDown);
+        return () => document.removeEventListener('pointerdown', handlePointerDown);
     }, [ref, onOutside]);
 }

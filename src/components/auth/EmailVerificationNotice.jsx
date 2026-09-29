@@ -24,7 +24,7 @@ function EmailVerificationNotice({ message }) {
     };
 
     return (
-        <div className="bg-amber-50 border border-amber-300 text-amber-800 text-sm p-3 rounded-md flex flex-wrap items-center justify-between gap-2">
+        <div className="bg-amber-50 border border-amber-300 text-amber-800 dark:bg-amber-950/40 dark:border-amber-900 dark:text-amber-200 text-sm p-3 rounded-md flex flex-wrap items-center justify-between gap-2">
             <span>{message || t('auth.verificationNotice.defaultMessage')}</span>
 
             {status === 'sent' ? (

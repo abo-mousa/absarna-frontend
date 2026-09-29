@@ -2,6 +2,7 @@ import { keepPreviousData, useInfiniteQuery, useQuery, useMutation, useQueryClie
 import api, { UPLOAD_CONFIRM_TIMEOUT_MS } from '@/lib/api/client';
 import { queryKeys } from '@/lib/queryKeys';
 import { useUserScope } from './useUserScope';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Maps a content type to the query key its public channel-page list is cached under —
 // shared by the owner-management mutations below so a publish/toggle/delete on
@@ -787,6 +788,7 @@ export const useDeleteChannel = () => {
  */
 export const useDeleteOwnChannel = (slug, channelId) => {
     const queryClient = useQueryClient();
+    const { refreshUser } = useAuth();
     return useMutation({
         mutationFn: (currentPassword) =>
             api.delete(`/channels/${channelId}`, { data: { currentPassword } }),
@@ -794,6 +796,9 @@ export const useDeleteOwnChannel = (slug, channelId) => {
             queryClient.removeQueries({ queryKey: ['channel', slug] });
             queryClient.invalidateQueries({ queryKey: ['my-channels'] });
             invalidateAdminChannels(queryClient);
+            // The navbar's upload button reads `user.uploadChannelSlug`; left alone it pointed at
+            // the channel just deleted until a reload.
+            refreshUser?.();
         },
     });
 };

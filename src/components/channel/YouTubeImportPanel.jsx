@@ -177,7 +177,7 @@ export function AdoptionPanelLine({ slug, onOpen }) {
     return (
         <>
             {state === 'blocked' ? (
-                <p className="text-sm text-gold leading-loose" dir="auto">
+                <p className="text-sm text-gold-ink leading-loose" dir="auto">
                     {t('youtube.adoption.needsOwnerVerification')}
                 </p>
             ) : (
@@ -392,7 +392,7 @@ function YouTubeImportPanel({ slug, isOwner, onOpenAdoption }) {
                         /* No OAuth client on this deployment. There is no second method behind it
                            any more, so this is a dead end for the owner and saying so is the only
                            honest thing on screen — an empty box reads as a page that failed. */
-                        <p className="text-sm text-gold">{t('youtube.oauth.unavailable')}</p>
+                        <p className="text-sm text-gold-ink">{t('youtube.oauth.unavailable')}</p>
                     )}
 
                     {isAdmin && (
@@ -442,7 +442,7 @@ function YouTubeImportPanel({ slug, isOwner, onOpenAdoption }) {
                         backend is waiting out a retry. The poll picks it up, and the next page
                         committed clears it. */}
                     {state.importStatus === 'RUNNING' && importReasonText(state) && (
-                        <p className="text-sm text-gold">{importReasonText(state)}</p>
+                        <p className="text-sm text-gold-ink">{importReasonText(state)}</p>
                     )}
 
                     {state.importStatus === 'SUCCESS' && (
@@ -460,7 +460,7 @@ function YouTubeImportPanel({ slug, isOwner, onOpenAdoption }) {
                         YouTube quota lands here every day until it is finished, and colouring the
                         ordinary path red teaches the owner to ignore the one time it is red. */}
                     {state.importStatus === 'PARTIAL' && (
-                        <p className="text-sm text-gold">{t('youtube.paused')}</p>
+                        <p className="text-sm text-gold-ink">{t('youtube.paused')}</p>
                     )}
 
                     {state.importStatus === 'FAILED' && (
@@ -581,7 +581,7 @@ function YouTubeImportPanel({ slug, isOwner, onOpenAdoption }) {
                         nothing for them to do — the next day's sweep is the retry. Colouring it as
                         an error would ask for an action that does not exist. */}
                     {refreshFailureText(state) && (
-                        <p className="text-sm text-gold" dir="auto">{refreshFailureText(state)}</p>
+                        <p className="text-sm text-gold-ink" dir="auto">{refreshFailureText(state)}</p>
                     )}
                 </div>
             )}

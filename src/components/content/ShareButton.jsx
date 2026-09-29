@@ -3,6 +3,7 @@ import { Share2, Copy, Check } from 'lucide-react';
 import Modal from '../ui/Modal';
 import { useToast } from '../../contexts/ToastContext';
 import { t } from '@/i18n';
+import { formatTimestamp } from '@/lib/spans';
 
 // Plain-text platform links, not brand icons — lucide-react ships no brand marks (and the
 // app already deliberately avoids per-row icons elsewhere, see SearchBar's suggestion-row
@@ -12,13 +13,6 @@ const shareTargets = (url, title) => [
     { label: t('share.telegram'), href: `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}` },
     { label: 'X', href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}` },
 ];
-
-function formatTimestamp(seconds) {
-    const total = Math.floor(seconds);
-    const m = Math.floor(total / 60);
-    const s = total % 60;
-    return `${m}:${String(s).padStart(2, '0')}`;
-}
 
 const canNativeShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
 

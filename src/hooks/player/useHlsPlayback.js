@@ -17,6 +17,13 @@ import { reportPlaybackError } from '@/lib/telemetry';
 const MAX_URL_REFRESHES = 3;
 
 /**
+ * Fatal media errors answered with `recoverMediaError()` before trying `swapAudioCodec()` once and
+ * then giving up. Counted within MEDIA_RECOVERY_WINDOW_MS of each other, so the budget is per burst.
+ */
+const MAX_MEDIA_RECOVERIES = 2;
+const MEDIA_RECOVERY_WINDOW_MS = 30 * 1000;
+
+/**
  * How long to wait before retrying the segment fetch that just failed, times the attempt number.
  *
  * The retry and the fix are racing each other. Re-minting the playback URL is a round trip and a
@@ -103,6 +110,8 @@ export function useHlsPlayback({ enabled, playbackUrl, videoId, videoRef, pendin
         let hls = null;
         let retryTimer = null;
         let resumeIfDeferred = null;
+        let mediaRecoveries = 0;
+        let lastMediaRecoveryAt = 0;
         loadStartedRef.current = false;
         setUnrecoverable(false);
         // The manifest describes this URL, so a list left over from the previous one would be
@@ -262,7 +271,27 @@ export function useHlsPlayback({ enabled, playbackUrl, videoId, videoRef, pendin
                 }
                 if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
                     // A decode stall, not a delivery problem — refetching the URL would not help.
-                    hls.recoverMediaError();
+                    // Budgeted, as the URL refreshes are: one undecodable segment (a bad encode, a
+                    // half-written object) throws again on the same segment after every recovery,
+                    // and an unbudgeted loop was a spinner that never ended with no «فشل التشغيل».
+                    // A burst resets once playback has run clean for a while, so a two-hour
+                    // lecture with one bad moment early on still gets its full budget later.
+                    const now = Date.now();
+                    if (now - lastMediaRecoveryAt > MEDIA_RECOVERY_WINDOW_MS) mediaRecoveries = 0;
+                    lastMediaRecoveryAt = now;
+                    mediaRecoveries += 1;
+                    if (mediaRecoveries <= MAX_MEDIA_RECOVERIES) {
+                        hls.recoverMediaError();
+                        return;
+                    }
+                    if (mediaRecoveries === MAX_MEDIA_RECOVERIES + 1) {
+                        // hls.js's own second step: the audio codec the manifest named may not be
+                        // the one the segments carry.
+                        hls.swapAudioCodec();
+                        hls.recoverMediaError();
+                        return;
+                    }
+                    giveUp();
                     return;
                 }
                 giveUp();

@@ -343,7 +343,7 @@ function AdminReports() {
                                                 «1» on every row would make the rows that matter
                                                 harder to spot, not easier. */}
                                             {alsoReported && (
-                                                <span className="inline-flex items-center gap-1 text-xs font-semibold text-gold">
+                                                <span className="inline-flex items-center gap-1 text-xs font-semibold text-gold-ink">
                                                     <Users size={13} />
                                                     {t('adminReports.corroboration', {
                                                         count: formatCount(alsoReported),

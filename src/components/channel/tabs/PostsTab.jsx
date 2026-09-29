@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { MessageSquarePlus } from 'lucide-react';
-import { Button, Input, Modal } from '@/components/ui';
+import { Button, ConfirmDialog, Input, Modal } from '@/components/ui';
 import ContentPublishForm from '../ContentPublishForm';
 import ManagedContentList from './ManagedContentList';
 import { useChannelContentTab } from '@/hooks/useChannelContentTab';
@@ -30,6 +30,7 @@ export default function PostsTab({ slug, active }) {
 
     return (
         <div className="grid gap-6">
+            <ConfirmDialog {...content.confirmDialog} />
             <Modal open={adding} onClose={() => setAdding(false)} title={t('channelManage.forms.post.heading')} maxWidth="560px">
                 <ContentPublishForm
                     bare

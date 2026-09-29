@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useConfirmation } from './useConfirmation';
 import { useToast } from '@/contexts/ToastContext';
 import { useEmptyPageStepBack } from './useEmptyPageStepBack';
 import { useDebouncedValue } from './useDebouncedValue';
@@ -115,9 +116,10 @@ export function useChannelContentTab(slug, type, active, series = null) {
         });
     };
 
-    const deleteItem = (item) => {
-        const label = item.title || (item.content ? `${item.content.substring(0, 40)}...` : '');
-        if (!window.confirm(t('channelManage.deleteConfirm', { label }))) return;
+    const [ask, confirmDialog] = useConfirmation();
+    const deleteItem = async (item) => {
+        const label = item.title || (item.content ? `${item.content.substring(0, 40)}…` : '');
+        if (!(await ask(t('channelManage.deleteConfirm', { label }), { danger: true }))) return;
         remove.mutate(item, {
             onSuccess: () => showToast(t('channelManage.deleted'), 'success'),
             onError: () => showToast(t('channelManage.deleteFailed'), 'error'),
@@ -125,6 +127,8 @@ export function useChannelContentTab(slug, type, active, series = null) {
     };
 
     return { items, loading, pageInfo, totalItems, setPage, publish, save, toggleVisibility, deleteItem,
+        // Rendered once by the tab as <ConfirmDialog {...content.confirmDialog} />.
+        confirmDialog,
         // `search` is the input's value; `term` is what the list currently answers. The list needs
         // both — the box binds to the first, and the empty state has to say "nothing matches
         // <term>" about the query that was actually run rather than about what is being typed.

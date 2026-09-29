@@ -28,6 +28,15 @@ import {
     rememberClaimInvite, claimInviteFor,
 } from '@/lib/claim';
 import { t } from '@/i18n';
+import { formatCount } from '@/lib/numbers';
+
+/**
+ * A tab's badge. Only the open tab fetches its list; every other tab's number comes from a
+ * one-row page of the same endpoint (same gate, same viewer), so a channel visit no longer pays
+ * for ~100 rows across four tabs nobody opened. The list's own total wins once it is loaded.
+ */
+const badgeCount = (badge, pages, rows) =>
+    pages?.pages[0]?.totalItems ?? badge?.pages[0]?.totalItems ?? rows.length;
 
 function ChannelPage() {
     const { slug } = useParams();
@@ -73,27 +82,30 @@ function ChannelPage() {
         fetchNextPage: fetchNextBooksPage,
         hasNextPage: hasNextBooksPage,
         isFetchingNextPage: isFetchingNextBooksPage,
-    } = useChannelBooks(slug, 24, !!channel);
+    } = useChannelBooks(slug, 24, !!channel && activeTab === 'books');
     const books = bookPages?.pages.flatMap((page) => page.content) || [];
-    const bookCount = bookPages?.pages[0]?.totalItems ?? books.length;
+    const { data: bookBadge } = useChannelBooks(slug, 1, !!channel);
+    const bookCount = badgeCount(bookBadge, bookPages, books);
 
     const {
         data: articlePages,
         fetchNextPage: fetchNextArticlesPage,
         hasNextPage: hasNextArticlesPage,
         isFetchingNextPage: isFetchingNextArticlesPage,
-    } = useChannelArticles(slug, 24, !!channel);
+    } = useChannelArticles(slug, 24, !!channel && activeTab === 'articles');
     const articles = articlePages?.pages.flatMap((page) => page.content) || [];
-    const articleCount = articlePages?.pages[0]?.totalItems ?? articles.length;
+    const { data: articleBadge } = useChannelArticles(slug, 1, !!channel);
+    const articleCount = badgeCount(articleBadge, articlePages, articles);
 
     const {
         data: postPages,
         fetchNextPage: fetchNextPostsPage,
         hasNextPage: hasNextPostsPage,
         isFetchingNextPage: isFetchingNextPostsPage,
-    } = useChannelPosts(slug, 24, !!channel);
+    } = useChannelPosts(slug, 24, !!channel && activeTab === 'posts');
     const posts = postPages?.pages.flatMap((page) => page.content) || [];
-    const postCount = postPages?.pages[0]?.totalItems ?? posts.length;
+    const { data: postBadge } = useChannelPosts(slug, 1, !!channel);
+    const postCount = badgeCount(postBadge, postPages, posts);
     // Still read here for the subscriber count in the header; the toggle itself moved into
     // SubscribeButton, which runs this same cached query.
     // For everyone, signed in or not: the backend answers a signed-out caller with the count and
@@ -104,9 +116,10 @@ function ChannelPage() {
         fetchNextPage: fetchNextSeriesPage,
         hasNextPage: hasNextSeriesPage,
         isFetchingNextPage: isFetchingNextSeriesPage,
-    } = useChannelSeries(slug, !!channel);
+    } = useChannelSeries(slug, !!channel && activeTab === 'series');
     const series = seriesPages?.pages.flatMap((page) => page.content) || [];
-    const seriesCount = seriesPages?.pages[0]?.totalItems ?? series.length;
+    const { data: seriesBadge } = useChannelSeries(slug, !!channel, 1);
+    const seriesCount = badgeCount(seriesBadge, seriesPages, series);
 
     const subscriberCount = subscriptionStatus?.subscriberCount || 0;
 
@@ -218,7 +231,7 @@ function ChannelPage() {
                 />
 
                 <div className="flex-1 min-w-[150px]">
-                    <h1 className="m-0 text-xl sm:text-2xl font-bold text-text-primary">{channel.name}</h1>
+                    <h1 dir="auto" className="m-0 text-xl sm:text-2xl font-bold text-text-primary">{channel.name}</h1>
                     {/* Subscribers and videos, for everyone. The video count is the channel's whole
                         public catalogue — the same frozen total the Videos tab badge shows, so a
                         search on the page does not make it shrink. Each waits for its own answer
@@ -229,7 +242,7 @@ function ChannelPage() {
                         {videoPages && <span>{t('common.videoCount', { count: videoCount })}</span>}
                     </p>
                     {channel.description && (
-                        <p className="text-text-secondary text-sm mt-2 max-w-[600px]">{channel.description}</p>
+                        <p dir="auto" className="text-text-secondary text-sm mt-2 max-w-[600px]">{channel.description}</p>
                     )}
                 </div>
 
@@ -341,7 +354,7 @@ function ChannelPage() {
                         <tab.icon size={16} />
                         {tab.label}
                         <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === tab.id ? 'bg-white/20' : 'bg-surface-hover'}`}>
-                            {tab.count}
+                            {formatCount(tab.count)}
                         </span>
                     </button>
                 ))}

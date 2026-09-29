@@ -15,6 +15,7 @@ import {
     useDeleteComment,
 } from '../../hooks/useComments';
 import { formatDigits, t } from '@/i18n';
+import { describeError } from '@/lib/describeError';
 
 const MAX_COMMENT_LENGTH = 2000;
 
@@ -66,7 +67,7 @@ function CommentsSection({ type, id }) {
                 if (err.response?.data?.emailVerificationRequired) {
                     setNeedsVerification(true);
                 } else {
-                    showToast(t('comments.createFailed'), 'error');
+                    showToast(describeError(err, t('comments.createFailed')), 'error');
                 }
             },
         });
@@ -86,7 +87,7 @@ function CommentsSection({ type, id }) {
                 if (err.response?.data?.emailVerificationRequired) {
                     setNeedsVerification(true);
                 } else {
-                    showToast(t('comments.replyFailed'), 'error');
+                    showToast(describeError(err, t('comments.replyFailed')), 'error');
                 }
             },
         });
@@ -102,7 +103,7 @@ function CommentsSection({ type, id }) {
         if (!editContent.trim()) return;
         updateComment.mutate({ commentId, content: editContent.trim() }, {
             onSuccess: () => setEditingId(null),
-            onError: () => showToast(t('comments.editFailed'), 'error'),
+            onError: (err) => showToast(describeError(err, t('comments.editFailed')), 'error'),
         });
     };
 
@@ -110,7 +111,7 @@ function CommentsSection({ type, id }) {
         const commentId = deletingId;
         setDeletingId(null);
         deleteComment.mutate(commentId, {
-            onError: () => showToast(t('comments.deleteFailed'), 'error'),
+            onError: (err) => showToast(describeError(err, t('comments.deleteFailed')), 'error'),
         });
     };
 
@@ -165,6 +166,7 @@ function CommentsSection({ type, id }) {
     const renderEditForm = (comment) => (
         <form onSubmit={(e) => handleEditSubmit(e, comment.id)} className="grid gap-2 mt-2">
             <textarea
+                dir="auto"
                 value={editContent}
                 onChange={(e) => setEditContent(e.target.value)}
                 maxLength={MAX_COMMENT_LENGTH}
@@ -207,6 +209,7 @@ function CommentsSection({ type, id }) {
                         <EmailVerificationNotice message={t('auth.verificationNotice.beforeComment')} />
                     )}
                     <textarea
+                        dir="auto"
                         placeholder={t('comments.placeholder')}
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
@@ -248,7 +251,7 @@ function CommentsSection({ type, id }) {
                     {comments.map((comment) => (
                         <div key={comment.id} className="bg-surface p-4 rounded-md border border-border-light">
                             <div className="flex justify-between mb-2">
-                                <strong className="text-primary">{comment.userName}</strong>
+                                <strong dir="auto" className="text-primary">{comment.userName}</strong>
                                 <div className="flex items-center gap-2">
                                     <span className="text-xs text-text-muted">{formatDate(comment.createdAt)}</span>
                                     {renderActions(comment)}
@@ -258,7 +261,7 @@ function CommentsSection({ type, id }) {
                             {editingId === comment.id ? (
                                 renderEditForm(comment)
                             ) : (
-                                <p className="font-reading text-text-secondary leading-relaxed">{comment.content}</p>
+                                <p dir="auto" className="font-reading text-text-secondary leading-relaxed">{comment.content}</p>
                             )}
 
                             {token && editingId !== comment.id && (
@@ -273,6 +276,7 @@ function CommentsSection({ type, id }) {
                             {replyingTo === comment.id && (
                                 <form onSubmit={(e) => handleReplySubmit(e, comment.id)} className="grid gap-2 mt-3">
                                     <textarea
+                                        dir="auto"
                                         placeholder={t('comments.replyPlaceholder')}
                                         value={replyContent}
                                         onChange={(e) => setReplyContent(e.target.value)}
@@ -307,7 +311,7 @@ function CommentsSection({ type, id }) {
                                             {editingId === reply.id ? (
                                                 renderEditForm(reply)
                                             ) : (
-                                                <p className="font-reading text-sm text-text-secondary mt-1 leading-relaxed">{reply.content}</p>
+                                                <p dir="auto" className="font-reading text-sm text-text-secondary mt-1 leading-relaxed">{reply.content}</p>
                                             )}
                                         </div>
                                     ))}

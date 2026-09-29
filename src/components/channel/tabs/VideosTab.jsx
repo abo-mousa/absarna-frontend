@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { Plus, Upload } from 'lucide-react';
 import { ArrowBack } from '@/components/ui/DirectionalIcon';
 import { useToast } from '@/contexts/ToastContext';
-import { Button, Input, Modal } from '@/components/ui';
+import { Button, ConfirmDialog, Input, Modal } from '@/components/ui';
 import ContentPublishForm, { FieldLabel } from '../ContentPublishForm';
 import ManagedContentList from './ManagedContentList';
 import VideoManageStatus from '../VideoManageStatus';
@@ -17,6 +17,7 @@ import { useUploadOriginal } from '@/hooks/useChannelYouTube';
 import { describeError } from '@/lib/describeError';
 import { stripEmpty } from '@/lib/forms';
 import { t } from '@/i18n';
+import { formatPercent } from '@/lib/numbers';
 import { formatLabel } from '@/lib/formats';
 import { useFormats } from '@/hooks/useVideos';
 import SubjectPicker from '@/components/content/SubjectPicker';
@@ -137,6 +138,8 @@ export default function VideosTab({ slug, channel, youtubeState, isOwner, active
 
     return (
         <div className="grid gap-6">
+            <ConfirmDialog {...content.confirmDialog} />
+            <ConfirmDialog {...upload.confirmDialog} />
             <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="flex gap-1 p-1 rounded-lg bg-surface border border-border-light w-fit">
                     {['all', 'bySeries'].map((id) => (
@@ -355,6 +358,7 @@ function SeriesVideos({ slug, series, active, onBack, onSeriesChange, extraActio
 
     return (
         <div className="grid gap-4">
+            <ConfirmDialog {...content.confirmDialog} />
             <div className="flex items-center justify-between gap-3 flex-wrap">
                 <button
                     type="button"
@@ -439,14 +443,16 @@ function useUploadOriginalAction(slug, youtubeState) {
                 }`}
             >
                 {busy
-                    ? <span className="text-xs">{originalUpload.progress}%</span>
+                    ? <span className="text-xs">{formatPercent(originalUpload.progress)}</span>
                     : <Upload size={16} />}
                 <input
                     type="file"
                     accept={acceptAttribute('videos')}
                     disabled={!ownerVerified || busy}
                     onChange={(e) => handleUpload(e, video)}
-                    className="hidden"
+                    // sr-only, not hidden: display:none takes the input out of the tab order, so
+                    // the keyboard could never reach "upload the original". FilePicker does the same.
+                    className="sr-only"
                 />
             </label>
         );

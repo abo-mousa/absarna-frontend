@@ -40,7 +40,7 @@ function ArticleDetail() {
                     )}
 
                     <div className="flex items-start justify-between gap-3 mb-4">
-                        <h1 className="text-2xl sm:text-3xl font-bold leading-snug">{article.title}</h1>
+                        <h1 dir="auto" className="text-2xl sm:text-3xl font-bold leading-snug">{article.title}</h1>
                         <div className="flex items-center gap-3 flex-shrink-0 mt-1 print:hidden">
                             <ShareButton title={article.title} path={`/articles/${article.id}`} />
                             <LikeButton type="article" id={article.id} />
@@ -69,7 +69,7 @@ function ArticleDetail() {
                         </span>
                     </div>
 
-                    <div className="font-reading whitespace-pre-wrap leading-[2.2] text-[1.05rem] text-text-primary">
+                    <div dir="auto" className="font-reading whitespace-pre-wrap leading-[2.2] text-[1.05rem] text-text-primary">
                         {article.content}
                     </div>
                 </div>

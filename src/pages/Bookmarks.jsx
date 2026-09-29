@@ -3,13 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { Trash2, Video, BookOpen, FileText, Bookmark } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell, { LIST_COLUMN } from '../components/layout/PageShell';
-import { QueryState } from '../components/ui';
+import { QueryState, ConfirmDialog } from '../components/ui';
 import { VideoCard, BookCard, ArticleCard } from '../components/content';
 import { useBookmarks, useClearBookmarks } from '../hooks/useBookmarks';
 import { useWatchProgressMap, useReadingProgressMap } from '../hooks/useVideos';
 import { useToast } from '../contexts/ToastContext';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { t } from '@/i18n';
+import { formatCount } from '@/lib/numbers';
 
 const TABS = [
     { id: 'VIDEO', label: t('common.videos'), icon: Video },
@@ -31,8 +32,11 @@ function Bookmarks() {
 
     const itemsForTab = bookmarks.filter((b) => b.itemType === activeTab);
 
-    const handleClear = () => {
-        if (!window.confirm(t('bookmarks.clearConfirm'))) return;
+    // The platform's own dialog, not window.confirm — see Subscriptions.
+    const [confirmingClear, setConfirmingClear] = useState(false);
+    const handleClear = () => setConfirmingClear(true);
+    const confirmClear = () => {
+        setConfirmingClear(false);
         clearBookmarks.mutate(undefined, {
             onError: () => showToast(t('bookmarks.clearFailed'), 'error'),
         });
@@ -40,6 +44,13 @@ function Bookmarks() {
 
     return (
         <PageShell contentClassName={LIST_COLUMN}>
+            <ConfirmDialog
+                open={confirmingClear}
+                title={t('bookmarks.clearConfirm')}
+                danger
+                onConfirm={confirmClear}
+                onClose={() => setConfirmingClear(false)}
+            />
             <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
                 <h1 className="text-xl font-bold">{t('bookmarks.title')}</h1>
                 {bookmarks.length > 0 && (
@@ -66,7 +77,7 @@ function Bookmarks() {
                     >
                         <tab.icon size={16} />
                         {tab.label}
-                        {' '}({bookmarks.filter((b) => b.itemType === tab.id).length})
+                        {' '}({formatCount(bookmarks.filter((b) => b.itemType === tab.id).length)})
                     </button>
                 ))}
             </div>

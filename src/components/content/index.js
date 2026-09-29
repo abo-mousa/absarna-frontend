@@ -4,7 +4,10 @@ export { default as BookCover } from './BookCover';
 export { default as BookDownloadButton } from './BookDownloadButton';
 export { default as ArticleCard } from './ArticleCard';
 export { default as PostCard } from './PostCard';
-export { default as VideoPlayer } from './VideoPlayer';
+// VideoPlayer is NOT re-exported either, for PdfReader's reason on a smaller scale: its module
+// is not side-effect free to Rollup (a module-scope forwardRef), so re-exporting it here made
+// every list page that imports a card from this barrel load the player chunk — the home page
+// included. Import it by file (VideoDetail, AdminReview).
 export { default as BookmarkButton } from './BookmarkButton';
 export { default as LikeButton } from './LikeButton';
 export { default as SubscribeButton } from './SubscribeButton';

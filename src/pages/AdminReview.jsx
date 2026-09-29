@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Check, ExternalLink, Play, X, Music, ShieldAlert, History, ListChecks } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
 import AdminNav from '../components/admin/AdminNav';
-import { VideoPlayer } from '../components/content';
+import VideoPlayer from '../components/content/VideoPlayer';
 import { Badge, Button, Modal, Pager, QueryState, SwapLabel } from '../components/ui';
 import { useToast } from '../contexts/ToastContext';
 import { usePageMeta } from '../hooks/usePageMeta';
@@ -336,7 +336,7 @@ function AdminReview() {
                                 />
 
                                 <div className="p-5">
-                                    <h2 className="text-lg font-bold mb-1">{selected.title}</h2>
+                                    <h2 dir="auto" className="text-lg font-bold mb-1">{selected.title}</h2>
                                     {selectedVideo.channelSlug && (
                                         <p className="text-xs text-text-muted mb-1">
                                             <Link to={`/channel/${selectedVideo.channelSlug}`} className="hover:text-primary hover:underline">

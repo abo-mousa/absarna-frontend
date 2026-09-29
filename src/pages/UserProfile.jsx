@@ -274,7 +274,7 @@ function ProfilePictureField({ user }) {
 
 function UserProfile() {
     usePageMeta({ title: t('profile.title') });
-    const { user } = useAuth();
+    const { user, refreshUser } = useAuth();
     const { showToast } = useToast();
     // No profilePictureUrl: the form had no field for it and re-sent whatever the profile held on
     // every save, which after an upload is the picture's media address — written back into the
@@ -335,6 +335,9 @@ function UserProfile() {
             // save — a bio edit, a name correction — into a password prompt, and would be a
             // password travelling for no reason on most of them.
             await api.put('/user/profile', emailChanged ? { ...form, currentPassword } : form);
+            // The name shows in the account menu and above the comment box, both read from the
+            // session's user — which otherwise kept the old one until a reload.
+            await refreshUser?.();
             showToast(t('profile.saved'), 'success');
             // Both, in this order: the field disappears because the edit is no longer pending, and
             // the password is not left sitting in a state the next save could resend.

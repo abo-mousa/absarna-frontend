@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { CheckCircle2, XCircle } from 'lucide-react';
 import { verifyEmail } from '@/lib/api/auth';
 import { useAuth } from '../contexts/AuthContext';
@@ -12,7 +12,16 @@ import { t } from '@/i18n';
 function VerifyEmail() {
     usePageMeta({ title: t('auth.verifyEmail.title') });
     const [searchParams] = useSearchParams();
-    const token = searchParams.get('token');
+    // Read once and then taken off the address, as the OAuth callback does with its code: the
+    // token is a credential (a reset link is an account for an hour), and left in the URL it sits
+    // in browser history, in a screenshot of the address bar, and in the Referer of every API
+    // call this page makes.
+    const [token] = useState(() => searchParams.get('token'));
+    const navigate = useNavigate();
+    const location = useLocation();
+    useEffect(() => {
+        if (searchParams.has('token')) navigate(location.pathname, { replace: true });
+    }, [searchParams, navigate, location.pathname]);
     const { token: authToken, refreshUser } = useAuth();
     const [status, setStatus] = useState('verifying'); // verifying | success | error
     const [errorMessage, setErrorMessage] = useState('');

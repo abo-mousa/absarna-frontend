@@ -264,7 +264,11 @@ function PdfReader({ fileUrl, initialPage = 1, onPageChange, onPageChangeImmedia
         for (let i = 1; i <= numPages; i++) {
             // Bail out if the document changed mid-search (new book opened) — pdfRef would no
             // longer match what this loop started with.
-            if (pdfRef.current !== pdf) return;
+            if (pdfRef.current !== pdf) {
+                // The panel must not keep saying «جارٍ البحث» for a search that stopped.
+                setSearching(false);
+                return;
+            }
             let text = cache.get(i);
             if (text === undefined) {
                 try {

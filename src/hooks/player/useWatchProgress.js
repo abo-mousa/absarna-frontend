@@ -46,7 +46,7 @@ export function useWatchProgress(videoId, positionOf, seriesId = null) {
     const sentRef = useRef(null);
     const inFlightRef = useRef(null);
 
-    const report = useCallback((seconds, auth = authRef.current) => {
+    const report = useCallback((seconds, auth = authRef.current, { leaving = false } = {}) => {
         const { token: authToken, videoId: authVideoId, seriesId: authSeriesId } = auth;
         if (!authToken || !authVideoId) return;
         const progressSeconds = Math.floor(seconds);
@@ -76,11 +76,22 @@ export function useWatchProgress(videoId, positionOf, seriesId = null) {
         //
         // ['goals'] and ['progress'] for the same reason as Today: a watch fills portions and moves
         // the tab's numbers. Marking them stale costs nothing while they are not on screen.
-        const invalidate = () => {
-            queryClient.invalidateQueries({ queryKey: ['watch-history'] });
-            queryClient.invalidateQueries({ queryKey: ['today'] });
-            queryClient.invalidateQueries({ queryKey: ['goals'] });
-            queryClient.invalidateQueries({ queryKey: ['progress'] });
+        //
+        // WHILE PLAYING the marking is quiet (`refetchType: 'none'`): every 60 s checkpoint used to
+        // refetch the 200-row history and the goals the video page itself has mounted — a POST
+        // and two GETs a minute for the whole lecture, on the mobile links this platform's readers
+        // use. Marked stale, each refetches on its next mount (every tier here refetches a stale
+        // query on mount), which is when anyone looks. A report that filled a portion or finished
+        // a programme, and the one sent on the way out, refetch at once: those change what the
+        // next screen shows.
+        const invalidate = (answer) => {
+            const changedGoals = !!answer?.completion
+                || (Array.isArray(answer?.portionsCompleted) && answer.portionsCompleted.length > 0);
+            const refetchType = leaving || changedGoals ? 'active' : 'none';
+            queryClient.invalidateQueries({ queryKey: ['watch-history'], refetchType });
+            queryClient.invalidateQueries({ queryKey: ['today'], refetchType });
+            queryClient.invalidateQueries({ queryKey: ['goals'], refetchType });
+            queryClient.invalidateQueries({ queryKey: ['progress'], refetchType });
         };
 
         // A hidden page is a page that may never get another turn: the tab is closing, or the
@@ -97,7 +108,7 @@ export function useWatchProgress(videoId, positionOf, seriesId = null) {
         inFlightRef.current = pending;
         api.post(`/videos/${authVideoId}/watch`, { progressSeconds }, { params: reportParams({ seriesId: authSeriesId }) })
             .then((res) => {
-                invalidate();
+                invalidate(res?.data);
                 // A finished programme, a filled portion: the app shell shows them.
                 emitProgressReport(res?.data);
             })
@@ -122,7 +133,7 @@ export function useWatchProgress(videoId, positionOf, seriesId = null) {
     useEffect(() => () => {
         const seconds = positionRef.current?.();
         if (seconds != null && seconds > 0) {
-            report(seconds, authRef.current);
+            report(seconds, authRef.current, { leaving: true });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);

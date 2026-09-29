@@ -4,7 +4,8 @@ import { Clock, Folder, User, AlertTriangle } from 'lucide-react';
 import { ArrowBack, ChevronBack, ChevronForward } from '@/components/ui/DirectionalIcon';
 import PageShell from '../components/layout/PageShell';
 import { QueryState, Avatar, Spinner, LinkifiedText, ExpandableText, KhatamStar, MetaDivider } from '../components/ui';
-import { VideoPlayer, CommentsSection, VideoCard, BookmarkButton, LikeButton, ReportButton, ShareButton, SourceBadge, SubscribeButton } from '../components/content';
+import { CommentsSection, VideoCard, BookmarkButton, LikeButton, ReportButton, ShareButton, SourceBadge, SubscribeButton } from '../components/content';
+import VideoPlayer from '../components/content/VideoPlayer';
 import PausedLine from '../components/journey/PausedLine';
 import VideoReflections from '../components/journey/VideoReflections';
 import { useVideo, useRelatedVideo, useWatchProgressMap, useWatchHistory } from '../hooks/useVideos';
@@ -157,7 +158,7 @@ function VideoDetail() {
                         role="status"
                         className={`mb-6 rounded-lg border p-4 text-sm ${
                             notice.tone === 'warning'
-                                ? 'border-amber-300 bg-amber-50 text-amber-900'
+                                ? 'border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200'
                                 // `bg-surface-hover`, not `bg-surface-muted`: the latter is not a
                                 // token (tailwind.config.js defines surface.DEFAULT and
                                 // surface.hover only), so Tailwind emitted no class and the

@@ -95,4 +95,23 @@ export const formatCompactCount = (value) => {
         .join('');
 };
 
+const percentFormatters = new Map();
+
+/**
+ * A whole percentage (0–100 in, «٤٥٪» / «45%» out) — an upload's progress. `Intl`'s percent style
+ * rather than a literal "%" after the digits, so Arabic gets its own sign as well as its digits.
+ */
+export const formatPercent = (value) => {
+    if (value === null || value === undefined || value === '') return '';
+    const number = Number(value);
+    if (!Number.isFinite(number)) return '';
+    const tag = currentLocaleInfo().numberFormat;
+    let formatter = percentFormatters.get(tag);
+    if (!formatter) {
+        formatter = new Intl.NumberFormat(tag, { style: 'percent', maximumFractionDigits: 0 });
+        percentFormatters.set(tag, formatter);
+    }
+    return formatter.format(number / 100);
+};
+
 export default formatCount;

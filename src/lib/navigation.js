@@ -15,6 +15,8 @@ const PROTECTED_PATTERNS = [
     /^\/admin(\/|$)/,
     /^\/create-channel(\/|$)/,
     /^\/channel\/[^/]+\/manage(\/|$)/,
+    /^\/journey(\/|$)/,
+    /^\/youtube\/oauth\/callback(\/|$)/,
 ];
 
 export const isProtectedPath = (pathname) =>

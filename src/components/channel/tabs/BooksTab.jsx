@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { BookPlus } from 'lucide-react';
-import { Button, Input, Modal } from '@/components/ui';
+import { Button, ConfirmDialog, Input, Modal } from '@/components/ui';
 import ContentPublishForm from '../ContentPublishForm';
 import ManagedContentList from './ManagedContentList';
 import { useChannelContentTab } from '@/hooks/useChannelContentTab';
@@ -63,6 +63,8 @@ export default function BooksTab({ slug, active }) {
 
     return (
         <div className="grid gap-6">
+            <ConfirmDialog {...content.confirmDialog} />
+            <ConfirmDialog {...upload.confirmDialog} />
             <Modal open={adding} onClose={() => setAdding(false)} title={t('channelManage.forms.book.heading')} maxWidth="640px">
                 <ContentPublishForm
                     bare

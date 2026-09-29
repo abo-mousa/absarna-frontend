@@ -1,5 +1,5 @@
-import { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { createContext, useState, useContext, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api/client';
 import { clearSession, isRemembered, readToken, storeSession } from '@/lib/authStorage';
@@ -54,7 +54,6 @@ function syncAccountTimeZone(profile) {
 
 export const AuthProvider = ({ children }) => {
     const navigate = useNavigate();
-    const location = useLocation();
     const queryClient = useQueryClient();
     const { showToast } = useToast();
     // Through lib/authStorage, which reads the browser-session store before the persistent one
@@ -154,11 +153,12 @@ export const AuthProvider = ({ children }) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // `location` changes on every navigation, and the session-expiry handler needs the route the
-    // visitor is actually on when the session dies — not the one they were on when the listener
-    // was registered. A ref keeps the listener itself stable.
-    const pathnameRef = useRef(location.pathname);
-    pathnameRef.current = location.pathname;
+    // The session-expiry handler needs the route the visitor is on when the session dies. It
+    // reads `window.location` at that moment rather than subscribing this provider to the
+    // router: a `useLocation()` here re-rendered the provider — and, through a new context value,
+    // every `useAuth()` consumer outside the route (Navbar, PageShell, JourneyProvider…) — on
+    // every navigation, for a value read once in an event handler.
+    const currentPath = () => window.location.pathname;
 
     // client.js dispatches this once a token refresh has actually failed (invalid/expired
     // refresh token) — a real "you're logged out", not a generic network blip.
@@ -169,8 +169,9 @@ export const AuthProvider = ({ children }) => {
             // an article or watching a video is not asking to sign in, and throwing them at a
             // login screen loses their place over a background request they never made. On a
             // public page the state is cleared and a toast says what happened.
-            if (isProtectedPath(pathnameRef.current)) {
-                navigate('/login', { replace: true, state: { from: pathnameRef.current } });
+            const path = currentPath();
+            if (isProtectedPath(path)) {
+                navigate('/login', { replace: true, state: { from: path } });
             } else {
                 showToast(t('auth.sessionExpired'), 'error');
             }
@@ -204,7 +205,7 @@ export const AuthProvider = ({ children }) => {
      *                   still expires. Defaults to false, the browser-session tier: a session that
      *                   outlives the browser is something a person opts into.
      */
-    const login = async (username, password, rememberMe = false) => {
+    const login = useCallback(async (username, password, rememberMe = false) => {
         try {
             // Through `lib/api/auth` rather than posting the body here, for the reason the
             // register path already does: two spellings of the same body drift, and the one that
@@ -216,13 +217,13 @@ export const AuthProvider = ({ children }) => {
         } catch (error) {
             return { success: false, message: authFailureMessage(error, 'login') };
         }
-    };
+    }, [applySession]);
 
     // Through `lib/api/auth`'s `register` rather than posting the body here. Both spelled the
     // same object out, and when the backend made `gender` required only one of them would ever
     // have been updated — which is the shape of the bug that made every signup a 400. One
     // definition of the body, in the module whose job is the request.
-    const register = async (username, email, password, fullName, gender, acceptedTerms) => {
+    const register = useCallback(async (username, email, password, fullName, gender, acceptedTerms) => {
         try {
             const res = await registerRequest(username, email, password, fullName, gender, acceptedTerms);
             // Remembered, with no box to tick: someone who has just created an account is on a
@@ -237,12 +238,16 @@ export const AuthProvider = ({ children }) => {
             // `error` too, so the form can mark the fields a VALIDATION_FAILED names.
             return { success: false, message: authFailureMessage(error, 'register'), error: keepRefusal(error) };
         }
-    };
+    }, [applySession]);
+
+    // Memoised, so a consumer re-renders when the session changes and not whenever this provider
+    // does.
+    const value = useMemo(() => ({
+        token, user, loading, login, register, logout, applySession, refreshUser: fetchUserProfile,
+    }), [token, user, loading, login, register, logout, applySession, fetchUserProfile]);
 
     return (
-        <AuthContext.Provider value={{
-            token, user, loading, login, register, logout, applySession, refreshUser: fetchUserProfile
-        }}>
+        <AuthContext.Provider value={value}>
             {children}
         </AuthContext.Provider>
     );

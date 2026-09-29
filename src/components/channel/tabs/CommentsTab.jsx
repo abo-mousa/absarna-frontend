@@ -38,7 +38,7 @@ export default function CommentsTab({ slug, active }) {
                         >
                             <div className="flex items-start justify-between gap-3 mb-1.5">
                                 <div className="min-w-0">
-                                    <strong className="text-primary text-sm">{comment.userName}</strong>
+                                    <strong dir="auto" className="text-primary text-sm">{comment.userName}</strong>
                                     {/* `ms-*`, not `me-*`: these badges follow the username in
                                         reading order, so the gap that separates them from it is on
                                         their LEADING side. Under RTL that is the physical right,
@@ -49,7 +49,7 @@ export default function CommentsTab({ slug, active }) {
                                         <span className="ms-2 text-xs text-text-muted">{t('channelManage.commentHidden')}</span>
                                     )}
                                     {comment.pinned && (
-                                        <span className="ms-2 text-xs text-gold">{t('channelManage.commentPinned')}</span>
+                                        <span className="ms-2 text-xs text-gold-ink">{t('channelManage.commentPinned')}</span>
                                     )}
                                 </div>
                                 <div className="flex gap-1 flex-shrink-0">
@@ -71,7 +71,7 @@ export default function CommentsTab({ slug, active }) {
                                     </button>
                                 </div>
                             </div>
-                            <p className={`text-sm ${comment.hidden ? 'text-text-muted' : 'text-text-secondary'}`}>
+                            <p dir="auto" className={`text-sm ${comment.hidden ? 'text-text-muted' : 'text-text-secondary'}`}>
                                 {comment.content}
                             </p>
                         </div>

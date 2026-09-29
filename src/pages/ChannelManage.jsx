@@ -52,7 +52,7 @@ function ErrorScreen({ icon, title, description, onBack }) {
 function ChannelManage() {
     const { slug } = useParams();
     const navigate = useNavigate();
-    const { user, loading: authLoading } = useAuth();
+    const { token, loading: authLoading } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
     const activeTab = resolveTab(searchParams.get('tab'));
     const setActiveTab = (tab) => setSearchParams({ tab }, { replace: true });
@@ -86,9 +86,12 @@ function ChannelManage() {
     // reads the verification level from it. One GET per visit, polling only while RUNNING.
     const { data: youtubeState } = useChannelYouTube(slug, Boolean(channel));
 
+    // On the TOKEN, not on `user`: a null user after two failed profile probes is not a logout
+    // (AuthContext keeps the session), and bouncing on it sent an owner home mid-session with no
+    // message. ProtectedRoute already covers "never signed in"; this covers the session ending.
     useEffect(() => {
-        if (!authLoading && !user) navigate('/');
-    }, [authLoading, user, navigate]);
+        if (!authLoading && !token) navigate('/');
+    }, [authLoading, token, navigate]);
 
     if (authLoading || channelLoading) {
         return (

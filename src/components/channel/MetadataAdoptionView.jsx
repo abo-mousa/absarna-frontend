@@ -285,7 +285,7 @@ function MetadataAdoptionView({ slug, onClose }) {
                 step that is left rather than as a refusal: they are not doing anything wrong, and
                 the remedy is on the panel above this one. */}
             {state === 'blocked' && (
-                <p className="text-sm text-gold leading-loose" dir="auto">
+                <p className="text-sm text-gold-ink leading-loose" dir="auto">
                     {t('youtube.adoption.needsOwnerVerification')}
                 </p>
             )}

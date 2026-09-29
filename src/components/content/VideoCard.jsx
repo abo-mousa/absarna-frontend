@@ -100,24 +100,15 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
     const date = displayDate(video);
     const kicker = videoKicker(video);
 
-    // Nested icon buttons (visibility/delete/channel) already stopPropagation on click; for
-    // keyboard, only treat Enter/Space as "activate the card" when the card itself is
-    // focused, not when it bubbles up from one of those nested buttons' own activation.
-    const handleKeyDown = (e) => {
-        if (e.target !== e.currentTarget) return;
-        if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            onClick(video);
-        }
-    };
-
+    // THE CARD IS NOT A BUTTON; ITS TITLE IS. The whole card used to be `role="button"`, and an
+    // ARIA button's children are presentational: VoiceOver and TalkBack flattened it to one
+    // control, so the channel and series buttons inside were unreachable to a screen-reader user
+    // and the title was announced twice (the label, then the picture's alt). The pointer still
+    // opens the video from anywhere on the card; the keyboard and the screen reader reach it
+    // through the title's own button, and the nested buttons are ordinary siblings of it.
     return (
-        <div
+        <article
             onClick={() => onClick(video)}
-            onKeyDown={handleKeyDown}
-            role="button"
-            tabIndex={0}
-            aria-label={t('video.watchAria', { title: video.title })}
             // NO BOX. The card is the picture and the type under it, sitting on the page — a
             // border, a fill and a shadow on every tile is what made the grid read as a video
             // site before anything in it had been read. The thumbnail keeps a hairline so a pale
@@ -127,18 +118,20 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
             // The hairline turns gold, and thickens, under the pointer and under keyboard focus —
             // and only then: gold marks the one thing being pointed at, so it is never on every
             // card of a grid, where it would be decoration and could no longer point at anything.
-            className="group cursor-pointer rounded-card focus:outline-none"
+            className="group cursor-pointer rounded-card"
         >
             <div className={`relative aspect-video bg-surface-hover overflow-hidden rounded-card outline outline-1 -outline-offset-1
                 transition-[outline-color] duration-150
                 group-hover:outline-2 group-hover:-outline-offset-2 group-hover:outline-gold
-                group-focus-visible:outline-2 group-focus-visible:-outline-offset-2 group-focus-visible:outline-gold ${
+                group-focus-within:outline-2 group-focus-within:-outline-offset-2 group-focus-within:outline-gold ${
                 video.visible === false ? 'outline-dashed outline-text-muted' : 'outline-black/5 dark:outline-white/5'
             }`}>
                 {thumbnail ? (
                     <img
                         src={thumbnail}
-                        alt={video.title}
+                        // Decorative here: the title button beside it names the video, and an alt
+                        // repeating it was the second of two announcements.
+                        alt=""
                         // Lazy: a grid, the Today page and the shelves draw far more pictures than
                         // a phone's first screen shows; the box's aspect ratio already holds the
                         // space, so deferring them moves nothing.
@@ -350,8 +343,17 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                     higher than its neighbours' and a blank band at the bottom: the "this card is
                     missing something" look. With the slot fixed, channel and views sit on
                     the same lines across a row. 2.75em is exactly two lines at leading-snug. */}
-                <h3 dir="auto" className="text-[0.95rem] font-bold mb-1.5 leading-snug line-clamp-2 min-h-[2.75em] group-hover:text-gold-ink group-focus-visible:text-gold-ink transition-colors">
-                    {video.title}
+                <h3 dir="auto" className="text-[0.95rem] font-bold mb-1.5 leading-snug min-h-[2.75em] group-hover:text-gold-ink group-focus-within:text-gold-ink transition-colors">
+                    {/* A block button with the clamp on a span inside it: a button is an atomic
+                        inline box, so a clamp on the heading around it would not cut its lines. */}
+                    <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); onClick(video); }}
+                        aria-label={t('video.watchAria', { title: video.title })}
+                        className="block w-full text-start font-bold leading-snug focus:outline-none"
+                    >
+                        <span className="line-clamp-2">{video.title}</span>
+                    </button>
                 </h3>
 
                 <div className="min-w-0 space-y-1">
@@ -392,7 +394,7 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
                     )}
                 </div>
             </div>
-        </div>
+        </article>
     );
 }
 

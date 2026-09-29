@@ -40,6 +40,20 @@ export const useToggleBookmark = (type, id) => {
             }
             return !currentlyBookmarked;
         },
+        // Optimistic, as likes and subscriptions are: the button flips on the press and flips
+        // back if the request fails, rather than sitting disabled for the round trip and jumping.
+        onMutate: async (currentlyBookmarked) => {
+            const key = queryKeys.bookmarkStatus(itemType, id, scope);
+            await queryClient.cancelQueries({ queryKey: key });
+            const previous = queryClient.getQueryData(key);
+            queryClient.setQueryData(key, !currentlyBookmarked);
+            return { previous };
+        },
+        onError: (_err, _vars, context) => {
+            if (context?.previous !== undefined) {
+                queryClient.setQueryData(queryKeys.bookmarkStatus(itemType, id, scope), context.previous);
+            }
+        },
         onSuccess: (nowBookmarked) => {
             queryClient.setQueryData(queryKeys.bookmarkStatus(itemType, id, scope), nowBookmarked);
             // A prefix, deliberately: it matches this viewer's list without repeating the scope,

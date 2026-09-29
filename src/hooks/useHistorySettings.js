@@ -49,6 +49,9 @@ export const useEraseProgress = () => {
             queryClient.invalidateQueries({ queryKey: ['watch-history'] });
             queryClient.invalidateQueries({ queryKey: ['reading-history'] });
             queryClient.invalidateQueries({ queryKey: ['book-read-progress'] });
+            // «خواطري» is erased with the history on the backend; without this the list, and a
+            // video page's cached lines, kept showing what was just erased.
+            queryClient.invalidateQueries({ queryKey: ['reflections'] });
         },
     });
 };

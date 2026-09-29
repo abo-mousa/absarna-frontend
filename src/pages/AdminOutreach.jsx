@@ -236,22 +236,30 @@ export default function AdminOutreach() {
                             {Object.values(LOCALES).map((option) => (
                                 <label
                                     key={option.code}
-                                    className={`px-4 py-2 rounded-lg border cursor-pointer text-sm font-semibold
+                                    className={`px-4 py-2 rounded-lg border text-sm font-semibold
                                         transition-colors ${locale === option.code
-                                        ? 'border-primary bg-primary/10 text-primary'
-                                        : 'border-border-light hover:bg-surface-hover'}`}
+                                        ? 'border-primary bg-primary/10 text-primary cursor-pointer'
+                                        : edited
+                                            ? 'border-border-light opacity-50 cursor-not-allowed'
+                                            : 'border-border-light hover:bg-surface-hover cursor-pointer'}`}
                                 >
                                     <input
                                         type="radio"
                                         name="outreach-locale"
                                         className="sr-only"
                                         checked={locale === option.code}
+                                        disabled={edited && locale !== option.code}
                                         onChange={() => setLocale(option.code)}
                                     />
                                     {option.nativeName}
                                 </label>
                             ))}
                         </div>
+                        {/* Switching language over an edited letter sent the old language's words
+                            under the new locale's closing line, so the switch waits for a reset. */}
+                        {edited && (
+                            <p className="text-text-muted text-xs mt-2">{t('admin.invite.localeLocked')}</p>
+                        )}
                     </fieldset>
 
                     <fieldset className="mb-5 border-0 p-0 m-0">

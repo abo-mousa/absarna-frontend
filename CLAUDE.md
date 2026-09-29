@@ -194,8 +194,9 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
 - **Every GET goes through a `useQuery`/`useInfiniteQuery` hook in `hooks/`**, never a raw `api.get`
   in a `useEffect`. The one exception is `AuthContext`'s own profile fetch.
 - **Cache tiers are named** (`lib/queryCache.js`): `LIVE`, `STANDARD` (default, 2 min),
-  `FEED` (15 min, the feed), `STATIC` (1h), `UNTIL_DAY_ENDS` (Today — stale at the earlier of UTC
-  midnight and the reader's). **Per-reader answers are cached HERE, never on the backend** (product
+  `FEED` (15 min, the feed), `STATIC` (1h), `UNTIL_DAY_ENDS` (Today — stale at the earliest of UTC
+  midnight, the reader's midnight, the reader's 03:00 when the learning day turns, and the reader's
+  noon when make-up turns into carry-over). **Per-reader answers are cached HERE, never on the backend** (product
   owner, 2026-09-26): the backend caches only what is the same for everybody and builds `/api/feed`
   and a signed-in Today page fresh on every request, so a missing invalidation in this repo is a
   stale page, and a missing cache in this repo is a request per navigation. `refetchOnWindowFocus` stays off everywhere. Put the tier spread
@@ -349,7 +350,7 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   system player takes over and the menu cannot follow.
 - **The whole bar is mirrored, timeline included: the video starts at the RIGHT edge and plays
   leftwards.** `dir="rtl"` governs the bar, `ratioFromPointer` measures from the track's *right*
-  edge, the played/buffered fills are anchored `right-0` and the handle is positioned with `right`,
+  edge, the played/buffered fills are anchored `start-0` (`insetInlineStart`) and the handle is positioned with it,
   ArrowLeft seeks **forward** (the keys follow the timeline, not the document), the double-tap
   zones put "back" on the right, the play triangle is mirrored to point left, and the settings
   panel opens `left-0` so it grows into the picture rather than off it. Two islands stay LTR on
@@ -636,7 +637,7 @@ What this app relies on; the mirror lives in the backend's `CLAUDE.md`.
   `CLEAN`, `ADVISORY`, `HELD`, `UNCHECKED`, `CLEARED`, `REJECTED`. Treat both as open sets: a new
   detector or a new state must render as an unknown note rather than throwing or falling through
   to "fine" — `ownerNotices` shows every finding that is not `CLEAN`/`CLEARED`, with the generic
-  `video.review.unknown.*` copy when it has no words for the pair, and `groupByType` gives an
+  `video.review.outcome.*` copy when it has no words for the pair, and `groupByType` gives an
   unknown detector its own tab. `lib/review.js` owns all of this.
   - **Not mapped by default, by design.** A `CLEARED` video is fully public, so a
     mapped-by-default field would disclose on every feed card that this one had been looked at. The
