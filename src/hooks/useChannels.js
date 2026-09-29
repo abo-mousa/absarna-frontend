@@ -568,16 +568,26 @@ export const useDeleteVideoByChannelId = () => {
 
 // ============ Admin channel moderation ============
 
-export const usePendingChannels = (enabled = true) => {
+/**
+ * One page (zero-based) of the channels waiting on an admin, oldest first. A backend from before
+ * paging answers with the whole list as a bare array; that is wrapped as a single page, so the
+ * two can be deployed in either order.
+ */
+export const usePendingChannels = (page = 0, enabled = true) => {
     const scope = useUserScope();
     return useQuery({
-        queryKey: queryKeys.adminPendingChannels(scope),
+        queryKey: queryKeys.adminPendingChannels(page, scope),
         queryFn: async () => {
-            const res = await api.get('/channels/admin/pending');
-            return res.data || [];
+            const res = await api.get('/channels/admin/pending', { params: { page, size: 20 } });
+            const data = res.data ?? [];
+            if (Array.isArray(data)) {
+                return { content: data, currentPage: 0, totalPages: 1, totalItems: data.length, hasNext: false, hasPrevious: false };
+            }
+            return data;
         },
         enabled,
         staleTime: 30 * 1000,
+        placeholderData: keepPreviousData,
     });
 };
 

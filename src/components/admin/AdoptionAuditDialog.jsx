@@ -1,4 +1,5 @@
-import { Modal } from '@/components/ui';
+import { useEffect, useState } from 'react';
+import { Modal, Pager } from '@/components/ui';
 import { useAdoptionAudit } from '@/hooks/useAdminData';
 import { dateLocale, parseTimestamp } from '@/lib/datetime';
 import { t } from '@/i18n';
@@ -16,7 +17,11 @@ const when = (value) => {
  * file. Each row shows the exact text affirmed and the wording the owner read.
  */
 export default function AdoptionAuditDialog({ channel, open, onClose }) {
-    const { data, isLoading, isError } = useAdoptionAudit(channel?.slug, open);
+    // Paged: the record is one row per imported video, thousands for an imported catalogue.
+    // Another channel's audit starts at its own first page.
+    const [page, setPage] = useState(0);
+    useEffect(() => setPage(0), [channel?.slug]);
+    const { data, isLoading, isError } = useAdoptionAudit(channel?.slug, page, open);
     const records = data?.records ?? [];
     return (
         <Modal open={open} onClose={onClose} title={t('admin.audit.title', { name: channel?.name ?? '' })} maxWidth="820px">
@@ -28,7 +33,7 @@ export default function AdoptionAuditDialog({ channel, open, onClose }) {
             )}
             {records.length > 0 && (
                 <>
-                    <p className="text-xs text-text-muted mb-2">{t('admin.audit.count', { count: records.length })}</p>
+                    <p className="text-xs text-text-muted mb-2">{t('admin.audit.count', { count: data?.totalItems ?? records.length })}</p>
                     <ul className="flex flex-col gap-2 max-h-[60vh] overflow-y-auto">
                         {records.map((row, i) => (
                             <li key={`${row.videoId}-${i}`} className="border border-border-light rounded-lg p-3 text-sm bg-surface">
@@ -49,6 +54,13 @@ export default function AdoptionAuditDialog({ channel, open, onClose }) {
                             </li>
                         ))}
                     </ul>
+                    <Pager
+                        page={data?.currentPage ?? page}
+                        totalPages={data?.totalPages}
+                        hasPrevious={data?.hasPrevious ?? page > 0}
+                        hasNext={data?.hasNext ?? false}
+                        onChange={setPage}
+                    />
                 </>
             )}
         </Modal>

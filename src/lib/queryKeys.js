@@ -120,13 +120,13 @@ export const queryKeys = {
 
     // ---- platform admin ----
     adminStats: (scope) => ['admin-stats', scope],
-    adminPendingChannels: (scope) => ['admin-pending-channels', scope],
+    adminPendingChannels: (page, scope) => ['admin-pending-channels', page, scope],
     // Keyed by the search and the status filter as well as the page, for the same reason the
     // report queue is: a filter press must not serve the previous view's rows while its own
     // request is in flight.
     adminAllChannels: (page, search, status, scope) => ['admin-all-channels', page, search, status, scope],
     adminChannelStatusHistory: (channelId, scope) => ['admin-channel-status-history', channelId, scope],
-    adminAdoptionAudit: (slug, scope) => ['admin-adoption-audit', slug, scope],
+    adminAdoptionAudit: (slug, page, scope) => ['admin-adoption-audit', slug, page, scope],
     adminUsers: (search, page, scope) => ['admin-users', search, page, scope],
     adminUser: (id, scope) => ['admin-user', id, scope],
     channelReviewExemptions: (channelId) => ['channel-review-exemptions', channelId],

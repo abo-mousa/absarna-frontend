@@ -130,9 +130,14 @@ const STATUS_FILTERS = ['', 'ACTIVE', 'PENDING', 'SUSPENDED', 'REJECTED'];
 function AdminChannels() {
     usePageMeta({ title: t('admin.manageChannels') });
     const { showToast } = useToast();
-    const { data: pendingChannels = [], isLoading: pendingLoading } = usePendingChannels();
-    // Paged, searched and filtered: every channel on the platform. Pending ones stay a whole
-    // list above it — that is a queue an admin empties, not a catalogue.
+    // Pending is paged too, oldest first: a queue an admin empties, but one a burst of imports
+    // can fill faster than anyone works it.
+    const [pendingPage, setPendingPage] = useState(0);
+    const { data: pendingData, isLoading: pendingLoading } = usePendingChannels(pendingPage);
+    useEmptyPageStepBack(pendingPage, setPendingPage, pendingData, pendingLoading);
+    const pendingChannels = pendingData?.content ?? [];
+    const pendingTotal = pendingData?.totalItems ?? pendingChannels.length;
+    // Paged, searched and filtered: every channel on the platform.
     const [page, setPage] = useState(0);
     const [search, setSearch] = useState('');
     const [status, setStatus] = useState('');
@@ -252,60 +257,69 @@ function AdminChannels() {
                 </div>
 
                 <QueryState isLoading={loading}>
-                    <h2 className="text-base font-bold mb-3">{t('admin.pendingCount', { count: pendingChannels.length })}</h2>
+                    <h2 className="text-base font-bold mb-3">{t('admin.pendingCount', { count: pendingTotal })}</h2>
 
                     {pendingChannels.length === 0 ? (
                         <p className="text-text-muted mb-8">{t('admin.pendingEmpty')}</p>
                     ) : (
-                        <div className="grid gap-3 mb-8">
-                            {pendingChannels.map((channel) => (
-                                <div key={channel.id} className="flex items-center gap-4 bg-surface p-4 rounded-lg border border-border-light flex-wrap">
-                                    <Avatar src={resolveMediaUrl(channel.logoUrl)} name={channel.name} />
-                                    <div className="flex-1 min-w-[150px]">
-                                        {/* The whole row's name is the link, not a small icon
-                                            beside it: opening the channel is the FIRST thing a
-                                            reviewer does, and this queue previously offered no
-                                            way to do it at all. */}
-                                        {channelLink(channel)}
-                                        <p className="text-sm text-text-muted">@{channel.slug}</p>
-                                        {/* Says what is being approved. Since channel creation
-                                            stopped queueing anything, a row here is an imported
-                                            catalogue that nothing has examined — the upload
-                                            pipeline never sees an imported video. */}
-                                        <p className="text-xs text-text-muted mt-1">
-                                            {channel.importReview === 'PENDING'
-                                                ? t('admin.pendingReasonImport')
-                                                : t('admin.pendingReasonOther')}
-                                        </p>
-                                        {channel.importReview === 'PENDING' && <ImportProgress slug={channel.slug} />}
-                                        <LastDecision change={channel.lastStatusChange} />
+                        <div className="mb-8">
+                            <div className="grid gap-3">
+                                {pendingChannels.map((channel) => (
+                                    <div key={channel.id} className="flex items-center gap-4 bg-surface p-4 rounded-lg border border-border-light flex-wrap">
+                                        <Avatar src={resolveMediaUrl(channel.logoUrl)} name={channel.name} />
+                                        <div className="flex-1 min-w-[150px]">
+                                            {/* The whole row's name is the link, not a small icon
+                                                beside it: opening the channel is the FIRST thing a
+                                                reviewer does, and this queue previously offered no
+                                                way to do it at all. */}
+                                            {channelLink(channel)}
+                                            <p className="text-sm text-text-muted">@{channel.slug}</p>
+                                            {/* Says what is being approved. Since channel creation
+                                                stopped queueing anything, a row here is an imported
+                                                catalogue that nothing has examined — the upload
+                                                pipeline never sees an imported video. */}
+                                            <p className="text-xs text-text-muted mt-1">
+                                                {channel.importReview === 'PENDING'
+                                                    ? t('admin.pendingReasonImport')
+                                                    : t('admin.pendingReasonOther')}
+                                            </p>
+                                            {channel.importReview === 'PENDING' && <ImportProgress slug={channel.slug} />}
+                                            <LastDecision change={channel.lastStatusChange} />
+                                        </div>
+                                        <div className="flex gap-2 flex-wrap">
+                                            <Link
+                                                to={`/channel/${channel.slug}`}
+                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-border
+                                                    text-sm font-semibold text-text-secondary hover:bg-surface-hover transition-colors"
+                                            >
+                                                <ExternalLink size={14} aria-hidden="true" />
+                                                {t('admin.openChannel')}
+                                            </Link>
+                                            {/* The owner's dashboard: the import panel, the held
+                                                uploads, the unconfirmed metadata — everything the
+                                                public page hides and an admin approving an import
+                                                wants to see. Admins pass the manage check. */}
+                                            <Link
+                                                to={`/channel/${channel.slug}/manage?tab=youtube`}
+                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-border
+                                                    text-sm font-semibold text-text-secondary hover:bg-surface-hover transition-colors"
+                                            >
+                                                <LayoutDashboard size={14} aria-hidden="true" />
+                                                {t('admin.pending.openDashboard')}
+                                            </Link>
+                                            <Button size="sm" onClick={() => openDecision(channel, 'approve')} icon={<Check size={14} />}>{t('admin.approve')}</Button>
+                                            <Button variant="danger" size="sm" onClick={() => openDecision(channel, 'reject')} icon={<X size={14} />}>{t('admin.reject')}</Button>
+                                        </div>
                                     </div>
-                                    <div className="flex gap-2 flex-wrap">
-                                        <Link
-                                            to={`/channel/${channel.slug}`}
-                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-border
-                                                text-sm font-semibold text-text-secondary hover:bg-surface-hover transition-colors"
-                                        >
-                                            <ExternalLink size={14} aria-hidden="true" />
-                                            {t('admin.openChannel')}
-                                        </Link>
-                                        {/* The owner's dashboard: the import panel, the held
-                                            uploads, the unconfirmed metadata — everything the
-                                            public page hides and an admin approving an import
-                                            wants to see. Admins pass the manage check. */}
-                                        <Link
-                                            to={`/channel/${channel.slug}/manage?tab=youtube`}
-                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-border
-                                                text-sm font-semibold text-text-secondary hover:bg-surface-hover transition-colors"
-                                        >
-                                            <LayoutDashboard size={14} aria-hidden="true" />
-                                            {t('admin.pending.openDashboard')}
-                                        </Link>
-                                        <Button size="sm" onClick={() => openDecision(channel, 'approve')} icon={<Check size={14} />}>{t('admin.approve')}</Button>
-                                        <Button variant="danger" size="sm" onClick={() => openDecision(channel, 'reject')} icon={<X size={14} />}>{t('admin.reject')}</Button>
-                                    </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
+                            <Pager
+                                page={pendingData?.currentPage ?? pendingPage}
+                                totalPages={pendingData?.totalPages}
+                                hasPrevious={pendingData?.hasPrevious ?? pendingPage > 0}
+                                hasNext={pendingData?.hasNext ?? false}
+                                onChange={setPendingPage}
+                            />
                         </div>
                     )}
 

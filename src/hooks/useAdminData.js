@@ -77,13 +77,19 @@ export const useChannelStatusHistory = (channelId, enabled = true) => {
     });
 };
 
-/** Every metadata affirmation recorded on one channel — the audit an admin hands to whoever asks. */
-export const useAdoptionAudit = (slug, enabled = true) => {
+/**
+ * One page of the metadata affirmations recorded on one channel, newest first — the audit an
+ * admin hands to whoever asks. Rows are under `records`; `totalItems` is the whole record's size.
+ */
+export const useAdoptionAudit = (slug, page = 0, enabled = true) => {
     const scope = useUserScope();
     return useQuery({
-        queryKey: queryKeys.adminAdoptionAudit(slug, scope),
-        queryFn: async () => (await api.get(`/channels/${slug}/youtube/adoption/audit`)).data,
+        queryKey: queryKeys.adminAdoptionAudit(slug, page, scope),
+        queryFn: async () => (await api.get(`/channels/${slug}/youtube/adoption/audit`, { params: { page, size: 20 } })).data,
         enabled: enabled && !!slug,
         staleTime: 60 * 1000,
+        // The previous page stays up while the next loads — but only within one channel, or
+        // opening the audit of a second channel would show the first one's records under its name.
+        placeholderData: (previous, previousQuery) => (previousQuery?.queryKey?.[1] === slug ? previous : undefined),
     });
 };
