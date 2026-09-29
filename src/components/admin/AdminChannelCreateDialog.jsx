@@ -13,8 +13,10 @@ const EMPTY = { name: '', slug: '', description: '', youtubeSource: '' };
  * A channel created by an admin on an owner's behalf — the seeding path
  * (`POST /api/channels/admin/create`), which until now had no screen.
  *
- * <p>The owner is picked from the account list, not typed as a number, for the same reason the
- * transfer dialog does it: the number is the one field a slip on gives the wrong person a channel.
+ * <p>The owner is optional: left empty, the channel is the creating admin's, which is how a
+ * channel for a scholar not yet on the platform is made — they take it over later by claiming it.
+ * When one is named it is picked from the account list, not typed as a number, for the same reason
+ * the transfer dialog does it: the number is the one field a slip on gives the wrong person a channel.
  * The rest is the public create form's fields, validated by the backend, whose refusals land on
  * the field they name.
  */
@@ -39,7 +41,8 @@ export default function AdminChannelCreateDialog({ open, onClose }) {
     const set = (key) => (e) => setFields((current) => ({ ...current, [key]: e.target.value }));
 
     const submit = () => {
-        const body = { ...fields, ownerUserId: owner.id };
+        const body = { ...fields };
+        if (owner) body.ownerUserId = owner.id;
         if (!body.description.trim()) delete body.description;
         if (!body.youtubeSource.trim()) delete body.youtubeSource;
         create.mutate(body, {
@@ -52,7 +55,9 @@ export default function AdminChannelCreateDialog({ open, onClose }) {
     };
 
     const rows = (candidates.data?.content ?? []).slice(0, 8);
-    const canSubmit = owner && fields.name.trim() && fields.slug.trim() && !create.isPending;
+    // A half-typed owner nobody was picked for blocks the press: sending it would quietly make
+    // the channel the admin's when they meant to name someone.
+    const canSubmit = (owner || !query.trim()) && fields.name.trim() && fields.slug.trim() && !create.isPending;
 
     return (
         <Modal open={open} onClose={onClose} title={t('admin.create.title')} maxWidth="600px">
