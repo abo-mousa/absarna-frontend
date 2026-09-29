@@ -28,8 +28,8 @@ function JourneyReflections() {
         .format(new Date(iso));
 
     return (
-        <PageShell tab>
-            <PageHeader title={t('journey.nav.reflections')} action={<JourneyNav />} tabs guide="journeyReflections" />
+        <PageShell tab guide="journeyReflections">
+            <PageHeader title={t('journey.nav.reflections')} action={<JourneyNav />} tabs />
             <div className="flex flex-col gap-8 max-w-[760px]">
                 <PausedLine where="journey" />
                 <div className="flex flex-col gap-4">

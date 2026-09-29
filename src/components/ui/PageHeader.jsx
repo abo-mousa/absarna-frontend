@@ -1,5 +1,3 @@
-import PageGuideButton from '../guide/PageGuideButton';
-
 /**
  * The top of a tab's page — Today, Discover, Books, Articles, Posts, Channels.
  *
@@ -17,25 +15,11 @@ import PageGuideButton from '../guide/PageGuideButton';
  * the phone bar's one «اقرأ» item and so need a switch between them that the wide navbar strip
  * already is. The line and its hairline disappear from `lg`; the `<h1>` never does.
  *
- * <p>`guide` names the page's guide (`components/guide/pageGuides`) and puts its «دليل الصفحة»
- * button at the line's far end.
- *
  * <p>`rule={false}` drops the hairline for a header whose next thing already draws one — Today,
  * where the dateline sat between two rules with the first section's `Cartouche` right under it.
  */
-function PageHeader({ title, action = null, tabs = false, belowLg = false, rule = true, guide = null }) {
+function PageHeader({ title, action = null, tabs = false, belowLg = false, rule = true }) {
     const line = `flex flex-wrap items-end gap-4 mb-6 ${rule ? 'border-b border-border' : ''} ${tabs ? '' : 'pb-3'}`;
-    if (guide) {
-        // The guide's button is the line's last thing, at the far end, and never wraps under the
-        // tabs: the tabs scroll sideways on a phone instead (JourneyNav), so the two share one row.
-        return (
-            <header className={`${line} flex-nowrap`}>
-                <h1 className="sr-only">{title}</h1>
-                <div className="min-w-0 flex-1">{action}</div>
-                <div className={`flex-shrink-0 ${tabs ? 'pb-1.5' : ''}`}><PageGuideButton id={guide} /></div>
-            </header>
-        );
-    }
     if (action && belowLg) {
         return (
             <>

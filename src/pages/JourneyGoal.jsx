@@ -5,7 +5,6 @@ import PageShell from '../components/layout/PageShell';
 import { QueryState, Cartouche, KhatamProgress, Button, Modal } from '../components/ui';
 import { CumulativeLine, DayLegend, DayStars, PaceBar, PausedLine, SacredText, useJourney } from '../components/journey';
 import { useArchiveGoal, useGoal, usePauseGoal, useResumeGoal, useUpdateGoal } from '../hooks/useGoals';
-import PageGuideButton from '../components/guide/PageGuideButton';
 import { useToast } from '../contexts/ToastContext';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { amountText, commitmentSentence, goalTitle, measureOf, resumeHref } from '@/lib/goalText';
@@ -25,12 +24,11 @@ function JourneyGoal() {
     const data = goal.data;
     usePageMeta({ title: data ? goalTitle(data) : t('journey.nav.goals') });
     return (
-        <PageShell tab>
-            <div className="flex items-center justify-between gap-3 mb-5">
+        <PageShell tab guide="journeyGoal">
+            <div className="mb-5">
                 <Link to="/journey/goals" className="inline-flex items-center gap-1.5 text-sm font-semibold">
                     <ArrowBack size={16} /> {t('journey.goal.back')}
                 </Link>
-                <PageGuideButton id="journeyGoal" />
             </div>
             <QueryState
                 isLoading={goal.isLoading}

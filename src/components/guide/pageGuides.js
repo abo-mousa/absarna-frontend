@@ -1,7 +1,7 @@
 import { CalendarCheck, Milestone, NotebookPen, Route, ScrollText, Target } from 'lucide-react';
 
 /**
- * The page guides: what the «؟» on a page opens (`PageGuideSheet`) and what `/guide/:slug` shows
+ * The page guides: what a page's «كيف تعمل هذه الصفحة؟» opens (`PageGuideSheet`) and what `/guide/:slug` shows
  * in full. One entry per page, its blocks in the order the page has them. A guide is mostly
  * pictures — screenshots of the real page, numbered where the captions point — so a block is one
  * of:

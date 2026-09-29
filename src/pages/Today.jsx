@@ -1,16 +1,12 @@
-import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useConsent } from '../contexts/ConsentContext';
 import PageShell from '../components/layout/PageShell';
 import { QueryState, Cartouche, KhatamProgress, KhatamStar, Avatar, PageHeader, DatePair } from '../components/ui';
 import { VideoCard, BookCard } from '../components/content';
-import { GuideDialog, GUIDE_SEEN_KEY } from '../components/guide';
 import { useToday, useHideContinue } from '../hooks/useToday';
 import { useToast } from '../contexts/ToastContext';
 import { X } from 'lucide-react';
 import { useChannelInvitations } from '../hooks/useChannelClaim';
-import { safeStorage } from '@/lib/safeStorage';
 import { useWatchProgressMap } from '../hooks/useVideos';
 import { useGridColumns } from '../hooks/useGridColumns';
 import { formatTimestamp } from '@/lib/spans';
@@ -84,28 +80,15 @@ function Today() {
     // since it is the one thing here addressed to them alone.
     const { data: invitations = [] } = useChannelInvitations(!!token);
 
-    // The guide opens by itself once: for a reader the backend calls new (it sent a welcome), and
-    // never again after it is closed. Remembered per browser — which dialog someone has seen is a
-    // convenience, not a record.
-    const [guideSeen, setGuideSeen] = useState(() => safeStorage.getItem(GUIDE_SEEN_KEY) === '1');
-    // Not while the consent banner is asking: on a phone the two together were a third of the
-    // screen of banner under a dialog, on someone's first seconds here. One question at a time —
-    // the guide opens the moment the banner is answered.
-    const { askingAny: consentAsking } = useConsent();
-    const closeGuide = () => {
-        safeStorage.setItem(GUIDE_SEEN_KEY, '1');
-        setGuideSeen(true);
-    };
+    // No guide opens by itself: a first visit is for the page, and the welcome block's «الدليل»
+    // and the link at the page's end are there for whoever wants one.
 
     return (
-        <PageShell tab>
-            {/* Its guide is the portion's: Today is where the portion is done, and its states
-                (now, later, passed, done, kept) are what a new reader asks about. */}
+        <PageShell tab guide="today">
             <PageHeader
                 title={t('nav.tabs.today')}
                 action={<DatePair />}
                 rule={false}
-                guide="today"
             />
             <QueryState
                 isLoading={today.isLoading}
@@ -234,7 +217,6 @@ function Today() {
 
                     <Colophon newcomer={!!welcome} />
                 </div>
-                <GuideDialog open={!!welcome && !guideSeen && !consentAsking} onClose={closeGuide} />
             </QueryState>
         </PageShell>
     );

@@ -10,7 +10,7 @@ const ITEMS = [
 ];
 
 /**
- * «مسيرتي»'s own places, drawn as the page header's view tabs are (`ViewTabs`) but as links — each
+ * «طريقي»'s own places, drawn as the page header's view tabs are (`ViewTabs`) but as links — each
  * is a page with its own URL, which Back and a shared link must reach.
  *
  * <p>The strip scrolls sideways on a narrow screen, and a scroller must not overflow downwards:

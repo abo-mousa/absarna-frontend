@@ -2,7 +2,6 @@ import { useRef, useState } from 'react';
 import { KhatamStar } from '../ui/Khatam';
 import { shotMeta, shotSrc } from './guideShotMeta';
 import { useTheme } from '@/contexts/ThemeContext';
-import { handMoved } from '@/lib/pointer';
 import { t } from '@/i18n';
 
 const FRAME_PAD = 6;
@@ -13,20 +12,21 @@ const FRAME_PAD = 6;
  * tried and dropped: a dense page has no clear place for them, so they sat on the very words and
  * stars they explained. Now a caption, touched or pointed at, dims the rest of the picture and
  * frames its part in gold — the same gesture «أرِني في الصفحة» makes on the page itself — and the
- * frame glides from one part to the next. Pointing at a part of the picture lights its caption.
+ * frame glides from one part to the next. Touching a part of the picture lights its caption.
+ *
+ * <p>Only a click or a tap lights anything. Hover did too, and on a page
+ * this dense the pointer is always over some part, so the picture flickered as the reader moved
+ * past it and dimmed whatever a scroll slid under the cursor. A highlight answers "where is that?",
+ * and only the reader knows when they are asking it.
  *
  * <p>`cut` fades an edge where the picture is a slice of something longer (the milestone road).
  */
 function GuideShot({ name, captions = [], cut = null }) {
     const theme = useTheme()?.theme;
-    // A click pins a part; pointing previews one over the pin and gives it back on leaving. Kept
-    // apart because one state for both made a click on a hovered caption toggle it off.
-    const [pinned, setPinned] = useState(null);
-    const [pointed, setPointed] = useState(null);
+    const [active, setActive] = useState(null);
     const picture = useRef(null);
     const meta = shotMeta(name);
     if (!meta) return null;
-    const active = pointed ?? pinned;
     const marks = meta.marks.slice(0, captions.length);
     // The frame keeps the last place it framed while it fades, so it never shrinks to a corner.
     const [x, y, w, h] = marks[active ?? 0] || [0, 0, 100, 100];
@@ -35,13 +35,9 @@ function GuideShot({ name, captions = [], cut = null }) {
     // still be pointed at.
     const areas = marks.map((mark, index) => ({ mark, index })).sort((a, b) => b.mark[2] * b.mark[3] - a.mark[2] * a.mark[3]);
     const choose = (index) => {
-        setPinned((current) => (current === index ? null : index));
-        setPointed(null);
+        setActive((current) => (current === index ? null : index));
         picture.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     };
-    // Only the hand points: a part scrolled under a still cursor is not being pointed at.
-    const enter = (index) => (event) => { if (handMoved(event)) setPointed(index); };
-    const leave = () => setPointed(null);
 
     return (
         <figure className="flex flex-col gap-3">
@@ -51,7 +47,7 @@ function GuideShot({ name, captions = [], cut = null }) {
                 </span>
                 <div
                     ref={picture}
-                    className="relative overflow-hidden rounded-md ring-1 ring-border-light shadow-[0_1px_2px_rgb(0_0_0/0.05),0_10px_28px_-14px_rgb(0_0_0/0.35)] scroll-my-4"
+                    className="relative overflow-hidden rounded-md ring-1 ring-border-light shadow-[0_1px_2px_rgb(0_0_0/0.05),0_10px_28px_-14px_rgb(0_0_0/0.35)] scroll-my-24"
                     style={{ aspectRatio: `${meta.w} / ${meta.h}` }}
                 >
                     <img
@@ -73,8 +69,6 @@ function GuideShot({ name, captions = [], cut = null }) {
                         <span
                             key={index}
                             aria-hidden="true"
-                            onMouseEnter={enter(index)}
-                            onMouseLeave={leave}
                             onClick={() => choose(index)}
                             className="absolute cursor-pointer"
                             style={{ left: `${ax}%`, top: `${ay}%`, width: `${aw}%`, height: `${ah}%` }}
@@ -90,7 +84,7 @@ function GuideShot({ name, captions = [], cut = null }) {
                             top: `calc(${y}% - ${FRAME_PAD}px)`,
                             width: `calc(${w}% + ${2 * FRAME_PAD}px)`,
                             height: `calc(${h}% + ${2 * FRAME_PAD}px)`,
-                            boxShadow: '0 0 0 200vmax rgb(20 16 8 / 0.42), 0 0 0 5px rgb(var(--color-gold) / 0.25)',
+                            boxShadow: '0 0 0 200vmax rgb(20 16 8 / 0.22), 0 0 0 5px rgb(var(--color-gold) / 0.25)',
                         }}
                     />
                 </div>
@@ -105,12 +99,6 @@ function GuideShot({ name, captions = [], cut = null }) {
                                         type="button"
                                         aria-pressed={lit}
                                         onClick={() => choose(index)}
-                                        onMouseEnter={enter(index)}
-                                        onMouseLeave={leave}
-                                        // Keyboard focus only: a click focuses the button too, and
-                                        // would keep showing a part the click just unpinned.
-                                        onFocus={(event) => { if (event.target.matches(':focus-visible')) setPointed(index); }}
-                                        onBlur={leave}
                                         className={`flex items-start gap-3 w-full text-start rounded-md px-3 py-2 transition-colors ring-1 ${
                                             lit ? 'bg-gold-light/70 ring-gold/50' : 'ring-transparent hover:bg-surface-hover'
                                         }`}

@@ -2,7 +2,7 @@
 /**
  * Takes the page guides' screenshots from the real app (components/guide).
  *
- *   ../absarna-backend/infra/local/seed-journey-demo.sh   # a lived-in «مسيرتي» for the demo reader
+ *   ../absarna-backend/infra/local/seed-journey-demo.sh   # a lived-in «طريقي» for the demo reader
  *   npm run dev                                           # the SPA on :5173, the API on :8080
  *   npm run guide:shots                                   # this script (or `-- name …` for some)
  *

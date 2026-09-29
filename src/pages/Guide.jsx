@@ -7,8 +7,8 @@ import { useAppBusy } from '@/hooks/useAppBusy';
 import { t } from '@/i18n';
 
 /**
- * The guide in full, as one page: the same steps the first-visit dialog walks through, for
- * whoever skipped it or wants it again (the account menu and Today's welcome link here) — and
+ * The guide in full, as one page: a step per place on the site, for whoever wants it (the account
+ * menu and Today's welcome link here) — and
  * below them the illustrated page guides, each a card with a picture of its page.
  */
 function Guide() {

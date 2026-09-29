@@ -4,6 +4,7 @@ import Navbar from './Navbar';
 import BottomTabBar from './BottomTabBar';
 import Footer from './Footer';
 import ConsentBanner from './ConsentBanner';
+import PageGuideLink from '../guide/PageGuideLink';
 import { t } from '@/i18n';
 
 /**
@@ -34,7 +35,11 @@ export const TAB_COLUMN = 'max-w-[1200px] 2xl:max-w-[1400px] 3xl:max-w-[1640px] 
  */
 export const LIST_COLUMN = 'max-w-[1640px] mx-auto w-full p-4 sm:p-6';
 
-function PageShell({ children, contentClassName = '', tab = false, sidebar = null }) {
+/**
+ * `guide` names the page's guide (`components/guide/pageGuides`) and puts its link after the page's
+ * own last line — the one place every guided page keeps it.
+ */
+function PageShell({ children, contentClassName = '', tab = false, sidebar = null, guide = null }) {
     const { user } = useAuth();
     const unverified = !!user && user.emailVerified === false;
 
@@ -70,7 +75,10 @@ function PageShell({ children, contentClassName = '', tab = false, sidebar = nul
             <div className="flex flex-1 min-w-0">
                 {sidebar}
                 <div className="flex-1 min-w-0 flex flex-col">
-                    <main id="main-content" tabIndex={-1} className={`flex-1 min-w-0 outline-none ${tab ? TAB_COLUMN : ''} ${contentClassName}`}>{children}</main>
+                    <main id="main-content" tabIndex={-1} className={`flex-1 min-w-0 outline-none ${tab ? TAB_COLUMN : ''} ${contentClassName}`}>
+                        {children}
+                        {guide && <PageGuideLink id={guide} />}
+                    </main>
                     {sidebar && <Footer />}
                     {sidebar && <ConsentBanner />}
                 </div>

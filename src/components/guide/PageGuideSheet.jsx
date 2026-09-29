@@ -15,7 +15,7 @@ const onPage = (anchor) => typeof document !== 'undefined' && !!document.querySe
 /**
  * A page's guide, over the page: a sheet from the bottom on a phone and a panel from the reading
  * end on a wide screen, so the page it explains stays in view beside it. Opened only by the
- * reader (`PageGuideButton`), never by itself.
+ * reader (`PageGuideLink`), never by itself.
  */
 function PageGuideSheet({ id, open, onClose, onShowMe }) {
     const [rendered, setRendered] = useState(open);

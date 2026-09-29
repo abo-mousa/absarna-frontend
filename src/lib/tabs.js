@@ -14,7 +14,7 @@ export const TABS = [
     { key: 'articles', to: '/articles' },
     { key: 'posts', to: '/posts' },
     { key: 'channels', to: '/channels' },
-    // «مسيرتي» — a seventh place on a wide screen; on a phone the bar is full, so it is in the
+    // «طريقي» — a seventh place on a wide screen; on a phone the bar is full, so it is in the
     // account menu and on Today (PROGRESS-AND-GOALS.md D1's default).
     { key: 'journey', to: '/journey' },
 ];

@@ -83,8 +83,6 @@ export function ConsentProvider({ children }) {
             forgetViewerId();
             setViewsConsent(DENIED);
         },
-        /** Either question still open — what the first-visit guide waits on. */
-        askingAny: shouldAskConsent(consent) || viewsConsent === null,
     }), [consent, viewsConsent]);
 
     return <ConsentContext.Provider value={value}>{children}</ConsentContext.Provider>;
@@ -108,6 +106,5 @@ export function useConsent() {
         askingViews: false,
         grantViews: () => {},
         denyViews: () => {},
-        askingAny: false,
     };
 }

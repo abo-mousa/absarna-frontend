@@ -49,8 +49,8 @@ export function GuideCard({ id, guide }) {
 }
 
 /**
- * One page guide as a page of its own (`/guide/:slug`): the same blocks the page's «دليل الصفحة»
- * sheet shows, with room — the words beside the picture — for reading before ever opening the
+ * One page guide as a page of its own (`/guide/:slug`): the same blocks the sheet at the page's end
+ * shows, with room — the words beside the picture — for reading before ever opening the
  * page, or for sending to someone.
  */
 function GuidePage() {

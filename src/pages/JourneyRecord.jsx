@@ -28,8 +28,8 @@ function JourneyRecord() {
     const fields = useProgressFields(FIELD_DAYS);
 
     return (
-        <PageShell tab>
-            <PageHeader title={t('journey.nav.record')} action={<JourneyNav />} tabs guide="journeyRecord" />
+        <PageShell tab guide="journeyRecord">
+            <PageHeader title={t('journey.nav.record')} action={<JourneyNav />} tabs />
             <div className="flex flex-col gap-10">
                 <PausedLine where="journey" />
 

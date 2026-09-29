@@ -23,7 +23,7 @@ export function accountMenuActions(user, signedIn = true) {
     if (!signedIn) return ['login', 'register', 'guide', 'theme', 'language'];
     return [
         'profile',
-        // «مسيرتي»: a tab from `lg` up, and only here below it — the phone's bar holds five.
+        // «طريقي»: a tab from `lg` up, and only here below it — the phone's bar holds five.
         'journey',
         // What the sidebar used to hold for an account, now that there is no sidebar.
         'history',

@@ -263,7 +263,7 @@ function AppRoutes() {
                 <Route path="/subscriptions" element={
                     <ProtectedRoute><Subscriptions /></ProtectedRoute>
                 } />
-                {/* «مسيرتي», the progress tab (PROGRESS-AND-GOALS.md §7.1). */}
+                {/* «طريقي», the progress tab (PROGRESS-AND-GOALS.md §7.1). */}
                 <Route path="/journey" element={<ProtectedRoute><Journey /></ProtectedRoute>} />
                 <Route path="/journey/goals" element={<ProtectedRoute><JourneyGoals /></ProtectedRoute>} />
                 <Route path="/journey/goals/:id" element={<ProtectedRoute><JourneyGoal /></ProtectedRoute>} />

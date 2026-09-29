@@ -177,10 +177,10 @@ export const en = {
             articles: 'Articles',
             posts: 'Posts',
             channels: 'Channels',
-            journey: 'My journey',
+            journey: 'My path',
             read: 'Read',
         },
-        journey: 'My journey',
+        journey: 'My path',
         history: 'Watch history',
         bookmarks: 'Saved',
         guide: 'How Absarna works',
@@ -293,7 +293,7 @@ export const en = {
             // The channel's address (its slug), on creating one.
             // The progress tab's goals and the Friday review (backend content/goal, content/weeklyreview).
             GOAL_LIMIT_REACHED: 'You have as many goals as you can hold for now. Finish or archive one, then start another.',
-            GOAL_ALREADY_EXISTS: 'You already have a goal for this; it is in My Journey.',
+            GOAL_ALREADY_EXISTS: 'You already have a goal for this; it is in My path.',
             GOAL_NOT_ACTIVE: 'This goal is no longer running: you finished or archived it.',
             GOAL_TARGET_NOT_FOUND: 'This programme or book could not be found; it may have been hidden.',
             QADA_NOT_AVAILABLE: 'Nothing from yesterday is waiting to be made up; making up runs from dawn until noon.',
@@ -736,13 +736,7 @@ export const en = {
     guide: {
         title: 'The Absarna guide',
         subtitle: 'A tour of the site, in a minute.',
-        progress: 'Step {step} of {total}',
-        skip: 'Skip',
-        back: 'Back',
-        next: 'Next',
-        done: 'Let’s start',
         start: 'Go to Today',
-        fullPage: 'Read the full guide',
         open: 'Open {place}',
         steps: {
             welcome: {
@@ -774,13 +768,12 @@ export const en = {
                 text: 'A channel can mark a video “removed elsewhere”, and what is uploaded here stays here. When a channel warns that a video has hard footage, it sits behind a cover and opens only when you choose.',
             },
             journey: {
-                title: 'My journey',
-                text: 'Your goals and daily portion, your steadiness week by week, and what you have finished — yours alone, and we send you nothing. Each of its pages has an illustrated guide behind its “Page guide” button.',
+                title: 'My path',
+                text: 'Your goals and daily portion, your steadiness week by week, and what you have finished — yours alone, and we send you nothing. Each of its pages has an illustrated guide, opened from “How does this page work?” at its end.',
             },
         },
         sheet: {
-            button: 'Page guide',
-            buttonAria: 'How does this page work?',
+            pageLink: 'How does this page work?',
             kicker: 'Page guide',
             close: 'Close the guide',
             contents: 'In this guide',
@@ -796,7 +789,7 @@ export const en = {
             mark: 'Point {n}',
             gotIt: 'Got it',
             pagesTitle: 'Illustrated page guides',
-            pagesText: 'Pictures of the pages themselves, numbered where they point. Each of these pages has a “Page guide” button that opens its guide right there.',
+            pagesText: 'Pictures of the pages themselves, numbered where they point. At the end of each of these pages, “How does this page work?” opens its guide right there.',
             openPage: 'Open the page',
             pageTitle: 'Guide to “{page}”',
             otherGuides: 'More page guides',
@@ -884,7 +877,7 @@ export const en = {
                 },
             },
             journey: {
-                title: 'My journey',
+                title: 'My path',
                 lede: 'Here you plan your portion and look back on what you have done; the portion itself you do on Today. Everything on this page is for you alone.',
                 blocks: {
                     intention: {
@@ -968,7 +961,7 @@ export const en = {
                         title: 'The week’s review',
                         text: 'A minute after Jumu’ah to look back on your week.',
                         marks: {
-                            '1': 'It appears at the top of “My journey” every Friday after the prayer, and stays until the week ends.',
+                            '1': 'It appears at the top of “My path” every Friday after the prayer, and stays until the week ends.',
                             '2': 'Open it to answer three questions: what helped, what got in the way, and whether to keep your portion, lighten it or move it to another time.',
                         },
                         appears: 'Appears on Friday, and stays until the week ends.',
@@ -1112,7 +1105,7 @@ export const en = {
                         text: 'From “End this goal” at the bottom of its page.',
                         marks: {
                             '1': 'Before it ends, we offer to keep only its minimum.',
-                            '2': 'If you do end it, what you learned stays counted in your journey.',
+                            '2': 'If you do end it, what you learned stays counted in your path.',
                         },
                     },
                 },
@@ -1276,7 +1269,7 @@ export const en = {
                     },
                     paused: {
                         title: 'While recording is paused',
-                        text: 'One quiet line on every page of your journey, and under the player, says nothing is being kept.',
+                        text: 'One quiet line on every page of My path, and under the player, says nothing is being kept.',
                         appears: 'Appears while you have paused recording.',
                         marks: {
                             '1': 'Resume with one tap, right there.',
@@ -1290,7 +1283,7 @@ export const en = {
                     },
                     pause: {
                         q: 'What does pausing do?',
-                        a: 'Nothing you watch or read is kept, nor your place in it, and it is not counted in your journey — until you resume.',
+                        a: 'Nothing you watch or read is kept, nor your place in it, and it is not counted in your path — until you resume.',
                     },
                     keep: {
                         q: 'Why do the counts outlive the retention?',
@@ -1359,8 +1352,8 @@ export const en = {
     },
 
     journey: {
-        title: 'My journey',
-        navLabel: 'My journey sections',
+        title: 'My path',
+        navLabel: 'My path sections',
         nav: {
             overview: 'Overview',
             goals: 'My goals',
@@ -1368,7 +1361,7 @@ export const en = {
             reflections: 'My reflections',
             record: 'Record',
         },
-        loadFailed: 'Your journey could not be loaded',
+        loadFailed: 'My path could not be loaded',
         makeWird: 'Make it a daily portion',
         inWird: 'In your portions',
         portionDone: 'Today’s portion of “{title}” is done — alhamdulillah',
@@ -1388,7 +1381,7 @@ export const en = {
         weekQuiet: 'no learning',
         weekOf: 'week',
         shelfTitle: 'What you finished',
-        colophon: 'This is your journey so far. What is left is written in your intention.',
+        colophon: 'This is your path so far. What is left is written in your intention.',
         intention: {
             title: 'This week’s intention',
             none: 'Once you start a daily portion, your week’s intention appears here.',
@@ -1586,7 +1579,7 @@ export const en = {
         },
         today: {
             title: 'Today’s portion',
-            toJourney: 'My journey',
+            toJourney: 'My path',
             anyTime: 'Any time of your day',
             progress: '{done} of {target}',
             progressAria: '{done} of {target}',
@@ -1678,7 +1671,7 @@ export const en = {
             title: 'End the goal',
             lightenFirst: 'Before you end it: what if you kept just {amount} a day?',
             lighten: 'Keep {amount}',
-            text: 'The goal moves to the archive. What you learned stays counted in your journey.',
+            text: 'The goal moves to the archive. What you learned stays counted in your path.',
             confirm: 'Archive it',
             done: 'Goal archived',
         },
@@ -1740,7 +1733,7 @@ export const en = {
         },
         paused: {
             player: 'Recording is paused — your place here is not being kept.',
-            journey: 'Recording is paused — what you learn now is not counted in your journey.',
+            journey: 'Recording is paused — what you learn now is not counted in your path.',
             resume: 'Resume recording',
         },
         record: {
@@ -1806,7 +1799,7 @@ export const en = {
             over: 'over {days}',
             count: 'That makes {count} you have finished here.',
             nextGoal: 'Choose your next portion',
-            toJourney: 'To my journey',
+            toJourney: 'To my path',
         },
         milestones: {
             reachedOn: 'Reached on {date}',
@@ -3409,7 +3402,7 @@ export const en = {
                         'Reading history — the same for books: what you read, and the last page you reached.',
                         'Watching and reading days — how far you got in each video and book on each day, and when, so that what you did in your day and your week can be counted. Anything older than the period you chose is deleted, and they are cleared together with the histories.',
                         'Your weekly totals and completions — numbers, not lists: how many minutes and pages each week, and the programmes and books you finished. They stay if you shorten how long your history is kept, because they do not say what you watched, and you can clear them with the histories if you wish.',
-                        'Your goals, daily portions and weekly reviews — what you set yourself in “My journey”: the amount and the time, your excused days, your intention if you wrote one, and your Friday review’s answers and note. Nobody else sees them; reviews older than the period you chose are deleted, and they are cleared together with the histories.',
+                        'Your goals, daily portions and weekly reviews — what you set yourself in “My path”: the amount and the time, your excused days, your intention if you wrote one, and your Friday review’s answers and note. Nobody else sees them; reviews older than the period you chose are deleted, and they are cleared together with the histories.',
                         'Your reflections — the line you may write after a lesson or a book, with what it was about. Nobody else sees them and nothing is suggested to you from them; anything older than the period you chose is deleted, and they are cleared together with the histories.',
                         'Your time zone — so that your day is counted by your own clock.',
                         'Saved items — what you saved to read or watch later.',

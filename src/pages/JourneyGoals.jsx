@@ -12,8 +12,8 @@ function JourneyGoals() {
     const goals = useGoals();
     const { openGoal } = useJourney();
     return (
-        <PageShell tab>
-            <PageHeader title={t('journey.nav.goals')} action={<JourneyNav />} tabs guide="journeyGoals" />
+        <PageShell tab guide="journeyGoals">
+            <PageHeader title={t('journey.nav.goals')} action={<JourneyNav />} tabs />
             <PausedLine where="journey" className="mb-6" />
             <QueryState
                 isLoading={goals.isLoading}

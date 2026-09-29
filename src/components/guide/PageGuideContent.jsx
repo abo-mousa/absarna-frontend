@@ -104,7 +104,9 @@ function PageGuideContent({ id, layout = 'sheet', available = null, onShowMe = n
                     <section
                         key={block.key}
                         id={`guide-${id}-${block.key}`}
-                        className={`scroll-mt-4 ${page ? 'grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,27rem)] gap-6 lg:gap-12 items-start' : 'flex flex-col gap-4'}`}
+                        // The page sits under the ~60px sticky navbar (see LegalDocument); the sheet
+                        // scrolls on its own, so it needs only air above the heading.
+                        className={`${page ? 'scroll-mt-28' : 'scroll-mt-6'} ${page ? 'grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,27rem)] gap-6 lg:gap-12 items-start' : 'flex flex-col gap-4'}`}
                     >
                         <div className={`flex flex-col gap-3 ${page ? 'lg:sticky lg:top-24' : ''}`}>
                             <h3 className="flex items-center gap-3">

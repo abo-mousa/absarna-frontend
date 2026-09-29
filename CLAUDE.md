@@ -127,13 +127,15 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   renders `KhatamEmblem` — the star twice, interlaced, around one thin lucide glyph — and takes a
   lucide COMPONENT as `icon`/`emptyIcon`; a string falls back to `Inbox`, so an emoji cannot come
   back through a prop. Emoji are drawn by the operating system and looked different on every phone.
-- **The guide** (`components/guide`, `/guide`) is one list of steps shown two ways: a paged dialog
-  that opens by itself on Today once — only when the backend sent a `welcome` (it decides who is
-  new) and until `absarna.guideSeen` is set — and the full page, linked from the welcome and the
-  account menu. A new tab means a new step in `GUIDE_STEPS`.
+- **The guide** (`components/guide`, `/guide`) is one list of steps on one page, linked from the
+  account menu and Today's welcome. **Nothing opens by itself** (product owner, 2026-09-29): a
+  paged dialog used to open on a new reader's first Today, and a guide should be there when
+  someone looks for it, never in the way when they are not. A new tab means a new step in
+  `GUIDE_STEPS`.
 - **A page guide is pictures of the page, and it opens only when asked** (`components/guide/
-  pageGuides.js`). «دليل الصفحة» at the end of `PageHeader`'s line (`guide="<id>"`, or a
-  `PageGuideButton` where a page has no header) opens a sheet (`?guide=1`, so Back closes it) of
+  pageGuides.js`). «كيف تعمل هذه الصفحة؟» is a quiet line at the page's END (`PageShell`'s
+  `guide="<id>"`, `PageGuideLink`) — it was a button in every page's header, which put it in the
+  first line of every visit for readers who knew the page already. It opens a sheet (`?guide=1`, so Back closes it) of
   real screenshots with numbered marks, a stepped dialog, the live day-symbol key, and questions;
   `/guide/:slug` shows the same blocks as a page, and `/guide` lists them. **The screenshots are
   taken, never drawn or placed by hand**: `npm run guide:shots` (the backend's
@@ -142,7 +144,7 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   layout change is a rerun, and a mark moves with what it points at. `data-guide` is also what
   «أرِني في الصفحة» spotlights; where a section is hidden until it has something in it, the block
   says when it appears instead. `pageGuides.test.js` pins registry ↔ marks ↔ both catalogs ↔
-  files ↔ anchors. Every «مسيرتي» page has one, and so does Today (the portion's states are what
+  files ↔ anchors. Every «طريقي» page has one, and so does Today (the portion's states are what
   a new reader asks about); a new page gets one the same way. **A shot that needs a time of day
   names it** (`part: 'morning' | 'afternoon' | 'evening'`): the backend decides Today's states
   from the zone the SPA sends, not from any clock a browser could fake, so the script takes it in
@@ -230,7 +232,7 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   the `<nav>` for exactly that reason. The `60px` the old sidebars hardcoded was a pixel short of the
   bar plus its border — and it cannot be a constant anyway: the logo and wordmark change size at
   `sm`, and the Arabic webfont arrives after first paint (`display=swap`) and re-lays the line box.
-- **There is no sidebar, on purpose.** The places are six tabs (`lib/tabs`), seven from `lg` with «مسيرتي»: a strip in the navbar
+- **There is no sidebar, on purpose.** The places are six tabs (`lib/tabs`), seven from `lg` with «طريقي»: a strip in the navbar
   from `lg`, a five-tab bar fixed to the bottom below it (Books and Articles fold into «اقرأ»,
   which opens Books — so below `lg` both pages carry `layout/ReadSwitch` in a `PageHeader belowLg`,
   or the Articles list has no way in at all), and `PageShell` gives every page bottom room for that bar plus the safe-area inset. History and
@@ -445,7 +447,7 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
   shows the inherited value and its source. `lib/subjects.js` is the backend's list, code for code.
   `Modal` renders through a portal and only the topmost `useFocusTrap` answers keys, so a dialog
   opened from inside another works — keep both if you touch either.
-- **«مسيرتي», the progress tab, is `components/journey` + `pages/Journey*.jsx`** (the plan is the
+- **«طريقي», the progress tab, is `components/journey` + `pages/Journey*.jsx`** (the plan is the
   backend's `PROGRESS-AND-GOALS.md` §7). What is easy to get wrong:
   - **Today decides current / later / passed / kept from the LOCAL clock** (`lib/journey.js`,
     `lib/slots.js`, `useNow`): Today is cached until the day ends and the slot moves under it. A

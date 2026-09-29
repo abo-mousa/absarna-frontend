@@ -8,14 +8,17 @@ import { isRtl, t } from '@/i18n';
 const OPENED_HERE = 'pageGuide';
 
 /**
- * «دليل الصفحة»: the quiet button at the end of a page's header line that opens its guide. It is
- * the only way the guide opens — nothing here calls attention to itself.
+ * «كيف تعمل هذه الصفحة؟»: a quiet line at the END of a page that opens its guide (`PageShell`'s
+ * `guide`). It sat in the header once, as a button on every visit's first line — there for the
+ * reader who needs it, and in the way of everyone who already knows the page. At the end it is
+ * found by someone looking for it and passed over by someone who is not. The account menu's
+ * «الدليل» is the other way in, to every page's guide at once.
  *
  * <p>The open sheet is `?guide=1`, so Back closes it and a link can open it (the full guide's
  * «افتح الصفحة»). Closing a sheet this button opened goes back one entry rather than replacing
  * it, or every look at the guide would leave a duplicate of the page in the history.
  */
-function PageGuideButton({ id, className = '' }) {
+function PageGuideLink({ id }) {
     const [params, setParams] = useSearchParams();
     const location = useLocation();
     const navigate = useNavigate();
@@ -45,25 +48,25 @@ function PageGuideButton({ id, className = '' }) {
 
     return (
         <>
-            <button
-                type="button"
-                onClick={show}
-                aria-label={t('guide.sheet.buttonAria')}
-                aria-haspopup="dialog"
-                aria-expanded={open}
-                className={`group inline-flex items-center gap-2 h-9 ps-1.5 pe-1.5 sm:pe-3 rounded-full border border-border-light bg-surface text-sm font-semibold text-text-secondary
-                    hover:text-text-primary hover:border-gold transition-colors ${className}`}
-            >
-                <span className="relative w-6 h-6 inline-flex items-center justify-center" aria-hidden="true">
-                    <KhatamStar filled={false} strokeWidth={7} className="absolute inset-0 w-full h-full text-gold transition-transform duration-300 group-hover:rotate-45" />
-                    <span className="relative text-[0.8rem] font-bold leading-none text-gold-ink">{isRtl() ? '؟' : '?'}</span>
-                </span>
-                <span className="hidden sm:inline">{t('guide.sheet.button')}</span>
-            </button>
+            <div className="mt-12 flex justify-center">
+                <button
+                    type="button"
+                    onClick={show}
+                    aria-haspopup="dialog"
+                    aria-expanded={open}
+                    className="group inline-flex items-center gap-2 text-sm text-text-muted hover:text-text-primary transition-colors"
+                >
+                    <span className="relative w-5 h-5 inline-flex items-center justify-center" aria-hidden="true">
+                        <KhatamStar filled={false} strokeWidth={7} className="absolute inset-0 w-full h-full text-gold/80 transition-transform duration-300 group-hover:rotate-45" />
+                        <span className="relative text-[0.7rem] font-bold leading-none text-gold-ink">{isRtl() ? '؟' : '?'}</span>
+                    </span>
+                    {t('guide.sheet.pageLink')}
+                </button>
+            </div>
             <PageGuideSheet id={id} open={open} onClose={close} onShowMe={showMe} />
             {spot && <Spotlight anchor={spot.anchor} title={spot.title} onDone={endSpot} />}
         </>
     );
 }
 
-export default PageGuideButton;
+export default PageGuideLink;

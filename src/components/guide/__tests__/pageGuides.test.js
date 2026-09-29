@@ -103,10 +103,10 @@ describe('page guides', () => {
         }
     });
 
-    it('names a real page for every guide, and gives each «مسيرتي» page its button', () => {
+    it('names a real page for every guide, and gives each «طريقي» page its link', () => {
         const code = sources(join(process.cwd(), 'src')).join('\n');
         for (const id of PAGE_GUIDE_ORDER) {
-            expect(code.includes(`guide="${id}"`) || code.includes(`<PageGuideButton id="${id}"`), id).toBe(true);
+            expect(code.includes(`guide="${id}"`), id).toBe(true);
         }
     });
 });
