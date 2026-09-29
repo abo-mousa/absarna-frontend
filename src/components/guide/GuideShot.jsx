@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { KhatamStar } from '../ui/Khatam';
 import { shotMeta, shotSrc } from './guideShotMeta';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -17,7 +17,8 @@ const FRAME_PAD = 6;
  * <p>Only a click or a tap lights anything. Hover did too, and on a page
  * this dense the pointer is always over some part, so the picture flickered as the reader moved
  * past it and dimmed whatever a scroll slid under the cursor. A highlight answers "where is that?",
- * and only the reader knows when they are asking it.
+ * and only the reader knows when they are asking it. It goes away as plainly: the same caption
+ * again, a click on the picture away from any part, or a click anywhere outside the figure.
  *
  * <p>`cut` fades an edge where the picture is a slice of something longer (the milestone road).
  */
@@ -25,12 +26,21 @@ function GuideShot({ name, captions = [], cut = null }) {
     const theme = useTheme()?.theme;
     const [active, setActive] = useState(null);
     const picture = useRef(null);
+    const figure = useRef(null);
+    const on = active != null;
+    useEffect(() => {
+        if (!on) return undefined;
+        const away = (event) => {
+            if (!figure.current?.contains(event.target)) setActive(null);
+        };
+        document.addEventListener('pointerdown', away);
+        return () => document.removeEventListener('pointerdown', away);
+    }, [on]);
     const meta = shotMeta(name);
     if (!meta) return null;
     const marks = meta.marks.slice(0, captions.length);
     // The frame keeps the last place it framed while it fades, so it never shrinks to a corner.
     const [x, y, w, h] = marks[active ?? 0] || [0, 0, 100, 100];
-    const on = active != null;
     // Larger parts under smaller ones, so a part inside another (a legend inside its grid) can
     // still be pointed at.
     const areas = marks.map((mark, index) => ({ mark, index })).sort((a, b) => b.mark[2] * b.mark[3] - a.mark[2] * a.mark[3]);
@@ -40,13 +50,15 @@ function GuideShot({ name, captions = [], cut = null }) {
     };
 
     return (
-        <figure className="flex flex-col gap-3">
+        <figure ref={figure} className="flex flex-col gap-3">
             <div className="relative rounded-lg bg-bg ring-1 ring-border-light p-2.5 sm:p-3">
                 <span className="absolute -top-2.5 end-3 z-10 px-2 py-0.5 rounded-sm border border-border-light bg-surface text-[0.65rem] font-semibold text-text-muted">
                     {t('guide.sheet.example')}
                 </span>
+                {/* A click that lands on the picture itself, not on a part, puts the highlight away. */}
                 <div
                     ref={picture}
+                    onClick={(event) => { if (event.target.tagName === 'IMG' || event.target === event.currentTarget) setActive(null); }}
                     className="relative overflow-hidden rounded-md ring-1 ring-border-light shadow-[0_1px_2px_rgb(0_0_0/0.05),0_10px_28px_-14px_rgb(0_0_0/0.35)] scroll-my-24"
                     style={{ aspectRatio: `${meta.w} / ${meta.h}` }}
                 >
