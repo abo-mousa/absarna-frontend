@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api/client';
 import { queryKeys } from '@/lib/queryKeys';
 import { useUserScope } from './useUserScope';
@@ -6,6 +6,9 @@ import { useUserScope } from './useUserScope';
 // Every listing here is admin-only, so it is user-scoped for the same reason the viewer's own
 // lists are: it must not survive a logout into the next person's session. The scope is the last
 // key segment, so the invalidations below stay prefix matches and need no scope of their own.
+//
+// The book, article and biography mutations that used to live here had no caller left — the
+// admin CRUD screens they served were removed long ago and the hooks stayed behind. Gone.
 
 // ============ STATS ============
 
@@ -21,95 +24,66 @@ export const useStats = () => {
     });
 };
 
-// ============ BOOKS ============
+// ============ USERS ============
 
-export const useCreateBook = () => {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: async (book) => {
-            const res = await api.post('/admin/books', book);
-            return res.data;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['admin-books'] });
-            queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
-            queryClient.invalidateQueries({ queryKey: ['books'] });
-        },
-    });
-};
-
-export const useDeleteBook = () => {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: async (id) => {
-            await api.delete(`/admin/books/${id}`);
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['admin-books'] });
-            queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
-        },
-    });
-};
-
-// ============ ARTICLES ============
-
-export const useCreateArticle = () => {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: async (article) => {
-            const res = await api.post('/admin/articles', article);
-            return res.data;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['admin-articles'] });
-            queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
-            queryClient.invalidateQueries({ queryKey: ['articles'] });
-        },
-    });
-};
-
-export const useDeleteArticle = () => {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: async (id) => {
-            await api.delete(`/admin/articles/${id}`);
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['admin-articles'] });
-            queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
-        },
-    });
-};
-
-// ============ BIOGRAPHY ============
-
-export const useBiography = () => {
+/** One page of accounts, narrowed by a username-or-email substring. */
+export const useAdminUsers = (search = '', page = 0, enabled = true) => {
     const scope = useUserScope();
     return useQuery({
-        queryKey: queryKeys.adminBiography(scope),
+        queryKey: queryKeys.adminUsers(search, page, scope),
         queryFn: async () => {
-            const res = await api.get('/admin/biography');
-            return res.data;
+            const params = { page, size: 20 };
+            if (search) params.search = search;
+            return (await api.get('/admin/users', { params })).data;
         },
-        staleTime: 10 * 60 * 1000,
+        enabled,
+        placeholderData: keepPreviousData,
+        staleTime: 30 * 1000,
     });
 };
 
-export const useUpdateBiography = () => {
-    const queryClient = useQueryClient();
+/** One account: who they are, the channels they own, what they reported and how it ended. */
+export const useAdminUser = (id) => {
+    const scope = useUserScope();
+    return useQuery({
+        queryKey: queryKeys.adminUser(id, scope),
+        queryFn: async () => (await api.get(`/admin/users/${id}`)).data,
+        enabled: !!id,
+        staleTime: 30 * 1000,
+    });
+};
 
+export const useUpdateUserRole = () => {
+    const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async (bio) => {
-            const res = await api.put('/admin/biography', bio);
-            return res.data;
-        },
+        mutationFn: async ({ id, role }) => (await api.put(`/admin/users/${id}/role`, { role })).data,
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['admin-biography'] });
-            queryClient.invalidateQueries({ queryKey: ['biography'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-user'] });
         },
+    });
+};
+
+// ============ CHANNEL DECISIONS ============
+
+/** Every recorded approve / reject / suspend of one channel, newest first. */
+export const useChannelStatusHistory = (channelId, enabled = true) => {
+    const scope = useUserScope();
+    return useQuery({
+        queryKey: queryKeys.adminChannelStatusHistory(channelId, scope),
+        queryFn: async () => (await api.get(`/channels/admin/${channelId}/status-history`)).data,
+        enabled: enabled && !!channelId,
+        staleTime: 30 * 1000,
+    });
+};
+
+/** Every metadata affirmation recorded on one channel — the audit an admin hands to whoever asks. */
+export const useAdoptionAudit = (slug, enabled = true) => {
+    const scope = useUserScope();
+    return useQuery({
+        queryKey: queryKeys.adminAdoptionAudit(slug, scope),
+        queryFn: async () => (await api.get(`/channels/${slug}/youtube/adoption/audit`)).data,
+        enabled: enabled && !!slug,
+        staleTime: 60 * 1000,
     });
 };

@@ -105,6 +105,18 @@ export const targetPath = (targetType, targetId) => {
 };
 
 /**
+ * Where a report's row should link: the target's own page, else the page the target sits ON
+ * (a comment's video, book or article — `parentType`/`parentId`, which the backend resolves
+ * from the comment row), else nothing. A post has neither, and falls back to the channel.
+ */
+export const reportLink = (report) =>
+    targetPath(report.targetType, report.targetId)
+    ?? targetPath(report.parentType, report.parentId);
+
+/** Which of the admin's own actions apply to a reported thing. */
+export const HIDEABLE_TARGETS = new Set(['VIDEO', 'BOOK', 'ARTICLE', 'POST']);
+
+/**
  * How many OPEN reports stand against a target, as something to show — or `null` for "one".
  *
  * <p>A lone complaint is the ordinary case and needs no decoration; the number is worth rendering

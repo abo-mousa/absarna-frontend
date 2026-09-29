@@ -32,6 +32,7 @@ export const en = {
 
     /** Words that genuinely mean the same thing everywhere they appear. */
     common: {
+        confirm: 'Confirm',
         channelScope: {
             label: 'Which channels',
             followed: 'From your channels',
@@ -284,6 +285,10 @@ export const en = {
          * how people learn to ignore the ones that would.
          */
         reasons: {
+            // Admin decisions on a channel and on an account.
+            STATUS_REASON_REQUIRED: 'A reject or a suspend must say why: the owner reads the reason on their dashboard.',
+            INVALID_ROLE: 'That role does not exist.',
+            CANNOT_DEMOTE_SELF: 'You cannot remove your own admin role. Ask another admin to do it.',
             // The channel's address (its slug), on creating one.
             // The progress tab's goals and the Friday review (backend content/goal, content/weeklyreview).
             GOAL_LIMIT_REACHED: 'You have as many goals as you can hold for now. Finish or archive one, then start another.',
@@ -2213,6 +2218,11 @@ export const en = {
             notDuplicateFailed: 'Could not show the video.',
         },
         underReviewImport: 'Your channel is hidden from visitors until the platform team has reviewed what you imported from YouTube. You can carry on uploading and editing here in the meantime, and everything appears the moment it is approved.',
+        // The two dark states an admin puts a channel in, with the sentence they wrote for the owner.
+        suspended: 'Your channel is suspended and hidden from visitors.',
+        rejected: 'Your channel was not approved and is hidden from visitors.',
+        statusReason: 'Reason given: {reason}',
+        statusContact: 'If you believe this is a mistake, write to us through the contact page.',
         underReview: 'Your channel is hidden from visitors until the platform team has reviewed it. You can carry on uploading and editing here in the meantime.',
 
         editTitle: 'Edit content',
@@ -2469,6 +2479,120 @@ export const en = {
 
     admin: {
         title: 'Admin panel',
+        // The channel's owner, as a link to their account page.
+        more: 'More actions',
+        ownerLink: 'Owner #{id}',
+        /**
+         * The four status decisions, each through one dialog that asks why. Reject and suspend
+         * REQUIRE a reason — they take something away, and the owner's dashboard is the only place
+         * they are told — approve and reactivate may carry one. Recorded with who and when.
+         */
+        decision: {
+            ownerReads: 'The owner reads this reason on their dashboard. It is recorded with your name and the time.',
+            reasonLabel: 'Reason (required)',
+            reasonOptionalLabel: 'Reason (optional)',
+            last: 'Last decision: {status} · {when} · by {by}',
+            approve: {
+                title: 'Approve {name}',
+                body: 'The channel goes live and everything in it becomes visible to visitors.',
+                action: 'Approve',
+                done: 'The channel is approved and live',
+                failed: 'Could not approve it',
+            },
+            reject: {
+                title: 'Reject {name}',
+                body: 'The channel stays hidden from visitors. A running YouTube import stops. Say why, so the owner knows what to fix.',
+                action: 'Reject',
+                done: 'The channel was rejected',
+                failed: 'Could not reject it',
+            },
+            suspend: {
+                title: 'Suspend {name}',
+                body: 'The channel and everything in it disappear from visitors at once. This is reversible with "Reactivate". Say why.',
+                action: 'Suspend',
+                done: 'The channel is suspended',
+                failed: 'Could not suspend it',
+            },
+            reactivate: {
+                title: 'Reactivate {name}',
+                body: 'The channel goes live again with everything in it.',
+                action: 'Reactivate',
+                done: 'The channel is live again',
+                failed: 'Could not reactivate it',
+            },
+        },
+        filters: {
+            status: 'Status',
+            all: 'All',
+            searchPlaceholder: 'Search by name or address…',
+            empty: 'No channel matches.',
+        },
+        history: {
+            action: 'History',
+            title: 'Decisions on {name}',
+            empty: 'No decision has been recorded on this channel yet.',
+            by: 'by {name}',
+            noReason: 'No reason was given.',
+        },
+        transfer: {
+            action: 'Transfer',
+            title: 'Transfer {name}',
+            body: 'Hands the channel to another account — the repair for a claim that went to the wrong person, or the route for an owner the YouTube proof cannot reach. Find the account by name or address.',
+            currentOwner: 'Current owner: #{id}',
+            findLabel: 'Username or email',
+            pick: 'Choose an account',
+            confirm: 'Transfer to {name}',
+            done: 'The channel now belongs to {name}',
+            failed: 'Could not transfer the channel',
+        },
+        create: {
+            action: 'Add a channel',
+            title: 'Add a channel for an owner',
+            body: 'Creates a channel owned by an existing account, the way seeded channels are made. The owner can change everything afterwards.',
+            name: 'Channel name',
+            slug: 'Address (slug)',
+            description: 'Description',
+            youtubeSource: 'YouTube channel link (optional)',
+            owner: 'Owner — username or email',
+            confirm: 'Create the channel',
+            done: '"{name}" was created',
+            failed: 'Could not create the channel',
+        },
+        audit: {
+            action: 'Affirmations',
+            title: 'Affirmed metadata on {name}',
+            intro: 'Every confirmation the owner recorded on their imported video details: the exact text affirmed, who affirmed it, and the wording they read. This is the record handed to whoever asks.',
+            count: '{count} affirmations',
+            empty: 'Nothing has been affirmed on this channel.',
+            failed: 'Could not load the record.',
+            video: 'Video #{id}',
+            user: 'by user #{id}',
+        },
+        pending: {
+            openDashboard: 'Owner dashboard',
+            importProgress: '{count} of ~{total} videos imported',
+            importProgressNoTotal: '{count} videos imported',
+            importState: {
+                RUNNING: 'import running',
+                PARTIAL: 'import paused',
+                SUCCESS: 'import finished',
+                FAILED: 'import failed',
+            },
+        },
+        overview: {
+            intro: 'What is waiting on you, and for how long. Each card leads to its queue.',
+            queues: 'Queues',
+            pendingChannels: 'Channels awaiting approval',
+            pendingChannelsHint: 'Imported catalogues nothing has examined.',
+            held: 'Held videos',
+            heldHint: 'Uploads nobody can see until a reviewer decides. {notes} notes on published videos besides.',
+            openReports: 'Open reports',
+            openReportsHint: 'What visitors flagged and no one has read.',
+            nothingWaiting: 'Nothing waiting.',
+            waitingSince: 'Oldest has waited {when}.',
+            open: 'Open the queue',
+            catalogue: 'On the platform',
+        },
         manageChannels: 'Manage channels',
         // Labelled rather than left as a bare <nav>, because a page can hold several and a screen
         // reader lists them by name.
@@ -2483,6 +2607,14 @@ export const en = {
          */
         review: {
             title: 'Content review',
+            viewLabel: 'Which findings',
+            viewQueue: 'Waiting',
+            viewDecided: 'Decided',
+            decidedHint: 'What a reviewer already cleared or rejected. A decision can be changed here: clear a rejected video, or reject a cleared one.',
+            emptyDecided: 'Nothing decided yet',
+            emptyDecidedDescription: 'Cleared and rejected findings appear here.',
+            waitingFor: 'waiting {when}',
+            detectedAgo: 'detected {when}',
             short: 'Review',
             // One sub-tab per detector, each with its own backlog count, because "how big is the
             // queue" is a different question for each.
@@ -2781,6 +2913,8 @@ export const en = {
      * again beside the buttons.
      */
     adminOutreach: {
+        replaceTitle: 'Replace the letter?',
+        replaceAction: 'Replace it',
         title: 'Outreach',
         intro: 'A personal letter from the platform to one person without an account: someone with an audience, a scholar with no YouTube channel, a reader. Start from a template and change anything. Every letter ends with a line saying a reply is enough to stop us writing; when someone replies that way, add them to the do-not-contact list below.',
         emailLabel: 'Email address',
@@ -2818,7 +2952,63 @@ export const en = {
         dncRemove: 'Remove',
         dncRemoveConfirm: 'Remove this address from the do-not-contact list? Only do this if it was added by mistake.',
     },
+    /**
+     * The platform admin's user lookup — the first user administration the platform has had.
+     * Read-mostly: who they are, what they own, what they reported. The role change is the one
+     * write. Nothing from a reader's private history is shown.
+     */
+    adminUsers: {
+        title: 'Accounts',
+        intro: 'Find an account by username or email address. An account page shows the channels it owns and its reporting record.',
+        searchPlaceholder: 'Username or email…',
+        empty: 'No account matches.',
+        count: '{count} accounts',
+        back: 'Back to the list',
+        joined: 'Joined {date}',
+        verified: 'Verified',
+        unverified: 'Unverified',
+        inactive: 'Inactive',
+        roles: {
+            USER: 'Reader',
+            CREATOR: 'Creator',
+            CHANNEL_ADMIN: 'Channel admin',
+            PLATFORM_ADMIN: 'Platform admin',
+        },
+        roleLabel: 'Role',
+        roleHint: 'Platform admin opens every screen here. You cannot remove your own admin role.',
+        saveRole: 'Save the role',
+        roleSaved: 'Role saved',
+        roleFailed: 'Could not change the role',
+        channels: 'Channels ({count})',
+        noChannels: 'This account owns no channel.',
+        openDashboard: 'Dashboard',
+        reports: 'Reports filed',
+        reportsSummary: '{open} open · {actioned} actioned · {dismissed} dismissed',
+        reportsDecided: 'decided {count} as a moderator',
+        noReports: 'This account has filed no report.',
+    },
+
     adminReports: {
+        openParent: 'Open the page it is on',
+        targetRemoved: 'The reported item no longer exists.',
+        reporterNamed: 'Reporter: {name}',
+        decidedByNamed: 'Decided by {name}',
+        /**
+         * The tools that change something, from the row. Deciding a report still touches nothing
+         * — these are the separate actions the page always pointed to, reachable without a walk
+         * through four screens. Each is the platform admin's own endpoint.
+         */
+        actions: {
+            label: 'Act:',
+            hide: 'Hide it',
+            hidden: 'Hidden from visitors',
+            deleteComment: 'Delete the comment',
+            deleteCommentTitle: 'Delete this comment?',
+            deleteCommentBody: '«{text}» will be removed for everyone. This cannot be undone.',
+            commentDeleted: 'The comment was deleted',
+            suspendChannel: 'Suspend the channel',
+            failed: 'Could not do that',
+        },
         priority: {
             urgent: 'Urgent',
             high: 'High priority',
@@ -2855,10 +3045,8 @@ export const en = {
         emptyDescription: 'Nothing is awaiting review in this category.',
         loadFailed: 'Could not load the reports',
 
-        reporter: 'Reporter #{id}',
         reportedAt: 'Reported: {date}',
         decidedAt: 'Decided: {date}',
-        decidedBy: 'Decision by moderator #{id}',
         // Rendered only when it is more than one \u2014 see `corroboration` in lib/reports.js. This
         // is the line that turns a list of separate objections into one case.
         corroboration: '{count} open reports on the same item',
@@ -3458,7 +3646,7 @@ export const TRANSLATED = [
     'auth', 'validation', 'home', 'video', 'books', 'pdfReader', 'articles', 'series',
     'channel', 'consent', 'createChannel', 'comments', 'likes', 'bookmarks', 'history',
     'subscriptions', 'profile', 'search', 'biography', 'share', 'upload', 'notFound',
-    'channelManage', 'youtube', 'youtubeOAuth', 'admin', 'adminReports', 'legal',
+    'channelManage', 'youtube', 'youtubeOAuth', 'admin', 'adminReports', 'adminUsers', 'legal',
     'pager', 'report', 'ownerImage', 'formats', 'rail', 'channelRail', 'guide', 'today',
     'journey', 'subjects', 'postsPage', 'channelsPage', 'voice', 'signInPrompt',
 ];

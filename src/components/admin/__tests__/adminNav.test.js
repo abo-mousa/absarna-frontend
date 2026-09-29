@@ -38,7 +38,10 @@ describe('AdminNav sections', () => {
         // A redirect kept for old links is not a destination — it has no page of its own.
         const redirects = [...app.matchAll(/path="(\/admin[^"]*)"\s+element=\{<Navigate/g)]
             .map((m) => m[1]);
-        const destinations = routed.filter((path) => !redirects.includes(path));
+        // A parameterised route (`/admin/users/:id`) is a detail of its section, not a section.
+        const destinations = [...new Set(routed
+            .filter((path) => !redirects.includes(path))
+            .map((path) => path.replace(/\/:[^/]+$/, '')))];
 
         expect(destinations.length).toBeGreaterThan(0);
         expect(new Set(SECTIONS.map((s) => s.to))).toEqual(new Set(destinations));
@@ -46,7 +49,7 @@ describe('AdminNav sections', () => {
 
     /** Every count a tab names is one the attention endpoint returns — a typo would badge nothing, silently. */
     it('names only counts the attention endpoint returns', () => {
-        const returned = ['pendingChannels', 'reviewBacklog', 'openReports', 'total'];
+        const returned = ['pendingChannels', 'reviewBacklog', 'reviewHeld', 'openReports', 'total'];
         for (const section of SECTIONS.filter((s) => s.countKey)) {
             expect(returned).toContain(section.countKey);
         }

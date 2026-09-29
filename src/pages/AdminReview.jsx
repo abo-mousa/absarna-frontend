@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, ExternalLink, Play, X, Music, ShieldAlert } from 'lucide-react';
+import { Check, ExternalLink, Play, X, Music, ShieldAlert, History, ListChecks } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
 import AdminNav from '../components/admin/AdminNav';
 import { VideoPlayer } from '../components/content';
@@ -10,6 +10,7 @@ import { usePageMeta } from '../hooks/usePageMeta';
 import { useReviewQueue, useDecideReview } from '../hooks/useReview';
 import { REVIEW_STATE, REVIEW_TYPE, findingRow, groupByType } from '@/lib/review';
 import { resolveMediaUrl } from '@/lib/media';
+import { dateLocale, parseTimestamp } from '@/lib/datetime';
 import { t, tOptional } from '@/i18n';
 
 // Which states read as a problem. HELD and REJECTED hide the video; ADVISORY and UNCHECKED are a
@@ -24,6 +25,20 @@ const BADGE_VARIANT = {
     [REVIEW_STATE.REJECTED]: 'danger',
     [REVIEW_STATE.ADVISORY]: 'featured',
     [REVIEW_STATE.UNCHECKED]: 'muted',
+    [REVIEW_STATE.CLEARED]: 'success',
+};
+
+// The two views: what is waiting (the backend's default set), and what a human already decided.
+// The second exists because the reject dialog promised "you can undo this later by clearing it"
+// and nothing on screen could — REJECTED rows left the queue and the endpoint's `?state=` filter
+// was never asked for. A decided row is re-decidable: CLEARED and REJECTED are both terminal for
+// the pipeline and both writable by a reviewer.
+const DECIDED_STATES = [REVIEW_STATE.CLEARED, REVIEW_STATE.REJECTED];
+
+const waitingSince = (value) => {
+    if (!value) return null;
+    const at = parseTimestamp(value).locale(dateLocale());
+    return at.isValid() ? at.fromNow() : null;
 };
 
 // The detectors this build knows. A type the backend sends that is not here still gets a tab
@@ -85,11 +100,20 @@ function AdminReview() {
     // finish, so the backlog grows on its own and a reviewer who cannot reach page 2 cannot empty
     // it.
     const [page, setPage] = useState(0);
-    const { data, isLoading, isError, error, refetch } = useReviewQueue({ page });
+    const [view, setView] = useState('queue');
+    const { data, isLoading, isError, error, refetch } = useReviewQueue({
+        page,
+        states: view === 'decided' ? DECIDED_STATES : null,
+    });
     const decide = useDecideReview();
     const playerRef = useRef(null);
 
-    const [tab, setTab] = useState(REVIEW_TYPE.MUSIC);
+    const [tab, setTabOnly] = useState(REVIEW_TYPE.MUSIC);
+    // A tab is a different list, so it starts at its own first page: sitting on page 3 of Music
+    // and pressing Explicit content showed "nothing of this kind on this page" for a tab whose
+    // backlog was on page 1.
+    const setTab = (type) => { setTabOnly(type); setPage(0); };
+    const switchView = (next) => { setView(next); setPage(0); };
     const [selectedId, setSelectedId] = useState(null);
     const [confirmingReject, setConfirmingReject] = useState(null);
 
@@ -167,7 +191,34 @@ function AdminReview() {
             <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
                 <AdminNav current="review" />
 
-                <h1 className="text-2xl font-bold mb-4">{t('admin.review.title')}</h1>
+                <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
+                    <h1 className="text-2xl font-bold">{t('admin.review.title')}</h1>
+                    <div className="flex gap-1.5" role="group" aria-label={t('admin.review.viewLabel')}>
+                        <button
+                            type="button"
+                            aria-pressed={view === 'queue'}
+                            onClick={() => switchView('queue')}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors ${
+                                view === 'queue' ? 'border-primary bg-primary-light text-primary' : 'border-border-light bg-surface hover:bg-surface-hover'
+                            }`}
+                        >
+                            <ListChecks size={14} aria-hidden="true" /> {t('admin.review.viewQueue')}
+                        </button>
+                        <button
+                            type="button"
+                            aria-pressed={view === 'decided'}
+                            onClick={() => switchView('decided')}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors ${
+                                view === 'decided' ? 'border-primary bg-primary-light text-primary' : 'border-border-light bg-surface hover:bg-surface-hover'
+                            }`}
+                        >
+                            <History size={14} aria-hidden="true" /> {t('admin.review.viewDecided')}
+                        </button>
+                    </div>
+                </div>
+                {view === 'decided' && (
+                    <p className="text-xs text-text-muted mb-4">{t('admin.review.decidedHint')}</p>
+                )}
 
                 {/* One tab per detector. Each carries its own backlog count, because "how big is
                     the queue" is a different question for each -- and because a tab whose count
@@ -221,10 +272,10 @@ function AdminReview() {
                     emptyIcon={EMPTY_ICON[tab]}
                     emptyTitle={emptyElsewhere
                         ? t('admin.review.emptyOnThisPage')
-                        : t('admin.review.empty')}
+                        : view === 'decided' ? t('admin.review.emptyDecided') : t('admin.review.empty')}
                     emptyDescription={emptyElsewhere
                         ? t('admin.review.emptyOnThisPageDescription', { count: backlogForTab })
-                        : t('admin.review.emptyDescription')}
+                        : view === 'decided' ? t('admin.review.emptyDecidedDescription') : t('admin.review.emptyDescription')}
                 >
                     <div className="grid gap-6 lg:grid-cols-[320px_1fr] items-start">
                         {/* The queue */}
@@ -253,6 +304,18 @@ function AdminReview() {
                                                 seconds: Math.round(row.coveredSeconds),
                                             })}
                                         </p>
+                                        {/* Whose channel, and how long it has waited: the queue
+                                            is oldest-first because a held upload is a person
+                                            waiting, and the row never said for how long. */}
+                                        <p className="text-xs text-text-muted mt-0.5">
+                                            {row.channelName ?? ''}
+                                            {row.channelName && waitingSince(row.detectedAt) ? ' · ' : ''}
+                                            {waitingSince(row.detectedAt)
+                                                ? t(view === 'decided' ? 'admin.review.detectedAgo' : 'admin.review.waitingFor', {
+                                                    when: waitingSince(row.detectedAt),
+                                                })
+                                                : ''}
+                                        </p>
                                     </button>
                                 </li>
                             ))}
@@ -274,6 +337,13 @@ function AdminReview() {
 
                                 <div className="p-5">
                                     <h2 className="text-lg font-bold mb-1">{selected.title}</h2>
+                                    {selectedVideo.channelSlug && (
+                                        <p className="text-xs text-text-muted mb-1">
+                                            <Link to={`/channel/${selectedVideo.channelSlug}`} className="hover:text-primary hover:underline">
+                                                {selectedVideo.channelName}
+                                            </Link>
+                                        </p>
+                                    )}
                                     <p className="text-sm text-text-secondary mb-4">{selected.reason}</p>
 
                                     {/* WHAT ELSE IS OUTSTANDING ON THIS VIDEO, and the reason the
@@ -354,7 +424,7 @@ function AdminReview() {
                                         <Button
                                             variant="primary"
                                             icon={<Check size={16} />}
-                                            disabled={decide.isPending}
+                                            disabled={decide.isPending || selected.state === REVIEW_STATE.CLEARED}
                                             onClick={() => submit(selected.videoId, REVIEW_STATE.CLEARED)}
                                         >
                                             {/* Both wordings rendered, so the button keeps its
@@ -373,7 +443,7 @@ function AdminReview() {
                                         <Button
                                             variant="danger"
                                             icon={<X size={16} />}
-                                            disabled={decide.isPending}
+                                            disabled={decide.isPending || selected.state === REVIEW_STATE.REJECTED}
                                             onClick={() => setConfirmingReject(selected)}
                                         >
                                             {t('admin.musicReview.reject')}

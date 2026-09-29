@@ -143,6 +143,24 @@ function ChannelManage() {
                                     : t('channelManage.underReview')}
                             </div>
                         )}
+                        {/* The other two dark states, with the sentence the admin wrote for the
+                            owner. A channel used to read "suspended" and nothing else — the
+                            reason now travels on the by-id response for whoever manages it. */}
+                        {(channel.status === 'SUSPENDED' || channel.status === 'REJECTED') && (
+                            <div className="mb-5 rounded-md border border-red-300 bg-red-50 dark:bg-red-950/30 p-4 text-sm text-red-800 dark:text-red-300">
+                                <p className="font-semibold">
+                                    {channel.status === 'SUSPENDED'
+                                        ? t('channelManage.suspended')
+                                        : t('channelManage.rejected')}
+                                </p>
+                                {channel.lastStatusChange?.reason && (
+                                    <p className="mt-1 whitespace-pre-wrap">
+                                        {t('channelManage.statusReason', { reason: channel.lastStatusChange.reason })}
+                                    </p>
+                                )}
+                                <p className="mt-1 text-xs opacity-80">{t('channelManage.statusContact')}</p>
+                            </div>
+                        )}
 
                         {/* Above every tab, not inside the YouTube one. An owner who has finished
                             importing stops opening that tab, which is exactly when this work

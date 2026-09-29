@@ -3,7 +3,7 @@ import { AlertTriangle, Ban, Mail, UserCheck } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
 import AdminNav from '../components/admin/AdminNav';
 import LetterEditor from '../components/admin/LetterEditor';
-import { Button, Input, Pager } from '../components/ui';
+import { Button, ConfirmDialog, Input, Pager } from '../components/ui';
 import { useToast } from '../contexts/ToastContext';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
@@ -91,11 +91,21 @@ export default function AdminOutreach() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [starters.data]);
 
-    const pickStarter = (starter) => {
-        if (edited && !window.confirm(t('adminOutreach.replaceConfirm'))) return;
+    // A starter picked over an edit asks first — in the platform's own dialog, not the
+    // browser's, which ignores the page's direction and language.
+    const [replacing, setReplacing] = useState(null);
+    const applyStarter = (starter) => {
         const next = fromStarter(starter);
         seededFrom.current = next;
         setFields(next);
+        setReplacing(null);
+    };
+    const pickStarter = (starter) => {
+        if (edited) {
+            setReplacing(starter);
+            return;
+        }
+        applyStarter(starter);
     };
 
     const setField = (key) => (value) => setFields((current) => ({ ...current, [key]: value }));
@@ -310,6 +320,15 @@ export default function AdminOutreach() {
 
                 <SentLog />
                 <DoNotContactSection />
+
+                <ConfirmDialog
+                    open={!!replacing}
+                    title={t('adminOutreach.replaceTitle')}
+                    body={t('adminOutreach.replaceConfirm')}
+                    confirmLabel={t('adminOutreach.replaceAction')}
+                    onConfirm={() => applyStarter(replacing)}
+                    onClose={() => setReplacing(null)}
+                />
             </div>
         </PageShell>
     );
@@ -382,9 +401,10 @@ function DoNotContactSection() {
             },
         );
 
-    const unlist = (address) => {
-        if (!window.confirm(t('adminOutreach.dncRemoveConfirm'))) return;
-        remove.mutate(address, {
+    const [unlisting, setUnlisting] = useState(null);
+    const confirmUnlist = () => {
+        remove.mutate(unlisting, {
+            onSuccess: () => setUnlisting(null),
             onError: (error) => showToast(describeError(error, t('adminOutreach.dncFailed')), 'error'),
         });
     };
@@ -430,7 +450,7 @@ function DoNotContactSection() {
                                     {row.note ? ` — ${row.note}` : ''}
                                 </span>
                             </div>
-                            <Button variant="ghost" onClick={() => unlist(row.email)} disabled={remove.isPending}>
+                            <Button variant="ghost" onClick={() => setUnlisting(row.email)} disabled={remove.isPending}>
                                 {t('adminOutreach.dncRemove')}
                             </Button>
                         </li>
@@ -444,6 +464,16 @@ function DoNotContactSection() {
                 hasNext={data?.hasNext ?? false}
                 onChange={setPage}
                 className="mt-3"
+            />
+            <ConfirmDialog
+                open={!!unlisting}
+                title={t('adminOutreach.dncRemove')}
+                body={t('adminOutreach.dncRemoveConfirm')}
+                confirmLabel={t('adminOutreach.dncRemove')}
+                danger
+                pending={remove.isPending}
+                onConfirm={confirmUnlist}
+                onClose={() => setUnlisting(null)}
             />
         </section>
     );

@@ -120,11 +120,15 @@ export const queryKeys = {
 
     // ---- platform admin ----
     adminStats: (scope) => ['admin-stats', scope],
-    adminBooks: (scope) => ['admin-books', scope],
-    adminArticles: (scope) => ['admin-articles', scope],
-    adminBiography: (scope) => ['admin-biography', scope],
     adminPendingChannels: (scope) => ['admin-pending-channels', scope],
-    adminAllChannels: (page, scope) => ['admin-all-channels', page, scope],
+    // Keyed by the search and the status filter as well as the page, for the same reason the
+    // report queue is: a filter press must not serve the previous view's rows while its own
+    // request is in flight.
+    adminAllChannels: (page, search, status, scope) => ['admin-all-channels', page, search, status, scope],
+    adminChannelStatusHistory: (channelId, scope) => ['admin-channel-status-history', channelId, scope],
+    adminAdoptionAudit: (slug, scope) => ['admin-adoption-audit', slug, scope],
+    adminUsers: (search, page, scope) => ['admin-users', search, page, scope],
+    adminUser: (id, scope) => ['admin-user', id, scope],
     channelReviewExemptions: (channelId) => ['channel-review-exemptions', channelId],
     // The viewer-report moderation queue. Keyed by every filter AND the page, so switching a
     // filter or stepping a page never serves the previous view's rows while its own request is in

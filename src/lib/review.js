@@ -118,6 +118,8 @@ export const findingRow = (finding) => {
         videoId: finding.videoId,
         title: finding.title,
         channelId: finding.channelId,
+        channelName: finding.channelName ?? null,
+        channelSlug: finding.channelSlug ?? null,
         type,
         state,
         hidden: hidesVideo(finding),

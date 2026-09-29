@@ -192,3 +192,50 @@ export const useDecideReport = () => {
         },
     });
 };
+
+// ------------------------------------------------------------------- acting on what was reported
+
+const invalidateAfterContentAction = (queryClient) => {
+    queryClient.invalidateQueries({ queryKey: ['admin-reports'] });
+    queryClient.invalidateQueries({ queryKey: ['admin-reports-target'] });
+    queryClient.invalidateQueries({ queryKey: ['video'] });
+    queryClient.invalidateQueries({ queryKey: ['videos'] });
+    queryClient.invalidateQueries({ queryKey: ['books'] });
+    queryClient.invalidateQueries({ queryKey: ['articles'] });
+    queryClient.invalidateQueries({ queryKey: ['posts'] });
+    queryClient.invalidateQueries({ queryKey: ['channel-posts'] });
+    queryClient.invalidateQueries({ queryKey: ['comments'] });
+    queryClient.invalidateQueries({ queryKey: ['feed'] });
+};
+
+/**
+ * Hides a reported video, book, article or post — the platform admin's own endpoints, which
+ * take `visible` and need no channel. Deciding the report is still a separate press: the record
+ * says what a human concluded, this is what they did about it, and the two must stay two facts.
+ */
+export const useAdminHideContent = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ targetType, targetId, visible = false }) => {
+            // A post has no update DTO, so its one admin write is a visibility endpoint of its own.
+            if (targetType === 'POST') {
+                return (await api.put(`/admin/posts/${targetId}/visibility`, { visible })).data;
+            }
+            const path = { VIDEO: 'videos', BOOK: 'books', ARTICLE: 'articles' }[targetType];
+            if (!path) throw new Error(`No admin hide for ${targetType}`);
+            return (await api.put(`/admin/${path}/${targetId}`, { visible })).data;
+        },
+        onSuccess: () => invalidateAfterContentAction(queryClient),
+    });
+};
+
+/** Removes a reported comment outright — `DELETE /api/admin/comments/{id}`, platform admin only. */
+export const useAdminDeleteComment = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (commentId) => {
+            await api.delete(`/admin/comments/${commentId}`);
+        },
+        onSuccess: () => invalidateAfterContentAction(queryClient),
+    });
+};

@@ -580,13 +580,20 @@ export const usePendingChannels = (enabled = true) => {
     });
 };
 
-/** One page (zero-based) of every channel on the platform, newest first. */
-export const useAllAdminChannels = (page = 0, enabled = true) => {
+/**
+ * One page (zero-based) of every channel on the platform, newest first — narrowed by a
+ * name-or-slug substring and/or a status. A list that grows with every sign-up is unusable past
+ * a few pages without a way to reach one row.
+ */
+export const useAllAdminChannels = (page = 0, search = '', status = '', enabled = true) => {
     const scope = useUserScope();
     return useQuery({
-        queryKey: queryKeys.adminAllChannels(page, scope),
+        queryKey: queryKeys.adminAllChannels(page, search, status, scope),
         queryFn: async () => {
-            const res = await api.get('/channels/admin/all', { params: { page, size: 20 } });
+            const params = { page, size: 20 };
+            if (search) params.search = search;
+            if (status) params.status = status;
+            const res = await api.get('/channels/admin/all', { params });
             return res.data;
         },
         enabled,
@@ -598,31 +605,52 @@ export const useAllAdminChannels = (page = 0, enabled = true) => {
 const invalidateAdminChannels = (queryClient) => {
     queryClient.invalidateQueries({ queryKey: ['admin-pending-channels'] });
     queryClient.invalidateQueries({ queryKey: ['admin-all-channels'] });
+    queryClient.invalidateQueries({ queryKey: ['admin-channel-status-history'] });
     queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+    queryClient.invalidateQueries({ queryKey: ['admin-user'] });
     // The navbar badge counts pending channels — approving or rejecting one changes it.
     queryClient.invalidateQueries({ queryKey: ['admin-attention'] });
+    // The channel's own page and dashboard read the status and the reason.
+    queryClient.invalidateQueries({ queryKey: ['channel'] });
 };
 
-export const useApproveChannel = () => {
+/**
+ * The three status decisions. Each takes `{ id, reason }`: a reject or a suspend is refused by
+ * the backend without a reason (`STATUS_REASON_REQUIRED`), an approve may carry one. The reason
+ * is recorded with the actor and the time, and the owner reads it on their dashboard — the only
+ * place they are ever told why.
+ */
+const statusDecision = (action) => () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (id) => api.post(`/channels/admin/${id}/approve`),
+        mutationFn: async ({ id, reason }) =>
+            (await api.post(`/channels/admin/${id}/${action}`, reason?.trim() ? { reason: reason.trim() } : {})).data,
         onSuccess: () => invalidateAdminChannels(queryClient),
     });
 };
 
-export const useRejectChannel = () => {
+export const useApproveChannel = statusDecision('approve');
+export const useRejectChannel = statusDecision('reject');
+export const useSuspendChannel = statusDecision('suspend');
+
+/**
+ * Hands a channel to an account by hand — the repair for a claim that went to the wrong person,
+ * and the route for the scholar the YouTube proof cannot reach. Works on a claimed channel too.
+ */
+export const useTransferChannel = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (id) => api.post(`/channels/admin/${id}/reject`),
+        mutationFn: async ({ channelId, ownerUserId }) =>
+            (await api.post(`/channels/admin/${channelId}/transfer`, { ownerUserId })).data,
         onSuccess: () => invalidateAdminChannels(queryClient),
     });
 };
 
-export const useSuspendChannel = () => {
+/** A channel created by an admin for an owner — the seeding path, which had no screen. */
+export const useCreateChannelByAdmin = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (id) => api.post(`/channels/admin/${id}/suspend`),
+        mutationFn: async (body) => (await api.post('/channels/admin/create', body)).data,
         onSuccess: () => invalidateAdminChannels(queryClient),
     });
 };

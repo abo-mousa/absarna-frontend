@@ -1,15 +1,27 @@
 import { resolveMediaUrl } from '@/lib/media';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, X, Pause, Play, Trash2, ExternalLink, ShieldOff, Link2, Mail } from 'lucide-react';
+import {
+    Check, X, Pause, Play, Trash2, ExternalLink, ShieldOff, Link2, Mail, History, ArrowRightLeft,
+    Plus, FileCheck, LayoutDashboard, UserRound,
+} from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
 import AdminNav from '../components/admin/AdminNav';
-import { QueryState, Avatar, Badge, Button, Modal, Input, Pager } from '../components/ui';
+import { QueryState, Avatar, Badge, Button, Modal, Input, Pager, SearchField } from '../components/ui';
 import ReviewExemptionDialog, { ReviewExemptionSummary } from '../components/channel/ReviewExemptionDialog';
 import ChannelInviteDialog from '../components/admin/ChannelInviteDialog';
+import StatusReasonDialog from '../components/admin/StatusReasonDialog';
+import StatusHistoryDialog from '../components/admin/StatusHistoryDialog';
+import { statusLabel } from '@/lib/channelStatus';
+import ChannelTransferDialog from '../components/admin/ChannelTransferDialog';
+import AdminChannelCreateDialog from '../components/admin/AdminChannelCreateDialog';
+import AdoptionAuditDialog from '../components/admin/AdoptionAuditDialog';
+import RowActionsMenu from '../components/admin/RowActionsMenu';
 import { useToast } from '../contexts/ToastContext';
 import { useEmptyPageStepBack } from '../hooks/useEmptyPageStepBack';
 import { usePageMeta } from '../hooks/usePageMeta';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
+import { useChannelYouTube } from '../hooks/useChannelYouTube';
 import {
     usePendingChannels,
     useAllAdminChannels,
@@ -21,6 +33,7 @@ import {
 } from '../hooks/useChannels';
 import { describeError } from '@/lib/describeError';
 import { dateLocale, parseTimestamp } from '@/lib/datetime';
+import { formatCount } from '@/lib/numbers';
 import { t } from '@/i18n';
 
 /**
@@ -41,7 +54,7 @@ function InvitationNote({ invitation }) {
     const when = at.isValid() ? at.locale(dateLocale()).fromNow() : null;
     const address = invitation.email ?? '';
     const masked = address.includes('@')
-        ? `${address[0]}\u2022\u2022\u2022${address.slice(address.indexOf('@'))}`
+        ? `${address[0]}•••${address.slice(address.indexOf('@'))}`
         : address;
     // Lapsed and unanswered: the cue to send again, which renews it with the same link. Null
     // once the channel is claimed or the offer withdrawn — and then the address is gone too.
@@ -61,6 +74,50 @@ function InvitationNote({ invitation }) {
     );
 }
 
+/**
+ * The last decision recorded on the row, with its reason — the answer to "why is this
+ * suspended", which used to be answerable only from the access log.
+ */
+function LastDecision({ change }) {
+    if (!change) return null;
+    const at = parseTimestamp(change.changedAt);
+    const when = at.isValid() ? at.locale(dateLocale()).fromNow() : '';
+    return (
+        <p className="text-xs text-text-muted mt-1" title={change.reason ?? ''}>
+            {t('admin.decision.last', {
+                status: statusLabel(change.toStatus),
+                when,
+                by: change.actorUsername ?? `#${change.actorUserId ?? '?'}`,
+            })}
+            {change.reason && <span className="text-text-secondary"> — {change.reason}</span>}
+        </p>
+    );
+}
+
+/**
+ * What an admin is approving: how far the import has got and whether it is still walking.
+ *
+ * <p>The row said "imported content from YouTube — review before approving" and showed nothing
+ * about the import itself, so the admin decided blind. The owner's status endpoint answers for
+ * an admin too (they pass the manage check), so this asks it per pending row — a queue that is
+ * rarely more than a handful of channels.
+ */
+function ImportProgress({ slug }) {
+    const { data } = useChannelYouTube(slug);
+    if (!data?.importStatus) return null;
+    const count = formatCount(data.importedVideos ?? 0);
+    const total = data.importTotalEstimate;
+    return (
+        <p className="text-xs text-text-secondary mt-1">
+            {total
+                ? t('admin.pending.importProgress', { count, total: formatCount(total) })
+                : t('admin.pending.importProgressNoTotal', { count })}
+            {' · '}
+            {t(`admin.pending.importState.${data.importStatus}`)}
+        </p>
+    );
+}
+
 const STATUS_VARIANT = {
     PENDING: 'featured',
     ACTIVE: 'success',
@@ -68,21 +125,19 @@ const STATUS_VARIANT = {
     SUSPENDED: 'muted',
 };
 
-const STATUS_LABEL = {
-    PENDING: t('admin.channelStatus.PENDING'),
-    ACTIVE: t('admin.channelStatus.ACTIVE'),
-    REJECTED: t('admin.channelStatus.REJECTED'),
-    SUSPENDED: t('admin.channelStatus.SUSPENDED'),
-};
+const STATUS_FILTERS = ['', 'ACTIVE', 'PENDING', 'SUSPENDED', 'REJECTED'];
 
 function AdminChannels() {
     usePageMeta({ title: t('admin.manageChannels') });
     const { showToast } = useToast();
     const { data: pendingChannels = [], isLoading: pendingLoading } = usePendingChannels();
-    // Paged: every channel on the platform. Pending ones stay a whole list above it — that is a
-    // queue an admin empties, not a catalogue.
+    // Paged, searched and filtered: every channel on the platform. Pending ones stay a whole
+    // list above it — that is a queue an admin empties, not a catalogue.
     const [page, setPage] = useState(0);
-    const { data: allChannelsPage, isLoading: allLoading } = useAllAdminChannels(page);
+    const [search, setSearch] = useState('');
+    const [status, setStatus] = useState('');
+    const debouncedSearch = useDebouncedValue(search.trim(), 300);
+    const { data: allChannelsPage, isLoading: allLoading } = useAllAdminChannels(page, debouncedSearch, status);
     useEmptyPageStepBack(page, setPage, allChannelsPage, allLoading);
     const allChannels = allChannelsPage?.content ?? [];
     const approveChannel = useApproveChannel();
@@ -102,15 +157,40 @@ function AdminChannels() {
     // Same arrangement for the invitation: this page owns which row is open and nothing else.
     const [inviting, setInviting] = useState(null);
 
+    // One dialog for the four status decisions: `{ channel, action }`.
+    const [deciding, setDeciding] = useState(null);
+    const [historyOf, setHistoryOf] = useState(null);
+    const [transferring, setTransferring] = useState(null);
+    const [auditing, setAuditing] = useState(null);
+    const [creating, setCreating] = useState(false);
+
     const loading = pendingLoading || allLoading;
 
-    const handleApprove = (id) => {
-        approveChannel.mutate(id, { onError: () => showToast(t('admin.approveFailed'), 'error') });
+    const applyFilter = (change) => {
+        setPage(0);
+        change();
     };
 
-    const handleReject = (id) => {
-        rejectChannel.mutate(id, { onError: () => showToast(t('admin.rejectFailed'), 'error') });
+    const decisionMutation = { approve: approveChannel, reject: rejectChannel, suspend: suspendChannel, reactivate: approveChannel };
+    // Reset first, or a refusal from the previous decision would mark the reason box of this one.
+    const openDecision = (channel, action) => {
+        decisionMutation[action].reset();
+        setDeciding({ channel, action });
     };
+
+    const confirmDecision = (reason) => {
+        const { channel, action } = deciding;
+        const mutation = decisionMutation[action];
+        mutation.mutate({ id: channel.id, reason }, {
+            onSuccess: () => {
+                showToast(t(`admin.decision.${action}.done`), 'success');
+                setDeciding(null);
+            },
+            onError: (error) => showToast(describeError(error, t(`admin.decision.${action}.failed`)), 'error'),
+        });
+    };
+    const decidingPending = deciding ? decisionMutation[deciding.action].isPending : false;
+    const decidingError = deciding ? decisionMutation[deciding.action].error : null;
 
     /**
      * Deletion is guarded by typing the slug, not by a confirm dialog.
@@ -149,16 +229,27 @@ function AdminChannels() {
         });
     };
 
-    const handleSuspend = (id) => {
-        suspendChannel.mutate(id, { onError: () => showToast(t('admin.suspendFailed'), 'error') });
-    };
+    const channelLink = (channel) => (
+        <Link
+            to={`/channel/${channel.slug}`}
+            className="font-bold hover:text-primary hover:underline inline-flex items-center gap-1.5"
+        >
+            {channel.name}
+            <ExternalLink size={14} aria-hidden="true" />
+        </Link>
+    );
 
     return (
         <PageShell>
             <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-6">
                 <AdminNav current="channels" />
 
-                <h1 className="text-xl font-bold mb-6">{t('admin.manageChannels')}</h1>
+                <div className="flex items-center justify-between gap-3 flex-wrap mb-6">
+                    <h1 className="text-xl font-bold">{t('admin.manageChannels')}</h1>
+                    <Button variant="outline" size="sm" onClick={() => setCreating(true)} icon={<Plus size={14} />}>
+                        {t('admin.create.action')}
+                    </Button>
+                </div>
 
                 <QueryState isLoading={loading}>
                     <h2 className="text-base font-bold mb-3">{t('admin.pendingCount', { count: pendingChannels.length })}</h2>
@@ -174,15 +265,8 @@ function AdminChannels() {
                                         {/* The whole row's name is the link, not a small icon
                                             beside it: opening the channel is the FIRST thing a
                                             reviewer does, and this queue previously offered no
-                                            way to do it at all — an admin had to build the URL
-                                            from the slug by hand before deciding. */}
-                                        <Link
-                                            to={`/channel/${channel.slug}`}
-                                            className="font-bold hover:text-primary hover:underline inline-flex items-center gap-1.5"
-                                        >
-                                            {channel.name}
-                                            <ExternalLink size={14} aria-hidden="true" />
-                                        </Link>
+                                            way to do it at all. */}
+                                        {channelLink(channel)}
                                         <p className="text-sm text-text-muted">@{channel.slug}</p>
                                         {/* Says what is being approved. Since channel creation
                                             stopped queueing anything, a row here is an imported
@@ -193,6 +277,8 @@ function AdminChannels() {
                                                 ? t('admin.pendingReasonImport')
                                                 : t('admin.pendingReasonOther')}
                                         </p>
+                                        {channel.importReview === 'PENDING' && <ImportProgress slug={channel.slug} />}
+                                        <LastDecision change={channel.lastStatusChange} />
                                     </div>
                                     <div className="flex gap-2 flex-wrap">
                                         <Link
@@ -203,15 +289,60 @@ function AdminChannels() {
                                             <ExternalLink size={14} aria-hidden="true" />
                                             {t('admin.openChannel')}
                                         </Link>
-                                        <Button size="sm" onClick={() => handleApprove(channel.id)} icon={<Check size={14} />}>{t('admin.approve')}</Button>
-                                        <Button variant="danger" size="sm" onClick={() => handleReject(channel.id)} icon={<X size={14} />}>{t('admin.reject')}</Button>
+                                        {/* The owner's dashboard: the import panel, the held
+                                            uploads, the unconfirmed metadata — everything the
+                                            public page hides and an admin approving an import
+                                            wants to see. Admins pass the manage check. */}
+                                        <Link
+                                            to={`/channel/${channel.slug}/manage?tab=youtube`}
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-border
+                                                text-sm font-semibold text-text-secondary hover:bg-surface-hover transition-colors"
+                                        >
+                                            <LayoutDashboard size={14} aria-hidden="true" />
+                                            {t('admin.pending.openDashboard')}
+                                        </Link>
+                                        <Button size="sm" onClick={() => openDecision(channel, 'approve')} icon={<Check size={14} />}>{t('admin.approve')}</Button>
+                                        <Button variant="danger" size="sm" onClick={() => openDecision(channel, 'reject')} icon={<X size={14} />}>{t('admin.reject')}</Button>
                                     </div>
                                 </div>
                             ))}
                         </div>
                     )}
 
-                    <h2 className="text-base font-bold mb-3">{t('admin.allChannelsCount', { count: allChannelsPage?.totalItems ?? 0 })}</h2>
+                    <div className="flex items-end justify-between gap-3 flex-wrap mb-3">
+                        <h2 className="text-base font-bold">{t('admin.allChannelsCount', { count: allChannelsPage?.totalItems ?? 0 })}</h2>
+                        <div className="flex gap-3 flex-wrap items-end">
+                            {/* Plain toggle buttons with aria-pressed, as the report queue's
+                                filters are — not a tablist promising an arrow-key model. */}
+                            <div className="flex gap-1.5 flex-wrap" role="group" aria-label={t('admin.filters.status')}>
+                                {STATUS_FILTERS.map((value) => (
+                                    <button
+                                        key={value || 'all'}
+                                        type="button"
+                                        aria-pressed={status === value}
+                                        onClick={() => applyFilter(() => setStatus(value))}
+                                        className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors ${
+                                            status === value
+                                                ? 'border-primary bg-primary-light text-primary'
+                                                : 'border-border-light bg-surface hover:bg-surface-hover'
+                                        }`}
+                                    >
+                                        {value ? statusLabel(value) : t('admin.filters.all')}
+                                    </button>
+                                ))}
+                            </div>
+                            <SearchField
+                                value={search}
+                                onChange={(value) => applyFilter(() => setSearch(value))}
+                                placeholder={t('admin.filters.searchPlaceholder')}
+                                className="min-w-[220px]"
+                            />
+                        </div>
+                    </div>
+
+                    {allChannels.length === 0 && (
+                        <p className="text-text-muted text-sm mb-4">{t('admin.filters.empty')}</p>
+                    )}
 
                     <div className="grid gap-3">
                         {allChannels.map((channel) => (
@@ -220,21 +351,27 @@ function AdminChannels() {
                                 <div className="flex-1 min-w-[150px]">
                                     {/* Same link as the queue above: suspending or deleting a
                                         channel is also a decision worth looking at it first. */}
-                                    <Link
-                                        to={`/channel/${channel.slug}`}
-                                        className="font-bold hover:text-primary hover:underline inline-flex items-center gap-1.5"
-                                    >
-                                        {channel.name}
-                                        <ExternalLink size={14} aria-hidden="true" />
-                                    </Link>
-                                    <p className="text-sm text-text-muted">@{channel.slug}</p>
+                                    {channelLink(channel)}
+                                    <p className="text-sm text-text-muted">
+                                        @{channel.slug}
+                                        {channel.ownerUserId != null && (
+                                            <>
+                                                {' · '}
+                                                <Link to={`/admin/users/${channel.ownerUserId}`} className="inline-flex items-center gap-1 hover:text-primary hover:underline">
+                                                    <UserRound size={12} aria-hidden="true" />
+                                                    {t('admin.ownerLink', { id: channel.ownerUserId })}
+                                                </Link>
+                                            </>
+                                        )}
+                                    </p>
                                     {/* The answer to "has anybody already written to this person,
                                         and where" — which nothing could answer while the
                                         invitation was a link an admin copied into their own mail
                                         client. */}
                                     <InvitationNote invitation={channel.claimInvitation} />
+                                    <LastDecision change={channel.lastStatusChange} />
                                 </div>
-                                <Badge variant={STATUS_VARIANT[channel.status]}>{STATUS_LABEL[channel.status]}</Badge>
+                                <Badge variant={STATUS_VARIANT[channel.status]}>{statusLabel(channel.status)}</Badge>
                                 {/* Shown on the row and not only inside the dialog. A channel
                                     nothing scans is indistinguishable from one whose uploads all
                                     came back clean, which is exactly why it has to be visible
@@ -244,9 +381,6 @@ function AdminChannels() {
                                         <ReviewExemptionSummary exemptions={channel.reviewExemptions} />
                                     </Badge>
                                 )}
-                                {/* Only where there is somebody to invite. A claimed or
-                                    ordinary channel has no offer to scope, and the backend
-                                    refuses to mint a token for one. */}
                                 {/* A claimed channel offers neither: its owner is here, and
                                     moving it again is the transfer action, not this one. */}
                                 {channel.claimState === 'UNCLAIMED' && (
@@ -289,16 +423,19 @@ function AdminChannels() {
                                         {t('admin.claimLink.open')}
                                     </Button>
                                 )}
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setExempting(channel)}
-                                    icon={<ShieldOff size={14} />}
-                                >
-                                    {t('admin.exemptions.action')}
-                                </Button>
+                                {/* The once-a-year actions, behind one button; the decisions
+                                    stay on the row. Affirmations are offered on every channel:
+                                    an owner-made channel that imported has them too. */}
+                                <RowActionsMenu
+                                    items={[
+                                        { id: 'exemptions', label: t('admin.exemptions.action'), icon: ShieldOff, onClick: () => setExempting(channel) },
+                                        { id: 'history', label: t('admin.history.action'), icon: History, onClick: () => setHistoryOf(channel) },
+                                        { id: 'audit', label: t('admin.audit.action'), icon: FileCheck, onClick: () => setAuditing(channel) },
+                                        { id: 'transfer', label: t('admin.transfer.action'), icon: ArrowRightLeft, onClick: () => setTransferring(channel) },
+                                    ]}
+                                />
                                 {channel.status === 'ACTIVE' && (
-                                    <Button size="sm" onClick={() => handleSuspend(channel.id)} icon={<Pause size={14} />} className="!bg-gold hover:!bg-gold">
+                                    <Button size="sm" onClick={() => openDecision(channel, 'suspend')} icon={<Pause size={14} />} className="!bg-gold hover:!bg-gold">
                                         {t('admin.suspend')}
                                     </Button>
                                 )}
@@ -309,11 +446,7 @@ function AdminChannels() {
                                 {(channel.status === 'SUSPENDED' || channel.status === 'REJECTED') && (
                                     <Button
                                         size="sm"
-                                        onClick={() => approveChannel.mutate(channel.id, {
-                                            onSuccess: () => showToast(t('admin.reactivated'), 'success'),
-                                            onError: () => showToast(t('admin.reactivateFailed'), 'error'),
-                                        })}
-                                        disabled={approveChannel.isPending}
+                                        onClick={() => openDecision(channel, 'reactivate')}
                                         icon={<Play size={14} className="rtl:scale-x-[-1]" />}
                                     >
                                         {t('admin.reactivate')}
@@ -353,6 +486,21 @@ function AdminChannels() {
                     open={!!inviting}
                     onClose={() => setInviting(null)}
                 />
+
+                <StatusReasonDialog
+                    channel={deciding?.channel}
+                    action={deciding?.action}
+                    open={!!deciding}
+                    pending={decidingPending}
+                    error={decidingError}
+                    onConfirm={confirmDecision}
+                    onClose={() => setDeciding(null)}
+                />
+
+                <StatusHistoryDialog channel={historyOf} open={!!historyOf} onClose={() => setHistoryOf(null)} />
+                <ChannelTransferDialog channel={transferring} open={!!transferring} onClose={() => setTransferring(null)} />
+                <AdoptionAuditDialog channel={auditing} open={!!auditing} onClose={() => setAuditing(null)} />
+                <AdminChannelCreateDialog open={creating} onClose={() => setCreating(false)} />
 
                 <Modal
                     open={!!deleting}

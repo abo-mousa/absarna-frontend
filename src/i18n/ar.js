@@ -17,6 +17,7 @@ export const ar = {
 
     /** Words that genuinely mean the same thing everywhere they appear. */
     common: {
+        confirm: 'تأكيد',
         // Books' and Articles' «من قنواتك | كل القنوات» (content/ChannelScopeTabs), worded as Posts'.
         channelScope: {
             label: 'من أيّ القنوات',
@@ -310,6 +311,10 @@ export const ar = {
          * full set.
          */
         reasons: {
+            // Admin decisions on a channel and on an account.
+            STATUS_REASON_REQUIRED: 'لا بدّ من ذكر السبب عند الرفض أو الإيقاف؛ فصاحب القناة يقرؤه في لوحة قناته.',
+            INVALID_ROLE: 'هذا الدور غير موجود.',
+            CANNOT_DEMOTE_SELF: 'لا يمكنك إزالة صلاحية الإدارة عن نفسك. اطلب ذلك من مدير آخر.',
             // The channel's address (its slug), on creating one.
             // The progress tab's goals and the Friday review (backend content/goal, content/weeklyreview).
             GOAL_LIMIT_REACHED: 'بلغتَ عدد الأهداف المتاح الآن. أتمِم هدفاً أو أرشِفه، ثم ابدأ غيره.',
@@ -2610,6 +2615,11 @@ export const ar = {
          * everything below the banner behaves normally while nobody can see the result.
          */
         underReviewImport: 'قناتك مخفية عن الزوار حتى تراجع الإدارة المحتوى الذي استوردته من يوتيوب. يمكنك متابعة الرفع والتعديل من هنا الآن، وسيظهر كل شيء فور الموافقة.',
+        // The two dark states an admin puts a channel in, with the sentence they wrote for the owner.
+        suspended: 'قناتك موقوفة ومخفية عن الزوار.',
+        rejected: 'لم تُقبل قناتك، وهي مخفية عن الزوار.',
+        statusReason: 'السبب المذكور: {reason}',
+        statusContact: 'إن رأيت أنّ في هذا خطأً فراسلنا من صفحة التواصل.',
         underReview: 'قناتك مخفية عن الزوار حتى تراجعها الإدارة. يمكنك متابعة الرفع والتعديل من هنا الآن.',
 
         editTitle: 'تعديل المحتوى',
@@ -2892,6 +2902,115 @@ export const ar = {
 
     admin: {
         title: 'لوحة التحكم',
+        // The channel's owner, as a link to their account page.
+        more: 'إجراءات أخرى',
+        ownerLink: 'المالك #{id}',
+        decision: {
+            ownerReads: 'يقرأ صاحبُ القناة هذا السببَ في لوحة قناته، ويُسجَّل باسمك ووقته.',
+            reasonLabel: 'السبب (مطلوب)',
+            reasonOptionalLabel: 'السبب (اختياري)',
+            last: 'آخر قرار: {status} · {when} · بواسطة {by}',
+            approve: {
+                title: 'الموافقة على {name}',
+                body: 'تُنشر القناة ويظهر كلّ ما فيها للزوار.',
+                action: 'موافقة',
+                done: 'تمّت الموافقة على القناة ونُشرت',
+                failed: 'تعذّرت الموافقة',
+            },
+            reject: {
+                title: 'رفض {name}',
+                body: 'تبقى القناة مخفية عن الزوار، ويتوقّف أيّ استيراد جارٍ من يوتيوب. اذكر السبب ليعرف صاحبها ما يُصلحه.',
+                action: 'رفض',
+                done: 'رُفضت القناة',
+                failed: 'تعذّر الرفض',
+            },
+            suspend: {
+                title: 'إيقاف {name}',
+                body: 'تختفي القناة وكلّ ما فيها عن الزوار فورًا. يمكن التراجع بـ«إعادة التفعيل». اذكر السبب.',
+                action: 'إيقاف',
+                done: 'أُوقفت القناة',
+                failed: 'تعذّر الإيقاف',
+            },
+            reactivate: {
+                title: 'إعادة تفعيل {name}',
+                body: 'تعود القناة للنشر بكلّ ما فيها.',
+                action: 'إعادة التفعيل',
+                done: 'عادت القناة للنشر',
+                failed: 'تعذّرت إعادة التفعيل',
+            },
+        },
+        filters: {
+            status: 'الحالة',
+            all: 'الكل',
+            searchPlaceholder: 'ابحث بالاسم أو العنوان…',
+            empty: 'لا قناة تطابق البحث.',
+        },
+        history: {
+            action: 'السجلّ',
+            title: 'القرارات على {name}',
+            empty: 'لم يُسجَّل قرار على هذه القناة بعد.',
+            by: 'بواسطة {name}',
+            noReason: 'لم يُذكر سبب.',
+        },
+        transfer: {
+            action: 'نقل الملكية',
+            title: 'نقل ملكية {name}',
+            body: 'تُنقل القناة إلى حساب آخر: وهو العلاج إن ذهب الاستلام إلى الشخص الخطأ، والطريق لمالكٍ لا يصل إليه إثبات يوتيوب. ابحث عن الحساب بالاسم أو العنوان.',
+            currentOwner: 'المالك الحالي: #{id}',
+            findLabel: 'اسم المستخدم أو البريد',
+            pick: 'اختر حسابًا',
+            confirm: 'انقل إلى {name}',
+            done: 'صارت القناة ملكًا لـ{name}',
+            failed: 'تعذّر نقل الملكية',
+        },
+        create: {
+            action: 'إضافة قناة',
+            title: 'إضافة قناة لمالك',
+            body: 'تُنشأ قناة يملكها حسابٌ موجود، كما تُنشأ القنوات الممهَّدة. يستطيع المالك تغيير كلّ شيء بعد ذلك.',
+            name: 'اسم القناة',
+            slug: 'العنوان (slug)',
+            description: 'الوصف',
+            youtubeSource: 'رابط قناة يوتيوب (اختياري)',
+            owner: 'المالك: اسم المستخدم أو البريد',
+            confirm: 'أنشئ القناة',
+            done: 'أُنشئت «{name}»',
+            failed: 'تعذّر إنشاء القناة',
+        },
+        audit: {
+            action: 'الإقرارات',
+            title: 'البيانات المُقَرّ بها في {name}',
+            intro: 'كلّ إقرار سجّله المالك على بيانات فيديوهاته المستوردة: النصّ المُقَرّ به بحروفه، ومَن أقرّ، والعبارة التي قرأها. هذا هو السجلّ الذي يُسلَّم لمن يسأل.',
+            count: '{count} إقرارًا',
+            empty: 'لم يُقَرّ بشيء في هذه القناة.',
+            failed: 'تعذّر تحميل السجلّ.',
+            video: 'فيديو #{id}',
+            user: 'بواسطة المستخدم #{id}',
+        },
+        pending: {
+            openDashboard: 'لوحة المالك',
+            importProgress: 'استُورد {count} من نحو {total} فيديو',
+            importProgressNoTotal: 'استُورد {count} فيديو',
+            importState: {
+                RUNNING: 'الاستيراد جارٍ',
+                PARTIAL: 'الاستيراد متوقّف مؤقتًا',
+                SUCCESS: 'اكتمل الاستيراد',
+                FAILED: 'فشل الاستيراد',
+            },
+        },
+        overview: {
+            intro: 'ما ينتظرك، ومنذ متى. كلّ بطاقة تفتح قائمتها.',
+            queues: 'القوائم',
+            pendingChannels: 'قنوات بانتظار الموافقة',
+            pendingChannelsHint: 'محتوى مستورد لم يفحصه شيء بعد.',
+            held: 'فيديوهات محجوزة',
+            heldHint: 'مقاطع لا يراها أحد حتى يقرّر المراجع. وإلى جانبها {notes} ملاحظة على فيديوهات منشورة.',
+            openReports: 'بلاغات مفتوحة',
+            openReportsHint: 'ما أبلغ عنه الزوار ولم يقرأه أحد.',
+            nothingWaiting: 'لا شيء ينتظر.',
+            waitingSince: 'أقدمها ينتظر {when}.',
+            open: 'افتح القائمة',
+            catalogue: 'على المنصّة',
+        },
         manageChannels: 'إدارة القنوات',
         // The admin section's own menu, on all four of its screens. Labelled rather than left as
         // a bare <nav>, because a page can hold several and a screen reader lists them by name.
@@ -2910,6 +3029,14 @@ export const ar = {
         // were drafted alongside the feature, not by a translator.
         review: {
             title: 'مراجعة المحتوى',
+            viewLabel: 'أيّ النتائج',
+            viewQueue: 'بالانتظار',
+            viewDecided: 'المقرَّر فيها',
+            decidedHint: 'ما سبق أن أجازه مراجعٌ أو رفضه. يمكن تغيير القرار من هنا: إجازة فيديو مرفوض، أو رفض فيديو مُجاز.',
+            emptyDecided: 'لم يُقرَّر في شيء بعد',
+            emptyDecidedDescription: 'تظهر هنا النتائج المُجازة والمرفوضة.',
+            waitingFor: 'ينتظر {when}',
+            detectedAgo: 'رُصد {when}',
             short: 'المراجعة',
             // Sub-tabs. One per detector, each with its own backlog count, because "how big is
             // the queue" is a different question for each.
@@ -3327,6 +3454,8 @@ export const ar = {
      * page and again beside the buttons.
      */
     adminOutreach: {
+        replaceTitle: 'أتستبدل الرسالة؟',
+        replaceAction: 'استبدلها',
         title: 'المراسلات',
         intro: 'رسالةٌ شخصية من المنصّة إلى شخصٍ واحد ليس له حساب: صاحب جمهور، أو عالم ليست له قناة على يوتيوب، أو قارئ. ابدأ من قالب وغيّر ما شئت. وتنتهي كلّ رسالة بسطرٍ يقول إنّ الردّ يكفي لنكفّ عن مراسلته؛ فإن ردّ أحدٌ بذلك فأضِفه إلى قائمة «لا تراسل» أدناه.',
         emailLabel: 'البريد الإلكتروني',
@@ -3364,7 +3493,53 @@ export const ar = {
         dncRemove: 'أزِل',
         dncRemoveConfirm: 'أتزيل هذا العنوان من قائمة «لا تراسل»؟ لا تفعل ذلك إلا إن أُضيف خطأً.',
     },
+    adminUsers: {
+        title: 'الحسابات',
+        intro: 'ابحث عن حساب باسم المستخدم أو البريد الإلكتروني. تعرض صفحة الحساب القنوات التي يملكها وسجلّ بلاغاته.',
+        searchPlaceholder: 'اسم المستخدم أو البريد…',
+        empty: 'لا حساب يطابق البحث.',
+        count: '{count} حسابًا',
+        back: 'عودة إلى القائمة',
+        joined: 'انضمّ في {date}',
+        verified: 'موثَّق',
+        unverified: 'غير موثَّق',
+        inactive: 'غير نشط',
+        roles: {
+            USER: 'قارئ',
+            CREATOR: 'ناشر',
+            CHANNEL_ADMIN: 'مدير قناة',
+            PLATFORM_ADMIN: 'مدير المنصّة',
+        },
+        roleLabel: 'الدور',
+        roleHint: 'مدير المنصّة يفتح كلّ شاشة هنا. لا يمكنك إزالة صلاحية الإدارة عن نفسك.',
+        saveRole: 'احفظ الدور',
+        roleSaved: 'حُفظ الدور',
+        roleFailed: 'تعذّر تغيير الدور',
+        channels: 'القنوات ({count})',
+        noChannels: 'لا يملك هذا الحساب قناة.',
+        openDashboard: 'اللوحة',
+        reports: 'البلاغات المقدَّمة',
+        reportsSummary: '{open} مفتوحة · {actioned} تُصرِّف فيها · {dismissed} صُرفت',
+        reportsDecided: 'قرّر في {count} بصفته مشرفًا',
+        noReports: 'لم يقدّم هذا الحساب أيّ بلاغ.',
+    },
+
     adminReports: {
+        openParent: 'افتح الصفحة التي فيها',
+        targetRemoved: 'المادة المُبلَّغ عنها لم تعد موجودة.',
+        reporterNamed: 'المُبلِّغ: {name}',
+        decidedByNamed: 'قرّر فيه {name}',
+        actions: {
+            label: 'تصرّف:',
+            hide: 'أخفِه',
+            hidden: 'أُخفي عن الزوار',
+            deleteComment: 'احذف التعليق',
+            deleteCommentTitle: 'أتحذف هذا التعليق؟',
+            deleteCommentBody: 'سيُحذف «{text}» للجميع. لا يمكن التراجع عن هذا.',
+            commentDeleted: 'حُذف التعليق',
+            suspendChannel: 'أوقف القناة',
+            failed: 'تعذّر ذلك',
+        },
         priority: {
             urgent: 'عاجل',
             high: 'أولوية عالية',
@@ -3401,10 +3576,8 @@ export const ar = {
         emptyDescription: 'لا شيء بانتظار المراجعة ضمن هذا التصنيف.',
         loadFailed: 'تعذّر تحميل البلاغات',
 
-        reporter: 'المُبلِّغ رقم {id}',
         reportedAt: 'أُبلغ عنه: {date}',
         decidedAt: 'تاريخ القرار: {date}',
-        decidedBy: 'قرار المشرف رقم {id}',
         // Rendered only when it is more than one — see `corroboration` in lib/reports.js. This is
         // the line that turns a list of separate objections into one case.
         corroboration: '{count} بلاغات مفتوحة على العنصر نفسه',

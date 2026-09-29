@@ -1,20 +1,24 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, Check, ExternalLink, Users, X, Flag } from 'lucide-react';
+import { AlertTriangle, Check, ExternalLink, EyeOff, Pause, Trash2, UserRound, Users, X, Flag } from 'lucide-react';
 import PageShell from '../components/layout/PageShell';
 import AdminNav from '../components/admin/AdminNav';
-import { Badge, Button, Pager, QueryState } from '../components/ui';
+import { Badge, Button, ConfirmDialog, Pager, QueryState } from '../components/ui';
+import StatusReasonDialog from '../components/admin/StatusReasonDialog';
 import { useToast } from '../contexts/ToastContext';
 import { usePageMeta } from '../hooks/usePageMeta';
-import { useChannel } from '../hooks/useChannels';
-import { useDecideReport, useReportQueue, useReportsForTarget } from '../hooks/useReports';
+import { useChannel, useSuspendChannel } from '../hooks/useChannels';
 import {
+    useAdminDeleteComment, useAdminHideContent, useDecideReport, useReportQueue, useReportsForTarget,
+} from '../hooks/useReports';
+import {
+    HIDEABLE_TARGETS,
     REPORT_STATUS,
     REPORT_TARGET_TYPE,
     corroboration,
     reasonLabel,
+    reportLink,
     statusLabel,
-    targetPath,
     targetTypeLabel,
 } from '@/lib/reports';
 import { describeError } from '@/lib/describeError';
@@ -53,8 +57,11 @@ const formatMoment = (value) => {
  * <p>The channel lookup is by id and costs nothing per extra row: `useChannel` is keyed by what it
  * is given, so every report against the same channel shares one cached query.
  */
-function ReportedTarget({ targetType, targetId, channelId }) {
-    const path = targetPath(targetType, targetId);
+function ReportedTarget({ report }) {
+    // The target's own page, or for a comment the page it sits on — the backend resolves the
+    // comment's parent, so a moderator lands beside the comment rather than on the channel.
+    const path = reportLink(report);
+    const { channelId } = report;
     // Enabled only where there is no direct route — an ordinary video report must not spend a
     // request learning a channel nobody is going to click.
     const { data: channel } = useChannel(channelId, !path && !!channelId);
@@ -63,7 +70,7 @@ function ReportedTarget({ targetType, targetId, channelId }) {
         return (
             <Link to={path} className="inline-flex items-center gap-1 text-primary font-semibold hover:underline">
                 <ExternalLink size={13} />
-                {t('adminReports.openTarget')}
+                {report.targetType === REPORT_TARGET_TYPE.COMMENT ? t('adminReports.openParent') : t('adminReports.openTarget')}
             </Link>
         );
     }
@@ -159,6 +166,42 @@ function AdminReports() {
         page,
     });
     const decide = useDecideReport();
+    // The tools that actually change something, reachable from the row. Deciding stays a
+    // separate press — see the component javadoc — but "open the target, find the manage page,
+    // find the row, hide it" was four screens for the commonest outcome of a report.
+    const hide = useAdminHideContent();
+    const deleteComment = useAdminDeleteComment();
+    const suspend = useSuspendChannel();
+    const [confirmingDelete, setConfirmingDelete] = useState(null);
+    const [suspending, setSuspending] = useState(null);
+    const { data: suspendingChannel } = useChannel(suspending?.channelId, !!suspending?.channelId);
+
+    const hideTarget = (report) => {
+        hide.mutate({ targetType: report.targetType, targetId: report.targetId }, {
+            onSuccess: () => showToast(t('adminReports.actions.hidden'), 'success'),
+            onError: (err) => showToast(describeError(err, t('adminReports.actions.failed')), 'error'),
+        });
+    };
+
+    const confirmDeleteComment = () => {
+        deleteComment.mutate(confirmingDelete.targetId, {
+            onSuccess: () => {
+                showToast(t('adminReports.actions.commentDeleted'), 'success');
+                setConfirmingDelete(null);
+            },
+            onError: (err) => showToast(describeError(err, t('adminReports.actions.failed')), 'error'),
+        });
+    };
+
+    const confirmSuspend = (reason) => {
+        suspend.mutate({ id: suspending.channelId, reason }, {
+            onSuccess: () => {
+                showToast(t('admin.decision.suspend.done'), 'success');
+                setSuspending(null);
+            },
+            onError: (err) => showToast(describeError(err, t('admin.decision.suspend.failed')), 'error'),
+        });
+    };
 
     const reports = data?.content ?? [];
     const openTotal = data?.openTotal ?? 0;
@@ -308,15 +351,30 @@ function AdminReports() {
                                                 </span>
                                             )}
                                         </div>
-                                        <ReportedTarget
-                                            targetType={report.targetType}
-                                            targetId={report.targetId}
-                                            channelId={report.channelId}
-                                        />
+                                        <ReportedTarget report={report} />
                                     </div>
 
+                                    {/* WHAT was reported, on the row. A queue that read "VIDEO
+                                        4821" made the moderator open every target to learn what
+                                        it was; the title (or a comment's first line) is resolved
+                                        by the backend per page, never stored on the report. Null
+                                        means the thing is gone — a report outlives its target. */}
+                                    <p dir="auto" className="text-sm mb-2">
+                                        {report.targetTitle
+                                            ? (report.targetType === REPORT_TARGET_TYPE.COMMENT
+                                                || report.targetType === REPORT_TARGET_TYPE.POST
+                                                ? <span className="text-text-secondary italic">«{report.targetTitle}»</span>
+                                                : <span className="font-semibold">{report.targetTitle}</span>)
+                                            : <span className="text-text-muted">{t('adminReports.targetRemoved')}</span>}
+                                    </p>
+
                                     <div className="text-xs text-text-muted mb-3 flex gap-3 flex-wrap">
-                                        <span>{t('adminReports.reporter', { id: report.reporterUserId })}</span>
+                                        <Link to={`/admin/users/${report.reporterUserId}`} className="inline-flex items-center gap-1 hover:text-primary hover:underline">
+                                            <UserRound size={12} aria-hidden="true" />
+                                            {t('adminReports.reporterNamed', {
+                                                name: report.reporterUsername ?? `#${report.reporterUserId}`,
+                                            })}
+                                        </Link>
                                         <span>{t('adminReports.reportedAt', { date: formatMoment(report.createdAt) })}</span>
                                     </div>
 
@@ -388,6 +446,39 @@ function AdminReports() {
                                                 >
                                                     {t('adminReports.dismiss')}
                                                 </Button>
+                                                <span className="text-xs text-text-muted self-center ms-2">{t('adminReports.actions.label')}</span>
+                                                {HIDEABLE_TARGETS.has(report.targetType) && report.targetTitle && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        icon={<EyeOff size={14} />}
+                                                        disabled={hide.isPending}
+                                                        onClick={() => hideTarget(report)}
+                                                    >
+                                                        {t('adminReports.actions.hide')}
+                                                    </Button>
+                                                )}
+                                                {report.targetType === REPORT_TARGET_TYPE.COMMENT && report.targetTitle && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        icon={<Trash2 size={14} />}
+                                                        disabled={deleteComment.isPending}
+                                                        onClick={() => setConfirmingDelete(report)}
+                                                    >
+                                                        {t('adminReports.actions.deleteComment')}
+                                                    </Button>
+                                                )}
+                                                {report.channelId != null && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        icon={<Pause size={14} />}
+                                                        onClick={() => setSuspending(report)}
+                                                    >
+                                                        {t('adminReports.actions.suspendChannel')}
+                                                    </Button>
+                                                )}
                                             </div>
                                         </div>
                                     ) : (
@@ -395,7 +486,9 @@ function AdminReports() {
                                             <div className="flex gap-3 flex-wrap">
                                                 <span>{t('adminReports.decidedAt', { date: formatMoment(report.decidedAt) })}</span>
                                                 {report.decidedByUserId != null && (
-                                                    <span>{t('adminReports.decidedBy', { id: report.decidedByUserId })}</span>
+                                                    <span>{t('adminReports.decidedByNamed', {
+                                                        name: report.decidedByUsername ?? `#${report.decidedByUserId}`,
+                                                    })}</span>
                                                 )}
                                             </div>
                                             {report.moderatorNote && (
@@ -423,6 +516,28 @@ function AdminReports() {
                     hasPrevious={data?.hasPrevious ?? page > 0}
                     hasNext={data?.hasNext ?? false}
                     onChange={setPage}
+                />
+
+                <ConfirmDialog
+                    open={!!confirmingDelete}
+                    title={t('adminReports.actions.deleteCommentTitle')}
+                    body={t('adminReports.actions.deleteCommentBody', { text: confirmingDelete?.targetTitle ?? '' })}
+                    confirmLabel={t('adminReports.actions.deleteComment')}
+                    danger
+                    pending={deleteComment.isPending}
+                    onConfirm={confirmDeleteComment}
+                    onClose={() => setConfirmingDelete(null)}
+                />
+                {/* The same reason dialog the channel list uses — a suspend from here is
+                    recorded like any other, with the reason the owner will read. */}
+                <StatusReasonDialog
+                    channel={suspendingChannel ?? (suspending ? { id: suspending.channelId, name: '' } : null)}
+                    action="suspend"
+                    open={!!suspending}
+                    pending={suspend.isPending}
+                    error={suspend.error}
+                    onConfirm={confirmSuspend}
+                    onClose={() => setSuspending(null)}
                 />
             </div>
         </PageShell>

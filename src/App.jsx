@@ -50,6 +50,7 @@ const AdminChannels = lazy(() => import('./pages/AdminChannels'));
 const AdminReview = lazy(() => import('./pages/AdminReview'));
 const AdminReports = lazy(() => import('./pages/AdminReports'));
 const AdminOutreach = lazy(() => import('./pages/AdminOutreach'));
+const AdminUsers = lazy(() => import('./pages/AdminUsers'));
 const CreateChannel = lazy(() => import('./pages/CreateChannel'));
 const ChannelManage = lazy(() => import('./pages/ChannelManage'));
 const About = lazy(() => import('./pages/About'));
@@ -297,6 +298,14 @@ function AppRoutes() {
                     @PreAuthorize; the endpoint is the half that actually refuses. */}
                 <Route path="/admin/reports" element={
                     <ProtectedRoute adminOnly><AdminReports /></ProtectedRoute>
+                } />
+                {/* Accounts: a lookup by name or address, and one account in full. adminOnly
+                    mirrors /api/admin/users. The detail is the same page with an id. */}
+                <Route path="/admin/users" element={
+                    <ProtectedRoute adminOnly><AdminUsers /></ProtectedRoute>
+                } />
+                <Route path="/admin/users/:id" element={
+                    <ProtectedRoute adminOnly><AdminUsers /></ProtectedRoute>
                 } />
                 {/* Letters to people without an account. adminOnly mirrors /api/admin/**. */}
                 <Route path="/admin/outreach" element={

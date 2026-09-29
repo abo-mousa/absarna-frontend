@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { LayoutDashboard, ShieldCheck, Flag, Tv, Send } from 'lucide-react';
+import { LayoutDashboard, ShieldCheck, Flag, Tv, Send, Users } from 'lucide-react';
 import { useAdminAttention, badgeText } from '@/hooks/useAdminAttention';
 import { t } from '@/i18n';
 
@@ -15,7 +15,7 @@ import { t } from '@/i18n';
  * one page, which is why the fix is one component the pages share instead of a back-link pasted
  * into each.
  *
- * <p>The nav is the same four items in the same order everywhere, including on the page you are
+ * <p>The nav is the same items in the same order everywhere, including on the page you are
  * already on: a menu whose contents change as you move through it is one nobody builds a model
  * of. The current entry stays a link rather than becoming a disabled span — pressing it is a
  * harmless way to reload a queue, and removing the only element that says where you are is how
@@ -25,14 +25,16 @@ import { t } from '@/i18n';
  * filled rather than outlined, so the state survives a monochrome rendering.
  *
  * <p><b>Each queue carries its own count</b> (`countKey`, a field of `/api/admin/attention`), so
- * the navbar badge's total can be traced to where the work is: findings for a reviewer, open
- * reports, channels waiting for review. The overview has none — its number is the navbar's.
+ * the navbar badge's total can be traced to where the work is. The review tab counts what HOLDS
+ * a video (`reviewHeld`) — an owner waiting — and not the notes on published videos, which the
+ * page itself shows per detector; badging both alike taught reviewers to ignore the badge.
  */
 export const SECTIONS = [
     { id: 'overview', to: '/admin', icon: LayoutDashboard, labelKey: 'admin.title' },
-    { id: 'review', to: '/admin/review', icon: ShieldCheck, labelKey: 'admin.review.title', countKey: 'reviewBacklog' },
+    { id: 'review', to: '/admin/review', icon: ShieldCheck, labelKey: 'admin.review.title', countKey: 'reviewHeld' },
     { id: 'reports', to: '/admin/reports', icon: Flag, labelKey: 'adminReports.title', countKey: 'openReports' },
     { id: 'channels', to: '/admin/channels', icon: Tv, labelKey: 'admin.manageChannels', countKey: 'pendingChannels' },
+    { id: 'users', to: '/admin/users', icon: Users, labelKey: 'adminUsers.title' },
     { id: 'outreach', to: '/admin/outreach', icon: Send, labelKey: 'adminOutreach.title' },
 ];
 
