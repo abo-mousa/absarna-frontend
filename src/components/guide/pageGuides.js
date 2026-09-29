@@ -1,4 +1,4 @@
-import { CalendarCheck, Milestone, NotebookPen, PenLine, Route, ScrollText, Target, Archive, History } from 'lucide-react';
+import { Milestone, NotebookPen, Route, ScrollText, Target } from 'lucide-react';
 
 /**
  * The page guides: what the «؟» on a page opens (`PageGuideSheet`) and what `/guide/:slug` shows
@@ -7,12 +7,14 @@ import { CalendarCheck, Milestone, NotebookPen, PenLine, Route, ScrollText, Targ
  * of:
  *
  * - `shot`: a screenshot (`guideShots.json`, taken by `npm run guide:shots`) with `marks`
- *   numbered captions. The count must equal the marks the capture script measured for it, which
+ *   captions, each tied to the part of the picture it describes. The count must equal the marks the capture script measured for it, which
  *   `pageGuides.test.js` pins.
  * - `steps`: a few screenshots stepped through, one caption each (creating a goal).
  * - `legend`: the day symbols drawn live by the real `DayStar`, so they can never disagree with it.
- * - `note`: a sentence and a glyph, for what no screenshot can show (the Friday review exists only
- *   on Fridays).
+ *
+ * <p>Every block has a picture: a block of words alone read as an empty section (product owner,
+ * 2026-09-29). What the page shows only sometimes is photographed anyway — the Friday review with
+ * its request answered as if it were Friday, a dialog opened and not confirmed.
  *
  * `anchor` is the page element's `data-guide`: present, the block offers «أرِني» (the spotlight);
  * absent — the page hides sections until they have something in them — the block says when it
@@ -33,7 +35,7 @@ export const PAGE_GUIDES = {
             { key: 'steady', type: 'shot', shot: 'steady', marks: 2, anchor: 'steady' },
             { key: 'month', type: 'shot', shot: 'month', marks: 1, anchor: 'month' },
             { key: 'shelf', type: 'shot', shot: 'shelf', marks: 1, anchor: 'shelf' },
-            { key: 'review', type: 'note', icon: CalendarCheck, anchor: 'review' },
+            { key: 'review', type: 'shot', shot: 'review', marks: 2, anchor: 'review' },
         ],
         faq: ['miss', 'rest', 'day', 'private'],
     },
@@ -61,7 +63,7 @@ export const PAGE_GUIDES = {
             { key: 'week', type: 'shot', shot: 'goal-week', marks: 3, anchor: 'goal-week' },
             { key: 'cumulative', type: 'shot', shot: 'goal-cumulative', marks: 4, anchor: 'goal-cumulative' },
             { key: 'excuse', type: 'shot', shot: 'goal-excuse', marks: 2, anchor: 'goal-excuse' },
-            { key: 'end', type: 'note', icon: Archive, anchor: 'goal-end' },
+            { key: 'end', type: 'shot', shot: 'goal-end', marks: 2, anchor: 'goal-end' },
         ],
         faq: ['behind', 'excused', 'edit'],
     },
@@ -81,7 +83,7 @@ export const PAGE_GUIDES = {
         to: '/journey/reflections',
         blocks: [
             { key: 'list', type: 'shot', shot: 'reflections', marks: 2, anchor: 'reflections', cut: 'bottom' },
-            { key: 'write', type: 'note', icon: PenLine },
+            { key: 'write', type: 'shot', shot: 'reflection-write', marks: 4 },
         ],
         faq: ['who', 'removed', 'delete'],
     },
@@ -94,7 +96,7 @@ export const PAGE_GUIDES = {
             { key: 'weeks', type: 'shot', shot: 'weeks', marks: 1, anchor: 'weeks' },
             { key: 'slots', type: 'shot', shot: 'slots', marks: 2, anchor: 'slots' },
             { key: 'fields', type: 'shot', shot: 'fields', marks: 1, anchor: 'fields' },
-            { key: 'history', type: 'note', icon: History, anchor: 'history' },
+            { key: 'history', type: 'shot', shot: 'history', marks: 2, anchor: 'history', cut: 'bottom' },
             { key: 'control', type: 'shot', shot: 'control', marks: 3, anchor: 'control' },
         ],
         faq: ['erase', 'pause', 'keep'],

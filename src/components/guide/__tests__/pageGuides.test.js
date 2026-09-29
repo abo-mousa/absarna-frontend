@@ -62,9 +62,9 @@ describe('page guides', () => {
     it('has the picture file for every locale and theme', () => {
         const root = join(process.cwd(), 'public/guide');
         for (const [name, entry] of Object.entries(shots)) {
-            for (const locale of Object.keys(entry)) {
+            for (const [locale, { ext = 'png' }] of Object.entries(entry)) {
                 for (const theme of ['light', 'dark']) {
-                    expect(existsSync(join(root, locale, theme, `${name}.png`)), `${locale}/${theme}/${name}`).toBe(true);
+                    expect(existsSync(join(root, locale, theme, `${name}.${ext}`)), `${locale}/${theme}/${name}`).toBe(true);
                 }
             }
         }

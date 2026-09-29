@@ -753,13 +753,6 @@ export const en = {
                 title: 'A voice for the silenced',
                 text: 'A channel can mark a video “removed elsewhere”, and what is uploaded here stays here. When a channel warns that a video has hard footage, it sits behind a cover and opens only when you choose.',
             },
-        },
-    },
-
-    subjects: {
-        names: {
-            ISLAMIC: 'Islamic sciences', QURAN: 'The Qur’an and its sciences', HADITH: 'Hadith and its sciences',
-            AQEEDAH: 'Creed', FIQH: 'Fiqh and its principles', SEERAH: 'The Prophet’s biography',
             journey: {
                 title: 'My journey',
                 text: 'Your goals and daily portion, your steadiness week by week, and what you have finished — yours alone, and we send you nothing. Each of its pages has an illustrated guide behind its “Page guide” button.',
@@ -782,6 +775,7 @@ export const en = {
             next: 'Next',
             mark: 'Point {n}',
             gotIt: 'Got it',
+            pointHint: 'Tap a line to see where it is in the picture.',
             pagesTitle: 'Illustrated guides to “My journey”',
             pagesText: 'Pictures of the pages themselves, numbered where they point. Each of these pages has a “Page guide” button that opens its guide right there.',
             openPage: 'Open the page',
@@ -872,7 +866,11 @@ export const en = {
                     },
                     review: {
                         title: 'The week’s review',
-                        text: 'Every Friday after Jumu’ah, a minute’s review of the week appears at the top of the page: what helped, what got in the way, and whether to keep your portion, lighten it or move it to another time.',
+                        text: 'A minute after Jumu’ah to look back on your week.',
+                        marks: {
+                            '1': 'It appears at the top of “My journey” every Friday after the prayer, and stays until the week ends.',
+                            '2': 'Open it to answer three questions: what helped, what got in the way, and whether to keep your portion, lighten it or move it to another time.',
+                        },
                         appears: 'Appears on Friday, and stays until the week ends.',
                     },
                 },
@@ -1002,7 +1000,11 @@ export const en = {
                     },
                     end: {
                         title: 'Ending the goal',
-                        text: 'At the bottom of the page. Before it ends we offer to keep only its minimum, and what you learned stays counted in your journey.',
+                        text: 'From “End this goal” at the bottom of its page.',
+                        marks: {
+                            '1': 'Before it ends, we offer to keep only its minimum.',
+                            '2': 'If you do end it, what you learned stays counted in your journey.',
+                        },
                     },
                 },
                 faq: {
@@ -1067,7 +1069,13 @@ export const en = {
                     },
                     write: {
                         title: 'How to write one',
-                        text: 'When you finish an episode or read a few pages of a book, we ask: what stayed with you? While watching, you can also note a reflection at a particular moment and come back to that moment from this page.',
+                        text: 'Under every episode: when you finish it we ask what stayed with you, and you can write at any moment of it.',
+                        marks: {
+                            '1': 'The question, and the moment in the episode you are writing at.',
+                            '2': 'One line if you like — seen by nobody else.',
+                            '3': 'Save it, and you will find it in “My reflections”.',
+                            '4': 'What you wrote on this lesson: press the time to go back to that moment.',
+                        },
                     },
                 },
                 faq: {
@@ -1125,7 +1133,11 @@ export const en = {
                     },
                     history: {
                         title: 'What you watched and read',
-                        text: 'The list of what you watched and read, where you can go back to your place in every episode and book.',
+                        text: 'Everything you watched and read, newest first.',
+                        marks: {
+                            '1': 'Videos and books, each in its own list.',
+                            '2': 'Each episode with how much of it you watched — press it to go back to your place.',
+                        },
                     },
                     control: {
                         title: 'Your record is yours',
@@ -1152,6 +1164,13 @@ export const en = {
                     },
                 },
             },
+        },
+    },
+
+    subjects: {
+        names: {
+            ISLAMIC: 'Islamic sciences', QURAN: 'The Qur’an and its sciences', HADITH: 'Hadith and its sciences',
+            AQEEDAH: 'Creed', FIQH: 'Fiqh and its principles', SEERAH: 'The Prophet’s biography',
             TAZKIYAH: 'Purification of the soul', DAWAH: 'Da’wah',
             HISTORY: 'History & civilisation', ISLAMIC_HISTORY: 'Islamic history', WORLD_HISTORY: 'World history',
             BIOGRAPHIES: 'Biographies', CIVILISATION: 'Civilisation & heritage',

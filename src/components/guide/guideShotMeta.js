@@ -14,6 +14,6 @@ export function shotMeta(name) {
 }
 
 /** Where `npm run guide:shots` wrote a screenshot, for the reader's locale and theme. */
-export function shotSrc(name, locale, theme) {
-    return `${import.meta.env.BASE_URL}guide/${locale}/${theme === 'dark' ? 'dark' : 'light'}/${name}.png`;
+export function shotSrc(name, locale, theme, ext = 'png') {
+    return `${import.meta.env.BASE_URL}guide/${locale}/${theme === 'dark' ? 'dark' : 'light'}/${name}.${ext}`;
 }

@@ -227,8 +227,8 @@ function AppRoutes() {
                 <Route path="/posts" element={<Posts />} />
                 <Route path="/channels" element={<Channels />} />
                 <Route path="/guide" element={<Guide />} />
-                <Route path="/search" element={<SearchPage />} />
                 <Route path="/guide/:slug" element={<GuidePage />} />
+                <Route path="/search" element={<SearchPage />} />
                 <Route path="/channel/:slug" element={<ChannelPage />} />
                 <Route path="/video/:id" element={<VideoDetail />} />
                 <Route path="/books" element={<Books />} />

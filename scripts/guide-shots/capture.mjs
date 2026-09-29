@@ -41,7 +41,8 @@ const only = process.argv.slice(2);
  * inside it, in the order of the guide's numbered captions (`{ sel, nth }` for the nth match, or
  * `{ text }` for a catalog key's text before its first placeholder). `until` ends the crop at the
  * bottom of a child; `maxHeight` cuts a tall one (from its top, or centred on `around`);
- * `prepare` runs before cropping. `fixed` is for something pinned to the screen (a dialog): it is
+ * `before` runs before the page loads (to intercept a request) and `prepare` before cropping; `jpeg`
+ * is for a shot made mostly of photographs. `fixed` is for something pinned to the screen (a dialog): it is
  * taken from the screen as it is, since a full-page capture stretches the screen to the page's
  * height and a pinned dialog re-centres in it.
  */
@@ -55,6 +56,14 @@ const SHOTS = [
     { name: 'steady', path: '/journey', anchor: 'steady', marks: ['li:last-child', 'p.text-sm'] },
     { name: 'month', path: '/journey', anchor: 'month', marks: [':scope > div > div:first-child'] },
     { name: 'shelf', path: '/journey', anchor: 'shelf', marks: ['li:first-child a'] },
+    {
+        // The review opens only after Jumu'ah: the page is told it is open, in this browser only.
+        name: 'review', path: '/journey', anchor: 'review', marks: ['h2', 'button'],
+        before: (page) => page.route('**/api/user/review/current**', async (route) => {
+            const response = await route.fetch();
+            route.fulfill({ response, json: { ...(await response.json()), open: true, savedAt: null } });
+        }),
+    },
     { name: 'wird', path: '/', anchor: 'wird', until: 'article', marks: ['article svg', 'article a.font-bold', 'article a.rounded-md', 'article span.text-xs'] },
     // A programme the demo reader has no goal for, or the button reads «في وِردك» instead.
     { name: 'make-wird', path: '/series/10', crop: 'div.bg-surface:has(> [data-guide="make-wird"])', marks: ['[data-guide="make-wird"]'] },
@@ -84,13 +93,34 @@ const SHOTS = [
         marks: ['dl', { sel: 'svg text[font-size="12"]', nth: 1 }, 'svg path[stroke-dasharray]', { sel: 'svg text[font-size="12"]', nth: 0 }],
     },
     { name: 'goal-excuse', path: '/journey/goals/10', anchor: 'goal-excuse', marks: [':scope > p', 'div.flex-wrap'] },
+    {
+        // Opened, never confirmed.
+        name: 'goal-end', path: '/journey/goals/10', crop: '[role="dialog"]', pad: 0, fixed: true,
+        marks: ['div.gap-5 > div[class*="border-gold"]', 'div.gap-5 > p'],
+        prepare: async (page) => {
+            await page.locator('[data-guide="goal-end"] > button').click();
+            await page.waitForTimeout(500);
+        },
+    },
     { name: 'thread', path: '/journey/milestones', anchor: 'thread', maxHeight: 560, marks: ['use.fill-gold', '[class*="fill-primary/60"]'] },
     { name: 'thread-end', path: '/journey/milestones', anchor: 'thread', maxHeight: 460, around: 'circle.stroke-primary', marks: ['circle.stroke-primary', 'use.fill-surface'] },
+    {
+        // A lesson the demo reader wrote about; the box is opened and never saved.
+        name: 'reflection-write', path: '/video/1462', anchor: 'video-reflection',
+        marks: ['form label', 'form input', 'form button[type="submit"]', 'ol li:first-child button'],
+        prepare: async (page) => {
+            await page.locator('[data-guide="video-reflection"] > button').click();
+            await page.waitForTimeout(300);
+            await page.locator('[data-guide="video-reflection"] input').blur();
+        },
+    },
     { name: 'reflections', path: '/journey/reflections', anchor: 'reflections', until: 'li:nth-child(2)', marks: ['li:first-child blockquote', 'li:first-child p a'] },
     { name: 'year', path: '/journey/record', anchor: 'year', marks: ['figure', 'figcaption', 'dl'] },
     { name: 'weeks', path: '/journey/record', anchor: 'weeks', marks: [':scope > div svg'] },
     { name: 'slots', path: '/journey/record', anchor: 'slots', marks: ['ul', ':scope > p'] },
     { name: 'fields', path: '/journey/record', anchor: 'fields', marks: [':scope > p'] },
+    // Thumbnails are photographs, so this one is a JPEG: as a PNG it weighed as much as ten others.
+    { name: 'history', path: '/journey/record', anchor: 'history', maxHeight: 540, jpeg: true, marks: [':scope div.mb-5', ':scope .grid > :first-child'] },
     { name: 'control', path: '/journey/record', anchor: 'control', marks: [{ sel: ':scope > div', nth: 1 }, { sel: ':scope button', nth: -2 }, { sel: ':scope button', nth: -1 }] },
 ];
 
@@ -157,7 +187,7 @@ async function measure(page, shot) {
             ]);
         }
         return { rect, marks };
-    }, { shot: { ...shot, prepare: undefined } });
+    }, { shot: { ...shot, prepare: undefined, before: undefined } });
 }
 
 async function main() {
@@ -181,6 +211,8 @@ async function main() {
             page.catalog = catalog;
             for (const shot of SHOTS) {
                 if (only.length && !only.includes(shot.name)) continue;
+                await page.unrouteAll({ behavior: 'ignoreErrors' });
+                if (shot.before) await shot.before(page);
                 await page.goto(SPA + shot.path, { waitUntil: 'networkidle' });
                 // What is pinned to the screen would be drawn across a crop further down the page: the
                 // phone's tab bar, the sticky navbar (unpinned — it keeps its place in the flow), and the
@@ -197,12 +229,17 @@ async function main() {
                     await page.waitForTimeout(300);
                     const measured = await measure(page, shot);
                     if (measured.error) throw new Error(measured.error);
-                    const file = resolve(root, `public/guide/${locale}/${theme}/${shot.name}.png`);
+                    const ext = shot.jpeg ? 'jpg' : 'png';
+                    const file = resolve(root, `public/guide/${locale}/${theme}/${shot.name}.${ext}`);
                     await mkdir(dirname(file), { recursive: true });
-                    await page.screenshot({ path: file, fullPage: !shot.fixed, clip: measured.rect, animations: 'disabled' });
+                    await page.screenshot({
+                        path: file, fullPage: !shot.fixed, clip: measured.rect, animations: 'disabled',
+                        ...(shot.jpeg ? { type: 'jpeg', quality: 82 } : {}),
+                    });
                     manifest[shot.name] ??= {};
                     manifest[shot.name][locale] = {
                         w: Math.round(measured.rect.width), h: Math.round(measured.rect.height), marks: measured.marks,
+                        ...(shot.jpeg ? { ext: 'jpg' } : {}),
                     };
                     console.log(`✓ ${locale}/${theme}/${shot.name}`);
                 } catch (error) {

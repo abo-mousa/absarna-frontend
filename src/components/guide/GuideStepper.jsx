@@ -66,7 +66,7 @@ function GuideStepper({ shots, steps }) {
                         {metas.map((meta, i) => (
                             <img
                                 key={shots[i]}
-                                src={shotSrc(shots[i], meta.locale, theme)}
+                                src={shotSrc(shots[i], meta.locale, theme, meta.ext)}
                                 alt=""
                                 width={meta.w}
                                 height={meta.h}

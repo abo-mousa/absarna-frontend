@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ChevronDown, LocateFixed } from 'lucide-react';
-import { KhatamEmblem, KhatamStar } from '../ui/Khatam';
+import { KhatamStar } from '../ui/Khatam';
 import GuideShot from './GuideShot';
 import GuideStepper from './GuideStepper';
 import GuideLegend from './GuideLegend';
@@ -9,7 +9,7 @@ import { formatDigits, t, tOptional } from '@/i18n';
 
 const numbered = (key, count) => Array.from({ length: count }, (_, i) => t(`${key}.${i + 1}`));
 
-/** A block's picture: a screenshot, a stepped dialog, the live symbol key, or a glyph. */
+/** A block's picture: a screenshot, a stepped dialog, or the live symbol key. */
 function Visual({ id, block }) {
     const key = blockKey(id, block);
     switch (block.type) {
@@ -24,12 +24,6 @@ function Visual({ id, block }) {
             );
         case 'legend':
             return <GuideLegend explain={(state) => t(`${key}.states.${state}`)} />;
-        case 'note':
-            return (
-                <div className="flex items-center justify-center py-6 rounded-lg bg-bg ring-1 ring-border-light">
-                    <KhatamEmblem icon={block.icon} size="sm" />
-                </div>
-            );
         default:
             return null;
     }

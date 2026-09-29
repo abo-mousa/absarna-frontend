@@ -29,7 +29,7 @@ export function GuideCard({ id, guide }) {
             <div className="relative h-40 bg-bg overflow-hidden border-b border-border-light">
                 {meta && (
                     <img
-                        src={shotSrc(cover, meta.locale, theme)}
+                        src={shotSrc(cover, meta.locale, theme, meta.ext)}
                         alt=""
                         loading="lazy"
                         className="absolute inset-x-4 top-4 w-[calc(100%-2rem)] h-auto rounded-md ring-1 ring-border-light shadow-md transition-transform duration-300 group-hover:-translate-y-1"

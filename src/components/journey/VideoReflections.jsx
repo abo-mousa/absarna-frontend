@@ -93,7 +93,7 @@ function VideoReflections({ videoId, getCurrentTime, seekTo, invite = false, cla
     };
 
     return (
-        <section className={`flex flex-col gap-3 ${className}`} aria-label={t('journey.reflections.onThisLesson')}>
+        <section data-guide="video-reflection" className={`flex flex-col gap-3 ${className}`} aria-label={t('journey.reflections.onThisLesson')}>
             {form ? (
                 <form onSubmit={submit} className="relative p-4 rounded-lg border border-gold/40 bg-gold-light/30">
                     <button
