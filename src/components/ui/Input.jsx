@@ -32,7 +32,7 @@ function Input({
                    field,
                    ...rest
                }) {
-    const { rejected, token } = useRejectedFields();
+    const { rejected, messages, token } = useRejectedFields();
     // Which refusal this field was last edited after: editing clears the mark for THAT refusal,
     // and a new one (a new error object) marks it again.
     const [editedAfter, setEditedAfter] = useState(null);
@@ -47,6 +47,14 @@ function Input({
     const ariaInvalid = refused ? true : rest['aria-invalid'];
     const generatedId = useId();
     const id = rest.id || generatedId;
+    // Which rule the backend said this field broke, under the field and read with it: a red
+    // border alone says "something here" and leaves the reader to guess what.
+    const refusal = refused ? messages?.get(field) : null;
+    const refusalId = `${id}-refusal`;
+    const describedBy = [rest['aria-describedby'], refusal ? refusalId : null].filter(Boolean).join(' ') || undefined;
+    const refusalLine = refusal ? (
+        <p id={refusalId} className="mt-1.5 text-xs text-red-600 dark:text-red-500 text-start">{refusal}</p>
+    ) : null;
     const [showPassword, setShowPassword] = useState(false);
     const isPassword = type === 'password';
     const inputType = isPassword && showPassword ? 'text' : type;
@@ -93,7 +101,9 @@ function Input({
                     className={baseClass}
                     {...rest}
                     aria-invalid={ariaInvalid}
+                    aria-describedby={describedBy}
                 />
+                {refusalLine}
             </div>
         );
     }
@@ -157,56 +167,61 @@ function Input({
         // No `dir` on the wrapper: it would hand the field's VALUE direction to the label and the
         // eye toggle, which are interface furniture and belong to the page's. The field elements
         // below state their own.
-        <div className="relative">
-            {textarea ? (
-                <textarea
-                    id={id}
-                    value={value}
-                    onChange={handleChange}
-                    onFocus={onFocus}
-                    onBlur={onBlur}
-                    placeholder={domPlaceholder}
-                    required={required}
-                    disabled={disabled}
-                    dir={dir}
-                    rows={rows}
-                    className={fieldClass}
-                    {...rest}
-                    aria-invalid={ariaInvalid}
-                />
-            ) : (
-                <input
-                    id={id}
-                    type={inputType}
-                    value={value}
-                    onChange={handleChange}
-                    onFocus={onFocus}
-                    onBlur={onBlur}
-                    placeholder={domPlaceholder}
-                    required={required}
-                    disabled={disabled}
-                    dir={dir}
-                    className={fieldClass}
-                    {...rest}
-                    aria-invalid={ariaInvalid}
-                />
-            )}
+        <div>
+            <div className="relative">
+                {textarea ? (
+                    <textarea
+                        id={id}
+                        value={value}
+                        onChange={handleChange}
+                        onFocus={onFocus}
+                        onBlur={onBlur}
+                        placeholder={domPlaceholder}
+                        required={required}
+                        disabled={disabled}
+                        dir={dir}
+                        rows={rows}
+                        className={fieldClass}
+                        {...rest}
+                        aria-invalid={ariaInvalid}
+                        aria-describedby={describedBy}
+                    />
+                ) : (
+                    <input
+                        id={id}
+                        type={inputType}
+                        value={value}
+                        onChange={handleChange}
+                        onFocus={onFocus}
+                        onBlur={onBlur}
+                        placeholder={domPlaceholder}
+                        required={required}
+                        disabled={disabled}
+                        dir={dir}
+                        className={fieldClass}
+                        {...rest}
+                        aria-invalid={ariaInvalid}
+                        aria-describedby={describedBy}
+                    />
+                )}
 
-            <label htmlFor={id} className={labelClass}>
-                {floatingLabel}
-            </label>
+                <label htmlFor={id} className={labelClass}>
+                    {floatingLabel}
+                </label>
 
-            {isPassword && (
-                <button
-                    type="button"
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    aria-pressed={showPassword}
-                    aria-label={showPassword ? t('fields.hidePassword') : t('fields.showPassword')}
-                    className="absolute inset-y-0 end-2.5 flex items-center text-text-muted hover:text-text-secondary"
-                >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-            )}
+                {isPassword && (
+                    <button
+                        type="button"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        aria-pressed={showPassword}
+                        aria-label={showPassword ? t('fields.hidePassword') : t('fields.showPassword')}
+                        className="absolute inset-y-0 end-2.5 flex items-center text-text-muted hover:text-text-secondary"
+                    >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                )}
+            </div>
+            {refusalLine}
         </div>
     );
 }

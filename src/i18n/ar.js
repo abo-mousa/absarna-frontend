@@ -290,6 +290,31 @@ export const ar = {
         server: 'حدث خلل في الخادم، يرجى المحاولة لاحقاً',
         fileTooLarge: 'الملف أكبر من الحجم المسموح به',
 
+        fieldRules: {
+            NotBlank: 'هذا الحقل مطلوب.',
+            NotNull: 'هذا الحقل مطلوب.',
+            NotEmpty: 'هذا الحقل مطلوب.',
+            sizeMax: 'النص أطول من المسموح: الحد الأقصى {max} حرفًا.',
+            sizeMin: 'النص أقصر من المسموح: الحد الأدنى {min} حرفًا.',
+            sizeBetween: 'يجب أن يكون الطول بين {min} و{max} حرفًا.',
+            min: 'يجب ألّا تقلّ القيمة عن {value}.',
+            max: 'يجب ألّا تزيد القيمة على {value}.',
+            Email: 'أدخل بريدًا إلكترونيًا صحيحًا، مثل name@example.com.',
+            URL: 'أدخل رابطًا كاملًا يبدأ بـ https://، أو اترك الحقل فارغًا.',
+            Pattern: 'الصيغة غير مقبولة.',
+            IsoCountry: 'اختر دولة من القائمة.',
+            AssertTrue: 'يلزم تأكيد هذا للمتابعة.',
+            Invalid: 'هذه القيمة غير مقبولة.',
+            byField: {
+                slug: {
+                    Pattern: 'يُكتب العنوان بحروف إنجليزية صغيرة وأرقام وشرطات (-) فقط، مثل my-channel.',
+                },
+                acceptedTerms: {
+                    AssertTrue: 'وافق على شروط الاستخدام وسياسة الخصوصية للمتابعة.',
+                },
+            },
+        },
+
         /**
          * Why an action was refused, keyed by the backend's `reason` code.
          *

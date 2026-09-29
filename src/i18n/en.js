@@ -275,6 +275,37 @@ export const en = {
         fileTooLarge: 'The file is larger than the allowed size',
 
         /**
+         * What a refused form field is told, under the field itself. The backend names the rule
+         * (`fieldErrors[].code`, a constraint name) and never words it; `lib/rejectedFields`
+         * picks the sentence. `byField` holds a field's own wording for a rule, where the general
+         * one would be true but useless ("not in the accepted format" for a slug).
+         */
+        fieldRules: {
+            NotBlank: 'This field is required.',
+            NotNull: 'This field is required.',
+            NotEmpty: 'This field is required.',
+            sizeMax: 'Too long: at most {max} characters.',
+            sizeMin: 'Too short: at least {min} characters.',
+            sizeBetween: 'Must be between {min} and {max} characters.',
+            min: 'Must be at least {value}.',
+            max: 'Must be at most {value}.',
+            Email: 'Enter a valid email address, such as name@example.com.',
+            URL: 'Enter a full web address starting with https://, or leave it empty.',
+            Pattern: 'This is not in the accepted format.',
+            IsoCountry: 'Choose a country from the list.',
+            AssertTrue: 'This has to be confirmed to continue.',
+            Invalid: 'This value was not accepted.',
+            byField: {
+                slug: {
+                    Pattern: 'An address may use only lowercase English letters, numbers and hyphens (-), such as my-channel.',
+                },
+                acceptedTerms: {
+                    AssertTrue: 'Accept the terms of use and the privacy policy to continue.',
+                },
+            },
+        },
+
+        /**
          * Why an action was refused, keyed by the backend's `reason` code. The backend sends codes
          * and never prose, so a code with no entry here falls back to the generic sentence for its
          * status — adding one on that side without adding it here is safe and silent.
