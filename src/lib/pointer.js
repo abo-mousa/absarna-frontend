@@ -31,3 +31,37 @@ export const primaryPointerCanHover = () => {
     }
     return canHover;
 };
+
+/**
+ * Whether a mouse event came from the hand or from the page moving under a still pointer.
+ *
+ * <p>A browser fires `mouseenter` when the page scrolls an element under a pointer that has not
+ * moved — a wheel turn, or a smooth scroll the page started itself. A hover that reacts to those
+ * lights whatever happens to pass under the cursor, one part after another, while the reader's hand
+ * is still. So: an event at a new screen position is the hand; one at the position we last saw is
+ * the hand only if nothing has scrolled since. Screen coordinates, not client ones — scrolling
+ * changes neither, and that is the point.
+ */
+let lastX = null;
+let lastY = null;
+let lastMove = 0;
+let lastScroll = 0;
+let listening = false;
+
+const record = (event) => {
+    if (event.screenX === lastX && event.screenY === lastY) return false;
+    lastX = event.screenX;
+    lastY = event.screenY;
+    lastMove = performance.now();
+    return true;
+};
+
+export const handMoved = (event) => {
+    if (!listening && typeof window !== 'undefined') {
+        listening = true;
+        window.addEventListener('mousemove', record, { passive: true, capture: true });
+        // Capture, because a scroll inside an element (the guide sheet) does not bubble.
+        window.addEventListener('scroll', () => { lastScroll = performance.now(); }, { passive: true, capture: true });
+    }
+    return record(event) || lastMove >= lastScroll;
+};

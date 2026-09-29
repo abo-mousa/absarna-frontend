@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { KhatamStar } from '../ui/Khatam';
 import { shotMeta, shotSrc } from './guideShotMeta';
 import { useTheme } from '@/contexts/ThemeContext';
+import { handMoved } from '@/lib/pointer';
 import { t } from '@/i18n';
 
 const FRAME_PAD = 6;
@@ -18,10 +19,14 @@ const FRAME_PAD = 6;
  */
 function GuideShot({ name, captions = [], cut = null }) {
     const theme = useTheme()?.theme;
-    const [active, setActive] = useState(null);
+    // A click pins a part; pointing previews one over the pin and gives it back on leaving. Kept
+    // apart because one state for both made a click on a hovered caption toggle it off.
+    const [pinned, setPinned] = useState(null);
+    const [pointed, setPointed] = useState(null);
     const picture = useRef(null);
     const meta = shotMeta(name);
     if (!meta) return null;
+    const active = pointed ?? pinned;
     const marks = meta.marks.slice(0, captions.length);
     // The frame keeps the last place it framed while it fades, so it never shrinks to a corner.
     const [x, y, w, h] = marks[active ?? 0] || [0, 0, 100, 100];
@@ -30,9 +35,13 @@ function GuideShot({ name, captions = [], cut = null }) {
     // still be pointed at.
     const areas = marks.map((mark, index) => ({ mark, index })).sort((a, b) => b.mark[2] * b.mark[3] - a.mark[2] * a.mark[3]);
     const choose = (index) => {
-        setActive((current) => (current === index ? null : index));
+        setPinned((current) => (current === index ? null : index));
+        setPointed(null);
         picture.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     };
+    // Only the hand points: a part scrolled under a still cursor is not being pointed at.
+    const enter = (index) => (event) => { if (handMoved(event)) setPointed(index); };
+    const leave = () => setPointed(null);
 
     return (
         <figure className="flex flex-col gap-3">
@@ -64,8 +73,8 @@ function GuideShot({ name, captions = [], cut = null }) {
                         <span
                             key={index}
                             aria-hidden="true"
-                            onMouseEnter={() => setActive(index)}
-                            onMouseLeave={() => setActive(null)}
+                            onMouseEnter={enter(index)}
+                            onMouseLeave={leave}
                             onClick={() => choose(index)}
                             className="absolute cursor-pointer"
                             style={{ left: `${ax}%`, top: `${ay}%`, width: `${aw}%`, height: `${ah}%` }}
@@ -96,10 +105,12 @@ function GuideShot({ name, captions = [], cut = null }) {
                                         type="button"
                                         aria-pressed={lit}
                                         onClick={() => choose(index)}
-                                        onMouseEnter={() => setActive(index)}
-                                        onMouseLeave={() => setActive(null)}
-                                        onFocus={() => setActive(index)}
-                                        onBlur={() => setActive(null)}
+                                        onMouseEnter={enter(index)}
+                                        onMouseLeave={leave}
+                                        // Keyboard focus only: a click focuses the button too, and
+                                        // would keep showing a part the click just unpinned.
+                                        onFocus={(event) => { if (event.target.matches(':focus-visible')) setPointed(index); }}
+                                        onBlur={leave}
                                         className={`flex items-start gap-3 w-full text-start rounded-md px-3 py-2 transition-colors ring-1 ${
                                             lit ? 'bg-gold-light/70 ring-gold/50' : 'ring-transparent hover:bg-surface-hover'
                                         }`}
