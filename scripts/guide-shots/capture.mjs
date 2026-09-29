@@ -4,7 +4,7 @@
  *
  *   ../absarna-backend/infra/local/seed-journey-demo.sh   # a lived-in «مسيرتي» for the demo reader
  *   npm run dev                                           # the SPA on :5173, the API on :8080
- *   npm run guide:shots                                   # this script
+ *   npm run guide:shots                                   # this script (or `-- name …` for some)
  *
  * For every shot below it opens the page as the demo reader at phone width, crops the element
  * named by its `data-guide` anchor, and writes one PNG per locale and theme to
@@ -17,7 +17,7 @@
  * Local only: it signs in as the seed script's demo reader and refuses any other API.
  */
 import { chromium } from 'playwright';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ar } from '../../src/i18n/ar.js';
@@ -56,7 +56,8 @@ const SHOTS = [
     { name: 'month', path: '/journey', anchor: 'month', marks: [':scope > div > div:first-child'] },
     { name: 'shelf', path: '/journey', anchor: 'shelf', marks: ['li:first-child a'] },
     { name: 'wird', path: '/', anchor: 'wird', until: 'article', marks: ['article svg', 'article a.font-bold', 'article a.rounded-md', 'article span.text-xs'] },
-    { name: 'make-wird', path: '/series/14', anchor: 'make-wird', pad: 16, marks: [':scope'] },
+    // A programme the demo reader has no goal for, or the button reads «في وِردك» instead.
+    { name: 'make-wird', path: '/series/10', crop: 'div.bg-surface:has(> [data-guide="make-wird"])', marks: ['[data-guide="make-wird"]'] },
     ...['target', 'amount', 'time', 'intention'].map((step, index) => ({
         name: `dialog-${step}`,
         path: '/journey/goals',
@@ -108,6 +109,16 @@ async function measure(page, shot) {
     return page.evaluate(({ shot }) => {
         const element = shot.crop ? document.querySelector(shot.crop) : document.querySelector(`[data-guide="${shot.anchor}"]`);
         if (!element) return { error: 'crop not found' };
+        // What a mark points at is what shows, not the box around it: a row of seven stars or a
+        // title is laid out full-width, and a line to that box's edge would end in empty space.
+        // A range over the element's contents is the union of what is drawn; an element with no
+        // contents of its own (a tick, a bar's track) keeps its box.
+        const contentBox = (node) => {
+            const range = document.createRange();
+            range.selectNodeContents(node);
+            const drawn = range.getBoundingClientRect();
+            return drawn.width > 0 && drawn.height > 0 ? drawn : node.getBoundingClientRect();
+        };
         const box = element.getBoundingClientRect();
         let bottom = box.bottom;
         if (shot.until) {
@@ -135,7 +146,7 @@ async function measure(page, shot) {
             const all = spec.sel === ':scope' ? [element] : [...element.querySelectorAll(spec.sel)];
             const target = all.at(spec.nth ?? 0);
             if (!target) return { error: `mark not found: ${spec.sel}` };
-            const r = target.getBoundingClientRect();
+            const r = contentBox(target);
             if (r.bottom < top || r.top > top + height) return { error: `mark outside the crop: ${spec.sel}` };
             const pct = (value, of) => Math.round((value / of) * 1000) / 10;
             marks.push([
@@ -203,10 +214,11 @@ async function main() {
         }
     }
     await browser.close();
-    if (!only.length) {
-        const sorted = Object.fromEntries(Object.keys(manifest).sort().map((key) => [key, manifest[key]]));
-        await writeFile(resolve(root, 'src/components/guide/guideShots.json'), `${JSON.stringify(sorted, null, 2)}\n`);
-    }
+    // A run of named shots (`npm run guide:shots -- year control`) replaces only theirs.
+    const path = resolve(root, 'src/components/guide/guideShots.json');
+    const merged = only.length ? { ...JSON.parse(await readFile(path, 'utf8')), ...manifest } : manifest;
+    const sorted = Object.fromEntries(Object.keys(merged).sort().map((key) => [key, merged[key]]));
+    await writeFile(path, `${JSON.stringify(sorted, null, 2)}\n`);
     if (failed) {
         console.error(`${failed} shot(s) failed`);
         process.exit(1);
