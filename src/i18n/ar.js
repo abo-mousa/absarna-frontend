@@ -3612,6 +3612,7 @@ export const ar = {
         starters: {
             PROMOTER: 'صاحب جمهور',
             SCHOLAR: 'عالم بلا قناة على يوتيوب',
+            CHANNEL_OWNER: 'صاحب قناة على يوتيوب',
             READER: 'قارئ',
         },
         edited: 'عُدّل عن القالب. تغيير اللغة يُبقي نصّك.',

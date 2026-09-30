@@ -3077,6 +3077,7 @@ export const en = {
         starters: {
             PROMOTER: 'Someone with an audience',
             SCHOLAR: 'Scholar without YouTube',
+            CHANNEL_OWNER: 'Has a YouTube channel',
             READER: 'A reader',
         },
         edited: 'Edited from the template. Switching language keeps your text.',
