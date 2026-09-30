@@ -15,6 +15,8 @@ import { resolveMediaUrl } from '@/lib/media';
 import { formatDigits, t } from '@/i18n';
 import { describeError } from '@/lib/describeError';
 import { WirdToday, QadaCards, MakeWird } from '../components/journey';
+import { useGoals } from '../hooks/useGoals';
+import { goalFor } from '@/lib/journey';
 import { useNow } from '../hooks/useNow';
 import { amountText } from '@/lib/goalText';
 import { countOf } from '@/lib/plural';
@@ -80,6 +82,19 @@ function Today() {
     // since it is the one thing here addressed to them alone.
     const { data: invitations = [] } = useChannelInvitations(!!token);
 
+    // «اجعله وِردًا» on ONE card of each row: the first whose programme or book no goal pursues
+    // yet. Under every card it read as a nudge; the others still show «في وِردك» where it applies,
+    // and every series or book page offers it. Keys are `s<seriesId>` / `b<bookId>`.
+    const goals = useGoals(!!token);
+    const firstOffer = (keys) => keys.find((key) => !goalFor(goals.data, key.startsWith('s')
+        ? { seriesId: Number(key.slice(1)) } : { bookId: Number(key.slice(1)) })) ?? null;
+    const continueOffer = firstOffer([
+        ...(data?.continueWatching || []).filter((item) => item.next.seriesId).map((item) => `s${item.next.seriesId}`),
+        ...(data?.continueReading || []).map((entry) => `b${entry.bookId}`),
+    ]);
+    const startOffer = firstOffer((data?.startProgrammes || []).filter((v) => v.seriesId).map((v) => `s${v.seriesId}`));
+    const welcomeOffer = firstOffer((welcome?.programmes || []).filter((v) => v.seriesId).map((v) => `s${v.seriesId}`));
+
     // No guide opens by itself: a first visit is for the page, and the welcome block's «الدليل»
     // and the link at the page's end are there for whoever wants one.
 
@@ -122,10 +137,12 @@ function Today() {
                             <Cartouche title={t('today.continueTitle')} />
                             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                 {data.continueWatching.map((item) => (
-                                    <ContinueVideo key={item.next.id} item={item} onHide={() => hide({ type: 'SERIES', id: item.next.seriesId })} wird={!!token} />
+                                    <ContinueVideo key={item.next.id} item={item} onHide={() => hide({ type: 'SERIES', id: item.next.seriesId })} wird={!!token}
+                                        offer={continueOffer === `s${item.next.seriesId}`} />
                                 ))}
                                 {data.continueReading.map((entry) => (
-                                    <ContinueBook key={entry.bookId} entry={entry} onHide={() => hide({ type: 'BOOK', id: entry.bookId })} wird={!!token} />
+                                    <ContinueBook key={entry.bookId} entry={entry} onHide={() => hide({ type: 'BOOK', id: entry.bookId })} wird={!!token}
+                                        offer={continueOffer === `b${entry.bookId}`} />
                                 ))}
                             </div>
                         </section>
@@ -139,7 +156,8 @@ function Today() {
                             <Cartouche title={t('today.startTitle')} />
                             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                 {data.startProgrammes.map((video) => (
-                                    <ContinueVideo key={video.id} item={{ next: video, progress: 0 }} starting wird={!!token} />
+                                    <ContinueVideo key={video.id} item={{ next: video, progress: 0 }} starting wird={!!token}
+                                        offer={startOffer === `s${video.seriesId}`} />
                                 ))}
                             </div>
                         </section>
@@ -150,7 +168,8 @@ function Today() {
                             <Cartouche title={t('today.welcome.programmesTitle')} />
                             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                 {welcome.programmes.map((video) => (
-                                    <ContinueVideo key={video.id} item={{ next: video, progress: 0 }} starting wird={!!token} />
+                                    <ContinueVideo key={video.id} item={{ next: video, progress: 0 }} starting wird={!!token}
+                                        offer={welcomeOffer === `s${video.seriesId}`} />
                                 ))}
                             </div>
                         </section>
@@ -374,7 +393,7 @@ function WelcomeHero({ signedIn }) {
  * A programme in progress: the star traced as far as the reader has come, and what is next.
  * `starting` is the welcome's case — a programme offered from its first episode, nothing traced.
  */
-function ContinueVideo({ item, starting = false, onHide = null, wird = false }) {
+function ContinueVideo({ item, starting = false, onHide = null, wird = false, offer = true }) {
     const video = item.next;
     const position = video.seriesPosition;
     const total = video.seriesLength;
@@ -405,7 +424,7 @@ function ContinueVideo({ item, starting = false, onHide = null, wird = false }) 
         </Link>
         {wird && video.seriesId && (
             <div className={CARD_ACTION}>
-                <MakeWird seriesId={video.seriesId} title={video.seriesTitle || video.title} />
+                <MakeWird seriesId={video.seriesId} title={video.seriesTitle || video.title} offer={offer} />
             </div>
         )}
         {onHide && <HideButton onHide={onHide} />}
@@ -420,7 +439,7 @@ const CARD = 'relative group/card flex flex-col bg-surface border border-border-
 const CARD_ACTION = 'ps-[5.875rem] pe-3.5 pb-3 -mt-2';
 
 /** A book in progress, traced in teal to tell it from a programme at a glance. */
-function ContinueBook({ entry, onHide = null, wird = false }) {
+function ContinueBook({ entry, onHide = null, wird = false, offer = true }) {
     return (
         <div className={CARD}>
         <Link
@@ -441,7 +460,7 @@ function ContinueBook({ entry, onHide = null, wird = false }) {
         </Link>
         {wird && (
             <div className={CARD_ACTION}>
-                <MakeWird bookId={entry.bookId} title={entry.book?.title} pages={entry.book?.pages} currentPage={entry.currentPage} />
+                <MakeWird bookId={entry.bookId} title={entry.book?.title} pages={entry.book?.pages} currentPage={entry.currentPage} offer={offer} />
             </div>
         )}
         {onHide && <HideButton onHide={onHide} />}

@@ -1630,7 +1630,9 @@ export const ar = {
             record: 'السجل',
         },
         loadFailed: 'تعذّر تحميل «طريقي»',
-        makeWird: 'اجعله وِردًا',
+        // The button with the amount it proposes (MakeWird), and the line under it on a page.
+        makeWirdAmount: 'اجعله وِردًا: {amount} كل يوم',
+        makeWirdHint: 'في وقت تختاره، ولا نرسل إليك شيئًا.',
         inWird: 'في وِردك',
         portionDone: 'تمّ وِردك من «{title}» — الحمد لله',
         portionDonePlain: 'تمّ وِردك اليوم — الحمد لله',
