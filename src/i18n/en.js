@@ -2603,6 +2603,13 @@ export const en = {
         confirmNewPassword: 'Confirm new password',
         passwordChanged: 'Your password has been changed',
         passwordChangeFailed: 'Could not change the password',
+        signOutEverywhere: {
+            heading: 'Sign out on other devices',
+            body: 'Signs this account out on every other phone, tablet and browser. Use it if a device is lost or you see a sign-in you do not recognise. You stay signed in here.',
+            action: 'Sign out everywhere else',
+            done: 'You have been signed out on every other device',
+            failed: 'Could not sign out the other devices',
+        },
         bioLabel: 'About you',
         bioPlaceholder: 'Write a short bio...',
         saved: 'Profile saved',

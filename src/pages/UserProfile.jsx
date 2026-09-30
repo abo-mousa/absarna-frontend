@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import api from '@/lib/api/client';
-import { changePassword, deleteAccount } from '@/lib/api/auth';
+import { changePassword, deleteAccount, signOutEverywhere } from '@/lib/api/auth';
 import { isRemembered } from '@/lib/authStorage';
 import PageShell from '../components/layout/PageShell';
 import { Input, Button, Modal, ImageUploadField, RejectedFields } from '../components/ui';
@@ -240,6 +240,40 @@ function ChangePasswordCard() {
 }
 
 /**
+ * Ends every other session of the account — for a device that is lost, sold or shared, or a
+ * sign-in the reader does not recognise. This device stays signed in: the response carries a
+ * replacement pair, adopted exactly as a password change's is.
+ */
+function SignOutEverywhereCard() {
+    const { applySession } = useAuth();
+    const { showToast } = useToast();
+    const [busy, setBusy] = useState(false);
+
+    const handleClick = async () => {
+        setBusy(true);
+        try {
+            const res = await signOutEverywhere(isRemembered());
+            applySession(res.data);
+            showToast(t('profile.signOutEverywhere.done'), 'success');
+        } catch (err) {
+            showToast(describeError(err, t('profile.signOutEverywhere.failed')), 'error');
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    return (
+        <div className="bg-surface p-6 sm:p-8 rounded-lg shadow-sm border border-border-light mt-6">
+            <h2 className="text-lg font-bold mb-2">{t('profile.signOutEverywhere.heading')}</h2>
+            <p className="text-sm text-text-muted mb-4">{t('profile.signOutEverywhere.body')}</p>
+            <Button variant="outline" onClick={handleClick} disabled={busy}>
+                {busy ? t('common.saving') : t('profile.signOutEverywhere.action')}
+            </Button>
+        </div>
+    );
+}
+
+/**
  * The account's own picture — shown in the account menu. Uploading needs a verified address (the
  * platform hosts it publicly); an unverified account is told so here rather than only by a refusal.
  */
@@ -435,6 +469,8 @@ function UserProfile() {
                 <VerificationCard verified={user?.emailVerified !== false} />
 
                 <ChangePasswordCard />
+
+                <SignOutEverywhereCard />
 
                 <DeleteAccountCard />
             </div>

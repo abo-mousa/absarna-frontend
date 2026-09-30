@@ -119,8 +119,10 @@ function CreateChannel() {
             // appears to change and a toast alone reads as "it did nothing".
             setFoundChannel(found);
             showToast(t('createChannel.youtubeFetched', { title: found.title }), 'success');
-        } catch {
-            showToast(t('createChannel.youtubeFetchFailed'), 'error');
+        } catch (err) {
+            // Through describeError so an unverified account hears why (the lookup spends shared
+            // YouTube quota, so it takes a verified address, like creating the channel does).
+            showToast(describeError(err, t('createChannel.youtubeFetchFailed')), 'error');
         }
     };
 

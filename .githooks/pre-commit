@@ -1,0 +1,11 @@
+#!/bin/sh
+# Refuses a commit that stages a secret. Enable once per clone:
+#     git config core.hooksPath .githooks
+# CI runs the same scan over the whole history (the `secrets` job), so this is the early, local
+# half: it catches a key before it exists in any commit, which is the only point at which leaking
+# it costs nothing. A key that reaches GitHub has to be rotated, even if the commit is rewritten.
+if command -v gitleaks >/dev/null 2>&1; then
+    exec gitleaks git --pre-commit --staged --redact --no-banner .
+fi
+echo "pre-commit: gitleaks is not installed (brew install gitleaks); secret scan SKIPPED" >&2
+exit 0

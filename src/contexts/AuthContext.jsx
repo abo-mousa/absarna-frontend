@@ -2,8 +2,8 @@ import { createContext, useState, useContext, useEffect, useCallback, useMemo } 
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api/client';
-import { clearSession, isRemembered, readToken, storeSession } from '@/lib/authStorage';
-import { login as loginRequest, register as registerRequest, updateLocale, updateTimeZone } from '@/lib/api/auth';
+import { clearSession, isRemembered, readRefreshToken, readToken, storeSession } from '@/lib/authStorage';
+import { login as loginRequest, logoutRequest, register as registerRequest, updateLocale, updateTimeZone } from '@/lib/api/auth';
 import { readerTimeZone } from '@/lib/timeZone';
 import { authFailureMessage } from '@/lib/authErrors';
 import { isProtectedPath } from '@/lib/navigation';
@@ -76,6 +76,13 @@ export const AuthProvider = ({ children }) => {
      * viewer's identity, which covers a login with no logout in between. Both are needed.
      */
     const logout = useCallback(() => {
+        // Revoke the session server-side first, so the refresh token stops working everywhere
+        // and not only here — fire and forget, read before the stores are cleared. A failure
+        // leaves the session to expire on its own, which is what every logout did before.
+        const refreshToken = readRefreshToken();
+        if (refreshToken) {
+            logoutRequest(refreshToken).catch(() => { /* expires on its own */ });
+        }
         // Both stores, whichever this session was using — see lib/authStorage.
         clearSession();
         setToken(null);

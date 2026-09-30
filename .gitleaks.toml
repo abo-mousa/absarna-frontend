@@ -1,0 +1,13 @@
+# gitleaks config: the default rules, plus one narrow exemption.
+#
+# The generic-api-key rule fires on any long random-looking literal, which in this codebase's
+# tests means fixture UUIDs, media-prefix tokens and HMAC test secrets. Exempted for that rule
+# only and under src/test/ only, so a real credential FORMAT (a Google key, an AWS key, a private
+# key block) is still caught in a test file.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Test fixtures that look random: UUIDs, hex tokens, throwaway HMAC secrets"
+targetRules = ["generic-api-key"]
+paths = ['''(^|/)src/test/''']

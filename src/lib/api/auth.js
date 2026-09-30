@@ -82,3 +82,19 @@ export const deleteAccount = (currentPassword) =>
  */
 export const changePassword = (currentPassword, newPassword, rememberMe) =>
     api.post('/user/change-password', { currentPassword, newPassword, rememberMe });
+
+/**
+ * Ends this device's session on the server, not only in this browser: the refresh token is
+ * revoked, so a copy of it taken earlier stops working too. Always answered 200, and never
+ * awaited by a logout — clearing local storage must not wait on the network.
+ */
+export const logoutRequest = (refreshToken) =>
+    api.post('/auth/logout', { refreshToken });
+
+/**
+ * "Sign out everywhere": every other device and token of the account stops working. Like a
+ * password change the response carries a replacement pair for this device, minted at the tier
+ * sent here (`isRemembered()`), so this session stays signed in.
+ */
+export const signOutEverywhere = (rememberMe) =>
+    api.post('/user/sessions/revoke-all', { rememberMe });

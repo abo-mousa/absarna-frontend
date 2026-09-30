@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '20'
+          cache: npm
+      # npm ci, not install: it fails when package.json and the lockfile disagree instead of
+      # quietly resolving something new, which is what makes the lockfile a pin.
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      # What ships to readers. Dev tooling is audited by Dependabot's PRs instead, so a vitest
+      # advisory does not block a deploy of code that never runs it.
+      - name: Audit production dependencies
+        run: npm audit --omit=dev
+
+  # Same as the backend's: the whole history, same rules as the pre-commit hook.
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - name: Scan the whole history for secrets
+        run: docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.30.1 git /repo --redact --no-banner -v
