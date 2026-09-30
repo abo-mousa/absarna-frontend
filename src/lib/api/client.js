@@ -117,6 +117,18 @@ const endSession = () => {
     window.dispatchEvent(new Event('auth:session-expired'));
 };
 
+/**
+ * The request once more, as the signed-out reader the session just ended into. The backend
+ * answers a stale token with 401 on public routes too (so the refresh above runs at all); when
+ * the session is over, a public page should still load as it does for any visitor rather than
+ * fail. A route that needs a session 401s again and is rejected as before — `_retry` is already
+ * set, so this cannot loop.
+ */
+const retrySignedOut = (request) => {
+    if (request.headers) delete request.headers.Authorization;
+    return api(request);
+};
+
 // Response interceptor — auto refresh on 401
 api.interceptors.response.use(
     (response) => response,
@@ -158,6 +170,7 @@ api.interceptors.response.use(
                 } catch (refreshError) {
                     if (refreshFailureEndsSession(refreshError)) {
                         endSession();
+                        return retrySignedOut(originalRequest);
                     }
                 }
             } else if (readToken()) {
@@ -166,6 +179,7 @@ api.interceptors.response.use(
                 // through to Promise.reject below with no signal at all, leaving the app's
                 // in-memory auth state stuck "logged in" while every request kept 401ing.
                 endSession();
+                return retrySignedOut(originalRequest);
             }
         }
 

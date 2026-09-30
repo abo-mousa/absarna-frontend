@@ -192,6 +192,22 @@ describe('api client', () => {
         expect(dispatched).toContain('auth:session-expired');
     });
 
+    it('loads a public page signed out when the session is over, rather than failing it', async () => {
+        // The backend answers a stale token with 401 on public routes too, so the refresh runs.
+        // When the refresh is refused the session is over, and the page — Today, here — should
+        // load as it does for any visitor: replayed once without the dead credential.
+        const api = await loadClient();
+        reply('/auth/refresh', 401);
+        reply('/today', 401, null, { once: true });
+        reply('/today', 200, { signedOut: true });
+
+        const response = await api.get('/today');
+
+        expect(response.data).toEqual({ signedOut: true });
+        expect(calls.filter((c) => c.url.includes('/today')).at(-1).headers.Authorization).toBeUndefined();
+        expect(dispatched).toContain('auth:session-expired');
+    });
+
     it('signals expiry when there is a token but no refresh token to try', async () => {
         // This used to fall straight through to the rejection with no signal at all, leaving the
         // app's in-memory auth state stuck "logged in" while every request 401'd.
