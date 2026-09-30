@@ -3677,7 +3677,7 @@ export const ar = {
         noChannels: 'لا يملك هذا الحساب قناة.',
         openDashboard: 'اللوحة',
         reports: 'البلاغات المقدَّمة',
-        reportsSummary: '{open} مفتوحة · {actioned} تُصرِّف فيها · {dismissed} صُرفت',
+        statusCount: '{status}: {count}',
         reportsDecided: 'قرّر في {count} بصفته مشرفًا',
         roleChange: 'من {from} إلى {to}، بواسطة {by}',
         roleChangeUnknownActor: 'حساب حُذف لاحقًا',

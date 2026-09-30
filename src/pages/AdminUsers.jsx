@@ -16,6 +16,13 @@ import { reasonLabel, reportLink, statusLabel as reportStatusLabel, targetTypeLa
 import { formatCount } from '@/lib/numbers';
 import { t } from '@/i18n';
 
+/** A report's statuses in the order they are worked, each with the badge colour it carries here. */
+const REPORT_STATUSES = [
+    { key: 'OPEN', variant: 'featured' },
+    { key: 'ACTIONED', variant: 'danger' },
+    { key: 'DISMISSED', variant: 'muted' },
+];
+
 const ROLES = ['USER', 'CREATOR', 'CHANNEL_ADMIN', 'PLATFORM_ADMIN'];
 const ROLE_VARIANT = { PLATFORM_ADMIN: 'danger', CHANNEL_ADMIN: 'featured', CREATOR: 'success', USER: 'muted' };
 const CHANNEL_VARIANT = { PENDING: 'featured', ACTIVE: 'success', REJECTED: 'danger', SUSPENDED: 'muted' };
@@ -155,14 +162,27 @@ function UserDetail({ id }) {
 
                     <section>
                         <h3 className="text-base font-bold mb-2">{t('adminUsers.reports')}</h3>
-                        <p className="text-sm text-text-secondary mb-3">
-                            {t('adminUsers.reportsSummary', {
-                                open: formatCount(data.reportsFiled?.OPEN ?? 0),
-                                actioned: formatCount(data.reportsFiled?.ACTIONED ?? 0),
-                                dismissed: formatCount(data.reportsFiled?.DISMISSED ?? 0),
-                            })}
-                            {data.reportsDecided > 0 && ` · ${t('adminUsers.reportsDecided', { count: formatCount(data.reportsDecided) })}`}
-                        </p>
+                        {/* One badge per status that has any, in the colours the report badges
+                            below use. Not a dotted line of counts: the Arabic zero «٠» is itself a
+                            dot, so «٠ مفتوحة · ٠ …» read as a row of dots — and a zero says nothing
+                            the list under it does not. */}
+                        {REPORT_STATUSES.some(({ key }) => (data.reportsFiled?.[key] ?? 0) > 0) && (
+                            <div className="flex flex-wrap gap-2 mb-3">
+                                {REPORT_STATUSES.filter(({ key }) => (data.reportsFiled?.[key] ?? 0) > 0).map(({ key, variant }) => (
+                                    <Badge key={key} variant={variant}>
+                                        {t('adminUsers.statusCount', {
+                                            status: reportStatusLabel(key),
+                                            count: formatCount(data.reportsFiled[key]),
+                                        })}
+                                    </Badge>
+                                ))}
+                            </div>
+                        )}
+                        {data.reportsDecided > 0 && (
+                            <p className="text-sm text-text-secondary mb-3">
+                                {t('adminUsers.reportsDecided', { count: formatCount(data.reportsDecided) })}
+                            </p>
+                        )}
                         {data.recentReports.length === 0 ? (
                             <p className="text-sm text-text-muted">{t('adminUsers.noReports')}</p>
                         ) : (
@@ -174,7 +194,7 @@ function UserDetail({ id }) {
                                             <div className="flex items-center gap-2 flex-wrap">
                                                 <strong>{reasonLabel(report.reason)}</strong>
                                                 <Badge variant="muted">{targetTypeLabel(report.targetType)}</Badge>
-                                                <Badge variant={report.status === 'OPEN' ? 'featured' : report.status === 'ACTIONED' ? 'danger' : 'muted'}>
+                                                <Badge variant={REPORT_STATUSES.find(({ key }) => key === report.status)?.variant ?? 'muted'}>
                                                     {reportStatusLabel(report.status)}
                                                 </Badge>
                                                 <span className="text-xs text-text-muted">{formatMoment(report.createdAt)}</span>

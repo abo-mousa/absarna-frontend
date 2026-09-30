@@ -3146,7 +3146,7 @@ export const en = {
         noChannels: 'This account owns no channel.',
         openDashboard: 'Dashboard',
         reports: 'Reports filed',
-        reportsSummary: '{open} open · {actioned} actioned · {dismissed} dismissed',
+        statusCount: '{status}: {count}',
         reportsDecided: 'decided {count} as a moderator',
         roleChange: 'From {from} to {to}, by {by}',
         roleChangeUnknownActor: 'an account since deleted',
