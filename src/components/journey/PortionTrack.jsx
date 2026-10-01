@@ -17,7 +17,7 @@ const daysFrom = (from, to) => Math.round((Date.parse(`${to}T12:00:00Z`) - Date.
  * A programme or a book drawn as the days it takes: the whole is the track, what is done is filled,
  * and what is left is cut into one segment per day's portion at the chosen pace — so «حلقتان كل
  * يوم» over twenty episodes is ten segments a reader can count, and changing the pace visibly
- * re-cuts them. The khatam star waits at the end. Past {@value MAX_SEGMENTS} portions a segment is
+ * re-cuts them. The khatam star waits at the end in gold — outlined until it is reached. Past {@value MAX_SEGMENTS} portions a segment is
  * a week of them, and the legend says so.
  *
  * <p>With a deadline, the segments that fall after it turn gold — the overrun, seen rather than
@@ -98,8 +98,9 @@ function PortionTrack({
                         />
                     )}
                 </div>
-                <KhatamStar filled={remaining === 0 || !late} strokeWidth={9}
-                            className={`w-5 h-5 flex-shrink-0 ${remaining === 0 ? 'text-gold' : late ? 'text-gold' : 'text-primary'}`} />
+                {/* Gold is the finish, the khatam: outlined while it is still ahead, filled once
+                    reached. Running late is the gold segments' to say, not the star's. */}
+                <KhatamStar filled={remaining === 0} strokeWidth={9} className="w-5 h-5 flex-shrink-0 text-gold" />
             </div>
             <div className="flex items-start justify-between gap-3">
                 <span className="text-xs text-text-secondary pt-0.5">
