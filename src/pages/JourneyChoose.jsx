@@ -14,7 +14,7 @@ import { useGoals } from '../hooks/useGoals';
 import { useToday } from '../hooks/useToday';
 import { usePageMeta } from '../hooks/usePageMeta';
 import { goalFor } from '../lib/journey';
-import { deadlineChoices, prefillFor, toggleShortlist } from '../lib/goalChoice';
+import { deadlineDate, prefillFor, toggleShortlist } from '../lib/goalChoice';
 import { amountText } from '../lib/goalText';
 import { formatCount } from '../lib/numbers';
 import { safeSessionStorage } from '../lib/safeStorage';
@@ -186,7 +186,7 @@ function JourneyChoose() {
 
     // The guided flow's deadline, so a preview opened from a proposal draws it on its week strip.
     const deadline = useMemo(() => (params.way === 'guided'
-        ? deadlineChoices().find((choice) => choice.key === params.deadline)?.date || null
+        ? deadlineDate(params.deadline)
         : null), [params.way, params.deadline]);
 
     return (

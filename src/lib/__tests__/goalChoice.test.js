@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-    SHORTLIST_MAX, asksForSubject, averageMinutes, daysToFinish, deadlineChoices, itemKey, prefillFor, toggleShortlist,
+    SHORTLIST_MAX, asksForSubject, averageMinutes, daysToFinish, deadlineChoices, deadlineDate, itemKey, prefillFor, toggleShortlist,
 } from '@/lib/goalChoice';
 
 /**
@@ -28,9 +28,10 @@ describe('deadlineChoices', () => {
         ]);
     });
 
-    it('adds Ramadan when the runtime has the Hijri calendar, as a later date', () => {
-        const ramadan = deadlineChoices(now).find((choice) => choice.key === 'ramadan');
-        if (ramadan) expect(ramadan.date > '2026-09-30').toBe(true);
+    it('leaves the seasons to «موعد آخر», and reads one as its date', () => {
+        expect(deadlineChoices(now).map((choice) => choice.key)).toEqual(['none', 'month', 'quarter']);
+        const ramadan = deadlineDate('ramadan', now);
+        if (ramadan) expect(ramadan > '2026-09-30').toBe(true);
     });
 });
 
@@ -79,5 +80,17 @@ describe('pace arithmetic', () => {
         expect(daysToFinish(32, 1)).toBe(32);
         expect(daysToFinish(30, 4)).toBe(8);
         expect(daysToFinish(0, 1)).toBe(0);
+    });
+});
+
+describe('deadlineDate', () => {
+    const now = new Date(2026, 9, 1);
+    it('reads a named choice, a date of the reader\'s own, and nothing', () => {
+        expect(deadlineDate('month', now)).toBe(deadlineChoices(now).find((c) => c.key === 'month').date);
+        expect(deadlineDate('2027-01-15', now)).toBe('2027-01-15');
+        expect(deadlineDate('none', now)).toBeNull();
+        expect(deadlineDate('2027-1-5', now)).toBeNull();
+        // An old link's date that has passed is no deadline, not a refusal from the backend.
+        expect(deadlineDate('2026-09-01', now)).toBeNull();
     });
 });

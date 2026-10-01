@@ -1,11 +1,14 @@
 import { useMemo, useState } from 'react';
-import { BookOpen, Gem, HandHeart, Megaphone, Moon, Scale, ScrollText, Search, SlidersHorizontal, Sparkles } from 'lucide-react';
+import { BookOpen, CalendarDays, Gem, HandHeart, Megaphone, Moon, Scale, ScrollText, Search, SlidersHorizontal, Sparkles } from 'lucide-react';
 import { Button, QueryState } from '@/components/ui';
 import { useGoalProposalPages, useGoalTopics } from '@/hooks/useGoalChoice';
 import { FIELDS, fieldOf, isField, searchSubjects, subjectLabel } from '@/lib/subjects';
-import { MINUTE_CHOICES, asksForSubject, chosenByText, deadlineChoices, itemKey } from '@/lib/goalChoice';
+import { MINUTE_CHOICES, asksForSubject, chosenByText, deadlineChoices, deadlineDate, isCustomDeadline, isSeasonDeadline, itemKey } from '@/lib/goalChoice';
+import { hijriDeadlines } from '@/lib/hijriSeasons';
 import { amountText, learningTime } from '@/lib/goalText';
 import { countOf } from '@/lib/plural';
+import { formatCount } from '@/lib/numbers';
+import { formatDay } from '@/lib/dayFormat';
 import { Poster, ShortlistMark } from './parts';
 import PaceStepper from '../PaceStepper';
 import PortionTrack from '../PortionTrack';
@@ -238,10 +241,10 @@ const CUSTOM_MAX = 120;
  * phone, the value read large as it moves, and nothing out of range to refuse. Chosen, the card
  * shows the length and stays selected like the others.
  */
-function CustomMinutesCard({ params, go }) {
+function CustomMinutesCard({ params, go, open, setOpen }) {
     const custom = !MINUTE_CHOICES.includes(params.minutes);
-    const [open, setOpen] = useState(false);
-    const [value, setValue] = useState(custom ? params.minutes : 30);
+    // An address can carry more than the slider holds (an older box took up to 240): clamped to it.
+    const [value, setValue] = useState(custom ? Math.min(CUSTOM_MAX, Math.max(CUSTOM_MIN, params.minutes)) : 30);
     if (!open) {
         return (
             <button
@@ -253,39 +256,182 @@ function CustomMinutesCard({ params, go }) {
                     custom ? 'border-primary ring-1 ring-primary bg-primary-light' : 'border-dashed border-border hover:border-primary'
                 }`}
             >
-                <span className="w-10 h-10 rounded-full flex items-center justify-center bg-surface-hover text-text-secondary flex-shrink-0">
+                <span className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${custom ? 'bg-primary text-white' : 'bg-surface-hover text-text-secondary'}`}>
                     <SlidersHorizontal size={20} aria-hidden="true" />
                 </span>
-                <span className="flex flex-col gap-0.5">
+                <span className="flex flex-col gap-0.5 flex-1">
                     <span className="font-semibold">{custom ? learningTime(params.minutes) : t('journey.choose.customTitle')}</span>
                     <span className="text-xs text-text-secondary">{custom ? t(`journey.choose.minutesHint.${hintFor(params.minutes)}`) : t('journey.choose.customHint')}</span>
                 </span>
+                {custom && <span className="text-xs font-semibold text-primary">{t('journey.choose.customChange')}</span>}
             </button>
         );
     }
+    const fill = `${((value - CUSTOM_MIN) / (CUSTOM_MAX - CUSTOM_MIN)) * 100}%`;
     return (
-        <div className="col-span-2 p-4 rounded-lg border border-primary ring-1 ring-primary bg-surface flex flex-col gap-3">
-            <div className="flex items-baseline justify-between gap-3">
-                <span className="font-serif text-3xl font-bold" aria-live="polite">{learningTime(value)}</span>
-                <span className="text-xs text-text-secondary">{t(`journey.choose.minutesHint.${hintFor(value)}`)}</span>
+        <div className="col-span-2 p-5 rounded-lg border border-primary ring-1 ring-primary bg-surface flex flex-col gap-5">
+            <div className="flex items-center gap-3">
+                <span className="w-10 h-10 rounded-full flex items-center justify-center bg-primary-light text-primary flex-shrink-0">
+                    <SlidersHorizontal size={20} aria-hidden="true" />
+                </span>
+                <span className="flex flex-col">
+                    <span className="text-xs font-semibold text-text-secondary">{t('journey.choose.customTitle')}</span>
+                    <span className="font-serif text-3xl font-bold text-primary-dark dark:text-primary leading-tight" aria-live="polite">
+                        {learningTime(value)}
+                    </span>
+                </span>
+                <span className="ms-auto self-end text-xs text-text-secondary pb-1">{t(`journey.choose.minutesHint.${hintFor(value)}`)}</span>
             </div>
-            <input
-                type="range"
-                min={CUSTOM_MIN}
-                max={CUSTOM_MAX}
-                step={5}
-                value={value}
-                onChange={(event) => setValue(Number(event.target.value))}
-                aria-label={t('journey.choose.customTitle')}
-                className="w-full accent-primary h-6"
-            />
-            <div className="flex justify-between text-xs text-text-muted -mt-2">
-                <span>{learningTime(CUSTOM_MIN)}</span>
-                <span>{learningTime(CUSTOM_MAX)}</span>
+            <div className="flex flex-col gap-2 px-1">
+                <input
+                    type="range"
+                    min={CUSTOM_MIN}
+                    max={CUSTOM_MAX}
+                    step={5}
+                    value={value}
+                    onChange={(event) => setValue(Number(event.target.value))}
+                    aria-label={t('journey.choose.customTitle')}
+                    aria-valuetext={learningTime(value)}
+                    className="pace-range"
+                    style={{ '--fill': fill }}
+                />
+                {/* A tick at each half hour, so a length can be found by eye before the number agrees. */}
+                <div className="relative h-4 text-[0.7rem] text-text-muted">
+                    {[CUSTOM_MIN, 30, 60, 90, CUSTOM_MAX].map((tick) => (
+                        <button
+                            key={tick}
+                            type="button"
+                            onClick={() => setValue(tick)}
+                            className="absolute -translate-x-1/2 rtl:translate-x-1/2 hover:text-primary"
+                            style={{ insetInlineStart: `${((tick - CUSTOM_MIN) / (CUSTOM_MAX - CUSTOM_MIN)) * 100}%` }}
+                        >
+                            {tick === CUSTOM_MAX ? t('journey.choose.twoHours') : formatCount(tick)}
+                        </button>
+                    ))}
+                </div>
             </div>
-            <div className="flex items-center gap-2">
-                <Button className="flex-1" onClick={() => { setOpen(false); go({ minutes: value }); }}>{t('journey.choose.customMinutesSet')}</Button>
-                <Button variant="ghost" onClick={() => setOpen(false)}>{t('common.cancel')}</Button>
+            <div className="flex items-center gap-3">
+                <Button className="flex-1 h-11" onClick={() => { setOpen(false); go({ minutes: value }); }}>
+                    {t('journey.choose.customUse', { minutes: learningTime(value) })}
+                </Button>
+                <button type="button" onClick={() => setOpen(false)} className="text-sm font-semibold text-text-secondary hover:underline px-2">
+                    {t('common.cancel')}
+                </button>
+            </div>
+        </div>
+    );
+}
+
+const isoAfter = (days) => {
+    const now = new Date();
+    return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate() + days, 12)).toISOString().slice(0, 10);
+};
+
+/** «موعد آخر»: the deadline row's fourth choice — a Hijri season or a date of the reader's own. */
+function CustomDeadlineChip({ params, open, setOpen }) {
+    const custom = isCustomDeadline(params.deadline);
+    return (
+        <button
+            type="button"
+            aria-pressed={custom && !open}
+            aria-expanded={open}
+            onClick={() => setOpen(!open)}
+            className={`h-10 px-4 rounded-full border text-sm font-semibold inline-flex items-center gap-2 ${
+                open || custom ? 'border-primary bg-primary-light text-primary-dark dark:text-primary' : 'border-dashed border-border bg-surface'
+            } ${custom && !open ? 'ring-2 ring-primary' : ''}`}
+        >
+            <CalendarDays size={16} aria-hidden="true" />
+            {!custom ? t('journey.choose.deadlineCustom')
+                : isSeasonDeadline(params.deadline) ? t(`journey.seasons.${params.deadline}`)
+                    : formatDay(params.deadline, { day: 'numeric', month: 'long' })}
+        </button>
+    );
+}
+
+/**
+ * A finish of the reader's own. The Hijri seasons first — before Ramadan, before the ten days of
+ * Dhu al-Hijjah, the end of the Hijri month and year, each the last day before it begins — since
+ * those are the dates a goal on this platform is most often set against; then the platform's date
+ * picker (a phone's own wheel) for any day from tomorrow to two years out. Whatever is chosen is
+ * read back large, in both calendars, with how far off it is.
+ */
+function CustomDeadlinePanel({ params, go, onClose }) {
+    const min = isoAfter(1);
+    const max = isoAfter(730);
+    const seasons = useMemo(() => hijriDeadlines(), []);
+    const [choice, setChoice] = useState(isCustomDeadline(params.deadline) ? params.deadline : (seasons.find((s) => s.key === 'ramadan')?.key || isoAfter(60)));
+    // From the seasons already computed: deadlineDate would walk the Hijri calendar again per render.
+    const date = isSeasonDeadline(choice) ? seasons.find((season) => season.key === choice)?.date || null : deadlineDate(choice);
+    const valid = !!date && date >= min && date <= max;
+    const days = valid ? Math.round((Date.parse(`${date}T12:00:00Z`) - Date.parse(`${isoAfter(0)}T12:00:00Z`)) / 86_400_000) : 0;
+    const away = days >= 14 ? countOf('journey.units.WEEKS', Math.round(days / 7)) : countOf('journey.units.DAYS', days);
+    return (
+        <div className="p-5 rounded-lg border border-primary ring-1 ring-primary bg-surface flex flex-col gap-4">
+            <div className="flex items-center gap-3">
+                <span className="w-10 h-10 rounded-full flex items-center justify-center bg-primary-light text-primary flex-shrink-0">
+                    <CalendarDays size={20} aria-hidden="true" />
+                </span>
+                <span className="flex flex-col min-w-0">
+                    <span className="text-xs font-semibold text-text-secondary">
+                        {isSeasonDeadline(choice) ? t(`journey.seasons.${choice}`) : t('journey.choose.deadlineCustomTitle')}
+                    </span>
+                    <span className="font-serif text-2xl font-bold text-primary-dark dark:text-primary leading-tight" aria-live="polite">
+                        {valid ? formatDay(date, { weekday: 'long', day: 'numeric', month: 'long' }) : '—'}
+                    </span>
+                    {valid && (
+                        <span className="text-xs text-text-secondary">
+                            {formatDay(date, { day: 'numeric', month: 'long', year: 'numeric' }, 'islamic-umalqura')}
+                            {' · '}{t('journey.choose.deadlineAway', { duration: away })}
+                        </span>
+                    )}
+                </span>
+            </div>
+
+            {seasons.length > 0 && (
+                <div className="flex flex-col gap-2">
+                    <span className="text-xs font-semibold text-text-secondary">{t('journey.choose.deadlineSeasons')}</span>
+                    <div className="grid grid-cols-2 gap-2">
+                        {seasons.map((season) => (
+                            <button
+                                key={season.key}
+                                type="button"
+                                aria-pressed={choice === season.key}
+                                onClick={() => setChoice(season.key)}
+                                className={`p-3 rounded-md border text-start flex flex-col gap-0.5 transition-colors ${
+                                    choice === season.key ? 'border-gold bg-gold-light ring-1 ring-gold' : 'border-border bg-bg hover:border-gold'
+                                }`}
+                            >
+                                <span className={`text-sm font-semibold ${choice === season.key ? 'text-gold-ink' : 'text-text-primary'}`}>
+                                    {t(`journey.seasons.${season.key}`)}
+                                </span>
+                                <span className="text-xs text-text-secondary">{formatDay(season.date, { day: 'numeric', month: 'long' })}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            <label className="flex flex-col gap-2">
+                <span className="text-xs font-semibold text-text-secondary">{t('journey.choose.deadlineOrDay')}</span>
+                <input
+                    type="date"
+                    min={min}
+                    max={max}
+                    value={isSeasonDeadline(choice) ? '' : choice}
+                    onChange={(event) => setChoice(event.target.value)}
+                    className={`w-full h-12 px-4 rounded-md border bg-bg text-base focus:border-primary focus:outline-none ${
+                        !isSeasonDeadline(choice) ? 'border-primary' : 'border-border'
+                    }`}
+                />
+            </label>
+
+            <div className="flex items-center gap-3">
+                <Button className="flex-1 h-11" disabled={!valid} onClick={() => { onClose(); go({ deadline: choice, step: 'proposals', page: 0 }, true); }}>
+                    {t('journey.choose.deadlineCustomUse')}
+                </Button>
+                <button type="button" onClick={onClose} className="text-sm font-semibold text-text-secondary hover:underline px-2">
+                    {t('common.cancel')}
+                </button>
             </div>
         </div>
     );
@@ -293,6 +439,10 @@ function CustomMinutesCard({ params, go }) {
 
 function TimeStep({ params, go }) {
     const deadlines = useMemo(() => deadlineChoices(), []);
+    // One choice at a time: while the custom card is open, or holds the answer, no preset is lit.
+    const [customOpen, setCustomOpen] = useState(false);
+    const [deadlineOpen, setDeadlineOpen] = useState(false);
+    const preset = !customOpen && MINUTE_CHOICES.includes(params.minutes) ? params.minutes : null;
     return (
         <>
             <h1 className="font-serif text-3xl font-bold">{t('journey.choose.timeTitle')}</h1>
@@ -302,11 +452,11 @@ function TimeStep({ params, go }) {
                         key={minutes}
                         title={learningTime(minutes)}
                         hint={t(`journey.choose.minutesHint.m${minutes}`)}
-                        selected={params.minutes === minutes}
-                        onClick={() => go({ minutes })}
+                        selected={preset === minutes}
+                        onClick={() => { setCustomOpen(false); go({ minutes }); }}
                     />
                 ))}
-                <CustomMinutesCard params={params} go={go} />
+                <CustomMinutesCard params={params} go={go} open={customOpen} setOpen={setCustomOpen} />
             </div>
             <h2 className="font-serif text-2xl font-bold mt-2">{t('journey.choose.deadlineTitle')}</h2>
             <div className="flex flex-wrap gap-2">
@@ -314,16 +464,18 @@ function TimeStep({ params, go }) {
                     <button
                         key={deadline.key}
                         type="button"
-                        aria-pressed={params.deadline === deadline.key}
-                        onClick={() => go({ deadline: deadline.key, step: 'proposals', page: 0 }, true)}
-                        className={`h-10 px-4 rounded-full border text-sm font-semibold ${
-                            deadline.key === 'ramadan' ? 'border-gold bg-gold-light text-gold-ink' : 'border-border bg-surface'
-                        } ${params.deadline === deadline.key ? 'ring-2 ring-primary' : ''}`}
+                        aria-pressed={!deadlineOpen && params.deadline === deadline.key}
+                        onClick={() => { setDeadlineOpen(false); go({ deadline: deadline.key, step: 'proposals', page: 0 }, true); }}
+                        className={`h-10 px-4 rounded-full border border-border bg-surface text-sm font-semibold ${
+                            !deadlineOpen && params.deadline === deadline.key ? 'ring-2 ring-primary' : ''
+                        }`}
                     >
                         {t(`journey.choose.deadlines.${deadline.key}`)}
                     </button>
                 ))}
+                <CustomDeadlineChip params={params} go={go} open={deadlineOpen} setOpen={setDeadlineOpen} />
             </div>
+            {deadlineOpen && <CustomDeadlinePanel params={params} go={go} onClose={() => setDeadlineOpen(false)} />}
         </>
     );
 }
@@ -382,7 +534,7 @@ function ProposalCard({ proposal, deadline, onOpen, shortlist, onToggle }) {
 
 function ProposalsStep({ params, go, onOpen, shortlist, onToggle, onBrowse }) {
     // Memoised: the Ramadan choice walks up to 400 days of the Hijri calendar through Intl.
-    const deadline = useMemo(() => deadlineChoices().find((d) => d.key === params.deadline)?.date || null, [params.deadline]);
+    const deadline = useMemo(() => deadlineDate(params.deadline), [params.deadline]);
     const subject = params.field === 'ANY' ? null : (params.subject || params.field);
     // Every page so far, in order: «أرني ثلاثة غيرها» adds three below, never swaps the first ones out.
     const proposals = useGoalProposalPages({ subject, minutes: params.minutes, deadline, pages: params.page });

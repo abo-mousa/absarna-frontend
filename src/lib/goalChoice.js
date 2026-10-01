@@ -24,19 +24,37 @@ const plusDays = (now, days) => {
 };
 
 /**
- * «وتحبّ أن تُتمّه…»: whenever, a month, three months — and Ramadan when the calendar has it and it
- * is not already inside three months' reach of another choice. `{ key, date }`, date 'YYYY-MM-DD'
- * or null for whenever.
+ * «وتحبّ أن تُتمّه…»'s row: whenever, a month, three months. The Hijri seasons (Ramadan among them)
+ * and any date of the reader's own live behind the row's fourth choice, «موعد آخر» — Ramadan alone
+ * as a chip made the row uneven and left the other seasons out. `{ key, date }`, date
+ * 'YYYY-MM-DD' or null for whenever.
  */
 export function deadlineChoices(now = new Date()) {
-    const out = [
+    return [
         { key: 'none', date: null },
         { key: 'month', date: plusDays(now, 30) },
         { key: 'quarter', date: plusDays(now, 90) },
     ];
-    const ramadan = hijriDeadlines(now).find((season) => season.key === 'ramadan');
-    if (ramadan) out.push({ key: 'ramadan', date: ramadan.date });
-    return out;
+}
+
+const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+const SEASONS = ['monthEnd', 'ramadan', 'dhulHijjah', 'yearEnd'];
+
+/** A Hijri season key ('ramadan', 'dhulHijjah', 'monthEnd', 'yearEnd') as a `deadline` param. */
+export const isSeasonDeadline = (value) => SEASONS.includes(value);
+
+/** Whether the `deadline` param is the reader's own choice — a season or a date — rather than the row's. */
+export const isCustomDeadline = (value) => ISO_DAY.test(value || '') || isSeasonDeadline(value);
+
+/**
+ * The date a `deadline` param stands for: a row choice's ('month'…), a season's (its last day
+ * before it begins), or the reader's own 'YYYY-MM-DD'; null for 'none' or anything unreadable —
+ * and null for a date already past, which an old link can carry and the backend would refuse.
+ */
+export function deadlineDate(value, now = new Date()) {
+    if (ISO_DAY.test(value || '')) return value >= plusDays(now, 0) ? value : null;
+    if (isSeasonDeadline(value)) return hijriDeadlines(now).find((season) => season.key === value)?.date || null;
+    return deadlineChoices(now).find((choice) => choice.key === value)?.date || null;
 }
 
 /**
