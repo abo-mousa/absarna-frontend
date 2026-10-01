@@ -1674,8 +1674,8 @@ export const en = {
         },
         choose: {
             aboutMinutesADay: 'about {minutes} a day',
-            customMinutes: 'Or another length:',
-            minutesUnit: 'minutes',
+            customTitle: 'Another length',
+            customHint: 'Choose your own, from 5 minutes to two hours',
             customMinutesSet: 'Use it',
             pace: { today: 'Today', deadline: 'Your date {date}' },
             groupIslamic: 'In the Islamic sciences',

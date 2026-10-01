@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { BookOpen, Gem, HandHeart, Megaphone, Moon, Scale, ScrollText, Search, Sparkles } from 'lucide-react';
+import { BookOpen, Gem, HandHeart, Megaphone, Moon, Scale, ScrollText, Search, SlidersHorizontal, Sparkles } from 'lucide-react';
 import { Button, QueryState } from '@/components/ui';
 import { useGoalProposalPages, useGoalTopics } from '@/hooks/useGoalChoice';
 import { FIELDS, fieldOf, isField, searchSubjects, subjectLabel } from '@/lib/subjects';
@@ -227,35 +227,67 @@ function SubjectStep({ topics, params, go }) {
     );
 }
 
+/** The four tiles' hints, reused for a length of the reader's own: the nearest one describes it. */
+const hintFor = (minutes) => (minutes < 15 ? 'm10' : minutes < 35 ? 'm20' : minutes < 55 ? 'm45' : 'm60');
+const CUSTOM_MIN = 5;
+const CUSTOM_MAX = 120;
+
 /**
- * «مدة أخرى»: a number of minutes of the reader's own, between the backend's bounds (5–240) — the
- * four tiles are the common answers, not the only ones.
+ * «مدة أخرى»: a fifth card in the same grid, full width — a footnote form under the four was easy to
+ * miss. Tapped, it opens in place into a slider (5 minutes to two hours, in fives): no keyboard on a
+ * phone, the value read large as it moves, and nothing out of range to refuse. Chosen, the card
+ * shows the length and stays selected like the others.
  */
-function CustomMinutes({ params, go }) {
+function CustomMinutesCard({ params, go }) {
     const custom = !MINUTE_CHOICES.includes(params.minutes);
-    const [value, setValue] = useState(custom ? String(params.minutes) : '');
-    const minutes = Number.parseInt(value, 10);
-    const valid = Number.isFinite(minutes) && minutes >= 5 && minutes <= 240;
+    const [open, setOpen] = useState(false);
+    const [value, setValue] = useState(custom ? params.minutes : 30);
+    if (!open) {
+        return (
+            <button
+                type="button"
+                onClick={() => setOpen(true)}
+                aria-pressed={custom}
+                aria-expanded={false}
+                className={`col-span-2 p-4 rounded-lg border bg-surface text-start flex items-center gap-3 transition-colors ${
+                    custom ? 'border-primary ring-1 ring-primary bg-primary-light' : 'border-dashed border-border hover:border-primary'
+                }`}
+            >
+                <span className="w-10 h-10 rounded-full flex items-center justify-center bg-surface-hover text-text-secondary flex-shrink-0">
+                    <SlidersHorizontal size={20} aria-hidden="true" />
+                </span>
+                <span className="flex flex-col gap-0.5">
+                    <span className="font-semibold">{custom ? learningTime(params.minutes) : t('journey.choose.customTitle')}</span>
+                    <span className="text-xs text-text-secondary">{custom ? t(`journey.choose.minutesHint.${hintFor(params.minutes)}`) : t('journey.choose.customHint')}</span>
+                </span>
+            </button>
+        );
+    }
     return (
-        <form
-            className="flex items-center gap-2 -mt-2"
-            onSubmit={(event) => { event.preventDefault(); if (valid) go({ minutes }); }}
-        >
-            <label className="text-sm font-semibold text-text-secondary" htmlFor="custom-minutes">{t('journey.choose.customMinutes')}</label>
+        <div className="col-span-2 p-4 rounded-lg border border-primary ring-1 ring-primary bg-surface flex flex-col gap-3">
+            <div className="flex items-baseline justify-between gap-3">
+                <span className="font-serif text-3xl font-bold" aria-live="polite">{learningTime(value)}</span>
+                <span className="text-xs text-text-secondary">{t(`journey.choose.minutesHint.${hintFor(value)}`)}</span>
+            </div>
             <input
-                id="custom-minutes"
-                type="number"
-                inputMode="numeric"
-                min={5}
-                max={240}
+                type="range"
+                min={CUSTOM_MIN}
+                max={CUSTOM_MAX}
+                step={5}
                 value={value}
-                onChange={(event) => setValue(event.target.value)}
-                placeholder="30"
-                className={`w-20 h-10 px-3 rounded-md border bg-surface text-sm text-center ${custom ? 'border-primary ring-1 ring-primary' : 'border-border'}`}
+                onChange={(event) => setValue(Number(event.target.value))}
+                aria-label={t('journey.choose.customTitle')}
+                className="w-full accent-primary h-6"
             />
-            <span className="text-sm text-text-secondary">{t('journey.choose.minutesUnit')}</span>
-            <Button type="submit" variant="ghost" disabled={!valid}>{t('journey.choose.customMinutesSet')}</Button>
-        </form>
+            <div className="flex justify-between text-xs text-text-muted -mt-2">
+                <span>{learningTime(CUSTOM_MIN)}</span>
+                <span>{learningTime(CUSTOM_MAX)}</span>
+            </div>
+            <div className="flex items-center gap-2">
+                <Button className="flex-1" onClick={() => { setOpen(false); go({ minutes: value }); }}>{t('journey.choose.customMinutesSet')}</Button>
+                <Button variant="ghost" onClick={() => setOpen(false)}>{t('common.cancel')}</Button>
+            </div>
+        </div>
     );
 }
 
@@ -274,8 +306,8 @@ function TimeStep({ params, go }) {
                         onClick={() => go({ minutes })}
                     />
                 ))}
+                <CustomMinutesCard params={params} go={go} />
             </div>
-            <CustomMinutes params={params} go={go} />
             <h2 className="font-serif text-2xl font-bold mt-2">{t('journey.choose.deadlineTitle')}</h2>
             <div className="flex flex-wrap gap-2">
                 {deadlines.map((deadline) => (

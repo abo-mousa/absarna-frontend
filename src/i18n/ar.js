@@ -1910,8 +1910,8 @@ export const ar = {
         },
         choose: {
             aboutMinutesADay: 'نحو {minutes} في اليوم',
-            customMinutes: 'أو مدة أخرى:',
-            minutesUnit: 'دقيقة',
+            customTitle: 'مدة أخرى',
+            customHint: 'اختر بنفسك، من ٥ دقائق إلى ساعتين',
             customMinutesSet: 'اعتمدها',
             pace: { today: 'اليوم', deadline: 'موعدك {date}' },
             groupIslamic: 'في العلوم الشرعية',
