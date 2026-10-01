@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { JourneyContext } from './journeyContext';
 import { useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { useSignInPrompt } from '@/contexts/SignInPromptContext';
@@ -40,13 +41,23 @@ export function JourneyProvider({ children }) {
     const { promptSignIn } = useSignInPrompt();
     const [dialog, setDialog] = useState(null);
 
-    const openGoal = useCallback((prefill = null) => {
+    const navigate = useNavigate();
+    /**
+     * With a target (a programme, a book, a habit, a proposal) the dialog opens on how much; with
+     * nothing, choosing WHAT is a page of its own (`/journey/choose`), not a first step squeezed
+     * into a dialog. `onCreated` runs once the goal exists — the choosing page goes to «طريقي».
+     */
+    const openGoal = useCallback((prefill = null, { onCreated = null } = {}) => {
         if (!token) {
             promptSignIn('goal');
             return;
         }
-        setDialog({ prefill });
-    }, [token, promptSignIn]);
+        if (!prefill?.kind) {
+            navigate('/journey/choose');
+            return;
+        }
+        setDialog({ prefill, onCreated });
+    }, [token, promptSignIn, navigate]);
     const editGoal = useCallback((goal) => setDialog({ goal }), []);
     const value = useMemo(() => ({ openGoal, editGoal }), [openGoal, editGoal]);
 
@@ -62,11 +73,12 @@ export function JourneyProvider({ children }) {
                                 onClose={() => setDialog(null)}
                                 goal={dialog.goal || null}
                                 prefill={dialog.prefill || null}
+                                onCreated={dialog.onCreated || null}
                                 unverified={user?.emailVerified === false}
                             />
                         </Suspense>
                     )}
-                    <ProgressMoments onNextGoal={() => setDialog({ prefill: null })} />
+                    <ProgressMoments onNextGoal={() => navigate('/journey/choose')} />
                 </>
             )}
         </JourneyContext.Provider>

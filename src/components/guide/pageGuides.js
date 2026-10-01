@@ -60,7 +60,7 @@ export const PAGE_GUIDES = {
         icon: Target,
         to: '/journey/goals',
         blocks: [
-            { key: 'create', type: 'steps', shots: ['dialog-target', 'dialog-amount', 'dialog-time', 'dialog-intention'], anchor: 'new-goal' },
+            { key: 'create', type: 'steps', shots: ['choose-start', 'dialog-amount', 'dialog-time', 'dialog-intention'], anchor: 'new-goal' },
             { key: 'makeWird', type: 'shot', shot: 'make-wird', marks: 1 },
             { key: 'goals', type: 'shot', shot: 'goal-card', marks: 6, anchor: 'goals', copyOf: 'journey' },
         ],

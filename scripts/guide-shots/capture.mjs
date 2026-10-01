@@ -177,18 +177,20 @@ const SHOTS = [
     },
     // A programme the demo reader has no goal for, or the button reads «في وِردك» instead.
     { name: 'make-wird', path: '/series/10', crop: 'div.bg-surface:has(> [data-guide="make-wird"])', marks: ['[data-guide="make-wird"]'] },
-    ...['target', 'amount', 'time', 'intention'].map((step, index) => ({
+    // «هدف جديد» opens the choosing page; what a goal pursues is chosen there, not in the dialog.
+    { name: 'choose-start', path: '/journey/choose', anchor: 'choose-start', marks: [] },
+    ...['amount', 'time', 'intention'].map((step, index) => ({
         name: `dialog-${step}`,
-        path: '/journey/goals',
+        path: '/journey/choose',
         crop: '[role="dialog"]',
         pad: 0,
         fixed: true,
         marks: [],
         prepare: async (page) => {
-            await page.locator('[data-guide="new-goal"] button').click();
-            await page.waitForTimeout(500);
             // A habit, never a real programme: the script walks the steps and never commits.
-            await page.locator('[role="dialog"] button').filter({ hasText: page.catalog.journey.habit.MINUTES }).click();
+            await page.locator('[data-guide="choose-habits"]').click();
+            await page.locator('[data-guide="habit-MINUTES"]').click();
+            await page.waitForTimeout(500);
             for (let i = 0; i < index; i++) {
                 await page.locator('[role="dialog"] button').filter({ hasText: new RegExp(`^${page.catalog.journey.dialog.next}$`) }).click();
                 await page.waitForTimeout(350);

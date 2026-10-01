@@ -79,7 +79,7 @@ function SubjectPicker({ value, onChange, inherited = null, label = null, id = '
     );
 }
 
-function PickerDialog({ value, onChoose, onClear, onClose }) {
+export function PickerDialog({ value, onChoose, onClear, onClose }) {
     // Opens on the fields, or straight on the current field's subjects when there is a choice to see.
     const [step, setStep] = useState(() => (value ? fieldOf(value)?.code || null : null));
     const [query, setQuery] = useState('');

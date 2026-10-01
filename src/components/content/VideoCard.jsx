@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Play, Eye, EyeOff, Trash2, Calendar, Loader2, AlertTriangle } from 'lucide-react';
-import { resolveMediaUrl, youtubeThumbnail } from '@/lib/media';
+import { resolveMediaUrl, videoPoster } from '@/lib/media';
 import { useConsent } from '@/contexts/ConsentContext';
 import { formatPublishDate, displayDate } from '@/lib/datetime';
 import Avatar from '../ui/Avatar';
@@ -28,23 +28,6 @@ import { videoKicker } from '@/lib/kicker';
 const META_GLYPH = 'w-5 flex justify-center flex-shrink-0';
 const META_ROW = 'flex items-center gap-1.5 text-xs max-w-full';
 
-function getThumbnail(video, youtubeAllowed) {
-    if (video.thumbnailUrl) {
-        // Returns null for an object key — an uploaded video has no thumbnail until a
-        // worker produces one, so the caller's placeholder is the correct state.
-        return resolveMediaUrl(video.thumbnailUrl);
-    }
-    // ONLY WITH CONSENT. This line is the busiest request to Google on the whole site: it fires
-    // from the reader's browser for every imported video on the home feed, in search and on every
-    // channel page, before anything has been clicked, carrying their IP address and user agent.
-    // Held back until they have said yes — the placeholder below is already the correct fallback,
-    // because an uploaded video has no thumbnail either until its transcode finishes.
-    //
-    // Note an owner's own poster is unaffected: it is served from our storage and is the branch
-    // above. A channel that uploads its own thumbnails looks identical either way.
-    if (video.sourceType === 'YOUTUBE' && youtubeAllowed) return youtubeThumbnail(video.sourceUrl);
-    return null;
-}
 
 // Percent watched, for the bar on the picture — the backend's fraction (the watch history's
 // `progress`), never a position divided by a length here. Hidden below 1% so a barely-started
@@ -81,7 +64,7 @@ function VideoCard({ video, onClick, isOwner, onToggleVisibility, onDelete, watc
     const navigate = useNavigate();
     const { youtubeAllowed } = useConsent();
     const [thumbnailFailed, setThumbnailFailed] = useState(false);
-    const thumbnail = thumbnailFailed ? null : getThumbnail(video, youtubeAllowed);
+    const thumbnail = thumbnailFailed ? null : videoPoster(video, youtubeAllowed);
     const watchedPercent = watchedPercentOf(watch);
     const finished = watch?.finished === true;
     // Null for everyone but the owner, and null for the owner too unless there is a verdict worth

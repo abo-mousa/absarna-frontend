@@ -9,6 +9,7 @@ import { useChannel } from '@/hooks/useChannels';
 import { useChannelYouTube } from '@/hooks/useChannelYouTube';
 import ChannelManageNav, { resolveTab } from '@/components/channel/ChannelManageNav';
 import AdoptionNotice from '@/components/channel/AdoptionNotice';
+import SubjectReviewNotice from '@/components/channel/SubjectReviewNotice';
 import { useAdoptionProgress } from '@/hooks/useChannelAdoption';
 import ChannelSettingsTab from '@/components/channel/tabs/ChannelSettingsTab';
 import VideosTab from '@/components/channel/tabs/VideosTab';
@@ -178,6 +179,11 @@ function ChannelManage() {
                                     { replace: true })}
                             />
                         )}
+
+                        {/* "We think this series is about X — is it?": asked here, above every tab,
+                            for the same reason as the notice above. */}
+                        {/* Keyed: its put-off state is per channel, read once when it mounts. */}
+                        <SubjectReviewNotice key={slug} slug={slug} />
 
                         {/* Every tab stays MOUNTED and is hidden rather than unmounted, and that is
                             load-bearing rather than tidy. A half-finished upload lives in its tab — the

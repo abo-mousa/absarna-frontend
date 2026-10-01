@@ -34,6 +34,7 @@ const Subscriptions = lazy(() => import('./pages/Subscriptions'));
 const Journey = lazy(() => import('./pages/Journey'));
 const JourneyIntro = lazy(() => import('./components/journey/JourneyIntro'));
 const JourneyGoals = lazy(() => import('./pages/JourneyGoals'));
+const JourneyChoose = lazy(() => import('./pages/JourneyChoose'));
 const JourneyGoal = lazy(() => import('./pages/JourneyGoal'));
 const JourneyMilestones = lazy(() => import('./pages/JourneyMilestones'));
 const JourneyRecord = lazy(() => import('./pages/JourneyRecord'));
@@ -293,6 +294,7 @@ function AppRoutes() {
                 {/* «طريقي», the progress tab (PROGRESS-AND-GOALS.md §7.1). */}
                 <Route path="/journey" element={<JourneyEntry />} />
                 <Route path="/journey/goals" element={<ProtectedRoute><JourneyGoals /></ProtectedRoute>} />
+                <Route path="/journey/choose" element={<ProtectedRoute><JourneyChoose /></ProtectedRoute>} />
                 <Route path="/journey/goals/:id" element={<ProtectedRoute><JourneyGoal /></ProtectedRoute>} />
                 <Route path="/journey/milestones" element={<ProtectedRoute><JourneyMilestones /></ProtectedRoute>} />
                 <Route path="/journey/record" element={<ProtectedRoute><JourneyRecord /></ProtectedRoute>} />

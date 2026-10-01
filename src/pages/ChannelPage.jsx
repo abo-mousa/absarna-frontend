@@ -21,6 +21,7 @@ import {
     useSubscriptionStatus,
 } from '../hooks/useChannels';
 import { useChannelSeries } from '../hooks/useSeries';
+import MakeWird from '../components/journey/MakeWird';
 import { useChannelClaim } from '../hooks/useChannelClaim';
 import { ClaimPanel } from '@/components/channel';
 import {
@@ -478,29 +479,35 @@ function ChannelPage() {
                             // `publiclyListed === false` reaches only the channel's owner: a series
                             // no visitor can see, marked the way a hidden video card is — dashed
                             // border and a badge — so it reads as hidden rather than as missing.
-                            <Link
+                            <div
                                 key={s.id}
-                                to={`/series/${s.id}`}
-                                className={`block bg-surface rounded-lg p-5 border shadow-sm hover:shadow-md transition-shadow ${
+                                className={`flex flex-col bg-surface rounded-lg border shadow-sm hover:shadow-md transition-shadow ${
                                     s.publiclyListed === false ? 'border-dashed border-border' : 'border-border-light'
                                 }`}
                             >
-                                <div className="flex items-center justify-between gap-2 mb-2">
-                                    <span className="flex items-center gap-2 text-primary font-semibold text-xs">
-                                        <Tv size={14} /> {t('series.badge')}
-                                    </span>
-                                    {s.publiclyListed === false && (
-                                        <span className="flex items-center gap-1 bg-black/70 text-white text-xs font-semibold px-2 py-0.5 rounded">
-                                            <EyeOff size={12} /> {t('series.hiddenBadge')}
+                                <Link to={`/series/${s.id}`} className="block p-5 pb-3 flex-1 hover:no-underline">
+                                    <div className="flex items-center justify-between gap-2 mb-2">
+                                        <span className="flex items-center gap-2 text-primary font-semibold text-xs">
+                                            <Tv size={14} /> {t('series.badge')}
                                         </span>
+                                        {s.publiclyListed === false && (
+                                            <span className="flex items-center gap-1 bg-black/70 text-white text-xs font-semibold px-2 py-0.5 rounded">
+                                                <EyeOff size={12} /> {t('series.hiddenBadge')}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <h3 dir="auto" className="text-base font-semibold mb-2 leading-snug line-clamp-2">{s.title}</h3>
+                                    {s.description && (
+                                        <p dir="auto" className="text-text-secondary text-sm leading-relaxed line-clamp-2 mb-2">{s.description}</p>
                                     )}
-                                </div>
-                                <h3 dir="auto" className="text-base font-semibold mb-2 leading-snug line-clamp-2">{s.title}</h3>
-                                {s.description && (
-                                    <p dir="auto" className="text-text-secondary text-sm leading-relaxed line-clamp-2 mb-2">{s.description}</p>
+                                    <span className="text-xs text-text-muted">{t('common.videoCount', { count: s.contentCount ?? 0 })}</span>
+                                </Link>
+                                {/* A reader choosing what to learn meets the programme here first, so the
+                                    offer is on the card itself — beside the link, never inside it. */}
+                                {s.publiclyListed !== false && (
+                                    <MakeWird seriesId={s.id} title={s.title} className="px-5 pb-4" />
                                 )}
-                                <span className="text-xs text-text-muted">{t('common.videoCount', { count: s.contentCount ?? 0 })}</span>
-                            </Link>
+                            </div>
                         ))}
                     </div>
 

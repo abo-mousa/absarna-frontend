@@ -60,6 +60,13 @@ export const queryKeys = {
     // progress report or a goal change invalidates exactly what it moves.
     goals: (scope) => ['goals', scope],
     goal: (id, scope) => ['goals', 'one', id, scope],
+    // Choosing a goal (`JourneyChoose`). Under `goals`, so starting one invalidates them all: what
+    // the reader now pursues leaves every suggestion, proposal and shelf at once.
+    goalSuggestions: (field, scope) => ['goals', 'suggestions', field, scope],
+    goalTopics: (scope) => ['goals', 'topics', scope],
+    goalProposals: (subject, minutes, deadline, page, scope) => ['goals', 'proposals', subject, minutes, deadline, page, scope],
+    goalChannels: (field, scope) => ['goals', 'channels', field, scope],
+    goalSearch: (q, scope) => ['goals', 'search', q, scope],
     progressOverview: (scope) => ['progress', 'overview', scope],
     progressMilestones: (scope) => ['progress', 'milestones', scope],
     progressCompletions: (scope) => ['progress', 'completions', scope],
@@ -96,6 +103,8 @@ export const queryKeys = {
     channelSeriesManagePage: (slug, page, scope) => ['channel-series-manage', slug, 'page', page, scope],
     channelComments: (slug, size, scope) => ['channel-comments', slug, size, scope],
     channelYouTube: (slug, scope) => ['channel-youtube', slug, scope],
+    // The owner's review of inferred subjects; under `channel-series-manage` so a series edit refreshes it.
+    subjectReview: (slug, scope) => ['channel-series-manage', slug, 'subject-review', scope],
     // The adoption progress and one page of what is awaiting it, under one prefix so confirming a
     // page invalidates both — the counts and the queue always move together, and a panel showing
     // "1,847 remaining" beside a list that has already lost them is the one state to avoid.

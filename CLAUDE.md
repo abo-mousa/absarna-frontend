@@ -458,6 +458,23 @@ Path alias `@/` → `src/`. Import from a folder's `index.js` barrel, not the in
     `lib/slots.js`, `useNow`): Today is cached until the day ends and the slot moves under it. A
     portion at its **minimum is `kept`, not `done`** — the day counts and the rest is still offered;
     only `FULL`/`MADE_UP` is done. Nothing a reader still has to do disappears, and nothing is red.
+  - **Choosing WHAT a goal pursues is a page, `/journey/choose` (`pages/JourneyChoose`,
+    `components/journey/choose`), not the dialog's first step.** Search alone asked a reader who
+    came to be shown what is here to already know, and that is where goals were abandoned.
+    `openGoal()` with no target navigates there; with one (a programme, a book, a habit, a proposal)
+    it opens the dialog on «كم», with the target pinned at the top. Two ways in: «ساعدني أختار» (a
+    field, then a subject **only when the field has two or more with content**, then minutes and a
+    deadline → three ready goals from `GET /api/user/goals/proposals`, paced from measured episode
+    length, the deadline carried into the dialog) and «أتصفّح بنفسي» (the backend's shelves,
+    channels with their top programmes inline, search). **Every card opens `PreviewSheet`, and its
+    «اجعله وِردي» is the one commit button of the whole flow.** Every step is in the URL, so Back walks
+    back through the questions and out of a channel; the shortlist («قائمتي», at most three) is page
+    state and deliberately not saved. Nothing here ranks by the reader's history — the backend
+    leaves out what they started, and that is all.
+  - **Owners are asked about inferred subjects on the dashboard** (`channel/SubjectReviewNotice`,
+    above every tab): one series at a time, «صحيح» / «مجال آخر» (the same `PickerDialog` the series
+    form uses) / «بلا مجال» / «تخطَّ». Unlike `AdoptionNotice` it can be put off — until more series
+    are waiting than when it was — and it shows nothing while the backend's inference is in dry-run.
   - **One goal dialog for the whole app** (`JourneyProvider`, `useJourney().openGoal(prefill)`),
     which also listens for what a progress report answers (`lib/progressEvents.js`): the finishing
     moment once per completion (ids remembered in `safeStorage`) and a toast per filled portion.

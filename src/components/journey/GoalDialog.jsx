@@ -1,14 +1,9 @@
 import { useMemo, useState } from 'react';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { Search } from 'lucide-react';
-import api from '@/lib/api/client';
-import { bookPortion } from '@/lib/journey';
-import { Modal, Button } from '../ui';
+import { Modal, Button, KhatamStar } from '../ui';
 import { EmailVerificationNotice } from '../auth';
 import { Chips, Stepper } from './controls';
 import SacredText from './SacredText';
 import { useCreateGoal, useGoalPreview, useUpdateGoal } from '@/hooks/useGoals';
-import { useToday } from '@/hooks/useToday';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useToast } from '@/contexts/ToastContext';
 import { hijriDeadlines } from '@/lib/hijriSeasons';
@@ -29,11 +24,6 @@ const ANCHORS = ['FAJR', 'DHUHR', 'ASR', 'MAGHRIB', 'ISHA', 'MORNING_ADHKAR', 'C
 const PRAYER_SLOT = { FAJR: 'GHADWA', MORNING_ADHKAR: 'GHADWA', DHUHR: 'RAWHA', ASR: 'RAWHA', MAGHRIB: 'DULJA', ISHA: 'DULJA' };
 /** How the time step refines a part of the day: after a prayer or a habit, at an hour, or not at all. */
 const whenOf = (form) => (form.atTime ? 'HOUR' : form.anchor || null);
-const HABITS = [
-    { kind: 'HABIT', measure: 'MINUTES', amount: 15 },
-    { kind: 'HABIT', measure: 'EPISODES', amount: 1 },
-    { kind: 'HABIT', measure: 'PAGES', amount: 5 },
-];
 
 /** The form's starting point: an existing goal, a proposal («اجعله وِردًا», the first-portion card), or nothing. */
 function initialForm(goal, prefill) {
@@ -68,7 +58,9 @@ function initialForm(goal, prefill) {
 /**
  * «اعقد العزم» — starting or editing a goal (PROGRESS-AND-GOALS.md §7.3, the `Wird` board).
  *
- * <p>Steps, each one screen: what (skipped when the goal came from a programme or book), how much
+ * <p>What the goal pursues is chosen before the dialog opens — on `/journey/choose`, a programme
+ * or book page's «اجعله وِردًا», or a proposal — and stays pinned at the top. Steps, each one
+ * screen: how much
  * (with the minimum, the days a week and a deadline, and a live preview of where it leads), when
  * (a daily portion only), and why — then the whole commitment read back as one sentence. Each
  * step carries at most one text, at the moment it speaks to (§8.1): consistency beside the
@@ -78,7 +70,7 @@ function initialForm(goal, prefill) {
  * <p>An unverified reader gets the verification notice instead of a form that fails on its last
  * step (§7.10); the backend's refusal is the one that counts.
  */
-function GoalDialog({ open, onClose, goal = null, prefill = null, unverified = false }) {
+function GoalDialog({ open, onClose, goal = null, prefill = null, unverified = false, onCreated = null }) {
     const editing = !!goal;
     return (
         <Modal
@@ -89,21 +81,20 @@ function GoalDialog({ open, onClose, goal = null, prefill = null, unverified = f
         >
             {unverified && !editing
                 ? <EmailVerificationNotice message={t('journey.dialog.verifyFirst')} />
-                : open && <GoalForm key={goal?.id ?? JSON.stringify(prefill)} goal={goal} prefill={prefill} onDone={onClose} />}
+                : open && <GoalForm key={goal?.id ?? JSON.stringify(prefill)} goal={goal} prefill={prefill} onDone={onClose} onCreated={onCreated} />}
         </Modal>
     );
 }
 
-function GoalForm({ goal, prefill, onDone }) {
+function GoalForm({ goal, prefill, onDone, onCreated }) {
     const editing = !!goal;
     const [form, setForm] = useState(() => initialForm(goal, prefill));
     const set = (patch) => setForm((current) => ({ ...current, ...patch }));
     const steps = useMemo(() => [
-        ...(!editing && !prefill?.kind ? ['target'] : []),
         'amount',
         ...(form.period === 'DAY' ? ['time'] : []),
         'intention',
-    ], [editing, prefill, form.period]);
+    ], [form.period]);
     const [stepIndex, setStepIndex] = useState(0);
     const step = steps[Math.min(stepIndex, steps.length - 1)];
     const last = stepIndex >= steps.length - 1;
@@ -130,7 +121,7 @@ function GoalForm({ goal, prefill, onDone }) {
     }), [form.kind, form.targetId, form.measure, form.period, form.amount, form.minimumAmount, form.daysPerWeek, form.deadline, daily]), 300);
     const preview = useGoalPreview(body, !!body.kind);
 
-    const canContinue = (step !== 'target' || !!form.kind) && (step !== 'time' || form.when !== 'HOUR' || !!form.atTime);
+    const canContinue = step !== 'time' || form.when !== 'HOUR' || !!form.atTime;
 
     const submit = () => {
         setError(null);
@@ -173,13 +164,24 @@ function GoalForm({ goal, prefill, onDone }) {
             period: form.period,
             deadline: form.deadline || undefined,
         }, {
-            onSuccess: () => { showToast(t('journey.dialog.created'), 'success'); onDone(); },
+            onSuccess: () => { showToast(t('journey.dialog.created'), 'success'); onDone(); onCreated?.(); },
             onError,
         });
     };
 
     return (
         <div className="flex flex-col gap-6">
+            {/* What is being committed to stays in view through every step: the reader chose it on
+                the choosing page, and «كم» and «متى» mean nothing without it. */}
+            {!editing && form.kind !== 'HABIT' && form.title && (
+                <div className="flex items-center gap-3 rounded-lg bg-text-primary text-bg px-4 py-3">
+                    <KhatamStar className="w-8 h-8 text-gold flex-shrink-0" strokeWidth={8} />
+                    <div className="min-w-0">
+                        <span className="block text-xs font-bold text-gold">{t('journey.dialog.yourWird')}</span>
+                        <span dir="auto" className="block font-semibold truncate">{form.title}</span>
+                    </div>
+                </div>
+            )}
             <ol className="flex items-center gap-2" aria-label={t('journey.dialog.stepsLabel')}>
                 {steps.map((name, index) => (
                     <li key={name} className="flex-1" aria-current={index === stepIndex ? 'step' : undefined}>
@@ -191,7 +193,6 @@ function GoalForm({ goal, prefill, onDone }) {
                 ))}
             </ol>
 
-            {step === 'target' && <TargetStep form={form} set={set} />}
             {step === 'amount' && <AmountStep form={form} set={set} editing={editing} preview={preview} />}
             {step === 'time' && <TimeStep form={form} set={set} />}
             {step === 'intention' && <IntentionStep form={form} set={set} />}
@@ -211,127 +212,6 @@ function GoalForm({ goal, prefill, onDone }) {
                     <Button onClick={() => setStepIndex(stepIndex + 1)} disabled={!canContinue}>{t('journey.dialog.next')}</Button>
                 )}
             </div>
-        </div>
-    );
-}
-
-/** What the goal is for: a programme or book the reader has started, or a habit of learning. */
-function TargetStep({ form, set }) {
-    const today = useToday();
-    const [query, setQuery] = useState('');
-    const q = useDebouncedValue(query.trim(), 300);
-    // Any programme or book on the site, not only what the reader started (product owner,
-    // 2026-09-28). Programmes come from the site's own search — its visibility rules included —
-    // grouped by series; books from the books listing's search.
-    const found = useQuery({
-        queryKey: ['goal-target-search', q],
-        enabled: q.length >= 2,
-        staleTime: 60_000,
-        placeholderData: keepPreviousData,
-        queryFn: async () => {
-            const [videos, books] = await Promise.all([
-                api.get('/search', { params: { q, size: 24 } }).then((res) => res.data?.content || []),
-                api.get('/books', { params: { search: q, size: 6 } }).then((res) => res.data?.content || []),
-            ]);
-            const series = new Map();
-            for (const video of videos) {
-                if (video.seriesId && !series.has(video.seriesId)) {
-                    series.set(video.seriesId, {
-                        kind: 'FINISH_SERIES', targetId: video.seriesId, title: video.seriesTitle || video.title,
-                        channel: video.channelName, amount: 1,
-                    });
-                }
-            }
-            return [
-                ...[...series.values()].slice(0, 8),
-                ...books.map((book) => ({
-                    kind: 'FINISH_BOOK', targetId: book.id, title: book.title, amount: bookPortion(book.pages, 0),
-                })),
-            ];
-        },
-    });
-    const started = [
-        ...(today.data?.continueWatching || [])
-            .filter((item) => item.next?.seriesId)
-            .map((item) => ({ kind: 'FINISH_SERIES', targetId: item.next.seriesId, title: item.next.seriesTitle, amount: 1 })),
-        ...(today.data?.continueReading || [])
-            .filter((entry) => entry.book)
-            .map((entry) => {
-                const left = (entry.book.pages || 0) - (entry.currentPage || 0);
-                return { kind: 'FINISH_BOOK', targetId: entry.bookId, title: entry.book.title, amount: Math.max(1, Math.ceil(left / 30)) };
-            }),
-    ];
-    const pick = (option) => set({
-        kind: option.kind,
-        targetId: option.targetId ?? null,
-        title: option.title || '',
-        measure: option.measure || (option.kind === 'FINISH_BOOK' ? 'PAGES' : 'EPISODES'),
-        amount: option.amount,
-        minimumAmount: 1,
-        period: 'DAY',
-        deadline: null,
-    });
-    const selected = (option) => form.kind === option.kind
-        && (option.kind === 'HABIT' ? form.measure === option.measure : form.targetId === option.targetId);
-    const card = (option, label, hint) => (
-        <button
-            key={`${option.kind}-${option.targetId ?? option.measure}`}
-            type="button"
-            role="radio"
-            aria-checked={selected(option)}
-            onClick={() => pick(option)}
-            className={`w-full text-start px-4 py-3 rounded-md border transition-colors ${
-                selected(option) ? 'border-primary bg-primary-light' : 'border-border bg-surface hover:border-primary'
-            }`}
-        >
-            <span dir="auto" className="block font-semibold text-text-primary truncate">{label}</span>
-            <span className="block text-xs text-text-muted mt-0.5">{hint}</span>
-        </button>
-    );
-    const searching = q.length >= 2;
-    const results = found.data || [];
-    return (
-        <div className="flex flex-col gap-5">
-            <label className="flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-bg focus-within:border-primary">
-                <Search size={16} aria-hidden="true" className="text-text-muted flex-shrink-0" />
-                <input
-                    type="search"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder={t('journey.dialog.searchTarget')}
-                    aria-label={t('journey.dialog.searchTarget')}
-                    className="flex-1 bg-transparent outline-none text-text-primary"
-                />
-            </label>
-            {searching ? (
-                <div role="radiogroup" className="flex flex-col gap-2">
-                    {found.isFetching && !results.length && <p className="text-sm text-text-muted">{t('common.loading')}</p>}
-                    {!found.isFetching && !results.length && <p className="text-sm text-text-muted">{t('journey.dialog.noTargets')}</p>}
-                    {results.map((option) => card(option, option.title, [
-                        t(option.kind === 'FINISH_SERIES' ? 'journey.dialog.finishProgramme' : 'journey.dialog.finishBook'),
-                        option.channel,
-                    ].filter(Boolean).join(' · ')))}
-                </div>
-            ) : (
-            <>
-            {started.length > 0 && (
-                <div>
-                    <p className="text-sm font-semibold mb-2">{t('journey.dialog.startedTitle')}</p>
-                    <div role="radiogroup" className="flex flex-col gap-2">
-                        {started.map((option) => card(option, option.title,
-                            t(option.kind === 'FINISH_SERIES' ? 'journey.dialog.finishProgramme' : 'journey.dialog.finishBook')))}
-                    </div>
-                </div>
-            )}
-            <div>
-                <p className="text-sm font-semibold mb-2">{started.length ? t('journey.dialog.habitTitle') : t('journey.dialog.habitTitleAlone')}</p>
-                <div role="radiogroup" className="flex flex-col gap-2">
-                    {HABITS.map((option) => card(option, t(`journey.habit.${option.measure}`),
-                        t('journey.dialog.habitHint', { amount: amountText(option.measure, option.amount) })))}
-                </div>
-            </div>
-            </>
-            )}
         </div>
     );
 }

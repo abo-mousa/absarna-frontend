@@ -103,3 +103,22 @@ export const durationToSeconds = (duration) => {
     if (parts.length === 0 || parts.some((part) => Number.isNaN(part))) return null;
     return parts.reduce((total, part) => total * 60 + part, 0);
 };
+
+/**
+ * A video's poster, or null for the placeholder: the backend's ranked `thumbnailUrl` when there is
+ * one, else — ONLY WITH CONSENT — the YouTube still for an imported video.
+ *
+ * <p>The consent half is the load-bearing one: this is the busiest request to Google on the whole
+ * site, fired from the reader's browser for every imported card on the home feed, in search and on
+ * every channel page, before anything has been clicked, carrying their IP address and user agent.
+ * The placeholder is already the correct fallback, because an uploaded video has no poster either
+ * until its transcode finishes. An owner's own poster is served from our storage and is the first
+ * branch, so a channel that uploads its own looks identical either way.
+ */
+export function videoPoster(video, youtubeAllowed) {
+    if (!video) return null;
+    // Null for an object key — an upload has no poster until a worker produces one.
+    if (video.thumbnailUrl) return resolveMediaUrl(video.thumbnailUrl);
+    if (video.sourceType === 'YOUTUBE' && youtubeAllowed) return youtubeThumbnail(video.sourceUrl);
+    return null;
+}
