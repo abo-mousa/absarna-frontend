@@ -71,17 +71,15 @@ function MoonMonth({ days, dayProps, value, today, allowed, marks, white, title,
                 <polygon points={starPoints(C, C - 44, 6.5)} className="fill-gold stroke-gold-ink" strokeWidth={0.6} />
                 {turned != null ? (
                     <>
-                        <text x={C} y={C - 24} textAnchor="middle" className="fill-gold-ink text-[10px] font-sans font-bold">{t('calendar.thisTurn')}</text>
-                        <text x={C} y={C - 2} textAnchor="middle" className="fill-primary-dark dark:fill-primary text-[17px] font-sans font-bold">
+                        <text x={C} y={C - 24} textAnchor="middle" className="fill-gold-ink text-[10.5px] font-sans font-bold">{t('calendar.thisTurn')}</text>
+                        <text x={C} y={C + 2} textAnchor="middle" className="fill-gold-ink text-[22px] font-sans font-bold">
                             {turned === 0 ? '0' : `${turned > 0 ? '+' : '−'}${countOf('journey.units.DAYS', Math.abs(turned))}`}
                         </text>
-                        <text x={C} y={C + 15} textAnchor="middle" className="fill-text-secondary text-[9px] font-sans">{formatDay(atMarker, { day: 'numeric', month: 'long' }, HIJRI)}</text>
                     </>
                 ) : chosen ? (
                     <>
-                        <text x={C} y={C - 22} textAnchor="middle" className="fill-gold-ink text-[10px] font-sans font-bold">{title}</text>
-                        <text x={C} y={C + 10} textAnchor="middle" className="fill-primary-dark dark:fill-primary text-[36px] font-numeral font-bold">{formatDay(chosen, { day: 'numeric' }, HIJRI)}</text>
-                        <text x={C} y={C + 25} textAnchor="middle" className="fill-text-secondary text-[9px] font-sans">{formatDay(chosen, { weekday: 'long', day: 'numeric', month: 'long' })}</text>
+                        <text x={C} y={C - 28} textAnchor="middle" className="fill-gold-ink text-[10.5px] font-sans font-bold">{title}</text>
+                        <text x={C} y={C + 4} textAnchor="middle" className="fill-primary-dark dark:fill-primary text-[34px] font-numeral font-bold">{formatDay(chosen, { day: 'numeric' }, HIJRI)}</text>
                     </>
                 ) : (
                     <text x={C} y={C + 6} textAnchor="middle" className="fill-primary-dark dark:fill-primary text-[15px] font-serif font-bold">{title}</text>
@@ -89,8 +87,8 @@ function MoonMonth({ days, dayProps, value, today, allowed, marks, white, title,
                 {/* how far ahead, right under the night it is about */}
                 {ahead && (
                     <>
-                        <text x={C} y={C + 41} textAnchor="middle" className="fill-primary-dark dark:fill-primary text-[10.5px] font-sans font-bold">{ahead.main}</text>
-                        {ahead.days && <text x={C} y={C + 53} textAnchor="middle" className="fill-text-secondary text-[8px] font-sans">{ahead.days}</text>}
+                        <text x={C} y={C + 27} textAnchor="middle" className="fill-primary-dark dark:fill-primary text-[16px] font-sans font-bold">{ahead.main}</text>
+                        {ahead.days && <text x={C} y={C + 44} textAnchor="middle" className="fill-text-secondary text-[11px] font-sans font-semibold">{ahead.days}</text>}
                     </>
                 )}
             </svg>

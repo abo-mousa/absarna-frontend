@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { daysBetween } from '@/lib/dayFormat';
 import { partsOf } from '@/lib/calendarMonth';
-import { advance, angleAt, dayAtAngle, turnBetween } from '@/lib/ringTurn';
+import { FLING_MAX, FLING_MIN, advance, angleAt, coast, dayAtAngle, flingVelocity, turnBetween } from '@/lib/ringTurn';
 
 const SETTLE_MS = 220;
 const TAP_PX = 6;
@@ -31,6 +31,11 @@ const reducedMotion = () => {
  * chooses the day tapped and turns the ring to bring it to the marker; a choice made elsewhere —
  * the keys, the month arrows — turns it there too. A light buzz per day, a stronger one per month.
  *
+ * <p>A strong pull, let go, keeps the ring going — coasting at the speed it was turned and slowing
+ * by friction (`coast`), so the strength of the pull decides how far: the days count up as it
+ * goes, it stops at `allowed`'s end, and it chooses only once it has come to rest. A touch while
+ * it coasts stops it where it is. Under reduced motion it does not coast.
+ *
  * <p>A press inside the plate, outside the ring, or on a control of its own (`data-ring-skip`)
  * is not a turn. The click a day's button would get after a turn is swallowed: the turn has chosen.
  *
@@ -46,12 +51,17 @@ export function useRotatingRing({ ref, days, shown, allowed, calendar, onLive, o
     const frame = useRef(0);
     const swallow = useRef(false);
     const [turned, setTurned] = useState(null);
+    // The ring coasting after a fling: its speed (days/ms) and where the turn began.
+    const coasting = useRef(null);
+    // What a coasting frame needs, as of the latest render — it runs between renders.
+    const latest = useRef(null);
+    latest.current = { allowed, calendar, onLive, onCommit };
     // A settle still running when the ring goes (the goal dialog closes on a choice) stops with it.
     useEffect(() => () => cancelAnimationFrame(frame.current), []);
 
     // Settle on `anchor`: from wherever the ring stands now, turning the short way to it.
     useEffect(() => {
-        if (drag.current) return undefined;
+        if (drag.current || coasting.current) return undefined;
         const from = days.indexOf(posRef.current.iso);
         const to = days.indexOf(anchor);
         const start = from >= 0 && to >= 0 ? from + posRef.current.frac - to : 0;
@@ -84,8 +94,44 @@ export function useRotatingRing({ ref, days, shown, allowed, calendar, onLive, o
         const { angle, r } = read(event);
         if (r < 0.5 || r > 1.02) return;
         cancelAnimationFrame(frame.current);
+        // A touch while it coasts stops it, where it is; the turn's count carries on from its start.
+        const stopped = coasting.current;
+        coasting.current = null;
         event.currentTarget.setPointerCapture?.(event.pointerId);
-        drag.current = { last: angle, x: event.clientX, y: event.clientY, moved: false, startIso: posRef.current.iso };
+        drag.current = {
+            last: angle, x: event.clientX, y: event.clientY, moved: false, samples: [],
+            stopped: !!stopped, startIso: stopped ? stopped.startIso : posRef.current.iso,
+        };
+    };
+
+    // One frame of a coast: the days the friction leaves, a buzz per day, and at rest — or at
+    // the last day that may be chosen — the choice, and the settle onto it.
+    const coastFrame = (now) => {
+        const c = coasting.current;
+        if (!c) return;
+        const { allowed: may, calendar: cal, onLive: live, onCommit: commit } = latest.current;
+        const dt = Math.min(48, now - c.last);
+        c.last = now;
+        const step = coast(c.v, dt);
+        c.v = step.v;
+        const prev = posRef.current;
+        const next = advance(prev, step.days, may);
+        const blocked = next.frac === 0 && next.iso === prev.iso && Math.abs(prev.frac + step.days) > 0.5;
+        posRef.current = next;
+        setPos(next);
+        if (next.iso !== prev.iso) {
+            const newMonth = partsOf(next.iso, cal).month !== partsOf(prev.iso, cal).month;
+            vibrate(newMonth ? 18 : 4);
+            setTurned(daysBetween(c.startIso, next.iso));
+            live(next.iso);
+        }
+        if (blocked || Math.abs(c.v) < FLING_MIN / 2) {
+            coasting.current = null;
+            setTurned(null);
+            commit(next.iso);
+            return;
+        }
+        frame.current = requestAnimationFrame(coastFrame);
     };
 
     const onPointerMove = (event) => {
@@ -97,7 +143,10 @@ export function useRotatingRing({ ref, days, shown, allowed, calendar, onLive, o
         const delta = turnBetween(d.last, angle);
         d.last = angle;
         const prev = posRef.current;
-        const next = advance(prev, (delta * days.length) / 360, allowed);
+        const turnedDays = (delta * days.length) / 360;
+        d.samples.push({ t: performance.now(), days: turnedDays });
+        if (d.samples.length > 8) d.samples.shift();
+        const next = advance(prev, turnedDays, allowed);
         posRef.current = next;
         setPos(next);
         if (next.iso !== prev.iso) {
@@ -112,10 +161,19 @@ export function useRotatingRing({ ref, days, shown, allowed, calendar, onLive, o
         const d = drag.current;
         if (!d) return;
         drag.current = null;
-        setTurned(null);
         swallow.current = true;
         setTimeout(() => { swallow.current = false; }, 0);
-        if (!d.moved) {
+        // A fling: let it coast, choosing when it comes to rest.
+        if (d.moved && !reducedMotion()) {
+            const v = Math.max(-FLING_MAX, Math.min(FLING_MAX, flingVelocity(d.samples, performance.now())));
+            if (Math.abs(v) >= FLING_MIN) {
+                coasting.current = { v, last: performance.now(), startIso: d.startIso };
+                frame.current = requestAnimationFrame(coastFrame);
+                return;
+            }
+        }
+        setTurned(null);
+        if (!d.moved && !d.stopped) {
             // A tap: the day nearest it, turned to the marker.
             const { angle } = read(event);
             const rot = Math.max(0, days.indexOf(posRef.current.iso)) + posRef.current.frac;

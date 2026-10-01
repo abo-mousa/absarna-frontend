@@ -21,7 +21,6 @@ function AstrolabeMonth({ days, dayProps, value, today, allowed, marks, calendar
     const n = days.length;
     const step = 360 / n;
     const at = (i) => dayAngle(i, rot, n);
-    const atMarker = days[((Math.round(rot) % n) + n) % n];
     const chosen = value && days.includes(value) ? value : null;
     return (
         <div ref={ref} {...handlers} className="relative w-full max-w-[340px] aspect-square mx-auto touch-none cursor-grab active:cursor-grabbing">
@@ -65,20 +64,19 @@ function AstrolabeMonth({ days, dayProps, value, today, allowed, marks, calendar
                 <polygon points={starPoints(C, C - 98, 7)} className="fill-gold stroke-gold-ink" strokeWidth={0.8} />
                 <path d={`M${C - 7},${C - 141} L${C + 7},${C - 141} L${C},${C - 132} Z`} className="fill-gold stroke-gold-ink" strokeWidth={0.8} />
 
-                <circle cx={C} cy={C} r={56} className="fill-surface stroke-gold" strokeWidth={1.2} />
-                <circle cx={C} cy={C} r={52} fill="none" className="stroke-gold-ink" strokeWidth={0.5} strokeDasharray="1.5 2.5" opacity={0.6} />
+                <circle cx={C} cy={C} r={62} className="fill-surface stroke-gold" strokeWidth={1.2} />
+                <circle cx={C} cy={C} r={58} fill="none" className="stroke-gold-ink" strokeWidth={0.5} strokeDasharray="1.5 2.5" opacity={0.6} />
                 {turned != null ? (
                     <>
-                        <text x={C} y={C - 26} textAnchor="middle" className="fill-gold-ink text-[8.5px] font-sans font-bold">{t('calendar.thisTurn')}</text>
-                        <text x={C} y={C - 7} textAnchor="middle" className="fill-primary-dark dark:fill-primary text-[15px] font-sans font-bold">
+                        <text x={C} y={C - 32} textAnchor="middle" className="fill-gold-ink text-[9.5px] font-sans font-bold">{t('calendar.thisTurn')}</text>
+                        <text x={C} y={C - 8} textAnchor="middle" className="fill-gold-ink text-[19px] font-sans font-bold">
                             {turned === 0 ? '0' : `${turned > 0 ? '+' : '−'}${countOf('journey.units.DAYS', Math.abs(turned))}`}
                         </text>
-                        <text x={C} y={C + 8} textAnchor="middle" className="fill-text-secondary text-[8px] font-sans">{formatDay(atMarker, { day: 'numeric', month: 'long' }, calendar)}</text>
                     </>
                 ) : (
                     <>
-                        <text x={C} y={C - 26} textAnchor="middle" className="fill-gold-ink text-[9px] font-sans font-bold">{title}</text>
-                        <text x={C} y={C + 4} textAnchor="middle" className="fill-primary-dark dark:fill-primary text-[30px] font-numeral font-bold">
+                        <text x={C} y={C - 34} textAnchor="middle" className="fill-gold-ink text-[9.5px] font-sans font-bold">{title}</text>
+                        <text x={C} y={C - 4} textAnchor="middle" className="fill-primary-dark dark:fill-primary text-[30px] font-numeral font-bold">
                             {chosen ? formatDay(chosen, { day: 'numeric' }, calendar) : '—'}
                         </text>
                     </>
@@ -86,8 +84,8 @@ function AstrolabeMonth({ days, dayProps, value, today, allowed, marks, calendar
                 {/* how far ahead, right under the day it is about */}
                 {ahead && (
                     <>
-                        <text x={C} y={C + 24} textAnchor="middle" className="fill-primary-dark dark:fill-primary text-[9.5px] font-sans font-bold">{ahead.main}</text>
-                        {ahead.days && <text x={C} y={C + 36} textAnchor="middle" className="fill-text-secondary text-[7.5px] font-sans">{ahead.days}</text>}
+                        <text x={C} y={C + 20} textAnchor="middle" className="fill-primary-dark dark:fill-primary text-[15px] font-sans font-bold">{ahead.main}</text>
+                        {ahead.days && <text x={C} y={C + 36} textAnchor="middle" className="fill-text-secondary text-[10px] font-sans font-semibold">{ahead.days}</text>}
                     </>
                 )}
             </svg>

@@ -1386,6 +1386,7 @@ export const en = {
     },
 
     calendar: {
+        about: 'about {duration}',
         thisTurn: 'This turn',
         ahead: 'in {duration}',
         turnHint: 'Turn the ring: the day under the gold marker is your choice, and turning on carries you into the next month',

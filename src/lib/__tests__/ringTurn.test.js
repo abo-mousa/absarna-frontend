@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { advance, angleAt, dayAngle, dayAtAngle, distanceOf, turnBetween } from '../ringTurn';
+import { COAST_TAU, advance, angleAt, coast, dayAngle, dayAtAngle, distanceOf, flingVelocity, turnBetween } from '../ringTurn';
 
 describe('ringTurn', () => {
     it('measures the short way round, across the top', () => {
@@ -44,5 +44,22 @@ describe('ringTurn', () => {
         expect(distanceOf(5)).toEqual({ unit: 'DAYS', count: 5 });
         expect(distanceOf(20)).toEqual({ unit: 'WEEKS', count: 3 });
         expect(distanceOf(130)).toEqual({ unit: 'MONTHS', count: 4 });
+    });
+    it('measures a fling from the last moves only', () => {
+        // 3 days over the last 60 ms → 0.05 days/ms
+        expect(flingVelocity([{ t: 940, days: 1 }, { t: 960, days: 1 }, { t: 980, days: 1 }, { t: 1000, days: 1 }], 1000)).toBeCloseTo(3 / 60, 6);
+        // a turn that stopped 200 ms before lifting has no speed left
+        expect(flingVelocity([{ t: 700, days: 2 }, { t: 800, days: 2 }], 1000)).toBe(0);
+        // backwards is negative
+        expect(flingVelocity([{ t: 950, days: -1 }, { t: 1000, days: -2 }], 1000)).toBeCloseTo(-2 / 50, 6);
+    });
+
+    it('coasts with friction, the distance set by the strength of the fling', () => {
+        let v = 0.05; let total = 0;
+        for (let i = 0; i < 400; i++) { const step = coast(v, 16); total += step.days; v = step.v; }
+        expect(total).toBeCloseTo(0.05 * COAST_TAU, 0);     // ≈ 19 days
+        const weak = coast(0.005, 16), strong = coast(0.05, 16);
+        expect(strong.days).toBeGreaterThan(weak.days * 9);  // ten times the pull, ten times the coast
+        expect(coast(-0.05, 16).days).toBeLessThan(0);
     });
 });

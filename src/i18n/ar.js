@@ -1618,6 +1618,7 @@ export const ar = {
     },
 
     calendar: {
+        about: 'نحو {duration}',
         thisTurn: 'هذه اللفّة',
         ahead: 'بعد {duration}',
         turnHint: 'أدِر الحلقة: اليوم تحت العلامة الذهبية هو اختيارك، ويمضي بك الدوران إلى الشهر التالي',

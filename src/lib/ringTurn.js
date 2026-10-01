@@ -58,6 +58,33 @@ export function advance({ iso, frac }, days, allowed) {
     return { iso: at, frac: f };
 }
 
+/**
+ * How fast a turn was going when the finger lifted, in days per millisecond — from the moves of
+ * the last `windowMs` (`samples`: `{ t, days }`, the days each move turned). Older moves are left
+ * out, so a turn that slowed to a stop before lifting has no speed to coast on.
+ */
+export function flingVelocity(samples, now, windowMs = 90) {
+    const recent = samples.filter((s) => now - s.t <= windowMs);
+    if (recent.length < 2) return 0;
+    const span = Math.max(16, now - recent[0].t);
+    return recent.slice(1).reduce((sum, s) => sum + s.days, 0) / span;
+}
+
+/** Fastest a fling may coast, days per millisecond (120 a second); the slowest worth coasting on. */
+export const FLING_MAX = 0.12;
+export const FLING_MIN = 0.002;
+/** How quickly a coasting ring slows: its speed falls by 1/e every `COAST_TAU` ms. */
+export const COAST_TAU = 380;
+
+/**
+ * One frame of coasting: the days turned in `dt` ms at speed `v` slowing by friction, and the speed
+ * left. A fling at speed v coasts about v × COAST_TAU days in all: 50 days a second → ~19 days.
+ */
+export function coast(v, dt, tau = COAST_TAU) {
+    const next = v * Math.exp(-dt / tau);
+    return { days: (v - next) * tau, v: next };
+}
+
 /** How far ahead a day is, in the unit a person would say it in: days, then weeks, then months. */
 export function distanceOf(days) {
     if (days < 14) return { unit: 'DAYS', count: days };

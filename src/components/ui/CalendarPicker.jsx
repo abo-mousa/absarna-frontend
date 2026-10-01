@@ -179,9 +179,10 @@ function CalendarPicker({ value = null, onChange, min = null, max = null, marks 
     // The two rings print it in their plate, beside the day it is about; the grid, under itself.
     const ahead = shown ? daysBetween(today, shown) : null;
     const distance = ahead != null && ahead > 0 ? distanceOf(ahead) : null;
+    // The exact days are the answer, large; weeks or months only an aside («نحو ٣ أسابيع»).
     const aheadText = distance ? {
-        main: t('calendar.ahead', { duration: countOf(`journey.units.${distance.unit}`, distance.count, { oblique: true }) }),
-        days: distance.unit !== 'DAYS' ? countOf('journey.units.DAYS', ahead) : null,
+        main: t('calendar.ahead', { duration: countOf('journey.units.DAYS', ahead, { oblique: true }) }),
+        days: distance.unit !== 'DAYS' ? t('calendar.about', { duration: countOf(`journey.units.${distance.unit}`, distance.count, { oblique: true }) }) : null,
     } : null;
     const ring = style !== 'zellige';
     const shared = { days, dayProps, value: shown, today, allowed, marks, calendar, other, white, title, onLive, onCommit, ahead: aheadText };
