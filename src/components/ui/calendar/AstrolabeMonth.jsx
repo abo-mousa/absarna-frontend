@@ -1,4 +1,6 @@
+import { useRef } from 'react';
 import { formatDay } from '@/lib/dayFormat';
+import { useRingTurn } from './useRingTurn';
 import { BOX, C, bandPath, placeAt, pt, rosetteLines, starPoints } from './ring';
 
 /**
@@ -7,9 +9,13 @@ import { BOX, C, bandPath, placeAt, pt, rosetteLines, starPoints } from './ring'
  * openwork over the plate and a pointer, star-tipped, at the chosen day. Seasons are a gold arc.
  *
  * <p>Months and days are real buttons laid over the drawing: pressing a month on the rim turns
- * the astrolabe to it, pressing a day chooses it, and the picker's keys move across both.
+ * the astrolabe to it, pressing a day chooses it, and the picker's keys move across both. The day
+ * ring also turns under a finger or a mouse (`useRingTurn`), on past the month's end.
  */
-function AstrolabeMonth({ days, dayProps, value, today, allowed, marks, calendar, other, months, onMonth, title }) {
+function AstrolabeMonth({ days, dayProps, value, today, allowed, marks, calendar, other, months, onMonth, title, onLive, onCommit }) {
+    const ref = useRef(null);
+    // The day ring turns: days sit at (i + 0.5) arcs, so day 1 starts at the top.
+    const turn = useRingTurn({ ref, days, offset: 0.5, calendar, allowed, onLive, onCommit });
     const step = 360 / days.length;
     const chosen = value && days.includes(value) ? value : null;
     const selIndex = chosen ? days.indexOf(chosen) : -1;
@@ -17,7 +23,7 @@ function AstrolabeMonth({ days, dayProps, value, today, allowed, marks, calendar
     // Seasons in this month, as runs of consecutive marked days.
     const marked = days.map((iso) => !!marks[iso]);
     return (
-        <div className="relative w-full max-w-[340px] aspect-square mx-auto">
+        <div ref={ref} {...turn} className="relative w-full max-w-[340px] aspect-square mx-auto touch-none cursor-grab active:cursor-grabbing">
             <svg viewBox={`0 0 ${BOX} ${BOX}`} className="absolute inset-0 w-full h-full" aria-hidden="true">
                 <circle cx={C} cy={C} r={168} className="fill-gold-light stroke-gold-ink" strokeWidth={1.3} />
                 {Array.from({ length: 120 }, (_, k) => {
@@ -74,6 +80,7 @@ function AstrolabeMonth({ days, dayProps, value, today, allowed, marks, calendar
                     <button
                         key={m.iso}
                         type="button"
+                        data-ring-skip=""
                         onClick={() => onMonth(m.iso)}
                         disabled={!m.reachable}
                         aria-pressed={m.current}

@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
+import { useRingTurn } from './useRingTurn';
 import { partsOf } from '@/lib/calendarMonth';
 import { formatDay } from '@/lib/dayFormat';
 import { BOX, C, moonPath, placeAt, pt, starPoints } from './ring';
@@ -11,14 +12,18 @@ const HIJRI = 'islamic-umalqura';
  * A Hijri month as it is seen: a moon for every night, in its phase, on a night sky inside the
  * band of eight-pointed stars the other two styles share — each moon numbered, and its Gregorian
  * day at the rim. Hijri by nature: the picker pins this style to the Hijri calendar. The moons
- * are real buttons laid over the drawing.
+ * are real buttons laid over the drawing, and the ring turns under a finger or a mouse
+ * (`useRingTurn`), night by night and on into the next month.
  */
-function MoonMonth({ days, dayProps, value, today, allowed, marks, white, title }) {
+function MoonMonth({ days, dayProps, value, today, allowed, marks, white, title, onLive, onCommit }) {
+    const ref = useRef(null);
+    // The moons turn: night i sits at i arcs, the first night at the top.
+    const turn = useRingTurn({ ref, days, offset: 0, calendar: HIJRI, allowed, onLive, onCommit });
     const step = 360 / days.length;
     const nights = useMemo(() => days.map((iso) => partsOf(iso, HIJRI).day), [days]);
     const chosen = value && days.includes(value) ? value : null;
     return (
-        <div className="relative w-full max-w-[340px] aspect-square mx-auto">
+        <div ref={ref} {...turn} className="relative w-full max-w-[340px] aspect-square mx-auto touch-none cursor-grab active:cursor-grabbing">
             <svg viewBox={`0 0 ${BOX} ${BOX}`} className="absolute inset-0 w-full h-full" aria-hidden="true">
                 <circle cx={C} cy={C} r={168} className="fill-gold-light stroke-gold-ink" strokeWidth={1} />
                 {Array.from({ length: 48 }, (_, k) => {

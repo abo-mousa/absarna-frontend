@@ -1618,6 +1618,8 @@ export const ar = {
     },
 
     calendar: {
+        ahead: 'بعد {duration}',
+        turnHint: 'أدِر الحلقة بإصبعك أو بالفأرة — تمضي بك إلى الشهر التالي',
         style: 'شكل التقويم',
         styles: { astrolabe: 'الإسطرلاب', moons: 'منازل القمر', zellige: 'الزليج' },
         hijriByNature: 'هجري بطبيعته',
@@ -1719,6 +1721,8 @@ export const ar = {
             EPISODES_OBL: { two: 'حلقتين' },
             PAGES_OBL: { two: 'صفحتين' },
             MINUTES_OBL: { two: 'دقيقتين' },
+            MONTHS: { zero: 'لا شهر', one: 'شهر واحد', two: 'شهران', few: '{count} أشهر', many: '{count} شهرًا', other: '{count} شهر' },
+            MONTHS_OBL: { two: 'شهرين' },
             DAYS_OBL: { two: 'يومين' },
             WEEKS_OBL: { two: 'أسبوعين' },
             KHATMAT: { zero: 'لا ختمة', one: 'ختمة واحدة', two: 'ختمتان', few: '{count} ختمات', many: '{count} ختمة', other: '{count} ختمة' },

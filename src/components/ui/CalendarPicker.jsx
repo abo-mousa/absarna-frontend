@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronBack, ChevronForward } from './DirectionalIcon';
 import { addDays, monthDays, partsOf, shiftMonth } from '@/lib/calendarMonth';
-import { formatDay, localDay } from '@/lib/dayFormat';
+import { daysBetween, formatDay, localDay } from '@/lib/dayFormat';
+import { distanceOf } from '@/lib/ringTurn';
+import { countOf } from '@/lib/plural';
 import { hasHijriCalendar } from '@/lib/hijriSeasons';
 import { safeStorage } from '@/lib/safeStorage';
 import { currentLocale, t } from '@/i18n';
@@ -68,6 +70,8 @@ function CalendarPicker({ value = null, onChange, min = null, max = null, marks 
     const today = localDay();
     const [cursor, setCursor] = useState(value || (min && min > today ? min : today));
     const [focused, setFocused] = useState(null);
+    // The day a turn of a ring is on, before the finger lifts — shown, not yet chosen.
+    const [live, setLive] = useState(null);
     const area = useRef(null);
     const other = calendar === HIJRI ? GREGORY : HIJRI;
     const rtl = typeof document !== 'undefined' && document.documentElement.dir === 'rtl';
@@ -133,7 +137,7 @@ function CalendarPicker({ value = null, onChange, min = null, max = null, marks 
             disabled: !allowed(iso),
             // Buttons in a labelled group — the days are not laid in rows in two of the styles,
             // and a grid without rows is worse for a screen reader than no grid at all.
-            'aria-pressed': iso === value,
+            'aria-pressed': iso === (live ?? value),
             'aria-current': iso === today ? 'date' : undefined,
             'aria-label': `${formatDay(iso, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }, calendar)} — ${formatDay(iso, { day: 'numeric', month: 'long', year: 'numeric' }, other)}${mark ? ` — ${mark}` : ''}`,
             title: mark || undefined,
@@ -159,7 +163,22 @@ function CalendarPicker({ value = null, onChange, min = null, max = null, marks 
             {children}
         </button>
     );
-    const shared = { days, dayProps, value, today, allowed, marks, calendar, other, white, title };
+    const shown = live ?? value;
+    const onLive = (iso) => {
+        setLive(iso);
+        if (!days.includes(iso)) setCursor(iso);
+    };
+    const onCommit = (iso) => {
+        setLive(null);
+        if (allowed(iso)) {
+            setFocused(iso);
+            onChange(iso);
+        }
+    };
+    const shared = { days, dayProps, value: shown, today, allowed, marks, calendar, other, white, title, onLive, onCommit };
+    // How far ahead the day is, as a person would say it — the feedback a turn gives as it goes.
+    const ahead = shown ? daysBetween(today, shown) : null;
+    const distance = ahead != null && ahead > 0 ? distanceOf(ahead) : null;
 
     return (
         <div className="flex flex-col gap-2.5 select-none">
@@ -205,6 +224,22 @@ function CalendarPicker({ value = null, onChange, min = null, max = null, marks 
                 {style === 'moons' && <MoonMonth {...shared} />}
                 {style === 'zellige' && <ZelligeMonth {...shared} />}
             </div>
+
+            <p className="text-center text-sm min-h-[1.25rem]" aria-live="polite">
+                {distance ? (
+                    <>
+                        <span className="font-semibold text-primary-dark dark:text-primary">
+                            {t('calendar.ahead', { duration: countOf(`journey.units.${distance.unit}`, distance.count, { oblique: true }) })}
+                        </span>
+                        {distance.unit !== 'DAYS' && (
+                            <span className="text-text-secondary">{' · '}{countOf('journey.units.DAYS', ahead)}</span>
+                        )}
+                    </>
+                ) : style !== 'zellige' ? (
+                    <span className="text-text-muted">{t('calendar.turnHint')}</span>
+                ) : null}
+            </p>
+            {distance && style !== 'zellige' && <p className="-mt-2 text-center text-xs text-text-muted">{t('calendar.turnHint')}</p>}
         </div>
     );
 }

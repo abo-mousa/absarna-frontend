@@ -1386,6 +1386,8 @@ export const en = {
     },
 
     calendar: {
+        ahead: 'in {duration}',
+        turnHint: 'Turn the ring with a finger or the mouse — it carries on into the next month',
         style: 'Calendar style',
         styles: { astrolabe: 'Astrolabe', moons: 'Moons', zellige: 'Zellige' },
         hijriByNature: 'Hijri by nature',
@@ -1487,6 +1489,8 @@ export const en = {
             EPISODES_OBL: { two: '{count} episodes' },
             PAGES_OBL: { two: '{count} pages' },
             MINUTES_OBL: { two: '{count} minutes' },
+            MONTHS: { zero: '{count} months', one: '{count} month', two: '{count} months', few: '{count} months', many: '{count} months', other: '{count} months' },
+            MONTHS_OBL: { two: '{count} months' },
             DAYS_OBL: { two: '{count} days' },
             WEEKS_OBL: { two: '{count} weeks' },
             KHATMAT: { zero: 'no completions', one: '{count} completion', two: '{count} completions', few: '{count} completions', many: '{count} completions', other: '{count} completions' },
