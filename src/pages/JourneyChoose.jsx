@@ -64,6 +64,8 @@ function readParams(search) {
         page: Number.isFinite(page) && page > 0 ? page : 0,
         tab: search.get('tab') || '',
         channel: search.get('channel') || '',
+        // 'subject' when the subject came from the second question rather than the first screen.
+        via: search.get('via') || '',
     };
 }
 

@@ -1,12 +1,12 @@
-import { useMemo } from 'react';
-import { Sparkles } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { BookOpen, Gem, HandHeart, Megaphone, Moon, Scale, ScrollText, Search, Sparkles } from 'lucide-react';
 import { Button, QueryState } from '@/components/ui';
-import { useGoalProposals, useGoalTopics } from '@/hooks/useGoalChoice';
-import { FIELDS, subjectLabel } from '@/lib/subjects';
-import { MINUTE_CHOICES, asksForSubject, chosenByText, deadlineChoices, finishText, itemKey } from '@/lib/goalChoice';
+import { useGoalProposalPages, useGoalTopics } from '@/hooks/useGoalChoice';
+import { FIELDS, fieldOf, isField, searchSubjects, subjectLabel } from '@/lib/subjects';
+import { MINUTE_CHOICES, asksForSubject, chosenByText, deadlineChoices, itemKey } from '@/lib/goalChoice';
 import { amountText, learningTime } from '@/lib/goalText';
 import { countOf } from '@/lib/plural';
-import { Poster, ShortlistMark, WeekStrip } from './parts';
+import { PaceTimeline, Poster, ShortlistMark } from './parts';
 import { t } from '@/i18n';
 
 /**
@@ -26,11 +26,13 @@ const daysUntil = (iso) => (iso ? Math.round((new Date(`${iso}T12:00:00`) - new 
 
 function Answered({ params, go }) {
     const chips = [];
-    if (params.field) {
+    // A subject picked on the first screen is one answer, not a field and then a subject.
+    const direct = params.subject && params.via !== 'subject';
+    if (params.field && !direct) {
         chips.push({ key: 'field', label: t(`journey.choose.intent.${params.field}`), step: 'field' });
     }
     if (params.subject && params.subject !== params.field) {
-        chips.push({ key: 'subject', label: subjectLabel(params.subject), step: 'subject' });
+        chips.push({ key: 'subject', label: subjectLabel(params.subject), step: direct ? 'field' : 'subject' });
     }
     if (params.step === 'proposals') {
         chips.push({ key: 'time', label: t('journey.choose.minutesADay', { minutes: learningTime(params.minutes) }), step: 'time' });
@@ -52,13 +54,13 @@ function Answered({ params, go }) {
     );
 }
 
-function Tile({ title, hint, icon: Icon = null, tint = TINTS[0], selected = false, onClick }) {
+function Tile({ title, hint, icon: Icon = null, tint = TINTS[0], selected = false, onClick, preview = null }) {
     return (
         <button
             type="button"
             onClick={onClick}
             aria-pressed={selected}
-            className={`min-h-[7rem] p-4 rounded-lg border bg-surface text-start flex flex-col gap-2 transition-colors ${
+            className={`min-h-[6.5rem] p-4 rounded-lg border bg-surface text-start flex flex-col gap-2 transition-colors ${
                 selected ? 'border-primary ring-1 ring-primary bg-primary-light' : 'border-border hover:border-primary'
             }`}
         >
@@ -68,41 +70,131 @@ function Tile({ title, hint, icon: Icon = null, tint = TINTS[0], selected = fals
                 </span>
             )}
             <span className="font-semibold leading-snug">{title}</span>
-            {hint && <span className="text-xs text-text-secondary -mt-1">{hint}</span>}
+            {preview && <span className="text-xs text-text-secondary leading-relaxed -mt-1">{preview}</span>}
+            {hint && <span className="text-xs text-text-muted -mt-1">{hint}</span>}
         </button>
     );
 }
 
+/**
+ * The Islamic sciences are most of this catalogue, so «أتعلّم ديني» as one tile was a question with
+ * one answer: its main subjects are choices of their own here, beside the whole field. The other
+ * fields stay whole, each naming the subjects it holds most of, so a reader sees what is inside
+ * before choosing. Only what holds something this reader could still start is offered.
+ */
+const ISLAMIC_FIRST = ['QURAN', 'HADITH', 'AQEEDAH', 'FIQH', 'SEERAH', 'TAZKIYAH', 'DAWAH'];
+const SUBJECT_ICONS = { QURAN: BookOpen, HADITH: ScrollText, AQEEDAH: Gem, FIQH: Scale, SEERAH: Moon, TAZKIYAH: HandHeart, DAWAH: Megaphone };
+
 function FieldStep({ topics, params, go }) {
-    const byCode = new Map((topics.fields || []).map((field) => [field.field, field]));
-    const choose = (code) => {
-        const topic = byCode.get(code);
-        go({ field: code, subject: '', step: asksForSubject(topic) ? 'subject' : 'time', page: 0 }, true);
+    const [query, setQuery] = useState('');
+    const fields = new Map((topics.fields || []).map((field) => [field.field, field]));
+    const subjects = new Map((topics.fields || []).flatMap((field) => field.subjects.map((subject) => [subject.subject, subject])));
+    const islamic = fields.get('ISLAMIC');
+    const chooseField = (code) => go({ field: code, subject: '', via: '', step: asksForSubject(fields.get(code)) ? 'subject' : 'time', page: 0 }, true);
+    const chooseSubject = (code) => go({ field: fieldOf(code)?.code || '', subject: code, via: '', step: 'time', page: 0 }, true);
+    const choose = (code) => (isField(code) ? chooseField(code) : chooseSubject(code));
+    /** «القرآن · الفقه · السيرة وغيرها» — the field's largest subjects, by what they hold. */
+    const preview = (field) => {
+        const top = [...field.subjects].sort((a, b) => (b.programmes + b.books) - (a.programmes + a.books)).slice(0, 3);
+        if (!top.length) return null;
+        const names = top.map((subject) => subjectLabel(subject.subject)).join(' · ');
+        return field.subjects.length > top.length ? `${names} ${t('journey.choose.holdsMore')}` : names;
     };
+    const matches = query.trim().length >= 2
+        ? searchSubjects(query).filter((code) => fields.has(code) || subjects.has(code)).slice(0, 8)
+        : [];
+
     return (
         <>
             <h1 className="font-serif text-3xl font-bold">{t('journey.choose.intentTitle')}</h1>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {FIELDS.filter((field) => byCode.has(field.code)).map((field, index) => (
-                    <Tile
-                        key={field.code}
-                        icon={field.icon}
-                        tint={TINTS[index % TINTS.length]}
-                        title={t(`journey.choose.intent.${field.code}`)}
-                        hint={holds(byCode.get(field.code))}
-                        selected={params.field === field.code}
-                        onClick={() => choose(field.code)}
+
+            <label className="flex flex-col gap-2">
+                <span className="text-sm font-semibold text-text-secondary">{t('journey.choose.typeIt')}</span>
+                <span className="relative">
+                    <Search size={16} aria-hidden="true" className="absolute top-1/2 -translate-y-1/2 start-3 text-text-muted" />
+                    <input
+                        type="search"
+                        value={query}
+                        onChange={(event) => setQuery(event.target.value)}
+                        placeholder={t('journey.choose.typeItPlaceholder')}
+                        className="w-full h-11 ps-9 pe-3 rounded-md border border-border bg-surface text-sm focus:border-primary focus:outline-none"
                     />
-                ))}
-                <Tile
-                    icon={Sparkles}
-                    tint={TINTS[2]}
-                    title={t('journey.choose.intent.ANY')}
-                    hint={holds(topics)}
-                    selected={params.field === 'ANY'}
-                    onClick={() => go({ field: 'ANY', subject: '', step: 'time', page: 0 }, true)}
-                />
-            </div>
+                </span>
+            </label>
+            {query.trim().length >= 2 && (
+                matches.length ? (
+                    <div className="flex flex-wrap gap-2 -mt-2">
+                        {matches.map((code) => (
+                            <button
+                                key={code}
+                                type="button"
+                                onClick={() => choose(code)}
+                                className="h-9 px-4 rounded-full border border-primary bg-primary-light text-primary-dark dark:text-primary text-sm font-semibold"
+                            >
+                                {subjectLabel(code)}
+                                {!isField(code) && fieldOf(code) && (
+                                    <span className="font-normal text-text-secondary"> · {subjectLabel(fieldOf(code).code)}</span>
+                                )}
+                            </button>
+                        ))}
+                    </div>
+                ) : <p className="text-sm text-text-muted -mt-2">{t('journey.choose.typeItNone')}</p>
+            )}
+
+            {islamic && (
+                <section className="flex flex-col gap-3">
+                    <h2 className="font-serif text-xl font-bold">{t('journey.choose.groupIslamic')}</h2>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                        {ISLAMIC_FIRST.filter((code) => subjects.has(code)).map((code, index) => (
+                            <Tile
+                                key={code}
+                                icon={SUBJECT_ICONS[code]}
+                                tint={TINTS[index % 2]}
+                                title={t(`journey.choose.intent.${code}`)}
+                                preview={subjectLabel(code)}
+                                hint={holds(subjects.get(code))}
+                                selected={params.subject === code}
+                                onClick={() => chooseSubject(code)}
+                            />
+                        ))}
+                        <Tile
+                            icon={FIELDS[0].icon}
+                            tint={TINTS[2]}
+                            title={t('journey.choose.intent.ISLAMIC')}
+                            preview={t('journey.choose.wholeField')}
+                            hint={holds(islamic)}
+                            selected={params.field === 'ISLAMIC' && !params.subject}
+                            onClick={() => go({ field: 'ISLAMIC', subject: '', via: '', step: 'time', page: 0 }, true)}
+                        />
+                    </div>
+                </section>
+            )}
+
+            <section className="flex flex-col gap-3">
+                {islamic && <h2 className="font-serif text-xl font-bold">{t('journey.choose.groupOther')}</h2>}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {FIELDS.filter((field) => field.code !== 'ISLAMIC' && fields.has(field.code)).map((field, index) => (
+                        <Tile
+                            key={field.code}
+                            icon={field.icon}
+                            tint={TINTS[index % TINTS.length]}
+                            title={t(`journey.choose.intent.${field.code}`)}
+                            preview={preview(fields.get(field.code))}
+                            hint={holds(fields.get(field.code))}
+                            selected={params.field === field.code}
+                            onClick={() => chooseField(field.code)}
+                        />
+                    ))}
+                    <Tile
+                        icon={Sparkles}
+                        tint={TINTS[2]}
+                        title={t('journey.choose.intent.ANY')}
+                        hint={holds(topics)}
+                        selected={params.field === 'ANY'}
+                        onClick={() => go({ field: 'ANY', subject: '', via: '', step: 'time', page: 0 }, true)}
+                    />
+                </div>
+            </section>
         </>
     );
 }
@@ -120,14 +212,14 @@ function SubjectStep({ topics, params, go }) {
                         title={subjectLabel(subject.subject)}
                         hint={holds(subject)}
                         selected={params.subject === subject.subject}
-                        onClick={() => go({ subject: subject.subject, step: 'time', page: 0 }, true)}
+                        onClick={() => go({ subject: subject.subject, via: 'subject', step: 'time', page: 0 }, true)}
                     />
                 ))}
                 <Tile
                     title={t('journey.choose.wholeField')}
                     hint={holds(field)}
                     selected={params.subject === field.field}
-                    onClick={() => go({ subject: field.field, step: 'time', page: 0 }, true)}
+                    onClick={() => go({ subject: field.field, via: 'subject', step: 'time', page: 0 }, true)}
                 />
             </div>
         </>
@@ -175,7 +267,7 @@ function ProposalCard({ proposal, deadlineDays, onOpen, shortlist, onToggle }) {
     const series = item.kind === 'FINISH_SERIES';
     const perEpisode = series && proposal.minutesPerDay && amount ? Math.round(proposal.minutesPerDay / amount) : null;
     return (
-        <div className="w-[85%] sm:w-[22rem] flex-shrink-0 snap-center rounded-lg border border-border bg-surface overflow-hidden flex flex-col">
+        <div className="rounded-lg border border-border bg-surface overflow-hidden flex flex-col">
             <div className="relative">
                 <button type="button" className="block w-full" onClick={() => onOpen(item, proposal)} aria-label={item.title}>
                     <Poster item={item} className="aspect-video w-full rounded-none" />
@@ -190,26 +282,26 @@ function ProposalCard({ proposal, deadlineDays, onOpen, shortlist, onToggle }) {
                         <span className="text-xs text-text-muted">{t('journey.choose.widenedMark', { subject: subjectLabel(item.subject) })}</span>
                     )}
                 </div>
-                <span className="text-sm">
+                <span className="text-sm text-text-secondary">
                     {[
                         amountText(series ? 'EPISODES' : 'PAGES', series ? item.episodes : item.pages),
                         perEpisode ? t('journey.choose.perEpisode', { minutes: learningTime(perEpisode) }) : null,
                     ].filter(Boolean).join(' · ')}
                 </span>
-                <div className="flex flex-col gap-2">
-                    {/* Why this one fits — the backend already measured it (`fitsDay`, `minutesPerDay`). */}
-                    {proposal.minutesPerDay ? (
-                        <span className={`text-xs font-semibold ${proposal.fitsDay === false ? 'text-gold-ink' : 'text-text-secondary'}`}>
-                            {proposal.fitsDay === false
-                                ? t('journey.choose.whyLonger', { minutes: learningTime(proposal.minutesPerDay) })
-                                : t('journey.choose.whyFits', { minutes: learningTime(proposal.minutesPerDay) })}
-                        </span>
-                    ) : null}
-                    <span className="text-sm font-semibold">{t('journey.choose.paceDaily', { amount: amountText(measure, amount) })}</span>
-                    <WeekStrip days={proposal.days} deadlineDays={deadlineDays} />
-                    <span className={`text-sm font-semibold ${proposal.fitsDeadline ? 'text-primary-dark dark:text-primary' : 'text-gold-ink'}`}>
-                        {proposal.fitsDeadline ? finishText(proposal.days) : t('journey.choose.missesDeadline')}
+                {/* The pace as one panel: how much a day and what it takes, the road to the finish,
+                    and a word only when something does not fit. */}
+                <div className="flex flex-col gap-3 rounded-md bg-bg p-3">
+                    <span className="text-sm">
+                        <span className="font-bold">{t('journey.choose.paceDaily', { amount: amountText(measure, amount) })}</span>
+                        {proposal.minutesPerDay ? (
+                            <span className="text-text-secondary">{' · '}{t('journey.choose.aboutMinutes', { minutes: learningTime(proposal.minutesPerDay) })}</span>
+                        ) : null}
                     </span>
+                    <PaceTimeline days={proposal.days} deadlineDays={deadlineDays} />
+                    {proposal.fitsDay === false && proposal.minutesPerDay ? (
+                        <span className="text-xs font-semibold text-gold-ink">{t('journey.choose.whyLonger', { minutes: learningTime(proposal.minutesPerDay) })}</span>
+                    ) : null}
+                    {!proposal.fitsDeadline && <span className="text-xs font-semibold text-gold-ink">{t('journey.choose.missesDeadline')}</span>}
                 </div>
                 {item.chosenBy ? <span className="text-xs text-gold-ink">{chosenByText(item.chosenBy)}</span> : null}
                 <Button className="mt-auto" onClick={() => onOpen(item, proposal)}>{t('journey.choose.look')}</Button>
@@ -222,10 +314,10 @@ function ProposalsStep({ params, go, onOpen, shortlist, onToggle, onBrowse }) {
     // Memoised: the Ramadan choice walks up to 400 days of the Hijri calendar through Intl.
     const deadline = useMemo(() => deadlineChoices().find((d) => d.key === params.deadline)?.date || null, [params.deadline]);
     const subject = params.field === 'ANY' ? null : (params.subject || params.field);
-    const proposals = useGoalProposals({ subject, minutes: params.minutes, deadline, page: params.page });
-    const data = proposals.data;
+    // Every page so far, in order: «أرني ثلاثة غيرها» adds three below, never swaps the first ones out.
+    const proposals = useGoalProposalPages({ subject, minutes: params.minutes, deadline, pages: params.page });
     const deadlineDays = daysUntil(deadline);
-    const thin = data?.widened
+    const thin = proposals.widened && subject && !isField(subject)
         ? t('journey.choose.widened', { subject: subjectLabel(subject), field: subjectLabel(params.field) })
         : null;
     return (
@@ -234,16 +326,16 @@ function ProposalsStep({ params, go, onOpen, shortlist, onToggle, onBrowse }) {
             {thin && <p className="text-sm text-text-secondary">{thin}</p>}
             <QueryState
                 isLoading={proposals.isLoading}
-                isError={proposals.isError}
+                isError={proposals.isError && !proposals.proposals.length}
                 error={proposals.error}
                 onRetry={proposals.refetch}
                 errorTitle={t('journey.loadFailed')}
-                isEmpty={!data?.proposals?.length}
+                isEmpty={!proposals.proposals.length}
                 emptyTitle={t('journey.choose.proposalsNone')}
                 emptyAction={<Button variant="ghost" onClick={onBrowse}>{t('journey.choose.ratherBrowse')}</Button>}
             >
-                <div className={`flex gap-4 overflow-x-auto snap-x snap-mandatory pb-3 -mx-4 px-4 sm:mx-0 sm:px-0 ${proposals.isFetching ? 'opacity-60' : ''}`}>
-                    {(data?.proposals || []).map((proposal) => (
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {proposals.proposals.map((proposal) => (
                         <ProposalCard
                             key={itemKey(proposal.item)}
                             proposal={proposal}
@@ -255,13 +347,15 @@ function ProposalsStep({ params, go, onOpen, shortlist, onToggle, onBrowse }) {
                     ))}
                 </div>
                 <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-                    <button
-                        type="button"
-                        onClick={() => go({ page: data?.hasMore ? params.page + 1 : 0 })}
-                        className="text-sm font-semibold text-primary hover:underline"
-                    >
-                        {data?.hasMore ? t('journey.choose.more') : t('journey.choose.fromTheStart')}
-                    </button>
+                    {proposals.hasMore && (
+                        <Button
+                            variant="ghost"
+                            onClick={() => go({ page: params.page + 1 })}
+                            disabled={proposals.isLoadingMore}
+                        >
+                            {t('journey.choose.more')}
+                        </Button>
+                    )}
                     <button type="button" onClick={onBrowse} className="text-sm font-semibold text-text-secondary hover:underline">
                         {t('journey.choose.ratherBrowse')}
                     </button>

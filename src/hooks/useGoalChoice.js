@@ -1,4 +1,4 @@
-import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useInfiniteQuery, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api/client';
 import { STANDARD } from '@/lib/queryCache';
 import { queryKeys } from '@/lib/queryKeys';
@@ -34,18 +34,35 @@ export const useGoalTopics = (enabled = true) => {
     });
 };
 
-/** Three ready goals for a subject, the minutes a day and a deadline; `page` is «أرني ثلاثة غيرها». */
-export const useGoalProposals = ({ subject, minutes, deadline, page }, enabled = true) => {
+/**
+ * Every page of proposals up to `pages` (0-based, from the URL), so «أرني ثلاثة غيرها» adds three
+ * below the ones already shown rather than replacing them — and Back, or a reload, rebuilds the
+ * same list. Each page is the same query `useGoalProposals` makes, so the cache is shared.
+ */
+export const useGoalProposalPages = ({ subject, minutes, deadline, pages }, enabled = true) => {
     const scope = useUserScope();
-    return useQuery({
-        queryKey: queryKeys.goalProposals(subject || null, minutes, deadline || null, page, scope),
-        queryFn: async () => (await api.get('/user/goals/proposals', {
-            params: { subject: subject || undefined, minutes, deadline: deadline || undefined, page, tz: readerTimeZone() },
-        })).data,
-        placeholderData: keepPreviousData,
-        enabled,
-        ...STANDARD,
+    const results = useQueries({
+        queries: Array.from({ length: pages + 1 }, (_, page) => ({
+            queryKey: queryKeys.goalProposals(subject || null, minutes, deadline || null, page, scope),
+            queryFn: async () => (await api.get('/user/goals/proposals', {
+                params: { subject: subject || undefined, minutes, deadline: deadline || undefined, page, tz: readerTimeZone() },
+            })).data,
+            enabled,
+            ...STANDARD,
+        })),
     });
+    const loaded = results.filter((result) => result.data).map((result) => result.data);
+    const last = results[results.length - 1];
+    return {
+        proposals: loaded.flatMap((data) => data.proposals || []),
+        widened: loaded.some((data) => data.widened),
+        hasMore: !!last?.data?.hasMore,
+        isLoading: results[0]?.isLoading,
+        isLoadingMore: results.length > 1 && !!last?.isLoading,
+        isError: results.some((result) => result.isError),
+        error: results.find((result) => result.error)?.error,
+        refetch: () => results.forEach((result) => result.isError && result.refetch()),
+    };
 };
 
 /** Channels to choose from, largest first, narrowed to a field. */

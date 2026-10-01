@@ -4,9 +4,9 @@ import { Modal, Button, KhatamStar, Spinner } from '@/components/ui';
 import { useSeriesDetail } from '@/hooks/useSeries';
 import { useGoals } from '@/hooks/useGoals';
 import { goalFor, bookPortion } from '@/lib/journey';
-import { averageMinutes, chosenByText, daysToFinish, finishText, itemKey, prefillFor } from '@/lib/goalChoice';
+import { averageMinutes, chosenByText, daysToFinish, itemKey, prefillFor } from '@/lib/goalChoice';
 import { amountText, learningTime } from '@/lib/goalText';
-import { Poster, WeekStrip } from './parts';
+import { PaceTimeline, Poster } from './parts';
 import { formatDigits, t } from '@/i18n';
 
 /**
@@ -66,12 +66,12 @@ function PreviewSheet({ item, proposal = null, deadline = null, deadlineDays = n
                 {description && <p dir="auto" className="font-reading text-sm leading-loose text-text-secondary line-clamp-3">{description}</p>}
 
                 {units > 0 && (
-                    <div className="flex flex-col gap-2 rounded-md border border-border-light p-3">
+                    <div className="flex flex-col gap-3 rounded-md bg-bg p-3">
                         <span className="text-sm font-semibold">{t('journey.choose.paceDaily', { amount: amountText(series ? 'EPISODES' : 'PAGES', amount) })}</span>
-                        <WeekStrip days={days} deadlineDays={deadlineDays} />
-                        <span className="text-sm text-primary-dark dark:text-primary font-semibold">
-                            {proposal && !proposal.fitsDeadline ? t('journey.choose.missesDeadline') : finishText(days)}
-                        </span>
+                        <PaceTimeline days={days} deadlineDays={deadlineDays} />
+                        {proposal && !proposal.fitsDeadline && (
+                            <span className="text-xs font-semibold text-gold-ink">{t('journey.choose.missesDeadline')}</span>
+                        )}
                     </div>
                 )}
 
