@@ -1932,6 +1932,7 @@ export const ar = {
             notNow: 'ليس الآن',
         },
         choose: {
+            searchChannels: 'ابحث عن قناة باسمها…',
             deadlineSeasons: 'من المواسم',
             deadlineCustom: 'موعد آخر',
             deadlineCustomTitle: 'أُنجزه قبل',
@@ -2008,7 +2009,7 @@ export const ar = {
             pick: 'اختره',
             remove: 'أزِله من القائمة',
             facts: { episodes: 'الحلقات', pages: 'الصفحات', perDay: 'كل يوم', finish: 'متى تُنجزه', channel: 'القناة' },
-            tabs: { suggestions: 'مقترحات', channels: 'القنوات', search: 'بحث' },
+            tabs: { suggestions: 'مقترحات', channels: 'القنوات' },
             allFields: 'الكل',
             shelves: { CHOSEN: 'اختارها كثيرون وِردًا', SHORT: 'تُنجزها في شهر', NEW: 'بدأت حديثًا', LONG: 'صحبة طويلة', DISCOVER: 'من قنوات لم ترها', BOOKS: 'كتب' },
             emptyShelves: 'لا شيء في هذا المجال بعد.',

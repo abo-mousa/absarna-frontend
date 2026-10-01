@@ -17,9 +17,12 @@ import { Poster, Shelf, ShortlistMark } from './parts';
 import { t } from '@/i18n';
 
 /**
- * «أتصفّح بنفسي»: the catalogue laid out for choosing — shelves by reason, channels by what they
- * hold (and inside one, its programmes and books), and search. Every card opens the preview; the
- * tab, the field and the open channel live in the URL, so Back leaves a channel before the page.
+ * «أتصفّح بنفسي»: the catalogue laid out for choosing — shelves by reason, and channels by what they
+ * hold (and inside one, its programmes and books). Each of the two has the search box at its top,
+ * searching what that tab holds: programmes and books under «اقتراحات», channels by name under
+ * «القنوات» — there is no search tab of its own (product owner). What is typed stays across the
+ * two. Every card opens the preview; the tab, the field and the open channel live in the URL, so
+ * Back leaves a channel before the page.
  */
 
 function FieldChips({ fields, value, onChange }) {
@@ -75,9 +78,9 @@ function Suggestions({ field, setField, onOpen, shortlist, onToggle }) {
     );
 }
 
-function Channels({ field, setField, openChannel, onOpen }) {
+function Channels({ field, setField, openChannel, onOpen, q }) {
     const topics = useGoalTopics();
-    const channels = useGoalChannels(field);
+    const channels = useGoalChannels(field, q);
     const list = channels.data?.pages.flatMap((page) => page.channels) || [];
     return (
         <div className="flex flex-col gap-5">
@@ -89,9 +92,9 @@ function Channels({ field, setField, openChannel, onOpen }) {
                 onRetry={channels.refetch}
                 errorTitle={t('journey.loadFailed')}
                 isEmpty={!list.length}
-                emptyTitle={t('journey.choose.emptyShelves')}
+                emptyTitle={q ? t('journey.choose.noResults') : t('journey.choose.emptyShelves')}
             >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 transition-opacity ${channels.isFetching && !channels.isFetchingNextPage ? 'opacity-60' : ''}`}>
                     {list.map((channel) => (
                         <div key={channel.channelId} className="rounded-lg border border-border bg-surface p-4 flex flex-col gap-3">
                             <button type="button" onClick={() => openChannel(channel.slug)} className="flex items-center gap-3 text-start">
@@ -232,14 +235,12 @@ function ChannelShelf({ slug, back, onOpen, shortlist, onToggle }) {
     );
 }
 
-function Search({ onOpen, shortlist, onToggle }) {
-    const [query, setQuery] = useState('');
-    const q = useDebouncedValue(query.trim(), 300);
+/** What «اقتراحات»'s search box found: programmes and books, in place of the shelves. */
+function SearchResults({ q, onOpen, shortlist, onToggle }) {
     const found = useGoalSearch(q);
     const results = found.data || [];
     return (
         <div className="flex flex-col gap-4">
-            <SearchField value={query} onChange={setQuery} placeholder={t('journey.choose.searchPlaceholder')} autoFocus />
             {q.length >= 2 && (
                 <QueryState
                     isLoading={found.isLoading}
@@ -267,11 +268,16 @@ function Search({ onOpen, shortlist, onToggle }) {
     );
 }
 
-const TABS = ['suggestions', 'channels', 'search'];
+// An address from before carrying tab=search opens «اقتراحات», where the search now is.
+const TABS = ['suggestions', 'channels'];
 
 function BrowseChoice({ params, go, onOpen, shortlist, onToggle }) {
     const tab = TABS.includes(params.tab) ? params.tab : 'suggestions';
     const setField = (field) => go({ field: field || '' });
+    // One box, at the top of both tabs; what is typed stays when the tab changes.
+    const [query, setQuery] = useState('');
+    const q = useDebouncedValue(query.trim(), 300);
+    const searching = q.length >= 2;
 
     if (params.channel) {
         return (
@@ -300,11 +306,17 @@ function BrowseChoice({ params, go, onOpen, shortlist, onToggle }) {
                     </button>
                 ))}
             </div>
-            {tab === 'suggestions' && <Suggestions field={params.field} setField={setField} onOpen={onOpen} shortlist={shortlist} onToggle={onToggle} />}
+            <SearchField
+                value={query}
+                onChange={setQuery}
+                placeholder={t(tab === 'channels' ? 'journey.choose.searchChannels' : 'journey.choose.searchPlaceholder')}
+            />
+            {tab === 'suggestions' && (searching
+                ? <SearchResults q={q} onOpen={onOpen} shortlist={shortlist} onToggle={onToggle} />
+                : <Suggestions field={params.field} setField={setField} onOpen={onOpen} shortlist={shortlist} onToggle={onToggle} />)}
             {tab === 'channels' && (
-                <Channels field={params.field} setField={setField} openChannel={(slug) => go({ channel: slug }, true)} onOpen={onOpen} />
+                <Channels field={params.field} setField={setField} openChannel={(slug) => go({ channel: slug }, true)} onOpen={onOpen} q={searching ? q : ''} />
             )}
-            {tab === 'search' && <Search onOpen={onOpen} shortlist={shortlist} onToggle={onToggle} />}
         </div>
     );
 }

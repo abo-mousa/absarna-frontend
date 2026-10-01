@@ -1696,6 +1696,7 @@ export const en = {
             notNow: 'Not now',
         },
         choose: {
+            searchChannels: 'Search a channel by name…',
             deadlineSeasons: 'A season',
             deadlineCustom: 'Another time',
             deadlineCustomTitle: 'Finish by',
@@ -1772,7 +1773,7 @@ export const en = {
             pick: 'Choose it',
             remove: 'Remove from the list',
             facts: { episodes: 'Episodes', pages: 'Pages', perDay: 'Each day', finish: 'When you finish', channel: 'Channel' },
-            tabs: { suggestions: 'Suggestions', channels: 'Channels', search: 'Search' },
+            tabs: { suggestions: 'Suggestions', channels: 'Channels' },
             allFields: 'All',
             shelves: { CHOSEN: 'Many made it their portion', SHORT: 'Finish within a month', NEW: 'Begun recently', LONG: 'Long companions', DISCOVER: 'From channels you haven’t seen', BOOKS: 'Books' },
             emptyShelves: 'Nothing in this field yet.',

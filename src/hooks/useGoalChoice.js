@@ -65,14 +65,15 @@ export const useGoalProposalPages = ({ subject, minutes, deadline, pages }, enab
     };
 };
 
-/** Channels to choose from, largest first, narrowed to a field. */
-export const useGoalChannels = (field, enabled = true) => {
+/** Channels to choose from, largest first, narrowed to a field and, with `q`, to names holding it. */
+export const useGoalChannels = (field, q = '', enabled = true) => {
     const scope = useUserScope();
     return useInfiniteQuery({
-        queryKey: queryKeys.goalChannels(field || null, scope),
+        queryKey: queryKeys.goalChannels(field || null, q || null, scope),
         queryFn: async ({ pageParam = 0 }) => (await api.get('/user/goals/channels', {
-            params: { field: field || undefined, page: pageParam },
+            params: { field: field || undefined, page: pageParam, q: q || undefined },
         })).data,
+        placeholderData: keepPreviousData,
         initialPageParam: 0,
         getNextPageParam: (last) => (last.hasNext ? last.currentPage + 1 : undefined),
         enabled,
