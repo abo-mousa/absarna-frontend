@@ -1618,8 +1618,9 @@ export const ar = {
     },
 
     calendar: {
+        thisTurn: 'هذه اللفّة',
         ahead: 'بعد {duration}',
-        turnHint: 'أدِر الحلقة بإصبعك أو بالفأرة — تمضي بك إلى الشهر التالي',
+        turnHint: 'أدِر الحلقة: اليوم تحت العلامة الذهبية هو اختيارك، ويمضي بك الدوران إلى الشهر التالي',
         style: 'شكل التقويم',
         styles: { astrolabe: 'الإسطرلاب', moons: 'منازل القمر', zellige: 'الزليج' },
         hijriByNature: 'هجري بطبيعته',
@@ -1932,6 +1933,7 @@ export const ar = {
             notNow: 'ليس الآن',
         },
         choose: {
+            deadlinePickPrompt: 'أدِر الحلقة أو اضغط يومًا أو موسمًا',
             searchChannels: 'ابحث عن قناة باسمها…',
             deadlineSeasons: 'من المواسم',
             deadlineCustom: 'موعد آخر',

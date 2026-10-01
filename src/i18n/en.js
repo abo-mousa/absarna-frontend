@@ -1386,8 +1386,9 @@ export const en = {
     },
 
     calendar: {
+        thisTurn: 'This turn',
         ahead: 'in {duration}',
-        turnHint: 'Turn the ring with a finger or the mouse — it carries on into the next month',
+        turnHint: 'Turn the ring: the day under the gold marker is your choice, and turning on carries you into the next month',
         style: 'Calendar style',
         styles: { astrolabe: 'Astrolabe', moons: 'Moons', zellige: 'Zellige' },
         hijriByNature: 'Hijri by nature',
@@ -1696,6 +1697,7 @@ export const en = {
             notNow: 'Not now',
         },
         choose: {
+            deadlinePickPrompt: 'Turn the ring, or press a day or a season',
             searchChannels: 'Search a channel by name…',
             deadlineSeasons: 'A season',
             deadlineCustom: 'Another time',

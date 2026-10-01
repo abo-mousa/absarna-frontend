@@ -175,10 +175,16 @@ function CalendarPicker({ value = null, onChange, min = null, max = null, marks 
             onChange(iso);
         }
     };
-    const shared = { days, dayProps, value: shown, today, allowed, marks, calendar, other, white, title, onLive, onCommit };
     // How far ahead the day is, as a person would say it — the feedback a turn gives as it goes.
+    // The two rings print it in their plate, beside the day it is about; the grid, under itself.
     const ahead = shown ? daysBetween(today, shown) : null;
     const distance = ahead != null && ahead > 0 ? distanceOf(ahead) : null;
+    const aheadText = distance ? {
+        main: t('calendar.ahead', { duration: countOf(`journey.units.${distance.unit}`, distance.count, { oblique: true }) }),
+        days: distance.unit !== 'DAYS' ? countOf('journey.units.DAYS', ahead) : null,
+    } : null;
+    const ring = style !== 'zellige';
+    const shared = { days, dayProps, value: shown, today, allowed, marks, calendar, other, white, title, onLive, onCommit, ahead: aheadText };
 
     return (
         <div className="flex flex-col gap-2.5 select-none">
@@ -225,21 +231,16 @@ function CalendarPicker({ value = null, onChange, min = null, max = null, marks 
                 {style === 'zellige' && <ZelligeMonth {...shared} />}
             </div>
 
-            <p className="text-center text-sm min-h-[1.25rem]" aria-live="polite">
-                {distance ? (
+            {/* The distance, read aloud as it changes; on screen the rings show it in their plate. */}
+            <p className={ring ? 'sr-only' : '-mt-1 text-center text-sm min-h-[1.25rem]'} aria-live="polite">
+                {aheadText && (
                     <>
-                        <span className="font-semibold text-primary-dark dark:text-primary">
-                            {t('calendar.ahead', { duration: countOf(`journey.units.${distance.unit}`, distance.count, { oblique: true }) })}
-                        </span>
-                        {distance.unit !== 'DAYS' && (
-                            <span className="text-text-secondary">{' · '}{countOf('journey.units.DAYS', ahead)}</span>
-                        )}
+                        <span className="font-semibold text-primary-dark dark:text-primary">{aheadText.main}</span>
+                        {aheadText.days && <span className="text-text-secondary">{' · '}{aheadText.days}</span>}
                     </>
-                ) : style !== 'zellige' ? (
-                    <span className="text-text-muted">{t('calendar.turnHint')}</span>
-                ) : null}
+                )}
             </p>
-            {distance && style !== 'zellige' && <p className="-mt-2 text-center text-xs text-text-muted">{t('calendar.turnHint')}</p>}
+            {ring && <p className="-mt-1 text-center text-xs text-text-muted">{t('calendar.turnHint')}</p>}
         </div>
     );
 }

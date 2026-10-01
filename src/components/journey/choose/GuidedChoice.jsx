@@ -267,7 +267,9 @@ function CustomDeadlinePanel({ params, go, onClose }) {
     const min = isoAfter(1);
     const max = isoAfter(730);
     const seasons = useMemo(() => hijriDeadlines(), []);
-    const [choice, setChoice] = useState(isCustomDeadline(params.deadline) ? params.deadline : (seasons.find((s) => s.key === 'ramadan')?.key || isoAfter(60)));
+    // Nothing chosen until the reader chooses: the calendar opens on this month, not on a season
+    // months away that the reader never asked for.
+    const [choice, setChoice] = useState(isCustomDeadline(params.deadline) ? params.deadline : null);
     // From the seasons already computed: deadlineDate would walk the Hijri calendar again per render.
     const date = isSeasonDeadline(choice) ? seasons.find((season) => season.key === choice)?.date || null : deadlineDate(choice);
     const valid = !!date && date >= min && date <= max;
@@ -280,8 +282,8 @@ function CustomDeadlinePanel({ params, go, onClose }) {
                 <span className="text-xs font-semibold text-text-secondary">
                     {isSeasonDeadline(choice) ? t(`journey.seasons.${choice}`) : t('journey.choose.deadlineCustomTitle')}
                 </span>
-                <span className="font-serif text-xl font-bold text-primary-dark dark:text-primary leading-snug" aria-live="polite">
-                    {valid ? formatDay(date, { weekday: 'long', day: 'numeric', month: 'long' }) : '—'}
+                <span className={`font-serif leading-snug ${valid ? 'text-xl font-bold text-primary-dark dark:text-primary' : 'text-base font-semibold text-text-muted'}`} aria-live="polite">
+                    {valid ? formatDay(date, { weekday: 'long', day: 'numeric', month: 'long' }) : t('journey.choose.deadlinePickPrompt')}
                 </span>
                 {valid && (
                     <span className="text-xs text-text-secondary">

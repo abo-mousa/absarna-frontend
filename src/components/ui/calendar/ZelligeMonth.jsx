@@ -18,7 +18,9 @@ function ZelligeMonth({ days, dayProps, value, today, allowed, marks, calendar, 
         }
     }
     return (
-        <div className="rounded-2xl border border-border bg-bg p-2.5">
+        // No wider than the two rings: stretched across a desktop panel each star became a tile
+        // the size of a hand.
+        <div className="w-full max-w-[360px] mx-auto rounded-2xl border border-border bg-bg p-2.5">
             <div className="grid grid-cols-7 text-center mb-1.5" aria-hidden="true">
                 {aWeekFromSaturday().map((day) => (
                     <span key={day} className="text-[0.7rem] font-semibold text-text-muted">{formatDay(day, { weekday: 'short' })}</span>
