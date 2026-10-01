@@ -8,10 +8,10 @@ import { t } from '@/i18n';
 const POINTS = ['wird', 'road', 'private'];
 
 /**
- * «طريقي» for a reader with no account. It is a tab in the phone's bar for everyone, so a visitor
+ * «طلب العلم» for a reader with no account. It is a tab in the phone's bar for everyone, so a visitor
  * who presses it is asking what it is — and a bounce to the login form answered with a password
  * box instead. This says what the place holds, that it is theirs alone, and how to have it; the
- * rest of «طريقي» (goals, milestones, the record) stays behind sign-in, since there is nothing of
+ * rest of «طلب العلم» (goals, milestones, the record) stays behind sign-in, since there is nothing of
  * a visitor's to show.
  */
 function JourneyIntro() {

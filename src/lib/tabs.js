@@ -5,7 +5,7 @@
  * <p>Five, and the same five at every width (product owner, 2026-09-29). The wide strip had seven
  * — Books, Articles and Posts each a tab — while the phone folded them, so a reader learned the
  * site twice. Now «اقرأ» holds all three behind one switch (`ReadSwitch`) everywhere, which is also
- * what gives «طريقي», the one place about the reader rather than the catalogue, a slot on a phone.
+ * what gives «طلب العلم», the one place about the reader rather than the catalogue, a slot on a phone.
  * A detail page belongs to the tab its list lives under — a book to «اقرأ», a channel to Channels
  * — so the bar keeps saying where the reader came from.
  */

@@ -103,7 +103,7 @@ describe('page guides', () => {
         }
     });
 
-    it('names a real page for every guide, and gives each «طريقي» page its link', () => {
+    it('names a real page for every guide, and gives each «طلب العلم» page its link', () => {
         const code = sources(join(process.cwd(), 'src')).join('\n');
         for (const id of PAGE_GUIDE_ORDER) {
             expect(code.includes(`guide="${id}"`), id).toBe(true);

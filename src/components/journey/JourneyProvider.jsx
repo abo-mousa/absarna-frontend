@@ -45,7 +45,7 @@ export function JourneyProvider({ children }) {
     /**
      * With a target (a programme, a book, a habit, a proposal) the dialog opens on how much; with
      * nothing, choosing WHAT is a page of its own (`/journey/choose`), not a first step squeezed
-     * into a dialog. `onCreated` runs once the goal exists — the choosing page goes to «طريقي».
+     * into a dialog. `onCreated` runs once the goal exists — the choosing page goes to «طلب العلم».
      */
     const openGoal = useCallback((prefill = null, { onCreated = null } = {}) => {
         if (!token) {

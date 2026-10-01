@@ -14,7 +14,7 @@ import { KEPT, fullWeek } from '@/lib/journey';
 import { t } from '@/i18n';
 
 /**
- * «طريقي» — where the portion is planned and reflected on (PROGRESS-AND-GOALS.md §7.3, the `Main`
+ * «طلب العلم» — where the portion is planned and reflected on (PROGRESS-AND-GOALS.md §7.3, the `Main`
  * and `Phone` boards); Today is where it is done. The week's intention, one text chosen by the
  * reader's state, the goals, what is nearly finished, twelve weeks of steadiness, the Hijri month
  * so far, the finished shelf — and then it ends.

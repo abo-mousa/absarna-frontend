@@ -1386,6 +1386,9 @@ export const en = {
     },
 
     calendar: {
+        style: 'Calendar style',
+        styles: { astrolabe: 'Astrolabe', moons: 'Moons', zellige: 'Zellige' },
+        hijriByNature: 'Hijri by nature',
         which: 'Calendar',
         hijri: 'Hijri',
         gregorian: 'Gregorian',

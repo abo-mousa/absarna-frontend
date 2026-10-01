@@ -52,7 +52,10 @@ const HABITS = [
 ];
 
 function readParams(search) {
-    const minutes = Number.parseInt(search.get('minutes') || '', 10);
+    // Held to the dial's range here, once, so the dial and the proposals read the same length — an
+    // older link can carry up to 240 from the number box the dial replaced.
+    const parsed = Number.parseInt(search.get('minutes') || '', 10);
+    const minutes = Number.isFinite(parsed) ? Math.min(120, Math.max(5, parsed)) : Number.NaN;
     const page = Number.parseInt(search.get('page') || '', 10);
     return {
         way: search.get('way') || '',

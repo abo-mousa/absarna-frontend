@@ -133,7 +133,7 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
 };
 
 /**
- * «طريقي» is a tab for everyone, so a visitor who presses it is shown what it is (JourneyIntro)
+ * «طلب العلم» is a tab for everyone, so a visitor who presses it is shown what it is (JourneyIntro)
  * rather than bounced to the login form. Its inner pages stay behind `ProtectedRoute`.
  */
 const JourneyEntry = () => {
@@ -291,7 +291,7 @@ function AppRoutes() {
                 <Route path="/subscriptions" element={
                     <ProtectedRoute><Subscriptions /></ProtectedRoute>
                 } />
-                {/* «طريقي», the progress tab (PROGRESS-AND-GOALS.md §7.1). */}
+                {/* «طلب العلم», the progress tab (PROGRESS-AND-GOALS.md §7.1). */}
                 <Route path="/journey" element={<JourneyEntry />} />
                 <Route path="/journey/goals" element={<ProtectedRoute><JourneyGoals /></ProtectedRoute>} />
                 <Route path="/journey/choose" element={<ProtectedRoute><JourneyChoose /></ProtectedRoute>} />

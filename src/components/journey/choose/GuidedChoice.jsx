@@ -335,8 +335,8 @@ function CustomDeadlinePanel({ params, go, onClose }) {
 function TimeStep({ params, go }) {
     const deadlines = useMemo(() => deadlineChoices(), []);
     const [deadlineOpen, setDeadlineOpen] = useState(false);
-    // The dial holds any length from five minutes to two hours; the URL keeps what it set.
-    const minutes = Math.min(120, Math.max(5, params.minutes));
+    // Already held to the dial's five minutes to two hours where the address is read (readParams).
+    const { minutes } = params;
     return (
         <>
             <h1 className="font-serif text-3xl font-bold">{t('journey.choose.timeTitle')}</h1>

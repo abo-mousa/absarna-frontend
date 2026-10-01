@@ -60,11 +60,18 @@ function vibrate(ms) {
  */
 function MinutesDial({ value, onChange }) {
     const [live, setLive] = useState(null);       // the length while a finger is down
+    // A drag follows the finger with no glide; a click or a tap glides to where it landed.
+    const [dragged, setDragged] = useState(false);
+    // The length just chosen, held until the page has it: between the finger lifting and the
+    // address changing there is a render with the old `value`, and showing it was the «blip» —
+    // the star snapped back to where it had been, then jumped forward again.
+    const [held, setHeld] = useState(null);
+    useEffect(() => setHeld(null), [value]);
     const svgRef = useRef(null);
     const sliderRef = useRef(null);
     const latest = useRef({ value, onChange });
     latest.current = { value, onChange };
-    const shown = live ?? value;
+    const shown = live ?? held ?? value;
     const rtl = isRtl();
 
     const read = (event, previous) => {
@@ -75,27 +82,32 @@ function MinutesDial({ value, onChange }) {
         if (previous == null && Math.hypot(dx, dy) < HIT_INNER) return null;
         return minutesAt(dx, dy, previous);
     };
-    const move = (next) => {
-        if (next == null || next === shown) return;
-        vibrate(DIAL_USUAL.includes(next) ? 12 : 4);
-        setLive(next);
-    };
+    const buzz = (next) => vibrate(DIAL_USUAL.includes(next) ? 12 : 4);
     const onPointerDown = (event) => {
         const next = read(event, null);
         if (next == null) return;
         event.currentTarget.setPointerCapture?.(event.pointerId);
-        move(next);
-        if (next === shown) setLive(next);
+        if (next !== shown) buzz(next);
+        setDragged(false);
+        setLive(next);
     };
     const onPointerMove = (event) => {
         if (live == null) return;
-        move(read(event, live));
+        const next = read(event, live);
+        if (next == null || next === live) return;
+        buzz(next);
+        setDragged(true);
+        setLive(next);
     };
     const finish = () => {
         if (live == null) return;
         const chosen = live;
         setLive(null);
-        if (chosen !== value) onChange(chosen);
+        setDragged(false);
+        if (chosen !== value) {
+            setHeld(chosen);
+            onChange(chosen);
+        }
     };
     // A mouse wheel or a trackpad turns the dial — but only once the dial has been clicked or
     // tabbed to, so scrolling the page past it never changes a choice. Listened to directly,
@@ -129,7 +141,7 @@ function MinutesDial({ value, onChange }) {
     const fill = (shown / DIAL_MAX) * 100;
     const unit = new Intl.PluralRules(currentLocale()).select(shown) === 'few' ? t('journey.dial.unitFew') : t('journey.dial.unitMany');
     const hint = t(`journey.choose.minutesHint.${shown < 15 ? 'm10' : shown < 35 ? 'm20' : shown < 55 ? 'm45' : 'm60'}`);
-    const glide = live == null ? 'transition-[stroke-dasharray,transform] duration-150 ease-out motion-reduce:transition-none' : '';
+    const glide = dragged ? '' : 'transition-[stroke-dasharray,transform] duration-200 ease-out motion-reduce:transition-none';
 
     return (
         <div
@@ -147,7 +159,7 @@ function MinutesDial({ value, onChange }) {
             <svg
                 ref={svgRef}
                 viewBox="0 0 340 340"
-                className={`w-full h-full ${live == null ? 'cursor-pointer' : 'cursor-grabbing'}`}
+                className={`w-full h-full ${dragged ? 'cursor-grabbing' : 'cursor-pointer'}`}
                 aria-hidden="true"
                 onPointerDown={onPointerDown}
                 onPointerMove={onPointerMove}
@@ -212,7 +224,7 @@ function MinutesDial({ value, onChange }) {
                 <text x={C} y={C + 32} textAnchor="middle" className="fill-gold-ink text-[11px] font-sans font-semibold">{unit}</text>
 
                 {/* the handle: the khatam star at the end of the arc */}
-                <g style={{ transform: `rotate(${angle}deg)`, transformOrigin: `${C}px ${C}px` }} className={`${glide} ${live == null ? 'cursor-grab' : 'cursor-grabbing'}`}>
+                <g style={{ transform: `rotate(${angle}deg)`, transformOrigin: `${C}px ${C}px` }} className={`${glide} ${dragged ? 'cursor-grabbing' : 'cursor-grab'}`}>
                     <circle cx={C} cy={C - TRACK} r={17} className="fill-surface stroke-gold" strokeWidth={2} />
                     <polygon points={khatamAt(C, C - TRACK, 11)} className="fill-gold stroke-gold-ink" strokeWidth={0.8} />
                 </g>
