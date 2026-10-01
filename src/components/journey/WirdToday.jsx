@@ -12,6 +12,7 @@ import { amountText, goalTitle, isolate, measureOf, resumeHref, slotName, tomorr
 import { safeStorage } from '@/lib/safeStorage';
 import { localDay } from '@/lib/dayFormat';
 import { describeError } from '@/lib/describeError';
+import { formatCount } from '@/lib/numbers';
 import { t } from '@/i18n';
 
 const FIRST_HIDDEN_KEY = 'absarna.firstWirdHiddenAt';
@@ -144,11 +145,14 @@ function PortionCard({ goal, view }) {
             current ? 'border-gold shadow-sm' : 'border-border-light'
         } ${view.status === 'excused' ? 'opacity-70' : ''}`}>
             <div className="flex items-start gap-3">
+                {/* Today's portion only — the star means one thing on this card: it fills as the
+                    day's amount is done, and says the count inside it. */}
                 <KhatamProgress
                     value={Math.min(1, target ? units / target : 0)}
+                    label={`${formatCount(Math.min(units, target))}/${formatCount(target)}`}
                     title={t('journey.today.progressAria', { done: units, target: amountText(measure, target, true) })}
                     traceClassName={done ? 'text-gold' : 'text-primary'}
-                    className="w-12 h-12 flex-shrink-0"
+                    className="w-14 h-14 flex-shrink-0"
                 />
                 <div className="min-w-0 flex-1">
                     <p className={`text-xs font-semibold ${current ? 'text-gold-ink' : 'text-text-muted'}`}>{when}</p>

@@ -3,13 +3,12 @@ import { Bookmark } from 'lucide-react';
 import { useConsent } from '@/contexts/ConsentContext';
 import { KhatamStar } from '@/components/ui';
 import { resolveMediaUrl, videoPoster } from '@/lib/media';
-import { chosenByText, finishText, itemKey, itemMeta } from '@/lib/goalChoice';
-import { formatDay } from '@/lib/dayFormat';
+import { chosenByText, itemKey, itemMeta } from '@/lib/goalChoice';
 import { t } from '@/i18n';
 
 /**
  * The pieces every screen of `JourneyChoose` shares: a programme's or book's picture, its card, the
- * timeline that draws a pace, and the shortlist's mark.
+ * shelves, and the shortlist's mark (the pace is `journey/PortionTrack`).
  */
 
 const TINTS = ['bg-primary-light text-primary', 'bg-gold-light text-gold-ink', 'bg-surface-hover text-text-secondary'];
@@ -87,81 +86,5 @@ export function Shelf({ title, items, onOpen, shortlist, onToggle }) {
                 ))}
             </div>
         </section>
-    );
-}
-
-const isoPlus = (days) => {
-    const now = new Date();
-    const day = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate() + days, 12));
-    return day.toISOString().slice(0, 10);
-};
-
-/**
- * A pace drawn as a road: today at one end, the finish — the khatam star — where this amount gets
- * the reader, and their own date flagged in gold when they gave one. Proportional, so it reads the
- * same for three weeks or a year (the cell grid it replaced gave up past twelve weeks), with a tick
- * per week, or per month once weeks would crowd. Running past the date paints the overrun gold.
- *
- * @param days         days to finish at this amount (day 1 is today)
- * @param deadlineDays days from today to the reader's date; null for none
- */
-export function PaceTimeline({ days, deadlineDays = null }) {
-    if (!days) return null;
-    const deadline = deadlineDays != null && deadlineDays >= 0 ? deadlineDays : null;
-    const span = Math.max(days, deadline ?? 0);
-    // Headroom at the end, so the star and the flag never sit on the rail's edge.
-    const scale = span * 1.08 + 1;
-    const at = (d) => `${Math.min(100, (d / scale) * 100)}%`;
-    const late = deadline != null && days > deadline;
-    const step = span / 7 <= 26 ? 7 : 30;
-    const ticks = [];
-    for (let d = step; d < span; d += step) ticks.push(d);
-    const finishIso = isoPlus(days - 1);
-    const deadlineIso = deadline != null ? isoPlus(deadline) : null;
-
-    return (
-        <div className="flex flex-col gap-2">
-            <div className="relative h-7" aria-hidden="true">
-                <span className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 rounded-full bg-border-light" />
-                {ticks.map((d) => (
-                    <span key={d} className="absolute top-1/2 -translate-y-1/2 w-px h-2.5 bg-border" style={{ insetInlineStart: at(d) }} />
-                ))}
-                {/* Positioned inline, not with a `start-0` class: the build has no logical inset utilities. */}
-                <span
-                    className="absolute top-1/2 -translate-y-1/2 h-1.5 rounded-full bg-primary"
-                    style={{ insetInlineStart: 0, width: at(late ? deadline : days) }}
-                />
-                {late && (
-                    <span
-                        className="absolute top-1/2 -translate-y-1/2 h-1.5 rounded-full bg-gold/70"
-                        style={{ insetInlineStart: at(deadline), width: `calc(${at(days)} - ${at(deadline)})` }}
-                    />
-                )}
-                <span className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-surface border-2 border-primary" style={{ insetInlineStart: 0 }} />
-                {deadline != null && (
-                    <span className="absolute top-0 bottom-0 w-0.5 rounded-full bg-gold" style={{ insetInlineStart: at(deadline) }} />
-                )}
-                <span
-                    className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 rtl:translate-x-1/2 w-7 h-7 rounded-full bg-surface flex items-center justify-center shadow-sm ring-1 ring-border-light"
-                    style={{ insetInlineStart: at(days) }}
-                >
-                    <KhatamStar filled className={`w-4 h-4 ${late ? 'text-gold' : 'text-primary'}`} strokeWidth={8} />
-                </span>
-            </div>
-            <div className="flex items-start justify-between gap-3">
-                <span className="text-xs text-text-muted pt-0.5">{t('journey.choose.pace.today')}</span>
-                <span className="flex flex-col items-end text-end gap-0.5">
-                    <span className={`text-sm font-bold ${late ? 'text-gold-ink' : 'text-primary-dark dark:text-primary'}`}>
-                        {finishText(days)}
-                    </span>
-                    <span className="text-xs text-text-secondary">
-                        {formatDay(finishIso)}
-                        {deadlineIso && (
-                            <span className="text-gold-ink">{' · '}{t('journey.choose.pace.deadline', { date: formatDay(deadlineIso) })}</span>
-                        )}
-                    </span>
-                </span>
-            </div>
-        </div>
     );
 }

@@ -1327,8 +1327,8 @@ export const ar = {
                         title: 'أين أنت',
                         text: 'ما أتممته حتى الآن، وأين أنت من موعدك.',
                         marks: {
-                            '1': 'النجمة تمتلئ حتى الختمة.',
-                            '2': 'ما أتممته من المجموع.',
+                            '1': 'ما أتممته من المجموع.',
+                            '2': 'ما بقي، قطعةً لكل يومٍ من وِردك — تعدّ الأيام بعينك.',
                             '3': 'العلامة الذهبية حيث يكون من يمشي بخطى ثابتة إلى موعدك — مسافة تراها، لا حكمٌ عليك.',
                             '4': 'أمتقدّم أنت أم متأخر، أو كم يكفيك في اليوم لتبلغ موعدك.',
                         },
@@ -1618,6 +1618,15 @@ export const ar = {
     },
 
     journey: {
+        track: {
+            perDay: 'كل قطعةٍ يومٌ من وِردك: {amount}',
+            perWeek: 'كل قطعةٍ أسبوعٌ من وِردك: {amount}',
+            perWeekGrouped: 'كل قطعةٍ أسبوعٌ من وِردك',
+            aria: '{done} من {total}، وتُتمّه {finish}',
+            amountWeek: '{amount} كل أسبوع',
+            less: 'أقلّ',
+            more: 'أكثر',
+        },
         title: 'طريقي',
         navLabel: 'أقسام طريقي',
         intro: {
@@ -1900,7 +1909,10 @@ export const ar = {
             notNow: 'ليس الآن',
         },
         choose: {
-            aboutMinutes: 'نحو {minutes}',
+            aboutMinutesADay: 'نحو {minutes} في اليوم',
+            customMinutes: 'أو مدة أخرى:',
+            minutesUnit: 'دقيقة',
+            customMinutesSet: 'اعتمدها',
             pace: { today: 'اليوم', deadline: 'موعدك {date}' },
             groupIslamic: 'في العلوم الشرعية',
             groupOther: 'وفي غيرها',

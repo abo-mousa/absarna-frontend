@@ -188,7 +188,6 @@ function JourneyChoose() {
     const deadline = useMemo(() => (params.way === 'guided'
         ? deadlineChoices().find((choice) => choice.key === params.deadline)?.date || null
         : null), [params.way, params.deadline]);
-    const deadlineDays = deadline ? Math.round((new Date(`${deadline}T12:00:00`) - new Date()) / 86_400_000) : null;
 
     return (
         <PageShell tab>
@@ -230,7 +229,6 @@ function JourneyChoose() {
                     item={preview.item}
                     proposal={preview.proposal}
                     deadline={preview.proposal ? deadline : null}
-                    deadlineDays={deadlineDays}
                     shortlist={shortlist}
                     onToggle={onToggle}
                     onCommit={onCommit}

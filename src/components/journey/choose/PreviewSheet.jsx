@@ -1,12 +1,15 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Bookmark, Play } from 'lucide-react';
 import { Modal, Button, KhatamStar, Spinner } from '@/components/ui';
 import { useSeriesDetail } from '@/hooks/useSeries';
 import { useGoals } from '@/hooks/useGoals';
 import { goalFor, bookPortion } from '@/lib/journey';
-import { averageMinutes, chosenByText, daysToFinish, itemKey, prefillFor } from '@/lib/goalChoice';
+import { averageMinutes, chosenByText, itemKey, prefillFor } from '@/lib/goalChoice';
 import { amountText, learningTime } from '@/lib/goalText';
-import { PaceTimeline, Poster } from './parts';
+import { Poster } from './parts';
+import PaceStepper from '../PaceStepper';
+import PortionTrack from '../PortionTrack';
 import { formatDigits, t } from '@/i18n';
 
 /**
@@ -17,7 +20,7 @@ import { formatDigits, t } from '@/i18n';
  * <p>«اجعله وِردي» here is the ONE commit button of the whole choosing flow: a card anywhere opens
  * this sheet, and nothing else starts a goal. A programme already pursued says so and links to it.
  */
-function PreviewSheet({ item, proposal = null, deadline = null, deadlineDays = null, shortlist, onToggle, onCommit, onClose }) {
+function PreviewSheet({ item, proposal = null, deadline = null, shortlist, onToggle, onCommit, onClose }) {
     const series = item.kind === 'FINISH_SERIES';
     const detail = useSeriesDetail(series ? item.targetId : null, 20, series);
     const goals = useGoals();
@@ -28,8 +31,11 @@ function PreviewSheet({ item, proposal = null, deadline = null, deadlineDays = n
 
     const units = series ? (page?.series?.contentCount ?? item.episodes ?? 0) : (item.pages ?? item.book?.pages ?? 0);
     const average = series ? averageMinutes(episodes) : null;
-    const amount = proposal?.amount || (series ? 1 : bookPortion(units, 0));
-    const days = daysToFinish(units, amount);
+    // The reader's own pace: from the proposal they opened (whatever they set on its card), else
+    // one episode, or a month's worth of pages; − and + re-cut the track, and it is what the goal
+    // dialog opens with.
+    const [chosen, setChosen] = useState(null);
+    const amount = chosen ?? (proposal?.amount || (series ? 1 : bookPortion(units, 0)));
     const saved = shortlist.some((entry) => itemKey(entry) === itemKey(item));
     const description = series ? page?.series?.description : item.book?.description;
 
@@ -67,11 +73,13 @@ function PreviewSheet({ item, proposal = null, deadline = null, deadlineDays = n
 
                 {units > 0 && (
                     <div className="flex flex-col gap-3 rounded-md bg-bg p-3">
-                        <span className="text-sm font-semibold">{t('journey.choose.paceDaily', { amount: amountText(series ? 'EPISODES' : 'PAGES', amount) })}</span>
-                        <PaceTimeline days={days} deadlineDays={deadlineDays} />
-                        {proposal && !proposal.fitsDeadline && (
-                            <span className="text-xs font-semibold text-gold-ink">{t('journey.choose.missesDeadline')}</span>
-                        )}
+                        <PaceStepper measure={series ? 'EPISODES' : 'PAGES'} amount={amount} onChange={setChosen} max={Math.max(1, units)} />
+                        {series && average ? (
+                            <span className="text-xs text-center text-text-secondary -mt-1">
+                                {t('journey.choose.aboutMinutesADay', { minutes: learningTime(average * amount) })}
+                            </span>
+                        ) : null}
+                        <PortionTrack total={units} amount={amount} measure={series ? 'EPISODES' : 'PAGES'} deadline={deadline} />
                     </div>
                 )}
 

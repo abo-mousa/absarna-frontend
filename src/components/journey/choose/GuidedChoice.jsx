@@ -6,7 +6,9 @@ import { FIELDS, fieldOf, isField, searchSubjects, subjectLabel } from '@/lib/su
 import { MINUTE_CHOICES, asksForSubject, chosenByText, deadlineChoices, itemKey } from '@/lib/goalChoice';
 import { amountText, learningTime } from '@/lib/goalText';
 import { countOf } from '@/lib/plural';
-import { PaceTimeline, Poster, ShortlistMark } from './parts';
+import { Poster, ShortlistMark } from './parts';
+import PaceStepper from '../PaceStepper';
+import PortionTrack from '../PortionTrack';
 import { t } from '@/i18n';
 
 /**
@@ -22,7 +24,6 @@ const holds = (topic) => [
     topic.programmes ? countOf('journey.units.PROGRAMMES', topic.programmes) : null,
     topic.books ? countOf('journey.units.BOOKS', topic.books) : null,
 ].filter(Boolean).join(' · ');
-const daysUntil = (iso) => (iso ? Math.round((new Date(`${iso}T12:00:00`) - new Date()) / 86_400_000) : null);
 
 function Answered({ params, go }) {
     const chips = [];
@@ -226,6 +227,38 @@ function SubjectStep({ topics, params, go }) {
     );
 }
 
+/**
+ * «مدة أخرى»: a number of minutes of the reader's own, between the backend's bounds (5–240) — the
+ * four tiles are the common answers, not the only ones.
+ */
+function CustomMinutes({ params, go }) {
+    const custom = !MINUTE_CHOICES.includes(params.minutes);
+    const [value, setValue] = useState(custom ? String(params.minutes) : '');
+    const minutes = Number.parseInt(value, 10);
+    const valid = Number.isFinite(minutes) && minutes >= 5 && minutes <= 240;
+    return (
+        <form
+            className="flex items-center gap-2 -mt-2"
+            onSubmit={(event) => { event.preventDefault(); if (valid) go({ minutes }); }}
+        >
+            <label className="text-sm font-semibold text-text-secondary" htmlFor="custom-minutes">{t('journey.choose.customMinutes')}</label>
+            <input
+                id="custom-minutes"
+                type="number"
+                inputMode="numeric"
+                min={5}
+                max={240}
+                value={value}
+                onChange={(event) => setValue(event.target.value)}
+                placeholder="30"
+                className={`w-20 h-10 px-3 rounded-md border bg-surface text-sm text-center ${custom ? 'border-primary ring-1 ring-primary' : 'border-border'}`}
+            />
+            <span className="text-sm text-text-secondary">{t('journey.choose.minutesUnit')}</span>
+            <Button type="submit" variant="ghost" disabled={!valid}>{t('journey.choose.customMinutesSet')}</Button>
+        </form>
+    );
+}
+
 function TimeStep({ params, go }) {
     const deadlines = useMemo(() => deadlineChoices(), []);
     return (
@@ -242,6 +275,7 @@ function TimeStep({ params, go }) {
                     />
                 ))}
             </div>
+            <CustomMinutes params={params} go={go} />
             <h2 className="font-serif text-2xl font-bold mt-2">{t('journey.choose.deadlineTitle')}</h2>
             <div className="flex flex-wrap gap-2">
                 {deadlines.map((deadline) => (
@@ -262,14 +296,20 @@ function TimeStep({ params, go }) {
     );
 }
 
-function ProposalCard({ proposal, deadlineDays, onOpen, shortlist, onToggle }) {
-    const { item, measure, amount } = proposal;
+function ProposalCard({ proposal, deadline, onOpen, shortlist, onToggle }) {
+    const { item, measure } = proposal;
     const series = item.kind === 'FINISH_SERIES';
-    const perEpisode = series && proposal.minutesPerDay && amount ? Math.round(proposal.minutesPerDay / amount) : null;
+    // The pace is the reader's to change: it starts at what fits the minutes they gave, and the
+    // track re-cuts as they move it. What one unit takes is the backend's measure, scaled.
+    const [amount, setAmount] = useState(proposal.amount);
+    const perUnit = proposal.minutesPerDay && proposal.amount ? proposal.minutesPerDay / proposal.amount : null;
+    const minutes = perUnit ? Math.round(perUnit * amount) : null;
+    const total = series ? item.episodes : item.pages;
+    const chosen = { ...proposal, amount, minutesPerDay: minutes };
     return (
         <div className="rounded-lg border border-border bg-surface overflow-hidden flex flex-col">
             <div className="relative">
-                <button type="button" className="block w-full" onClick={() => onOpen(item, proposal)} aria-label={item.title}>
+                <button type="button" className="block w-full" onClick={() => onOpen(item, chosen)} aria-label={item.title}>
                     <Poster item={item} className="aspect-video w-full rounded-none" />
                 </button>
                 <ShortlistMark item={item} shortlist={shortlist} onToggle={onToggle} className="absolute top-2 start-2" />
@@ -284,27 +324,25 @@ function ProposalCard({ proposal, deadlineDays, onOpen, shortlist, onToggle }) {
                 </div>
                 <span className="text-sm text-text-secondary">
                     {[
-                        amountText(series ? 'EPISODES' : 'PAGES', series ? item.episodes : item.pages),
-                        perEpisode ? t('journey.choose.perEpisode', { minutes: learningTime(perEpisode) }) : null,
+                        amountText(measure, total),
+                        series && perUnit ? t('journey.choose.perEpisode', { minutes: learningTime(Math.round(perUnit)) }) : null,
                     ].filter(Boolean).join(' · ')}
                 </span>
-                {/* The pace as one panel: how much a day and what it takes, the road to the finish,
-                    and a word only when something does not fit. */}
+                {/* The pace as one panel: the reader's own amount, what it takes a day, and the
+                    days it comes to — one segment each. */}
                 <div className="flex flex-col gap-3 rounded-md bg-bg p-3">
-                    <span className="text-sm">
-                        <span className="font-bold">{t('journey.choose.paceDaily', { amount: amountText(measure, amount) })}</span>
-                        {proposal.minutesPerDay ? (
-                            <span className="text-text-secondary">{' · '}{t('journey.choose.aboutMinutes', { minutes: learningTime(proposal.minutesPerDay) })}</span>
-                        ) : null}
-                    </span>
-                    <PaceTimeline days={proposal.days} deadlineDays={deadlineDays} />
-                    {proposal.fitsDay === false && proposal.minutesPerDay ? (
-                        <span className="text-xs font-semibold text-gold-ink">{t('journey.choose.whyLonger', { minutes: learningTime(proposal.minutesPerDay) })}</span>
+                    <PaceStepper measure={measure} amount={amount} onChange={setAmount} max={Math.max(1, total || 50)} />
+                    {minutes ? (
+                        <span className={`text-xs text-center -mt-1 ${proposal.fitsDay === false && amount === proposal.amount ? 'text-gold-ink font-semibold' : 'text-text-secondary'}`}>
+                            {proposal.fitsDay === false && amount === proposal.amount
+                                ? t('journey.choose.whyLonger', { minutes: learningTime(minutes) })
+                                : t('journey.choose.aboutMinutesADay', { minutes: learningTime(minutes) })}
+                        </span>
                     ) : null}
-                    {!proposal.fitsDeadline && <span className="text-xs font-semibold text-gold-ink">{t('journey.choose.missesDeadline')}</span>}
+                    <PortionTrack total={total} amount={amount} measure={measure} deadline={deadline} />
                 </div>
                 {item.chosenBy ? <span className="text-xs text-gold-ink">{chosenByText(item.chosenBy)}</span> : null}
-                <Button className="mt-auto" onClick={() => onOpen(item, proposal)}>{t('journey.choose.look')}</Button>
+                <Button className="mt-auto" onClick={() => onOpen(item, chosen)}>{t('journey.choose.look')}</Button>
             </div>
         </div>
     );
@@ -316,7 +354,6 @@ function ProposalsStep({ params, go, onOpen, shortlist, onToggle, onBrowse }) {
     const subject = params.field === 'ANY' ? null : (params.subject || params.field);
     // Every page so far, in order: «أرني ثلاثة غيرها» adds three below, never swaps the first ones out.
     const proposals = useGoalProposalPages({ subject, minutes: params.minutes, deadline, pages: params.page });
-    const deadlineDays = daysUntil(deadline);
     const thin = proposals.widened && subject && !isField(subject)
         ? t('journey.choose.widened', { subject: subjectLabel(subject), field: subjectLabel(params.field) })
         : null;
@@ -339,7 +376,7 @@ function ProposalsStep({ params, go, onOpen, shortlist, onToggle, onBrowse }) {
                         <ProposalCard
                             key={itemKey(proposal.item)}
                             proposal={proposal}
-                            deadlineDays={deadlineDays}
+                            deadline={deadline}
                             onOpen={onOpen}
                             shortlist={shortlist}
                             onToggle={onToggle}

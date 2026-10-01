@@ -1,33 +1,31 @@
 import { Link } from 'react-router-dom';
 import DayStars from './DayStars';
+import PortionTrack from './PortionTrack';
 import { amountText, goalTitle, measureOf, paceText, whenName } from '@/lib/goalText';
 import { t } from '@/i18n';
 
 /**
- * How far along a finishing goal is, as a bar — with a tick where a steady reader would be today
- * when there is a deadline, so "behind" is a distance to see rather than a verdict to read.
+ * How far along a finishing goal is, as the days it takes — see `PortionTrack`. With a deadline,
+ * the gold tick is where a steady reader would be today and the status says ahead or behind, so
+ * "behind" is a distance to see rather than a verdict to read.
  */
 export function PaceBar({ goal }) {
     const pace = goal.pace;
     if (!pace?.total) return null;
-    const share = (units) => `${Math.min(100, Math.max(0, (units / pace.total) * 100))}%`;
-    const measure = measureOf(goal);
     return (
-        <div>
-            <div className="relative h-2 rounded-full bg-border-light overflow-visible"
-                 role="img"
-                 aria-label={t('journey.pace.barAria', { current: pace.current, total: amountText(measure, pace.total, true) })}>
-                <div className="absolute inset-y-0 start-0 rounded-full bg-primary" style={{ width: share(pace.current) }} />
-                {pace.expectedUnits != null && pace.remaining > 0 && (
-                    <span className="absolute -top-1 -bottom-1 w-0.5 bg-gold-ink" style={{ insetInlineStart: share(pace.expectedUnits) }}
-                          title={t('journey.pace.expectedTick')} />
-                )}
-            </div>
-            <p className="flex justify-between text-xs text-text-muted mt-1.5">
-                <span>{t('journey.pace.of', { current: pace.current, total: amountText(measure, pace.total, true) })}</span>
-                <span>{paceText(goal)}</span>
-            </p>
-        </div>
+        <PortionTrack
+            total={pace.total}
+            current={pace.current}
+            amount={goal.amount}
+            measure={measureOf(goal)}
+            period={goal.period}
+            daysPerWeek={goal.daysPerWeek || 7}
+            deadline={goal.deadline}
+            finishDate={pace.finishDate}
+            daysToFinish={pace.daysToFinish}
+            expectedUnits={pace.expectedUnits}
+            status={goal.deadline ? paceText(goal) : null}
+        />
     );
 }
 

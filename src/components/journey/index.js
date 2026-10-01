@@ -4,6 +4,8 @@ export { default as MakeWird } from './MakeWird';
 export { JourneyProvider } from './JourneyProvider';
 export { useJourney } from './journeyContext';
 export { default as GoalRow, PaceBar } from './GoalRow';
+export { default as PortionTrack } from './PortionTrack';
+export { default as PaceStepper } from './PaceStepper';
 export { default as DayStars, DayStar, DayLegend } from './DayStars';
 export { default as CumulativeLine } from './CumulativeLine';
 export { default as JourneyNav } from './JourneyNav';

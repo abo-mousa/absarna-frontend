@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowBack } from '@/components/ui/DirectionalIcon';
 import PageShell from '../components/layout/PageShell';
-import { QueryState, Cartouche, KhatamProgress, Button, Modal } from '../components/ui';
+import { QueryState, Cartouche, Button, Modal } from '../components/ui';
 import { CumulativeLine, DayLegend, DayStars, PaceBar, PausedLine, SacredText, useJourney } from '../components/journey';
 import { useArchiveGoal, useGoal, usePauseGoal, useResumeGoal, useUpdateGoal } from '../hooks/useGoals';
 import { useToast } from '../contexts/ToastContext';
@@ -72,13 +72,8 @@ function GoalBody({ goal }) {
             </header>
 
             {goal.pace?.total != null && (
-                <section data-guide="goal-pace" className="flex items-center gap-5 p-5 rounded-lg border border-border-light bg-surface">
-                    <KhatamProgress
-                        value={goal.pace.total ? goal.pace.current / goal.pace.total : 0}
-                        title={t('journey.pace.barAria', { current: goal.pace.current, total: amountText(measure, goal.pace.total, true) })}
-                        className="w-20 h-20 flex-shrink-0"
-                    />
-                    <div className="flex-1 min-w-0"><PaceBar goal={goal} /></div>
+                <section data-guide="goal-pace" className="p-5 rounded-lg border border-border-light bg-surface">
+                    <PaceBar goal={goal} />
                 </section>
             )}
 

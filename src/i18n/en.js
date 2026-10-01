@@ -1100,8 +1100,8 @@ export const en = {
                         title: 'Where you stand',
                         text: 'What you have finished so far, and how that sits with your date.',
                         marks: {
-                            '1': 'The star fills up to the finish.',
-                            '2': 'How much of the whole you have finished.',
+                            '1': 'How much of the whole you have finished.',
+                            '2': 'What is left, one segment per day of your portion — the days, to count at a glance.',
                             '3': 'The gold tick is where a steady pace to your date would be — a distance to see, not a verdict.',
                             '4': 'Ahead or behind, or how much a day gets you there on time.',
                         },
@@ -1386,6 +1386,15 @@ export const en = {
     },
 
     journey: {
+        track: {
+            perDay: 'Each segment is a day of your portion: {amount}',
+            perWeek: 'Each segment is a week of your portion: {amount}',
+            perWeekGrouped: 'Each segment is a week of your portion',
+            aria: '{done} of {total}, finished {finish}',
+            amountWeek: '{amount} a week',
+            less: 'Less',
+            more: 'More',
+        },
         title: 'My path',
         navLabel: 'My path sections',
         intro: {
@@ -1664,7 +1673,10 @@ export const en = {
             notNow: 'Not now',
         },
         choose: {
-            aboutMinutes: 'about {minutes}',
+            aboutMinutesADay: 'about {minutes} a day',
+            customMinutes: 'Or another length:',
+            minutesUnit: 'minutes',
+            customMinutesSet: 'Use it',
             pace: { today: 'Today', deadline: 'Your date {date}' },
             groupIslamic: 'In the Islamic sciences',
             groupOther: 'And beyond them',

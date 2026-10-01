@@ -198,7 +198,7 @@ const SHOTS = [
         },
     })),
     { name: 'goal-head', path: '/journey/goals/PRIMARY', anchor: 'goal-head', marks: ['p.font-reading', 'p[dir="auto"].text-text-primary', 'a.bg-primary', 'button'] },
-    { name: 'goal-pace', path: '/journey/goals/PRIMARY', anchor: 'goal-pace', marks: [{ sel: '[role="img"]', nth: 0 }, { sel: '[role="img"]', nth: 1 }, 'span[title]', 'p.justify-between > span:last-child'] },
+    { name: 'goal-pace', path: '/journey/goals/PRIMARY', anchor: 'goal-pace', marks: ['[data-track="done"]', '[data-track="left"]', 'span[title]', '[data-track="status"]'] },
     { name: 'goal-week', path: '/journey/goals/PRIMARY', anchor: 'goal-week', marks: ['ul', 'div.mt-5', '[data-guide="legend"]'] },
     {
         name: 'goal-cumulative', path: '/journey/goals/PRIMARY', anchor: 'goal-cumulative',
