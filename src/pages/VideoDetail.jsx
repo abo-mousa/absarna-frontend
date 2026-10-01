@@ -333,15 +333,10 @@ function VideoDetail() {
                             )}
                         </div>
 
+                        {/* In reading order, as Pager does: previous at the start with its arrow
+                            before the word, next at the end with its arrow after it — so under RTL
+                            «› السابق» sits on the right and «التالي ‹» on the left. */}
                         <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => nextVideo && navigate(`/video/${nextVideo.id}`)}
-                                disabled={!nextVideo}
-                                title={nextVideo?.title}
-                                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-md bg-surface-hover text-text-secondary text-sm font-semibold hover:text-text-primary transition-colors disabled:opacity-40 disabled:pointer-events-none"
-                            >
-                                <ChevronForward size={16} /> {t('video.next')}
-                            </button>
                             <button
                                 onClick={() => prevVideo && navigate(`/video/${prevVideo.id}`)}
                                 disabled={!prevVideo}
@@ -349,6 +344,14 @@ function VideoDetail() {
                                 className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-md bg-surface-hover text-text-secondary text-sm font-semibold hover:text-text-primary transition-colors disabled:opacity-40 disabled:pointer-events-none"
                             >
                                 <ChevronBack size={16} /> {t('video.previous')}
+                            </button>
+                            <button
+                                onClick={() => nextVideo && navigate(`/video/${nextVideo.id}`)}
+                                disabled={!nextVideo}
+                                title={nextVideo?.title}
+                                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-md bg-surface-hover text-text-secondary text-sm font-semibold hover:text-text-primary transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                            >
+                                {t('video.next')} <ChevronForward size={16} />
                             </button>
                         </div>
                     </div>

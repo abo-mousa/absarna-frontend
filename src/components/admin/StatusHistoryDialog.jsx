@@ -2,6 +2,7 @@ import { Modal, Badge } from '@/components/ui';
 import { useChannelStatusHistory } from '@/hooks/useAdminData';
 import { formatWhen, statusLabel } from '@/lib/channelStatus';
 import { t } from '@/i18n';
+import { ArrowForward } from '../ui/DirectionalIcon';
 
 const STATUS_VARIANT = { PENDING: 'featured', ACTIVE: 'success', REJECTED: 'danger', SUSPENDED: 'muted' };
 
@@ -20,7 +21,9 @@ export default function StatusHistoryDialog({ channel, open, onClose }) {
                         <li key={row.id} className="border border-border-light rounded-lg p-3 text-sm bg-surface">
                             <div className="flex items-center gap-2 flex-wrap mb-1">
                                 <Badge variant={STATUS_VARIANT[row.fromStatus] ?? 'muted'}>{statusLabel(row.fromStatus)}</Badge>
-                                <span aria-hidden="true">←</span>
+                                {/* From the old status towards the new, in reading order: a drawn arrow
+                                    that turns with the language, not a «←» that is right in Arabic only. */}
+                                <ArrowForward size={14} className="text-text-muted flex-shrink-0" />
                                 <Badge variant={STATUS_VARIANT[row.toStatus] ?? 'muted'}>{statusLabel(row.toStatus)}</Badge>
                                 <span className="text-xs text-text-muted">
                                     {formatWhen(row.changedAt)}
