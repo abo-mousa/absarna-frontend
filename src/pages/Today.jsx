@@ -82,9 +82,10 @@ function Today() {
     // since it is the one thing here addressed to them alone.
     const { data: invitations = [] } = useChannelInvitations(!!token);
 
-    // «اجعله وِردًا» on ONE card of each row: the first whose programme or book no goal pursues
-    // yet. Under every card it read as a nudge; the others still show «في وِردك» where it applies,
-    // and every series or book page offers it. Keys are `s<seriesId>` / `b<bookId>`.
+    // «اجعله وِردًا» spelled out on ONE card of each row: the first whose programme or book no goal
+    // pursues yet. Under every card the sentence read as a nudge; the others carry a small outlined
+    // star that does the same thing without saying so, or «في وِردك» where it applies. Keys are
+    // `s<seriesId>` / `b<bookId>`.
     const goals = useGoals(!!token);
     const firstOffer = (keys) => keys.find((key) => !goalFor(goals.data, key.startsWith('s')
         ? { seriesId: Number(key.slice(1)) } : { bookId: Number(key.slice(1)) })) ?? null;

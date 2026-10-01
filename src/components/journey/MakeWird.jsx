@@ -23,9 +23,11 @@ import { t } from '@/i18n';
  * days) — the same number, so the button and the dialog cannot disagree — and the page button
  * adds the line that answers the other worry: at a time you choose, and nothing is sent to you.
  *
- * <p>`offer={false}` keeps the «في وِردك» mark and drops the invitation. Today shows the
- * invitation on one card of a row: under every card it read as a nudge, which is the one thing
- * this platform will not do, and each card's series or book page still offers it.
+ * <p>`offer={false}` keeps the «في وِردك» mark and reduces the invitation to a small outlined
+ * star with no sentence — the same action, named only to a screen reader and in the tooltip.
+ * Today labels the invitation on one card of a row: under every card it read as a nudge, which is
+ * the one thing this platform will not do, and a reader who wants another card's programme
+ * should not have to open its page to find the button.
  */
 function MakeWird({ seriesId = null, bookId = null, title, pages = null, currentPage = 0, variant = 'card', offer = true, className = '' }) {
     const { token } = useAuth();
@@ -44,12 +46,26 @@ function MakeWird({ seriesId = null, bookId = null, title, pages = null, current
             </Link>
         );
     }
-    if (!offer) return null;
     // The amount the dialog proposes, stated before the press.
     const proposal = seriesId != null
         ? { kind: 'FINISH_SERIES', targetId: seriesId, title, amount: 1, measure: 'EPISODES' }
         : { kind: 'FINISH_BOOK', targetId: bookId, title, amount: bookPortion(pages, currentPage), measure: 'PAGES' };
     const { measure, ...goal } = proposal;
+    const label = t('journey.makeWirdAmount', { amount: amountText(measure, goal.amount) });
+    if (!offer) {
+        // No data-guide: the guide points at the labelled offer, never at this.
+        return (
+            <button
+                type="button"
+                aria-label={label}
+                title={label}
+                className={`inline-flex items-center justify-center w-6 h-6 -m-1.5 rounded text-text-muted hover:text-gold focus-visible:text-gold transition-colors ${className}`}
+                onClick={() => openGoal(goal)}
+            >
+                <KhatamStar filled={false} strokeWidth={10} className="w-3 h-3" />
+            </button>
+        );
+    }
     const action = (
         <button
             type="button"
@@ -57,7 +73,7 @@ function MakeWird({ seriesId = null, bookId = null, title, pages = null, current
             className={`${button} ${variant === 'button' ? '' : className}`}
             onClick={() => openGoal(goal)}
         >
-            {star}{t('journey.makeWirdAmount', { amount: amountText(measure, goal.amount) })}
+            {star}{label}
         </button>
     );
     if (variant !== 'button') return action;
