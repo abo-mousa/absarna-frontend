@@ -1393,6 +1393,15 @@ export const en = {
         next: 'Next month',
     },
     journey: {
+        dial: {
+            aria: 'Minutes of your day',
+            hour: '1 h',
+            twoHours: '2 h',
+            unitFew: 'minutes',
+            unitMany: 'minutes',
+            hint: 'Turn the star or tap the ring · five minutes a step',
+            wheelHint: 'or click it and turn the mouse wheel',
+        },
         track: {
             perDay: 'Each segment is a day of your portion: {amount}',
             perWeek: 'Each segment is a week of your portion: {amount}',
@@ -1686,11 +1695,6 @@ export const en = {
             deadlineCustomUse: 'Use this date',
             deadlineAway: 'in {duration}',
             aboutMinutesADay: 'about {minutes} a day',
-            customTitle: 'Another length',
-            customHint: 'Choose your own, from 5 minutes to two hours',
-            customChange: 'Change',
-            customUse: 'Use {minutes}',
-            twoHours: '2 h',
             pace: { today: 'Today', deadline: 'Your date {date}' },
             groupIslamic: 'In the Islamic sciences',
             groupOther: 'And beyond them',

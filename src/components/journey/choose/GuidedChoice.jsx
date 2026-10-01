@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { BookOpen, CalendarDays, Gem, HandHeart, Megaphone, Moon, Scale, ScrollText, Search, SlidersHorizontal, Sparkles } from 'lucide-react';
+import { BookOpen, CalendarDays, Gem, HandHeart, Megaphone, Moon, Scale, ScrollText, Search, Sparkles } from 'lucide-react';
 import { Button, CalendarPicker, QueryState } from '@/components/ui';
 import { useGoalProposalPages, useGoalTopics } from '@/hooks/useGoalChoice';
 import { FIELDS, fieldOf, isField, searchSubjects, subjectLabel } from '@/lib/subjects';
@@ -7,11 +7,11 @@ import { MINUTE_CHOICES, asksForSubject, chosenByText, deadlineChoices, deadline
 import { hijriDeadlines } from '@/lib/hijriSeasons';
 import { amountText, learningTime } from '@/lib/goalText';
 import { countOf } from '@/lib/plural';
-import { formatCount } from '@/lib/numbers';
 import { formatDay } from '@/lib/dayFormat';
 import { Poster, ShortlistMark } from './parts';
 import PaceStepper from '../PaceStepper';
 import PortionTrack from '../PortionTrack';
+import MinutesDial from './MinutesDial';
 import { t } from '@/i18n';
 
 /**
@@ -230,98 +230,6 @@ function SubjectStep({ topics, params, go }) {
     );
 }
 
-/** The four tiles' hints, reused for a length of the reader's own: the nearest one describes it. */
-const hintFor = (minutes) => (minutes < 15 ? 'm10' : minutes < 35 ? 'm20' : minutes < 55 ? 'm45' : 'm60');
-const CUSTOM_MIN = 5;
-const CUSTOM_MAX = 120;
-
-/**
- * «مدة أخرى»: a fifth card in the same grid, full width — a footnote form under the four was easy to
- * miss. Tapped, it opens in place into a slider (5 minutes to two hours, in fives): no keyboard on a
- * phone, the value read large as it moves, and nothing out of range to refuse. Chosen, the card
- * shows the length and stays selected like the others.
- */
-function CustomMinutesCard({ params, go, open, setOpen }) {
-    const custom = !MINUTE_CHOICES.includes(params.minutes);
-    // An address can carry more than the slider holds (an older box took up to 240): clamped to it.
-    const [value, setValue] = useState(custom ? Math.min(CUSTOM_MAX, Math.max(CUSTOM_MIN, params.minutes)) : 30);
-    if (!open) {
-        return (
-            <button
-                type="button"
-                onClick={() => setOpen(true)}
-                aria-pressed={custom}
-                aria-expanded={false}
-                className={`col-span-2 p-4 rounded-lg border bg-surface text-start flex items-center gap-3 transition-colors ${
-                    custom ? 'border-primary ring-1 ring-primary bg-primary-light' : 'border-dashed border-border hover:border-primary'
-                }`}
-            >
-                <span className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${custom ? 'bg-primary text-white' : 'bg-surface-hover text-text-secondary'}`}>
-                    <SlidersHorizontal size={20} aria-hidden="true" />
-                </span>
-                <span className="flex flex-col gap-0.5 flex-1">
-                    <span className="font-semibold">{custom ? learningTime(params.minutes) : t('journey.choose.customTitle')}</span>
-                    <span className="text-xs text-text-secondary">{custom ? t(`journey.choose.minutesHint.${hintFor(params.minutes)}`) : t('journey.choose.customHint')}</span>
-                </span>
-                {custom && <span className="text-xs font-semibold text-primary">{t('journey.choose.customChange')}</span>}
-            </button>
-        );
-    }
-    const fill = `${((value - CUSTOM_MIN) / (CUSTOM_MAX - CUSTOM_MIN)) * 100}%`;
-    return (
-        <div className="col-span-2 p-4 rounded-lg border border-primary ring-1 ring-primary bg-surface flex flex-col gap-4">
-            <div className="flex items-center gap-3">
-                <span className="w-10 h-10 rounded-full flex items-center justify-center bg-primary-light text-primary flex-shrink-0">
-                    <SlidersHorizontal size={20} aria-hidden="true" />
-                </span>
-                <span className="flex flex-col">
-                    <span className="text-xs font-semibold text-text-secondary">{t('journey.choose.customTitle')}</span>
-                    <span className="font-serif text-2xl font-bold text-primary-dark dark:text-primary leading-tight" aria-live="polite">
-                        {learningTime(value)}
-                    </span>
-                </span>
-                <span className="ms-auto self-end text-xs text-text-secondary pb-1">{t(`journey.choose.minutesHint.${hintFor(value)}`)}</span>
-            </div>
-            <div className="flex flex-col gap-2 px-1">
-                <input
-                    type="range"
-                    min={CUSTOM_MIN}
-                    max={CUSTOM_MAX}
-                    step={5}
-                    value={value}
-                    onChange={(event) => setValue(Number(event.target.value))}
-                    aria-label={t('journey.choose.customTitle')}
-                    aria-valuetext={learningTime(value)}
-                    className="pace-range"
-                    style={{ '--fill': fill }}
-                />
-                {/* A tick at each half hour, so a length can be found by eye before the number agrees. */}
-                <div className="relative h-4 text-[0.7rem] text-text-muted">
-                    {[CUSTOM_MIN, 30, 60, 90, CUSTOM_MAX].map((tick) => (
-                        <button
-                            key={tick}
-                            type="button"
-                            onClick={() => setValue(tick)}
-                            className="absolute -translate-x-1/2 rtl:translate-x-1/2 hover:text-primary"
-                            style={{ insetInlineStart: `${((tick - CUSTOM_MIN) / (CUSTOM_MAX - CUSTOM_MIN)) * 100}%` }}
-                        >
-                            {tick === CUSTOM_MAX ? t('journey.choose.twoHours') : formatCount(tick)}
-                        </button>
-                    ))}
-                </div>
-            </div>
-            <div className="flex items-center gap-3">
-                <Button className="flex-1 h-11" onClick={() => { setOpen(false); go({ minutes: value }); }}>
-                    {t('journey.choose.customUse', { minutes: learningTime(value) })}
-                </Button>
-                <button type="button" onClick={() => setOpen(false)} className="text-sm font-semibold text-text-secondary hover:underline px-2">
-                    {t('common.cancel')}
-                </button>
-            </div>
-        </div>
-    );
-}
-
 const isoAfter = (days) => {
     const now = new Date();
     return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate() + days, 12)).toISOString().slice(0, 10);
@@ -426,24 +334,34 @@ function CustomDeadlinePanel({ params, go, onClose }) {
 
 function TimeStep({ params, go }) {
     const deadlines = useMemo(() => deadlineChoices(), []);
-    // One choice at a time: while the custom card is open, or holds the answer, no preset is lit.
-    const [customOpen, setCustomOpen] = useState(false);
     const [deadlineOpen, setDeadlineOpen] = useState(false);
-    const preset = !customOpen && MINUTE_CHOICES.includes(params.minutes) ? params.minutes : null;
+    // The dial holds any length from five minutes to two hours; the URL keeps what it set.
+    const minutes = Math.min(120, Math.max(5, params.minutes));
     return (
         <>
             <h1 className="font-serif text-3xl font-bold">{t('journey.choose.timeTitle')}</h1>
-            <div className="grid grid-cols-2 gap-3">
-                {MINUTE_CHOICES.map((minutes) => (
-                    <Tile
-                        key={minutes}
-                        title={learningTime(minutes)}
-                        hint={t(`journey.choose.minutesHint.m${minutes}`)}
-                        selected={preset === minutes}
-                        onClick={() => { setCustomOpen(false); go({ minutes }); }}
-                    />
+            <MinutesDial value={minutes} onChange={(next) => go({ minutes: next })} />
+            <p className="-mt-2 text-center text-sm text-text-secondary">
+                {t('journey.dial.hint')}
+                {/* Only where there is a mouse to turn: a phone has no wheel to mention. */}
+                <span className="hidden [@media(hover:hover)_and_(pointer:fine)]:inline">{' · '}{t('journey.dial.wheelHint')}</span>
+            </p>
+            {/* The usual lengths, one tap each — the gold beads on the dial, in words. Two by two
+                on a phone, so four never wrap three-and-one. */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-w-[400px] w-full mx-auto">
+                {MINUTE_CHOICES.map((choice) => (
+                    <button
+                        key={choice}
+                        type="button"
+                        aria-pressed={minutes === choice}
+                        onClick={() => go({ minutes: choice })}
+                        className={`h-10 px-3 rounded-full border text-sm font-semibold transition-colors ${
+                            minutes === choice ? 'border-primary bg-primary-light text-primary-dark dark:text-primary ring-1 ring-primary' : 'border-border bg-surface hover:border-primary'
+                        }`}
+                    >
+                        {learningTime(choice)}
+                    </button>
                 ))}
-                <CustomMinutesCard params={params} go={go} open={customOpen} setOpen={setCustomOpen} />
             </div>
             <h2 className="font-serif text-2xl font-bold mt-2">{t('journey.choose.deadlineTitle')}</h2>
             <div className="flex flex-wrap gap-2">

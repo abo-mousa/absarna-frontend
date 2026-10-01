@@ -1625,6 +1625,15 @@ export const ar = {
         next: 'الشهر التالي',
     },
     journey: {
+        dial: {
+            aria: 'كم دقيقة من يومك',
+            hour: 'ساعة',
+            twoHours: 'ساعتان',
+            unitFew: 'دقائق',
+            unitMany: 'دقيقة',
+            hint: 'أدِر النجمة أو اضغط على الحلقة · كل خطوة خمس دقائق',
+            wheelHint: 'أو اضغطها ثم أدِر عجلة الفأرة',
+        },
         track: {
             perDay: 'كل قطعةٍ يومٌ من وِردك: {amount}',
             perWeek: 'كل قطعةٍ أسبوعٌ من وِردك: {amount}',
@@ -1922,11 +1931,6 @@ export const ar = {
             deadlineCustomUse: 'اعتمد هذا الموعد',
             deadlineAway: 'بعد {duration}',
             aboutMinutesADay: 'نحو {minutes} في اليوم',
-            customTitle: 'مدة أخرى',
-            customHint: 'اختر بنفسك، من ٥ دقائق إلى ساعتين',
-            customChange: 'غيّرها',
-            customUse: 'اعتمد {minutes}',
-            twoHours: 'ساعتان',
             pace: { today: 'اليوم', deadline: 'موعدك {date}' },
             groupIslamic: 'في العلوم الشرعية',
             groupOther: 'وفي غيرها',
