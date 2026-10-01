@@ -930,7 +930,7 @@ export const en = {
                             '1': 'The goal, its portion, and its time of day.',
                             '2': '“Week’s intention”: the goal your week is built on.',
                             '3': 'This week’s days, one by one.',
-                            '4': 'How much of the whole you have finished.',
+                            '4': 'What you have finished, and what is left — one segment per day of your portion.',
                             '5': 'The gold tick: where a steady pace to your date would be today.',
                             '6': 'Ahead or behind — or when you finish at this pace.',
                         },
@@ -1385,6 +1385,13 @@ export const en = {
         seriesHint: 'Given to every episode of the series without a field of its own.',
     },
 
+    calendar: {
+        which: 'Calendar',
+        hijri: 'Hijri',
+        gregorian: 'Gregorian',
+        previous: 'Previous month',
+        next: 'Next month',
+    },
     journey: {
         track: {
             perDay: 'Each segment is a day of your portion: {amount}',
@@ -1577,7 +1584,7 @@ export const en = {
             days5: 'Five, and two days of rest',
             deadlineLabel: 'By when?',
             noDeadline: 'No date',
-            pickDate: 'Or pick a day:',
+            pickDate: 'Or pick a day on the calendar',
             whenLabel: 'When will you keep it?',
             atHour: 'At an hour I choose',
             refineLabel: 'Tie it to something?',
@@ -1674,7 +1681,6 @@ export const en = {
         },
         choose: {
             deadlineSeasons: 'A season',
-            deadlineOrDay: 'Or pick a day',
             deadlineCustom: 'Another time',
             deadlineCustomTitle: 'Finish by',
             deadlineCustomUse: 'Use this date',

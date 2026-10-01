@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Modal, Button, KhatamStar } from '../ui';
+import { CalendarDays } from 'lucide-react';
+import { Modal, Button, CalendarPicker, KhatamStar } from '../ui';
 import { EmailVerificationNotice } from '../auth';
 import { Chips, Stepper } from './controls';
 import SacredText from './SacredText';
@@ -218,6 +219,8 @@ function GoalForm({ goal, prefill, onDone, onCreated }) {
 
 /** How much, how often, and by when — with the preview answering where that leads. */
 function AmountStep({ form, set, editing, preview }) {
+    // Our calendar, opened under the deadline chips — the platform's spoke Gregorian in the browser's language.
+    const [picking, setPicking] = useState(false);
     const daily = form.period === 'DAY';
     const finishing = form.kind !== 'HABIT';
     const seasons = useMemo(() => (finishing ? hijriDeadlines() : []), [finishing]);
@@ -282,19 +285,27 @@ function AmountStep({ form, set, editing, preview }) {
                                 ? [{ value: form.deadline, label: formatDay(form.deadline) }] : []),
                         ]}
                     />
-                    <label className="flex items-center gap-2 mt-3 text-sm text-text-secondary">
+                    <button
+                        type="button"
+                        onClick={() => setPicking((open) => !open)}
+                        aria-expanded={picking}
+                        className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
+                    >
+                        <CalendarDays size={16} aria-hidden="true" />
                         {t('journey.dialog.pickDate')}
-                        <input
-                            type="date"
-                            dir="ltr"
-                            value={form.deadline || ''}
-                            // Tomorrow, on the reader's clock: the backend refuses today, and the UTC
-                            // date is yesterday's for an evening in Riyadh.
-                            min={localDay(new Date(Date.now() + 86_400_000))}
-                            onChange={(e) => set({ deadline: e.target.value || null })}
-                            className="px-2 py-1.5 rounded-md border border-border bg-surface text-text-primary"
-                        />
-                    </label>
+                    </button>
+                    {picking && (
+                        <div className="mt-3 p-3 rounded-lg border border-border-light bg-surface">
+                            <CalendarPicker
+                                value={form.deadline}
+                                onChange={(deadline) => { set({ deadline }); setPicking(false); }}
+                                // Tomorrow, on the reader's clock: the backend refuses today, and the
+                                // UTC date is yesterday's for an evening in Riyadh.
+                                min={localDay(new Date(Date.now() + 86_400_000))}
+                                marks={Object.fromEntries(seasons.map((season) => [season.date, t(`journey.seasons.${season.key}`)]))}
+                            />
+                        </div>
+                    )}
                 </div>
             )}
 

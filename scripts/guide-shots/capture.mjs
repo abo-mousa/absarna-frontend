@@ -102,7 +102,7 @@ const SHOTS = [
     { name: 'intention', path: '/journey', anchor: 'intention', marks: [':scope > p', 'li.bg-primary-light', { sel: ':scope > p', nth: 1 }] },
     {
         name: 'goal-card', path: '/journey', crop: '[data-guide="goals"] a[href^="/journey/goals/"]',
-        marks: ['p.font-bold', 'span[class*="border-gold"]', 'ul', '[role="img"]', 'span[title]', 'p.justify-between > span:last-child'],
+        marks: ['p.font-bold', 'span[class*="border-gold"]', { sel: 'ul > li', all: true }, '[role="img"]', 'span[title]', '[data-track="status"]'],
     },
     { name: 'almost', path: '/journey', anchor: 'almost', marks: ['a svg', 'a p.text-xs'] },
     { name: 'steady', path: '/journey', anchor: 'steady', marks: ['li:last-child', 'p.text-sm'] },
@@ -147,7 +147,7 @@ const SHOTS = [
     {
         // The review's own questions: opened from its banner, told it is Friday afternoon.
         name: 'review-sheet', path: '/journey', crop: '[role="dialog"]', pad: 0, fixed: true,
-        marks: ['[data-guide="review-sheet"] ul.flex', { sel: '[data-guide="review-sheet"] [role="group"]', nth: 0 }],
+        marks: [{ sel: '[data-guide="review-sheet"] ul.flex > li', all: true }, { sel: '[data-guide="review-sheet"] [role="group"]', nth: 0 }],
         before: (page) => page.route('**/api/user/review/current**', async (route) => {
             const response = await route.fetch();
             route.fulfill({ response, json: { ...(await response.json()), open: true, savedAt: null } });
@@ -176,7 +176,7 @@ const SHOTS = [
         }),
     },
     // A programme the demo reader has no goal for, or the button reads «في وِردك» instead.
-    { name: 'make-wird', path: '/series/10', crop: 'div.bg-surface:has(> [data-guide="make-wird"])', marks: ['[data-guide="make-wird"]'] },
+    { name: 'make-wird', path: '/series/10', crop: 'div.bg-surface:has(> div > [data-guide="make-wird"])', marks: ['[data-guide="make-wird"]'] },
     // «هدف جديد» opens the choosing page; what a goal pursues is chosen there, not in the dialog.
     { name: 'choose-start', path: '/journey/choose', anchor: 'choose-start', marks: [] },
     ...['amount', 'time', 'intention'].map((step, index) => ({
@@ -199,7 +199,7 @@ const SHOTS = [
     })),
     { name: 'goal-head', path: '/journey/goals/PRIMARY', anchor: 'goal-head', marks: ['p.font-reading', 'p[dir="auto"].text-text-primary', 'a.bg-primary', 'button'] },
     { name: 'goal-pace', path: '/journey/goals/PRIMARY', anchor: 'goal-pace', marks: ['[data-track="done"]', '[data-track="left"]', 'span[title]', '[data-track="status"]'] },
-    { name: 'goal-week', path: '/journey/goals/PRIMARY', anchor: 'goal-week', marks: ['ul', 'div.mt-5', '[data-guide="legend"]'] },
+    { name: 'goal-week', path: '/journey/goals/PRIMARY', anchor: 'goal-week', marks: [{ sel: ':scope > div > ul > li, :scope > ul > li', all: true }, 'div.mt-5', '[data-guide="legend"]'] },
     {
         name: 'goal-cumulative', path: '/journey/goals/PRIMARY', anchor: 'goal-cumulative',
         marks: ['dl', { sel: 'svg text[font-size="12"]', nth: 1 }, 'svg path[stroke-dasharray]', { sel: 'svg text[font-size="12"]', nth: 0 }],
@@ -282,11 +282,28 @@ async function measure(page, shot) {
         // title is laid out full-width, and a line to that box's edge would end in empty space.
         // A range over the element's contents is the union of what is drawn; an element with no
         // contents of its own (a tick, a bar's track) keeps its box.
+        // Screen-reader-only text is laid out (clipped, not removed) and runs longer in English, so
+        // it is left out: a day's star measured with its «Saturday: done in full» was wider than
+        // the picture.
+        const visibleChildren = (node) => [...node.childNodes].filter((child) => !(child.nodeType === 1 && child.classList.contains('sr-only')));
         const contentBox = (node) => {
-            const range = document.createRange();
-            range.selectNodeContents(node);
-            const drawn = range.getBoundingClientRect();
-            return drawn.width > 0 && drawn.height > 0 ? drawn : node.getBoundingClientRect();
+            const rects = [];
+            for (const child of visibleChildren(node)) {
+                if (child.nodeType === 3) {
+                    const range = document.createRange();
+                    range.selectNodeContents(child);
+                    rects.push(range.getBoundingClientRect());
+                } else if (child.nodeType === 1) {
+                    rects.push(contentBox(child));
+                }
+            }
+            const drawn = rects.filter((r) => r.width > 0 && r.height > 0);
+            if (!drawn.length) return node.getBoundingClientRect();
+            const left = Math.min(...drawn.map((r) => r.left));
+            const top = Math.min(...drawn.map((r) => r.top));
+            const right = Math.max(...drawn.map((r) => r.right));
+            const bottom = Math.max(...drawn.map((r) => r.bottom));
+            return { left, top, right, bottom, width: right - left, height: bottom - top, x: left, y: top };
         };
         const box = element.getBoundingClientRect();
         let bottom = box.bottom;

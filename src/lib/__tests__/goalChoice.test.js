@@ -92,5 +92,7 @@ describe('deadlineDate', () => {
         expect(deadlineDate('2027-1-5', now)).toBeNull();
         // An old link's date that has passed is no deadline, not a refusal from the backend.
         expect(deadlineDate('2026-09-01', now)).toBeNull();
+        expect(deadlineDate('2026-10-01', now)).toBeNull(); // today: GoalService wants after today
+        expect(deadlineDate('2026-10-02', now)).toBe('2026-10-02');
     });
 });

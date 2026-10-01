@@ -3,6 +3,7 @@ export { default as Card } from './Card';
 export { default as Input } from './Input';
 export { default as FilePicker } from './FilePicker';
 export { default as Modal } from './Modal';
+export { default as CalendarPicker } from './CalendarPicker';
 export { default as Badge } from './Badge';
 export { default as Grid } from './Grid';
 export { default as Spinner } from './Spinner';

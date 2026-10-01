@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { BookOpen, CalendarDays, Gem, HandHeart, Megaphone, Moon, Scale, ScrollText, Search, SlidersHorizontal, Sparkles } from 'lucide-react';
-import { Button, QueryState } from '@/components/ui';
+import { Button, CalendarPicker, QueryState } from '@/components/ui';
 import { useGoalProposalPages, useGoalTopics } from '@/hooks/useGoalChoice';
 import { FIELDS, fieldOf, isField, searchSubjects, subjectLabel } from '@/lib/subjects';
 import { MINUTE_CHOICES, asksForSubject, chosenByText, deadlineChoices, deadlineDate, isCustomDeadline, isSeasonDeadline, itemKey } from '@/lib/goalChoice';
@@ -269,14 +269,14 @@ function CustomMinutesCard({ params, go, open, setOpen }) {
     }
     const fill = `${((value - CUSTOM_MIN) / (CUSTOM_MAX - CUSTOM_MIN)) * 100}%`;
     return (
-        <div className="col-span-2 p-5 rounded-lg border border-primary ring-1 ring-primary bg-surface flex flex-col gap-5">
+        <div className="col-span-2 p-4 rounded-lg border border-primary ring-1 ring-primary bg-surface flex flex-col gap-4">
             <div className="flex items-center gap-3">
                 <span className="w-10 h-10 rounded-full flex items-center justify-center bg-primary-light text-primary flex-shrink-0">
                     <SlidersHorizontal size={20} aria-hidden="true" />
                 </span>
                 <span className="flex flex-col">
                     <span className="text-xs font-semibold text-text-secondary">{t('journey.choose.customTitle')}</span>
-                    <span className="font-serif text-3xl font-bold text-primary-dark dark:text-primary leading-tight" aria-live="polite">
+                    <span className="font-serif text-2xl font-bold text-primary-dark dark:text-primary leading-tight" aria-live="polite">
                         {learningTime(value)}
                     </span>
                 </span>
@@ -351,8 +351,8 @@ function CustomDeadlineChip({ params, open, setOpen }) {
 /**
  * A finish of the reader's own. The Hijri seasons first — before Ramadan, before the ten days of
  * Dhu al-Hijjah, the end of the Hijri month and year, each the last day before it begins — since
- * those are the dates a goal on this platform is most often set against; then the platform's date
- * picker (a phone's own wheel) for any day from tomorrow to two years out. Whatever is chosen is
+ * those are the dates a goal on this platform is most often set against; then our calendar
+ * (`ui/CalendarPicker`, Hijri or Gregorian) for any day from tomorrow to two years out. Whatever is chosen is
  * read back large, in both calendars, with how far off it is.
  */
 function CustomDeadlinePanel({ params, go, onClose }) {
@@ -366,64 +366,51 @@ function CustomDeadlinePanel({ params, go, onClose }) {
     const days = valid ? Math.round((Date.parse(`${date}T12:00:00Z`) - Date.parse(`${isoAfter(0)}T12:00:00Z`)) / 86_400_000) : 0;
     const away = days >= 14 ? countOf('journey.units.WEEKS', Math.round(days / 7)) : countOf('journey.units.DAYS', days);
     return (
-        <div className="p-5 rounded-lg border border-primary ring-1 ring-primary bg-surface flex flex-col gap-4">
-            <div className="flex items-center gap-3">
-                <span className="w-10 h-10 rounded-full flex items-center justify-center bg-primary-light text-primary flex-shrink-0">
-                    <CalendarDays size={20} aria-hidden="true" />
+        <div className="p-4 rounded-lg border border-primary ring-1 ring-primary bg-surface flex flex-col gap-3">
+            {/* What is chosen, in one block: the day large, then both calendars and how far off. */}
+            <div className="flex flex-col">
+                <span className="text-xs font-semibold text-text-secondary">
+                    {isSeasonDeadline(choice) ? t(`journey.seasons.${choice}`) : t('journey.choose.deadlineCustomTitle')}
                 </span>
-                <span className="flex flex-col min-w-0">
-                    <span className="text-xs font-semibold text-text-secondary">
-                        {isSeasonDeadline(choice) ? t(`journey.seasons.${choice}`) : t('journey.choose.deadlineCustomTitle')}
-                    </span>
-                    <span className="font-serif text-2xl font-bold text-primary-dark dark:text-primary leading-tight" aria-live="polite">
-                        {valid ? formatDay(date, { weekday: 'long', day: 'numeric', month: 'long' }) : '—'}
-                    </span>
-                    {valid && (
-                        <span className="text-xs text-text-secondary">
-                            {formatDay(date, { day: 'numeric', month: 'long', year: 'numeric' }, 'islamic-umalqura')}
-                            {' · '}{t('journey.choose.deadlineAway', { duration: away })}
-                        </span>
-                    )}
+                <span className="font-serif text-xl font-bold text-primary-dark dark:text-primary leading-snug" aria-live="polite">
+                    {valid ? formatDay(date, { weekday: 'long', day: 'numeric', month: 'long' }) : '—'}
                 </span>
+                {valid && (
+                    <span className="text-xs text-text-secondary">
+                        {formatDay(date, { day: 'numeric', month: 'long', year: 'numeric' }, 'islamic-umalqura')}
+                        {' · '}{t('journey.choose.deadlineAway', { duration: away })}
+                    </span>
+                )}
             </div>
 
             {seasons.length > 0 && (
-                <div className="flex flex-col gap-2">
-                    <span className="text-xs font-semibold text-text-secondary">{t('journey.choose.deadlineSeasons')}</span>
-                    <div className="grid grid-cols-2 gap-2">
-                        {seasons.map((season) => (
-                            <button
-                                key={season.key}
-                                type="button"
-                                aria-pressed={choice === season.key}
-                                onClick={() => setChoice(season.key)}
-                                className={`p-3 rounded-md border text-start flex flex-col gap-0.5 transition-colors ${
-                                    choice === season.key ? 'border-gold bg-gold-light ring-1 ring-gold' : 'border-border bg-bg hover:border-gold'
-                                }`}
-                            >
-                                <span className={`text-sm font-semibold ${choice === season.key ? 'text-gold-ink' : 'text-text-primary'}`}>
-                                    {t(`journey.seasons.${season.key}`)}
-                                </span>
-                                <span className="text-xs text-text-secondary">{formatDay(season.date, { day: 'numeric', month: 'long' })}</span>
-                            </button>
-                        ))}
-                    </div>
+                <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-1" aria-label={t('journey.choose.deadlineSeasons')} role="group">
+                    {seasons.map((season) => (
+                        <button
+                            key={season.key}
+                            type="button"
+                            aria-pressed={choice === season.key}
+                            onClick={() => setChoice(season.key)}
+                            className={`flex-shrink-0 h-9 px-3 rounded-full border text-sm font-semibold inline-flex items-center gap-1.5 transition-colors ${
+                                choice === season.key ? 'border-gold bg-gold-light text-gold-ink' : 'border-border bg-bg text-text-primary hover:border-gold'
+                            }`}
+                        >
+                            {t(`journey.seasons.${season.key}`)}
+                            <span className="text-xs font-normal text-text-secondary">{formatDay(season.date, { day: 'numeric', month: 'short' })}</span>
+                        </button>
+                    ))}
                 </div>
             )}
 
-            <label className="flex flex-col gap-2">
-                <span className="text-xs font-semibold text-text-secondary">{t('journey.choose.deadlineOrDay')}</span>
-                <input
-                    type="date"
+            <div className="flex flex-col gap-1.5 border-t border-border-light pt-3">
+                <CalendarPicker
+                    value={isSeasonDeadline(choice) ? date : choice}
+                    onChange={setChoice}
                     min={min}
                     max={max}
-                    value={isSeasonDeadline(choice) ? '' : choice}
-                    onChange={(event) => setChoice(event.target.value)}
-                    className={`w-full h-12 px-4 rounded-md border bg-bg text-base focus:border-primary focus:outline-none ${
-                        !isSeasonDeadline(choice) ? 'border-primary' : 'border-border'
-                    }`}
+                    marks={Object.fromEntries(seasons.map((season) => [season.date, t(`journey.seasons.${season.key}`)]))}
                 />
-            </label>
+            </div>
 
             <div className="flex items-center gap-3">
                 <Button className="flex-1 h-11" disabled={!valid} onClick={() => { onClose(); go({ deadline: choice, step: 'proposals', page: 0 }, true); }}>

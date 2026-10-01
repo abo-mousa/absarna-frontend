@@ -24,7 +24,7 @@ const plusDays = (now, days) => {
 };
 
 /**
- * «وتحبّ أن تُتمّه…»'s row: whenever, a month, three months. The Hijri seasons (Ramadan among them)
+ * «ومتى تحبّ أن تُنجزه؟»'s row: whenever, a month, three months. The Hijri seasons (Ramadan among them)
  * and any date of the reader's own live behind the row's fourth choice, «موعد آخر» — Ramadan alone
  * as a chip made the row uneven and left the other seasons out. `{ key, date }`, date
  * 'YYYY-MM-DD' or null for whenever.
@@ -49,10 +49,12 @@ export const isCustomDeadline = (value) => ISO_DAY.test(value || '') || isSeason
 /**
  * The date a `deadline` param stands for: a row choice's ('month'…), a season's (its last day
  * before it begins), or the reader's own 'YYYY-MM-DD'; null for 'none' or anything unreadable —
- * and null for a date already past, which an old link can carry and the backend would refuse.
+ * and null for a date not after today, which an old link can carry and the backend would refuse.
  */
 export function deadlineDate(value, now = new Date()) {
-    if (ISO_DAY.test(value || '')) return value >= plusDays(now, 0) ? value : null;
+    // After today, as GoalService requires of a new deadline — today itself would pass the
+    // proposals and then be refused at «اجعله وِردي».
+    if (ISO_DAY.test(value || '')) return value > plusDays(now, 0) ? value : null;
     if (isSeasonDeadline(value)) return hijriDeadlines(now).find((season) => season.key === value)?.date || null;
     return deadlineChoices(now).find((choice) => choice.key === value)?.date || null;
 }
@@ -113,7 +115,7 @@ export function itemMeta(item) {
 /** «اختاره ١٤ قارئًا وِردًا» — shown only from the backend's threshold up, which sends null below it. */
 export const chosenByText = (count) => t('journey.choose.chosenBy', { readers: countOf('journey.units.READERS', count) });
 
-/** «تُتمّه بعد ٥ أسابيع» — days under two weeks, weeks above. */
+/** «تُنجزه بعد ٥ أسابيع» — days under two weeks, weeks above. */
 export function finishText(days) {
     if (!days) return '';
     const duration = days >= 14
