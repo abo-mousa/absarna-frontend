@@ -63,6 +63,71 @@ function usePickedImage() {
     };
 }
 
+/**
+ * What an unverified account sees here instead of the form: the first of two steps.
+ *
+ * <p>The form used to open for them and refuse at submit (403 + emailVerificationRequired), after
+ * they had typed a name, a description and picked a logo. Now that every signed-in account is
+ * offered the way here, the newcomer arrives here before their mail has, and the page says what
+ * comes first. Verifying in another tab is not seen by this one, so "I have verified" reads the
+ * profile again — and the form takes this step's place the moment it says verified.
+ */
+function VerifyFirst() {
+    const { refreshUser } = useAuth();
+    const [checking, setChecking] = useState(false);
+    // Still mounted after a check means the profile still says unverified.
+    const [checked, setChecked] = useState(false);
+
+    const check = async () => {
+        setChecking(true);
+        try {
+            await refreshUser?.();
+        } finally {
+            setChecking(false);
+            setChecked(true);
+        }
+    };
+
+    return (
+        <PageShell verificationBanner={false}>
+            <div className="max-w-[500px] mx-auto my-8 sm:my-10 px-4">
+                <div className="bg-surface p-6 sm:p-8 rounded-lg shadow-sm border border-border-light flex flex-col gap-5">
+                    <h1 className="text-xl font-bold">{t('createChannel.heading')}</h1>
+
+                    <ol className="grid grid-cols-2 gap-2" aria-label={t('createChannel.stepsLabel')}>
+                        <li aria-current="step" className="flex flex-col gap-1.5">
+                            <span className="h-1 rounded-full bg-primary" />
+                            <span className="text-[0.8rem] font-bold text-primary">{t('createChannel.stepVerify')}</span>
+                        </li>
+                        <li className="flex flex-col gap-1.5">
+                            <span className="h-1 rounded-full bg-border" />
+                            <span className="text-[0.8rem] font-semibold text-text-secondary">{t('createChannel.stepDetails')}</span>
+                        </li>
+                    </ol>
+
+                    <div className="flex flex-col gap-2">
+                        <h2 className="font-serif text-[1.6rem] font-semibold leading-tight">{t('createChannel.verifyTitle')}</h2>
+                        <p className="font-reading text-text-secondary leading-relaxed">{t('createChannel.verifyText')}</p>
+                    </div>
+
+                    <EmailVerificationNotice message={t('createChannel.verifyNotice')} showAddress />
+
+                    <div className="flex flex-col gap-2">
+                        <Button variant="outline" onClick={check} disabled={checking} className="self-start">
+                            {checking ? t('common.loading') : t('createChannel.verifiedContinue')}
+                        </Button>
+                        {checked && !checking && (
+                            <p role="status" className="text-sm text-text-secondary">{t('createChannel.stillUnverified')}</p>
+                        )}
+                    </div>
+
+                    <p className="text-sm text-text-secondary border-t border-border-light pt-4">{t('createChannel.nextStep')}</p>
+                </div>
+            </div>
+        </PageShell>
+    );
+}
+
 function CreateChannel() {
     usePageMeta({ title: t('createChannel.title') });
     const { showToast } = useToast();
@@ -159,7 +224,10 @@ function CreateChannel() {
 
             const source = form.youtubeSource.trim();
             if (!source) {
-                navigate('/');
+                // To the new channel's dashboard, which opens on its first steps. It went to the
+                // home page, so the commonest case — a channel with nothing linked — ended on a
+                // toast and a page with no way back to the channel just made.
+                navigate(`/channel/${form.slug}/manage`);
                 return;
             }
 
@@ -204,6 +272,10 @@ function CreateChannel() {
         }
     };
 
+    // Unverified: the first step, not a form that refuses at the end. `user` is null only while
+    // the profile loads, and then the form shows as it always did.
+    if (user && !user.emailVerified) return <VerifyFirst />;
+
     return (
         <PageShell>
             <div className="max-w-[500px] mx-auto my-8 sm:my-10 px-4">
@@ -239,6 +311,14 @@ function CreateChannel() {
                             {slugError
                                 ? <p id="slug-error" role="alert" className="text-xs text-red-600 dark:text-red-400 mt-1">{slugError}</p>
                                 : <p className="text-xs text-text-muted mt-1">{t('createChannel.slugHint')}</p>}
+                            {/* The address as it will be, which is what the field is: a Latin name
+                                for a link, not something an Arabic title can fill. */}
+                            {form.slug && (
+                                <p className="text-xs text-text-secondary mt-1">
+                                    {t('createChannel.slugPreview')}{' '}
+                                    <bdi dir="ltr" className="font-semibold">{`${window.location.host}/channel/${form.slug}`}</bdi>
+                                </p>
+                            )}
                         </div>
 
                         <Input

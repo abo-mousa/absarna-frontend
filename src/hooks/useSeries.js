@@ -140,6 +140,19 @@ const invalidateSeriesAndVideos = (queryClient, slug) => {
     queryClient.invalidateQueries({ queryKey: ['videos'] });
 };
 
+/**
+ * Moves one video to a 1-based position in its series; the backend numbers the series afresh
+ * (`VideoService#moveInSeries`), so every list showing the series' order is stale afterwards.
+ */
+export const useMoveInSeries = (slug) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ videoId, position }) =>
+            (await api.post(`/channels/${slug}/content/videos/${videoId}/series-position`, { position })).data,
+        onSuccess: () => invalidateSeriesAndVideos(queryClient, slug),
+    });
+};
+
 /** Edits a series' title and description. Sends only what changed, like ContentEditModal. */
 export const useUpdateSeries = (slug) => {
     const queryClient = useQueryClient();

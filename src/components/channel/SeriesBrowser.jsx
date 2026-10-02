@@ -1,13 +1,11 @@
 import { useRef, useState } from 'react';
-import { Eye, EyeOff, Pencil, Plus, Trash2, Inbox } from 'lucide-react';
+import { Eye, EyeOff, Pencil, Trash2, Inbox } from 'lucide-react';
 import { ChevronForward } from '@/components/ui/DirectionalIcon';
 import { useToast } from '@/contexts/ToastContext';
-import { Button, Input, Modal, Pager } from '@/components/ui';
-import ContentPublishForm from './ContentPublishForm';
+import { Button, Modal, Pager } from '@/components/ui';
 import ContentEditModal from './ContentEditModal';
 import {
     useChannelSeriesManagePage,
-    useCreateSeries,
     useDeleteSeries,
     useSetSeriesVisibility,
     useUpdateSeries,
@@ -15,10 +13,7 @@ import {
 import { useEmptyPageStepBack } from '@/hooks/useEmptyPageStepBack';
 import { useKeepScrollPlace } from '@/hooks/useKeepScrollPlace';
 import { describeError } from '@/lib/describeError';
-import { stripEmpty } from '@/lib/forms';
 import { t } from '@/i18n';
-import { useChannel } from '@/hooks/useChannels';
-import SubjectPicker from '@/components/content/SubjectPicker';
 
 /**
  * `'empty'`, `'hidden'`, `'partial'` or `'visible'` — what the owner's series row says about who
@@ -177,70 +172,6 @@ function SeriesSummary({ series }) {
                 hidden: series.hiddenCount, count: series.contentCount,
             })}`}
         </span>
-    );
-}
-
-/**
- * Creates a series, in a dialog opened from the videos section's header.
- *
- * <p>A dialog rather than a form above the list: the series view is for finding a course and
- * working on its videos, and a create form stacked on top of it pushed the list down the page for
- * something done once per course.
- */
-export function NewSeriesModal({ slug, open, onClose }) {
-    const { showToast } = useToast();
-    const createSeries = useCreateSeries(slug);
-    const [form, setForm] = useState({ title: '', description: '', subject: '' });
-    const { data: channel } = useChannel(slug, open);
-
-    const handleCreate = async (e) => {
-        e.preventDefault();
-        try {
-            await createSeries.mutateAsync(stripEmpty(form));
-            setForm({ title: '', description: '', subject: '' });
-            showToast(t('channelManage.seriesCreated'), 'success');
-            onClose();
-        } catch (err) {
-            showToast(t('channelManage.seriesCreateFailed', { reason: describeError(err) }), 'error');
-        }
-    };
-
-    return (
-        <Modal open={open} onClose={onClose} title={t('channelManage.newSeriesHeading')} maxWidth="560px">
-            <ContentPublishForm
-                bare
-                onSubmit={handleCreate}
-                submitLabel={t('channelManage.createSeries')}
-                submitIcon={<Plus size={18} />}
-                submitting={createSeries.isPending}
-                error={createSeries.error}
-            >
-                <Input
-                    label={t('channelManage.seriesTitleLabel')}
-                    value={form.title}
-                    onChange={(e) => setForm({ ...form, title: e.target.value })}
-                    required
-                    field="title"
-                />
-                <Input
-                    label={t('fields.description')}
-                    textarea
-                    rows={2}
-                    value={form.description}
-                    onChange={(e) => setForm({ ...form, description: e.target.value })}
-                    field="description"
-                />
-                <div>
-                    <SubjectPicker
-                        id="new-series-subject"
-                        value={form.subject || null}
-                        onChange={(subject) => setForm((current) => ({ ...current, subject: subject || '' }))}
-                        inherited={channel?.defaultSubject ? { code: channel.defaultSubject, from: 'channel' } : null}
-                    />
-                    <p className="text-xs text-text-muted mt-1.5">{t('subjects.seriesHint')}</p>
-                </div>
-            </ContentPublishForm>
-        </Modal>
     );
 }
 

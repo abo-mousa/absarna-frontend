@@ -59,6 +59,9 @@ function Footer() {
                     <Link to="/privacy" className={footerLinkClass}>{t('legal.footer.privacy')}</Link>
                     <Link to="/terms" className={footerLinkClass}>{t('legal.footer.terms')}</Link>
                     <Link to="/contact" className={footerLinkClass}>{t('legal.footer.contact')}</Link>
+                    {/* For whoever is looking for how to publish here — findable when looked for, like
+                        the rest of this row, and the one page an outreach letter usually links to. */}
+                    <Link to="/publish" className={footerLinkClass}>{t('legal.footer.publish')}</Link>
                     {/* WITHDRAWAL, and it is here because it has to be as easy as consenting was.
                         A decision that can only be undone by clearing site data is not a decision
                         that was freely given. ONE link for both choices — YouTube and counting

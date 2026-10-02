@@ -23,11 +23,11 @@ const viewer = { role: 'USER', platformAdmin: false, canUpload: false };
 
 describe('accountMenuActions', () => {
     it('gives a platform admin every account control', () => {
-        expect(accountMenuActions(admin)).toEqual(['profile', 'history', 'bookmarks', 'upload', 'admin', 'guide', 'theme', 'language', 'logout']);
+        expect(accountMenuActions(admin)).toEqual(['profile', 'history', 'bookmarks', 'upload', 'createChannel', 'admin', 'guide', 'theme', 'language', 'logout']);
     });
 
     it('offers upload to a creator and not the admin panel', () => {
-        expect(accountMenuActions(creator)).toEqual(['profile', 'history', 'bookmarks', 'upload', 'guide', 'theme', 'language', 'logout']);
+        expect(accountMenuActions(creator)).toEqual(['profile', 'history', 'bookmarks', 'upload', 'createChannel', 'guide', 'theme', 'language', 'logout']);
     });
 
     it('offers a plain account its profile, the settings and sign-out', () => {
@@ -44,6 +44,8 @@ describe('accountMenuActions', () => {
         expect(row).not.toContain('md:hidden');
         expect(t('nav.createChannel')).not.toBe('nav.createChannel');
         expect(t('nav.createChannelShort')).not.toBe('nav.createChannelShort');
+        expect(t('nav.createAnotherChannel')).not.toBe('nav.createAnotherChannel');
+        expect(t('nav.createChannelVerifyFirst')).not.toBe('nav.createChannelVerifyFirst');
     });
 
     it('offers a visitor sign-in first, then registration and the settings', () => {

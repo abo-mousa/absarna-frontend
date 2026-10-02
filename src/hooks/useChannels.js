@@ -419,7 +419,15 @@ export const useUpdateChannelContent = (slug, type) => {
             const res = await api.patch(`/channels/${slug}/content/${type}/${id}`, changes);
             return res.data;
         },
-        onSuccess: () => invalidateChannelContent(queryClient, slug, type),
+        onSuccess: (_data, { changes }) => {
+            invalidateChannelContent(queryClient, slug, type);
+            // A video moved into or out of a series changes the series' counts and episode lists.
+            if (type === 'videos' && ('seriesId' in changes || changes.clearSeries)) {
+                queryClient.invalidateQueries({ queryKey: ['channel-series-manage', slug] });
+                queryClient.invalidateQueries({ queryKey: ['channel-series', slug] });
+                queryClient.invalidateQueries({ queryKey: ['series'] });
+            }
+        },
     });
 };
 

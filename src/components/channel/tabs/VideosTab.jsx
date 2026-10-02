@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
-import { Plus, Upload } from 'lucide-react';
+import { Plus, Upload, ArrowUp, ArrowDown, Import, BookOpen } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { ArrowBack } from '@/components/ui/DirectionalIcon';
 import { useToast } from '@/contexts/ToastContext';
 import { Button, ConfirmDialog, Input, Modal } from '@/components/ui';
@@ -7,11 +8,15 @@ import ContentPublishForm, { FieldLabel } from '../ContentPublishForm';
 import ManagedContentList from './ManagedContentList';
 import VideoManageStatus from '../VideoManageStatus';
 import VideoThumbnailPicker from '../VideoThumbnailPicker';
-import SeriesBrowser, { NewSeriesModal, SeriesActions } from '../SeriesBrowser';
+import SeriesBrowser, { SeriesActions } from '../SeriesBrowser';
+import NewSeriesModal from '../NewSeriesModal';
+import SeriesSelect from '../SeriesSelect';
+import CategoryField from '../CategoryField';
 import { useChannelContentTab } from '@/hooks/useChannelContentTab';
 import { useKeepScrollPlace } from '@/hooks/useKeepScrollPlace';
 import { useChannelUpload } from '@/hooks/useChannelUpload';
-import { useChannelSeriesManage } from '@/hooks/useSeries';
+import { useChannelSeriesManage, useMoveInSeries } from '@/hooks/useSeries';
+import { MANAGE_PAGE_SIZE } from '@/hooks/useChannels';
 import { usePresignedUpload, acceptAttribute } from '@/hooks/usePresignedUpload';
 import { useUploadOriginal } from '@/hooks/useChannelYouTube';
 import { describeError } from '@/lib/describeError';
@@ -160,7 +165,7 @@ export default function VideosTab({ slug, channel, youtubeState, isOwner, active
                 </div>
 
                 <div className="flex gap-2 flex-wrap">
-                    {view === 'bySeries' && !openSeries && (
+                    {!openSeries && (
                         <Button variant="outline" size="sm" icon={<Plus size={16} />} onClick={() => setCreatingSeries(true)}>
                             {t('channelManage.newSeriesHeading')}
                         </Button>
@@ -223,91 +228,90 @@ export default function VideosTab({ slug, channel, youtubeState, isOwner, active
                     }}
                 >
                     <Input label={t('fields.title')} value={form.title} onChange={field('title')} field="title" required />
-                    <Input label={t('fields.description')} textarea rows={3} value={form.description} onChange={field('description')} field="description" />
-                    <Input label={t('fields.category')} value={form.category} onChange={field('category')} field="category" />
-                    {/* Starts on "as the channel": an upload with no format of its own reads as the
-                        channel's default, so an owner who set one never has to touch this. The
-                        empty value is stripped before sending, which is what leaves it unset. */}
-                    <div>
-                        <FieldLabel>{t('formats.label')}</FieldLabel>
-                        <select
-                            value={form.format}
-                            onChange={field('format')}
-                            className="w-full px-3.5 py-2.5 rounded-md border border-border outline-none focus:border-primary transition-colors bg-surface"
-                        >
-                            <option value="">
-                                {channel?.defaultFormat
-                                    ? t('formats.inherit', { format: formatLabel(channel.defaultFormat) })
-                                    : t('formats.unset')}
-                            </option>
-                            {formats.map(({ name }) => (
-                                <option key={name} value={name}>{formatLabel(name)}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className="grid grid-cols-1 xs:grid-cols-2 gap-4">
-                        <div>
-                            <FieldLabel>{t('channelManage.seriesSelectLabel')}</FieldLabel>
-                            <select
-                                value={form.seriesId}
-                                onChange={field('seriesId')}
-                                className="w-full px-3.5 py-2.5 rounded-md border border-border outline-none focus:border-primary transition-colors bg-surface"
-                            >
-                                <option value="">{t('channelManage.seriesSelectNone')}</option>
-                                {seriesList.map((s) => (
-                                    <option key={s.id} value={s.id}>{s.title}</option>
-                                ))}
-                            </select>
-                        </div>
-                        {form.seriesId && (
-                            <Input
-                                label={t('channelManage.seriesOrderLabel')}
-                                type="number"
-                                min="1"
-                                value={form.orderInSeries}
-                                onChange={field('orderInSeries')}
-                                field="orderInSeries"
-                            />
-                        )}
-                    </div>
-                    {/* Optional, and usually already answered: an upload with none of its own reads as
-                        its series' subject, else the channel's, and the picker says which. */}
-                    <SubjectPicker
-                        id="upload-subject"
-                        value={form.subject || null}
-                        onChange={(subject) => setForm((current) => ({ ...current, subject: subject || '' }))}
-                        inherited={(() => {
-                            const fromSeries = seriesList.find((s) => String(s.id) === String(form.seriesId))?.subject;
-                            if (fromSeries) return { code: fromSeries, from: 'series' };
-                            return channel?.defaultSubject ? { code: channel.defaultSubject, from: 'channel' } : null;
-                        })()}
+                    <SeriesSelect
+                        slug={slug}
+                        id="upload-series"
+                        value={form.seriesId}
+                        onChange={(seriesId) => setForm((current) => ({ ...current, seriesId, orderInSeries: '' }))}
+                        enabled={active && uploadOpen}
                     />
-                    <Input label={t('fields.originalPublishDateOptional')} type="date" value={form.originalPublishDate} onChange={field('originalPublishDate')} field="originalPublishDate" />
-                    {[
-                        ['graphicContent', 'voice.formGraphic', 'voice.formGraphicHint'],
-                        ['removedElsewhere', 'voice.formRemoved', 'voice.formRemovedHint'],
-                    ].map(([flag, label, hint]) => (
-                        <label key={flag} className="flex items-start gap-3 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={form[flag]}
-                                onChange={(e) => setForm({ ...form, [flag]: e.target.checked })}
-                                className="mt-1 accent-[rgb(var(--color-voice))]"
+                    <Input label={t('fields.description')} textarea rows={3} value={form.description} onChange={field('description')} field="description" />
+
+                    {/* What most uploads never need, folded away: the four fields above are a lecture
+                        published. The rest is inherited (format and subject from the series or the
+                        channel) or an exception (the two notes every reader sees). */}
+                    <details className="group rounded-md border border-border-light">
+                        <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-text-secondary">
+                            {t('channelManage.forms.video.moreOptions')}
+                            <span className="block text-xs font-normal text-text-muted">{t('channelManage.forms.video.moreOptionsHint')}</span>
+                        </summary>
+                        <div className="grid gap-4 px-4 pb-4">
+                            {/* Starts on "as the channel": an upload with no format of its own reads as
+                                the channel's default, so an owner who set one never has to touch this.
+                                The empty value is stripped before sending, which is what leaves it unset. */}
+                            <div>
+                                <FieldLabel>{t('formats.label')}</FieldLabel>
+                                <select
+                                    value={form.format}
+                                    onChange={field('format')}
+                                    className="w-full px-3.5 py-2.5 rounded-md border border-border outline-none focus:border-primary transition-colors bg-surface"
+                                >
+                                    <option value="">
+                                        {channel?.defaultFormat
+                                            ? t('formats.inherit', { format: formatLabel(channel.defaultFormat) })
+                                            : t('formats.unset')}
+                                    </option>
+                                    {formats.map(({ name }) => (
+                                        <option key={name} value={name}>{formatLabel(name)}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            {/* Optional, and usually already answered: an upload with none of its own
+                                reads as its series' subject, else the channel's, and the picker says which. */}
+                            <SubjectPicker
+                                id="upload-subject"
+                                value={form.subject || null}
+                                onChange={(subject) => setForm((current) => ({ ...current, subject: subject || '' }))}
+                                inherited={(() => {
+                                    const fromSeries = seriesList.find((s) => String(s.id) === String(form.seriesId))?.subject;
+                                    if (fromSeries) return { code: fromSeries, from: 'series' };
+                                    return channel?.defaultSubject ? { code: channel.defaultSubject, from: 'channel' } : null;
+                                })()}
                             />
-                            <span>
-                                <span className="block text-sm font-semibold">{t(label)}</span>
-                                <span className="block text-xs text-text-muted">{t(hint)}</span>
-                            </span>
-                        </label>
-                    ))}
+                            <CategoryField id="upload-category" value={form.category} onChange={field('category')} />
+                            <Input label={t('fields.originalPublishDateOptional')} type="date" value={form.originalPublishDate} onChange={field('originalPublishDate')} field="originalPublishDate" />
+                            {[
+                                ['graphicContent', 'voice.formGraphic', 'voice.formGraphicHint'],
+                                ['removedElsewhere', 'voice.formRemoved', 'voice.formRemovedHint'],
+                            ].map(([flag, label, hint]) => (
+                                <label key={flag} className="flex items-start gap-3 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={form[flag]}
+                                        onChange={(e) => setForm({ ...form, [flag]: e.target.checked })}
+                                        className="mt-1 accent-[rgb(var(--color-voice))]"
+                                    />
+                                    <span>
+                                        <span className="block text-sm font-semibold">{t(label)}</span>
+                                        <span className="block text-xs text-text-muted">{t(hint)}</span>
+                                    </span>
+                                </label>
+                            ))}
+                        </div>
+                    </details>
                 </ContentPublishForm>
             </Modal>
 
             {/* Inline style: the held height is a runtime value, which Tailwind cannot see. */}
             <div style={heldHeight ? { minHeight: heldHeight } : undefined}>
                 <div ref={listRef} className="grid gap-6">
-                    {view === 'all' && (
+                    {/* Only once the first page has ANSWERED empty: before it arrives (or while the tab
+                        is not open and its query is off) there is no data, which is not "no videos". */}
+                    {view === 'all' && content.pageInfo && content.totalItems === 0 && !content.term && (
+                        <FirstSteps onUpload={() => setUploadOpen(true)} />
+                    )}
+
+                    {view === 'all' && !(content.pageInfo && content.totalItems === 0 && !content.term) && (
                         <ManagedContentList
                             type="videos"
                             slug={slug}
@@ -355,6 +359,37 @@ function SeriesVideos({ slug, series, active, onBack, onSeriesChange, extraActio
     const none = series === 'none';
     const content = useChannelContentTab(slug, 'videos', active, none ? 'none' : String(series.id));
     const title = none ? t('channelManage.seriesView.noSeries') : series.title;
+    const move = useMoveInSeries(slug);
+    const { showToast } = useToast();
+
+    // The order the backend lists a series in is the order a reader follows it, so moving a row
+    // here moves the episode for everyone. A position is absolute across pages.
+    const positionOf = (video) => {
+        const index = content.items.findIndex((item) => item.id === video.id);
+        return (content.pageInfo?.page ?? 0) * MANAGE_PAGE_SIZE + index + 1;
+    };
+    const moveTo = (video, position) => move.mutate({ videoId: video.id, position }, {
+        onError: (err) => showToast(describeError(err, t('channelManage.seriesView.moveFailed')), 'error'),
+    });
+    const rowActions = none ? extraActions : (video) => {
+        const position = positionOf(video);
+        const button = 'p-2 rounded-md text-text-secondary hover:bg-surface-hover hover:text-primary transition-colors disabled:opacity-30 disabled:pointer-events-none';
+        return (
+            <>
+                <button type="button" className={button} disabled={position <= 1 || move.isPending}
+                        onClick={() => moveTo(video, position - 1)}
+                        title={t('channelManage.seriesView.moveUp')} aria-label={t('channelManage.seriesView.moveUp')}>
+                    <ArrowUp size={16} />
+                </button>
+                <button type="button" className={button} disabled={position >= content.totalItems || move.isPending}
+                        onClick={() => moveTo(video, position + 1)}
+                        title={t('channelManage.seriesView.moveDown')} aria-label={t('channelManage.seriesView.moveDown')}>
+                    <ArrowDown size={16} />
+                </button>
+                {extraActions?.(video)}
+            </>
+        );
+    };
 
     return (
         <div className="grid gap-4">
@@ -379,7 +414,7 @@ function SeriesVideos({ slug, series, active, onBack, onSeriesChange, extraActio
                 heading={t('channelManage.seriesView.seriesVideosHeading', { title, count: content.totalItems })}
                 content={content}
                 getHref={videoPageHref}
-                extraActions={extraActions}
+                extraActions={rowActions}
                 renderStatus={(video) => <VideoManageStatus video={video} slug={slug} isOwner={isOwner} />}
             />
         </div>
@@ -457,4 +492,39 @@ function useUploadOriginalAction(slug, youtubeState) {
             </label>
         );
     };
+}
+
+/**
+ * What a channel with no videos shows instead of «لا يوجد محتوى بعد»: the three ways to put
+ * something in it. A new owner landed on that sentence with the upload button in a corner and no
+ * word that a YouTube channel could be brought over, or that books live one tab along.
+ */
+function FirstSteps({ onUpload }) {
+    const [, setSearchParams] = useSearchParams();
+    const goTo = (tab) => setSearchParams({ tab }, { replace: true });
+    const steps = [
+        { key: 'upload', icon: Upload, onClick: onUpload },
+        { key: 'import', icon: Import, onClick: () => goTo('youtube') },
+        { key: 'book', icon: BookOpen, onClick: () => goTo('books') },
+    ];
+    return (
+        <section className="rounded-lg border border-border bg-surface p-5 sm:p-6">
+            <h2 className="font-serif text-[1.6rem] font-semibold leading-tight">{t('channelManage.firstSteps.title')}</h2>
+            <p className="text-text-secondary mt-1 mb-5">{t('channelManage.firstSteps.text')}</p>
+            <div className="grid gap-3 sm:grid-cols-3">
+                {steps.map(({ key, icon: Icon, onClick }) => (
+                    <button
+                        key={key}
+                        type="button"
+                        onClick={onClick}
+                        className="text-start flex flex-col gap-1.5 p-4 rounded-md border border-border-light hover:border-primary hover:bg-primary-light/40 transition-colors"
+                    >
+                        <Icon size={20} className="text-primary" />
+                        <span className="font-bold">{t(`channelManage.firstSteps.${key}.title`)}</span>
+                        <span className="text-sm text-text-secondary">{t(`channelManage.firstSteps.${key}.text`)}</span>
+                    </button>
+                ))}
+            </div>
+        </section>
+    );
 }

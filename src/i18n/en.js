@@ -194,6 +194,8 @@ export const en = {
         uploadShort: 'Upload',
         createChannel: 'Create a channel',
         createChannelShort: 'New channel',
+        createAnotherChannel: 'Create another channel',
+        createChannelVerifyFirst: 'Confirm your email first',
         profile: 'Profile',
         profileShort: 'Account',
         adminPanel: 'Admin panel',
@@ -741,12 +743,54 @@ export const en = {
         manage: 'Manage channel',
         create: 'Create a channel',
         createPrompt: 'Have knowledge to share?',
+        createPitch: 'Create a channel and publish your lectures, books and articles in it, or bring over what you published on YouTube.',
+        createCta: 'Create your channel',
+        howItWorks: 'How channels work',
         following: 'Your channels',
         manageFollowing: 'Manage subscriptions',
         directory: 'Discover channels',
         more: 'Show more channels',
         empty: 'No channels yet',
         loadFailed: 'Channels could not be loaded',
+    },
+
+    publishPage: {
+        title: 'Publish on Absarna',
+        kicker: 'For scholars, students of knowledge and writers',
+        heading: 'Publish your knowledge on Absarna',
+        intro: 'Your channel is one place for your lectures, books and articles. It is visible from the moment you create it, readers find it in Watch and Read, and what you publish reaches the Today page of everyone who follows you.',
+        ctaRegister: 'Create an account to start',
+        ctaCreate: 'Create your channel',
+        ctaManage: 'Go to your channel dashboard',
+        offersTitle: 'What you can publish',
+        offers: {
+            video: {
+                title: 'Video lectures',
+                text: 'Upload them from your device; they play at a quality that suits each connection, and you can arrange them into series a student follows episode by episode.',
+            },
+            youtube: {
+                title: 'Your YouTube channel',
+                text: 'Bring over what you published there once you have shown it is yours, and anything new there is added to your channel here every day without you doing anything.',
+            },
+            books: {
+                title: 'Books and articles',
+                text: 'Readers read your books inside the site and keep their place; your articles sit in the Read library.',
+            },
+            posts: {
+                title: 'Posts',
+                text: 'Short notes for your followers: a lesson announced, or a new episode pointed out.',
+            },
+        },
+        stepsTitle: 'In three steps',
+        steps: {
+            one: 'Create an account and confirm your email.',
+            two: 'Create your channel with a name and a description; it is visible at once.',
+            three: 'Upload your first lecture, or import your YouTube channel.',
+        },
+        checksTitle: 'What we check',
+        checksText: 'Every video uploaded to Absarna is checked automatically for music and explicit content before anyone can see it. Imports from YouTube do not go through that check, so the platform team reviews a channel when it imports, and it stays hidden until approved.',
+        readyTitle: 'Ready to start?',
+        readyText: 'You need an account with a confirmed email, and two minutes for the channel’s name and description.',
     },
 
     postsPage: {
@@ -2416,8 +2460,9 @@ export const en = {
         subheading: 'Your channel goes live the moment you create it, and you can publish straight away.',
         nameLabel: 'Channel name *',
         namePlaceholder: 'For example: Muhammad Elhamy',
-        slugLabel: 'Slug *',
-        slugHint: 'Lower-case letters, digits and hyphens only',
+        slugLabel: 'Channel address *',
+        slugHint: 'Lower-case Latin letters, digits and hyphens; it is the name in your channel’s link.',
+        slugPreview: 'Your channel’s link:',
         descriptionPlaceholder: 'Channel description...',
         submitting: 'Creating...',
         submit: 'Create channel',
@@ -2433,6 +2478,15 @@ export const en = {
         youtubeFetchFailed: 'We could not find that channel. Check the URL and try again.',
         created: 'Channel created, and it is live now.',
         failed: 'Could not create the channel',
+        stepsLabel: 'Steps to create a channel',
+        stepVerify: '1 · Confirm your email',
+        stepDetails: '2 · Channel details',
+        verifyTitle: 'Confirm your email first',
+        verifyText: 'A channel publishes in your name, so we first make sure the address is yours. Open the link we sent you, which works for ten minutes, then come back to this page to carry on.',
+        verifyNotice: 'Link not arrived, or expired?',
+        verifiedContinue: 'I have confirmed it, continue',
+        stillUnverified: 'Your email is not confirmed yet. Open the link in your inbox, then press again.',
+        nextStep: 'After confirming: the channel’s name, address and description, and your YouTube channel’s link if you have one.',
     },
 
     /**
@@ -2591,6 +2645,8 @@ export const en = {
                 published: 'Video published',
                 uploadFailed: 'Could not upload the video: {reason}',
                 action: 'Publish video',
+                moreOptions: 'More options',
+                moreOptionsHint: 'Format, subject, category, original date and notices, all optional.',
             },
             book: {
                 heading: 'Add a book',
@@ -2598,6 +2654,8 @@ export const en = {
                 fileHint: 'The upload starts as soon as you choose a file, and you can fill in the details while it runs. The book is not shown until you press "Publish book".',
                 uploading: 'Uploading...',
                 pagesLabel: 'Number of pages',
+                pagesCounting: 'Counting the file’s pages…',
+                pagesCounted: 'Pages: {pages} (from the file)',
                 submit: 'Publish book',
                 listHeading: 'My books ({count})',
                 uploaded: 'Book uploaded',
@@ -2623,6 +2681,15 @@ export const en = {
 
         seriesSelectLabel: 'Series (optional)',
         seriesSelectNone: 'No series',
+        seriesJoinsAtEnd: 'The video joins the end of the series; change its place from “By series”.',
+        categoryHint: 'A word shown on the card that readers browse by, such as “Tafsir”. Pick a suggestion to keep one spelling.',
+        firstSteps: {
+            title: 'Your channel is ready, so start with your first item',
+            text: 'Choose where to begin. You can combine them whenever you like.',
+            upload: { title: 'Upload a lecture', text: 'A video from your device, checked and then published.' },
+            import: { title: 'Import from YouTube', text: 'Bring over what you published on your channel there.' },
+            book: { title: 'Add a book', text: 'A PDF read inside the site.' },
+        },
         seriesOrderLabel: 'Position in the series',
         newSeriesHeading: 'New series',
         seriesTitleLabel: 'Series title',
@@ -2639,6 +2706,9 @@ export const en = {
             all: 'All videos',
             bySeries: 'By series',
             backToSeries: 'All series',
+            moveUp: 'Move up',
+            moveDown: 'Move down',
+            moveFailed: 'Could not change the order',
             // Uploads never assigned, and imports found in no playlist. Without this entry a view
             // organised by series would lose them.
             noSeries: 'Videos with no series',
@@ -3503,6 +3573,7 @@ export const en = {
             privacy: 'Privacy Policy',
             terms: 'Terms of Use',
             contact: 'Contact us',
+            publish: 'Publish on Absarna',
             rights: '© {year} أَبْصَرْنا',
         },
 
@@ -3986,7 +4057,7 @@ export const TRANSLATED = [
     'subscriptions', 'profile', 'search', 'biography', 'share', 'upload', 'notFound',
     'channelManage', 'youtube', 'youtubeOAuth', 'admin', 'adminReports', 'adminUsers', 'legal',
     'pager', 'report', 'ownerImage', 'formats', 'rail', 'channelRail', 'guide', 'today',
-    'journey', 'subjects', 'postsPage', 'channelsPage', 'voice', 'signInPrompt',
+    'journey', 'subjects', 'postsPage', 'channelsPage', 'publishPage', 'voice', 'signInPrompt',
 ];
 
 export default en;

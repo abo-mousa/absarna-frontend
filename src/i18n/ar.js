@@ -208,6 +208,8 @@ export const ar = {
         uploadShort: 'رفع',
         createChannel: 'إنشاء قناة',
         createChannelShort: 'قناة جديدة',
+        createAnotherChannel: 'إنشاء قناة أخرى',
+        createChannelVerifyFirst: 'وثّق بريدك أولاً',
         profile: 'الملف الشخصي',
         profileShort: 'حسابي',
         adminPanel: 'لوحة التحكم',
@@ -959,12 +961,56 @@ export const ar = {
         manage: 'إدارة القناة',
         create: 'إنشاء قناة',
         createPrompt: 'لديك علم تنشره؟',
+        createPitch: 'أنشئ قناة وانشر فيها محاضراتك وكتبك ومقالاتك، أو انقل إليها ما نشرته على يوتيوب.',
+        createCta: 'أنشئ قناتك',
+        howItWorks: 'كيف تعمل القنوات؟',
         following: 'قنواتك',
         manageFollowing: 'إدارة المتابعات',
         directory: 'اكتشف القنوات',
         more: 'عرض المزيد من القنوات',
         empty: 'لا توجد قنوات بعد',
         loadFailed: 'تعذّر تحميل القنوات',
+    },
+
+    // The /publish page (pages/Publish): what a channel is, for someone deciding whether to make
+    // one. Every sentence names something that exists — the checks and the import's review too.
+    publishPage: {
+        title: 'انشر على أَبْصَرْنا',
+        kicker: 'للعلماء وطلبة العلم والكتّاب',
+        heading: 'انشر علمك على أَبْصَرْنا',
+        intro: 'قناتك مكان واحد لمحاضراتك وكتبك ومقالاتك. تظهر للناس من لحظة إنشائها، ويجدها القرّاء في «شاهد» و«اقرأ»، ويصل جديدها إلى «اليوم» عند من يتابعونك.',
+        ctaRegister: 'أنشئ حسابًا لتبدأ',
+        ctaCreate: 'أنشئ قناتك',
+        ctaManage: 'إلى إدارة قناتك',
+        offersTitle: 'ما تنشره في قناتك',
+        offers: {
+            video: {
+                title: 'محاضراتك بالفيديو',
+                text: 'ارفعها من جهازك، فتُعرض بجودات تناسب كل اتصال، ورتّبها في سلاسل يتابعها الطالب حلقةً بعد حلقة.',
+            },
+            youtube: {
+                title: 'قناتك على يوتيوب',
+                text: 'انقل ما نشرته هناك بعد أن تثبت أنها قناتك، ويُضاف جديدها إلى قناتك هنا كل يوم دون أن تفعل شيئًا.',
+            },
+            books: {
+                title: 'الكتب والمقالات',
+                text: 'كتبك يقرؤها الناس داخل الموقع ويُحفظ لهم موضع توقّفهم، ومقالاتك في مكتبة «اقرأ».',
+            },
+            posts: {
+                title: 'المنشورات',
+                text: 'كلمات قصيرة لمتابعيك: إعلان درس، أو تنبيه إلى حلقة جديدة.',
+            },
+        },
+        stepsTitle: 'في ثلاث خطوات',
+        steps: {
+            one: 'أنشئ حسابًا ووثّق بريدك.',
+            two: 'أنشئ قناتك باسمها ووصفها، فتظهر فورًا.',
+            three: 'ارفع أول محاضرة، أو استورد قناتك من يوتيوب.',
+        },
+        checksTitle: 'ما نتحقّق منه',
+        checksText: 'كل فيديو يُرفع إلى أَبْصَرْنا يُفحص آليًا بحثًا عن الموسيقى والمحتوى الفاضح قبل أن يظهر للناس. وما يُستورد من يوتيوب لا يمرّ بهذا الفحص، فتُراجع إدارة المنصّة القناة عند استيرادها، وتبقى محجوبة حتى تُعتمد.',
+        readyTitle: 'جاهز لتبدأ؟',
+        readyText: 'تحتاج حسابًا موثّق البريد، ودقيقتين لاسم القناة ووصفها.',
     },
 
     // The posts page (/posts): short notes channels write, from the channels a reader follows or
@@ -2782,8 +2828,9 @@ export const ar = {
         subheading: 'قناتك تظهر مباشرة بعد الإنشاء، ويمكنك النشر فوراً.',
         nameLabel: 'اسم القناة *',
         namePlaceholder: 'مثال: محمد إلهامي',
-        slugLabel: 'المعرف (Slug) *',
-        slugHint: 'أحرف صغيرة وأرقام وشرطات فقط',
+        slugLabel: 'رابط القناة *',
+        slugHint: 'بالأحرف الإنجليزية الصغيرة والأرقام والشرطات، وهو الاسم الذي يظهر في رابط قناتك.',
+        slugPreview: 'رابط قناتك:',
         descriptionPlaceholder: 'وصف القناة...',
         submitting: 'جاري الإنشاء...',
         submit: 'إنشاء القناة',
@@ -2803,6 +2850,16 @@ export const ar = {
         youtubeFetchFailed: 'تعذر العثور على القناة. تأكد من الرابط وحاول مرة أخرى.',
         created: 'تم إنشاء القناة، وهي ظاهرة الآن.',
         failed: 'فشل في إنشاء القناة',
+        // The first step, for an unverified account (CreateChannel's VerifyFirst).
+        stepsLabel: 'خطوات إنشاء القناة',
+        stepVerify: '1 · وثّق بريدك',
+        stepDetails: '2 · بيانات القناة',
+        verifyTitle: 'وثّق بريدك أولاً',
+        verifyText: 'القناة تنشر باسمك، فنتأكد أولاً أن البريد بريدك. افتح الرابط الذي أرسلناه إليك، وهو صالح عشر دقائق، ثم عُد إلى هذه الصفحة لتكمل.',
+        verifyNotice: 'لم يصلك الرابط، أو انتهت صلاحيته؟',
+        verifiedContinue: 'وثّقته، تابع',
+        stillUnverified: 'لم يُوثَّق بريدك بعد. افتح الرابط من بريدك، ثم اضغط مرة أخرى.',
+        nextStep: 'بعد التوثيق: اسم القناة ومعرّفها ووصفها، ورابط قناتك على يوتيوب إن كانت لك.',
     },
 
     /**
@@ -2998,6 +3055,8 @@ export const ar = {
                 published: 'تم نشر الفيديو',
                 uploadFailed: 'فشل في رفع الفيديو: {reason}',
                 action: 'نشر الفيديو',
+                moreOptions: 'خيارات إضافية',
+                moreOptionsHint: 'النوع والموضوع والتصنيف وتاريخ النشر الأصلي والتنبيهات — كلها اختيارية.',
             },
             book: {
                 heading: 'إضافة كتاب',
@@ -3005,6 +3064,8 @@ export const ar = {
                 fileHint: 'يبدأ رفع الملف فور اختياره، ويمكنك إكمال البيانات أثناء الرفع. لن يظهر الكتاب إلا بعد الضغط على «نشر الكتاب».',
                 uploading: 'جاري الرفع...',
                 pagesLabel: 'عدد الصفحات',
+                pagesCounting: 'جاري عدّ صفحات الملف…',
+                pagesCounted: 'عدد الصفحات: {pages} (من الملف)',
                 submit: 'نشر الكتاب',
                 listHeading: 'كتبي ({count})',
                 uploaded: 'تم رفع الكتاب',
@@ -3030,6 +3091,17 @@ export const ar = {
 
         seriesSelectLabel: 'السلسلة (اختياري)',
         seriesSelectNone: 'بدون سلسلة',
+        // Under the series picker (SeriesSelect): where a video lands, and how to change it.
+        seriesJoinsAtEnd: 'يُضاف الفيديو في آخر السلسلة، ويمكنك تغيير ترتيبه من «حسب السلسلة».',
+        categoryHint: 'كلمة تظهر على البطاقة ويتصفّح بها القرّاء، مثل «تفسير». اختر من المقترحات ليبقى التصنيف واحدًا.',
+        // A channel with no videos yet (VideosTab's FirstSteps).
+        firstSteps: {
+            title: 'قناتك جاهزة، فابدأ بأول محتوى',
+            text: 'اختر من أين تبدأ. يمكنك الجمع بينها متى شئت.',
+            upload: { title: 'ارفع محاضرة', text: 'فيديو من جهازك، يُفحص ثم يُنشر.' },
+            import: { title: 'استورد من يوتيوب', text: 'انقل ما نشرته على قناتك هناك.' },
+            book: { title: 'أضف كتابًا', text: 'ملف PDF يُقرأ داخل الموقع.' },
+        },
         seriesOrderLabel: 'الترتيب داخل السلسلة',
         newSeriesHeading: 'سلسلة جديدة',
         seriesTitleLabel: 'عنوان السلسلة',
@@ -3048,6 +3120,9 @@ export const ar = {
             all: 'كل الفيديوهات',
             bySeries: 'حسب السلسلة',
             backToSeries: 'كل السلاسل',
+            moveUp: 'نقل إلى الأعلى',
+            moveDown: 'نقل إلى الأسفل',
+            moveFailed: 'تعذّر تغيير الترتيب',
             // The videos in no series: uploads never assigned, and imports found in no playlist.
             // Without this entry a view organised by series would lose them.
             noSeries: 'فيديوهات بلا سلسلة',
@@ -3998,6 +4073,7 @@ export const ar = {
             privacy: 'سياسة الخصوصية',
             terms: 'شروط الاستخدام',
             contact: 'تواصل معنا',
+            publish: 'انشر على أَبْصَرْنا',
             // The view-counting id's switch (lib/viewerId); the words say what a press will do.
             // {year} comes from the clock in Footer.jsx. Latin digits, like every other number in
             // this app — see lib/numbers.js on why the app has one digit system and not two.

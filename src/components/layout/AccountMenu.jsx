@@ -28,8 +28,9 @@ export function accountMenuActions(user, signedIn = true) {
         'bookmarks',
         // The backend's answers (profile), never a role compared here. With no channel to upload
         // to, the shortcut is channel creation, and it says so — on every width, since this row
-        // is how a newcomer finds out a channel is theirs to make.
-        ...(user?.canUpload ? [user.uploadChannelSlug ? 'upload' : 'createChannel'] : []),
+        // is how a newcomer finds out a channel is theirs to make. An owner keeps upload first and
+        // gets "another channel" under it, which used to be reachable from the Channels tab only.
+        ...(user?.canUpload ? (user.uploadChannelSlug ? ['upload', 'createChannel'] : ['createChannel']) : []),
         ...(user?.platformAdmin ? ['admin'] : []),
         'guide',
         'theme',
@@ -200,10 +201,24 @@ function AccountMenu({ attentionCount = 0 }) {
                                     </Link>
                                 );
                             case 'createChannel':
-                                return (
-                                    <Link key={action} role="menuitem" to={uploadPathFor(user)} className={itemClass}>
+                                // An owner's is a plain row under upload. A newcomer's is lit — the
+                                // one thing in this menu they have not met yet — and, unverified,
+                                // says what comes first, so the page it opens is no surprise.
+                                return user?.uploadChannelSlug ? (
+                                    <Link key={action} role="menuitem" to="/create-channel" className={itemClass}>
                                         <Plus size={18} />
-                                        {t('nav.createChannel')}
+                                        {t('nav.createAnotherChannel')}
+                                    </Link>
+                                ) : (
+                                    <Link key={action} role="menuitem" to="/create-channel"
+                                          className="flex items-center gap-3 mx-2 my-1 px-3 py-2 rounded-md bg-primary-light text-primary hover:bg-primary/20 hover:no-underline transition-colors">
+                                        <Plus size={18} className="flex-shrink-0" />
+                                        <span className="flex flex-col leading-snug">
+                                            <span className="text-sm font-bold">{t('nav.createChannel')}</span>
+                                            {!user?.emailVerified && (
+                                                <span className="text-xs text-text-secondary">{t('nav.createChannelVerifyFirst')}</span>
+                                            )}
+                                        </span>
                                     </Link>
                                 );
                             case 'admin':

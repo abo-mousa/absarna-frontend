@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { BookPlus } from 'lucide-react';
 import { Button, ConfirmDialog, Input, Modal } from '@/components/ui';
 import ContentPublishForm from '../ContentPublishForm';
@@ -9,6 +9,8 @@ import { acceptAttribute } from '@/hooks/usePresignedUpload';
 import { stripEmpty } from '@/lib/forms';
 import { useChannel } from '@/hooks/useChannels';
 import SubjectPicker from '@/components/content/SubjectPicker';
+import CategoryField from '../CategoryField';
+import { countPdfPages } from '@/lib/pdfPages';
 import { t } from '@/i18n';
 
 const EMPTY_FORM = {
@@ -32,10 +34,30 @@ export default function BooksTab({ slug, active }) {
     const upload = useChannelUpload(slug, 'books');
     const [form, setForm] = useState(EMPTY_FORM);
     const [adding, setAdding] = useState(false);
+    // 'idle' | 'counting' | 'counted' | 'failed' — the page count read from the picked file.
+    const [pageCount, setPageCount] = useState('idle');
+    // Which pick a count belongs to: a second file chosen while the first is still being counted
+    // must not have the first file's number land on it.
+    const pickRef = useRef(0);
 
     const field = (key) => (e) => setForm({ ...form, [key]: e.target.value });
 
-    const handleFileSelect = (e) => upload.selectFile(e, {
+    const handleFileSelect = (e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const pick = ++pickRef.current;
+            setPageCount('counting');
+            setForm((current) => ({ ...current, pages: '' }));
+            countPdfPages(file).then((pages) => {
+                if (pick !== pickRef.current) return;
+                setPageCount(pages ? 'counted' : 'failed');
+                if (pages) setForm((current) => ({ ...current, pages: String(pages) }));
+            });
+        }
+        return uploadFile(e);
+    };
+
+    const uploadFile = (e) => upload.selectFile(e, {
         failureMessage: (reason) => t('channelManage.forms.book.uploadFailed', { reason }),
         onUploaded: (uploadSessionId, fallbackTitle) => setForm((current) => ({
             ...current,
@@ -56,6 +78,8 @@ export default function BooksTab({ slug, active }) {
             onSuccess: () => {
                 upload.forget();
                 setForm(EMPTY_FORM);
+                pickRef.current += 1;
+                setPageCount('idle');
                 setAdding(false);
             },
         });
@@ -86,10 +110,15 @@ export default function BooksTab({ slug, active }) {
                     <Input label={t('fields.title')} value={form.title} onChange={field('title')} field="title" required />
                     <Input label={t('fields.description')} textarea rows={3} value={form.description} onChange={field('description')} field="description" />
 
-                    <div className="grid grid-cols-1 xs:grid-cols-2 gap-4">
-                        <Input label={t('fields.category')} value={form.category} onChange={field('category')} field="category" />
-                        <Input label={t('channelManage.forms.book.pagesLabel')} type="number" value={form.pages} onChange={field('pages')} field="pages" />
-                    </div>
+                    {/* Read from the file; asked for only when the file would not say. */}
+                    {pageCount === 'counting' && <p className="text-sm text-text-muted">{t('channelManage.forms.book.pagesCounting')}</p>}
+                    {pageCount === 'counted' && (
+                        <p className="text-sm text-text-secondary">{t('channelManage.forms.book.pagesCounted', { pages: form.pages })}</p>
+                    )}
+                    {pageCount === 'failed' && (
+                        <Input label={t('channelManage.forms.book.pagesLabel')} type="number" min="1" value={form.pages} onChange={field('pages')} field="pages" />
+                    )}
+                    <CategoryField id="book-category" kind="books" value={form.category} onChange={field('category')} />
                     <SubjectPicker
                         id="book-subject"
                         value={form.subject || null}

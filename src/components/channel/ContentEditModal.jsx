@@ -7,6 +7,8 @@ import { useFormats } from '@/hooks/useVideos';
 import { useChannel } from '@/hooks/useChannels';
 import { useChannelSeriesManage } from '@/hooks/useSeries';
 import SubjectPicker from '@/components/content/SubjectPicker';
+import SeriesSelect from './SeriesSelect';
+import CategoryField from './CategoryField';
 import { t } from '@/i18n';
 
 /**
@@ -55,8 +57,14 @@ function ContentEditModal({ open, type, item, onClose, onSave, saving, error = n
     const hasSubject = type === 'videos' || type === 'books' || type === 'series';
     const [subject, setSubject] = useState(null);
     const { data: channel } = useChannel(slug, !!slug && open && hasSubject);
-    const { data: seriesList = [] } = useChannelSeriesManage(slug, !!slug && open && type === 'videos' && !!item?.seriesId);
-    const seriesSubject = type === 'videos' ? seriesList.find((s) => s.id === item?.seriesId)?.subject : null;
+    // Which series the video is in, as the select's string ('' for none). The picker is the only
+    // place a video's series can change after upload — it was set once, in the upload form, and
+    // a video published into none or the wrong one stayed there.
+    const [series, setSeries] = useState('');
+    const { data: seriesList = [] } = useChannelSeriesManage(slug, !!slug && open && type === 'videos');
+    // The series as chosen in this dialog, so "no series" shows the channel's subject as inherited.
+    const seriesSubject = type === 'videos' && series
+        ? seriesList.find((s) => String(s.id) === series)?.subject : null;
     const inherited = seriesSubject ? { code: seriesSubject, from: 'series' }
         : channel?.defaultSubject ? { code: channel.defaultSubject, from: 'channel' } : null;
 
@@ -68,6 +76,7 @@ function ContentEditModal({ open, type, item, onClose, onSave, saving, error = n
         setFormat(type === 'videos' ? item.ownFormat || '' : '');
         setFlags({ graphicContent: !!item.graphicContent, removedElsewhere: !!item.removedElsewhere });
         setSubject(item.subject || null);
+        setSeries(item.seriesId != null ? String(item.seriesId) : '');
         // Keyed on the item's IDENTITY, not the item: `item` is a fresh object on every refetch
         // of the list behind this dialog, and re-seeding then would silently discard whatever the
         // owner has typed. `fields` is derived from `type` (a new array each render), so `type`
@@ -98,6 +107,12 @@ function ContentEditModal({ open, type, item, onClose, onSave, saving, error = n
             if (subject) changes.subject = subject;
             else changes.clearSubject = true;
         }
+        if (type === 'videos' && series !== (item.seriesId != null ? String(item.seriesId) : '')) {
+            // Joins the new series at its end (the backend's rule); "none" is its own flag, since
+            // the merge cannot hear a null.
+            if (series) changes.seriesId = Number(series);
+            else changes.clearSeries = true;
+        }
         if (type === 'videos') {
             for (const flag of ['graphicContent', 'removedElsewhere']) {
                 if (flags[flag] !== !!item[flag]) changes[flag] = flags[flag];
@@ -121,7 +136,15 @@ function ContentEditModal({ open, type, item, onClose, onSave, saving, error = n
                     <p className="text-xs text-text-muted">{t('channelManage.editYoutubeNote')}</p>
                 )}
 
-                {fields.map((field) => (
+                {fields.map((field) => (field === 'category' && (type === 'videos' || type === 'books') ? (
+                    <CategoryField
+                        key={field}
+                        kind={type}
+                        id={`edit-category-${item.id}`}
+                        value={form[field] ?? ''}
+                        onChange={(e) => setForm({ ...form, [field]: e.target.value })}
+                    />
+                ) : (
                     <Input
                         key={field}
                         label={t(LABELS[field])}
@@ -133,7 +156,11 @@ function ContentEditModal({ open, type, item, onClose, onSave, saving, error = n
                         required={field === 'title'}
                         field={field}
                     />
-                ))}
+                )))}
+
+                {type === 'videos' && slug && (
+                    <SeriesSelect slug={slug} id={`edit-series-${item.id}`} value={series} onChange={setSeries} enabled={open} />
+                )}
 
                 {hasSubject && (
                     <div>

@@ -38,8 +38,11 @@ export const LIST_COLUMN = 'max-w-[1640px] mx-auto w-full p-4 sm:p-6';
 /**
  * `guide` names the page's guide (`components/guide/pageGuides`) and puts its link after the page's
  * own last line — the one place every guided page keeps it.
+ *
+ * <p>`verificationBanner={false}` is for a page whose own content IS that notice — the
+ * create-channel page's first step — where the banner above it said the same thing twice.
  */
-function PageShell({ children, contentClassName = '', tab = false, sidebar = null, guide = null }) {
+function PageShell({ children, contentClassName = '', tab = false, sidebar = null, guide = null, verificationBanner = true }) {
     const { user } = useAuth();
     const unverified = !!user && user.emailVerified === false;
     // A verified address can stop working too (a closed mailbox): that reader is told the same way.
@@ -59,7 +62,7 @@ function PageShell({ children, contentClassName = '', tab = false, sidebar = nul
                 It used to appear solely inside the comment box and the create-channel form, so
                 someone who never tried either was never told — and the ten-minute link they
                 missed, or never received, looked like nothing was wrong. */}
-            {(unverified || undeliverable) && (
+            {verificationBanner && (unverified || undeliverable) && (
                 <div className="max-w-[1400px] w-full mx-auto px-3 sm:px-6 pt-3">
                     <EmailVerificationNotice message={t('auth.verificationNotice.banner')} showAddress />
                 </div>

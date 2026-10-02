@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Plus, Settings, Users } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import PageShell from '../components/layout/PageShell';
-import { QueryState, Cartouche, Avatar, PageHeader } from '../components/ui';
+import { QueryState, Cartouche, Avatar, PageHeader, KhatamStar } from '../components/ui';
 import { useChannelDirectory, useSubscriptions, useMyChannels } from '../hooks/useChannels';
 import { resolveMediaUrl } from '@/lib/media';
 import { formatChipLabel } from '@/lib/formats';
@@ -18,7 +18,7 @@ import { t } from '@/i18n';
  * and a page of them would be a request per channel — the channel's own page has the button.
  */
 function Channels() {
-    const { token } = useAuth();
+    const { token, user } = useAuth();
     const { data: myChannels = [] } = useMyChannels(!!token);
     const { data: subscriptions = [] } = useSubscriptions(!!token);
     const directory = useChannelDirectory();
@@ -30,8 +30,28 @@ function Channels() {
             <PageHeader title={t('nav.tabs.channels')} />
 
             <div className="flex flex-col gap-10">
+                {/* The way to make a channel, first on the tab whose subject is channels. It sat as a
+                    grey line under the whole directory, which pages — on a phone nobody reached it.
+                    Read off the profile rather than the my-channels list, which arrives later: an
+                    owner would otherwise see the card flash before their channels landed. */}
+                {token && user && !user.uploadChannelSlug && myChannels.length === 0 && (
+                    <section className="bg-surface border border-border rounded-lg p-5 sm:p-6 flex flex-col gap-3">
+                        <div className="flex items-center gap-2.5">
+                            <KhatamStar className="w-3.5 h-3.5 flex-shrink-0 text-gold" />
+                            <h2 className="font-serif text-[1.6rem] font-semibold leading-tight">{t('channelsPage.createPrompt')}</h2>
+                        </div>
+                        <p className="font-reading text-text-secondary leading-relaxed max-w-[60ch]">{t('channelsPage.createPitch')}</p>
+                        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+                            <Link to="/create-channel" className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-primary text-white rounded-md font-semibold hover:bg-primary-dark hover:no-underline">
+                                <Plus size={16} /> {t('channelsPage.createCta')}
+                            </Link>
+                            <Link to="/publish" className="text-sm font-semibold">{t('channelsPage.howItWorks')}</Link>
+                        </div>
+                    </section>
+                )}
+
                 {/* A heading only over something (product owner, 2026-09-28): a reader with no channel of
-                    their own gets the way to make one as a line at the foot of the page instead. */}
+                    their own gets the card above instead. */}
                 {token && myChannels.length > 0 && (
                     <section>
                         <Cartouche
@@ -132,12 +152,6 @@ function Channels() {
                     </QueryState>
                 </section>
 
-                {token && myChannels.length === 0 && (
-                    <p className="text-sm text-text-secondary">
-                        {t('channelsPage.createPrompt')}{' '}
-                        <Link to="/create-channel" className="font-semibold">{t('channelsPage.create')}</Link>
-                    </p>
-                )}
             </div>
         </PageShell>
     );

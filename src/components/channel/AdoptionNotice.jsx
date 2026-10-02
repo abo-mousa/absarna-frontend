@@ -39,6 +39,10 @@ function AdoptionNotice({ slug, onOpen }) {
     // 'done' and 'none' say nothing here. The finished state is worth a sentence inside the
     // YouTube tab, where somebody went looking; at the top of every page it would be furniture.
     if (state !== 'working' && state !== 'blocked') return null;
+    // Blocked with nothing imported is a channel that has no imported text at all — every new
+    // channel, before anything is linked. Above every tab that read as a warning about content it
+    // does not have, on the owner's first screen. The YouTube tab still says it, where it is asked.
+    if (!progress?.imported) return null;
 
     return (
         <div className="mb-5 rounded-md border border-gold/30 bg-gold/10 p-4 grid gap-2 sm:flex sm:items-center sm:gap-4">
