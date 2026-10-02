@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { EmailTypoHint } from '../components/auth';
 import { useToast } from '../contexts/ToastContext';
 import { usePageMeta } from '../hooks/usePageMeta';
 import PageShell from '../components/layout/PageShell';
@@ -190,6 +191,8 @@ function Register() {
                         placeholder="email@example.com"
                         dir="ltr"
                     />
+                    {/* Before the mail is sent, not after it bounces. */}
+                    <EmailTypoHint value={form.email} onAccept={(email) => setForm({ ...form, email })} />
 
                     <div>
                         <Input

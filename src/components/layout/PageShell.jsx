@@ -42,6 +42,8 @@ export const LIST_COLUMN = 'max-w-[1640px] mx-auto w-full p-4 sm:p-6';
 function PageShell({ children, contentClassName = '', tab = false, sidebar = null, guide = null }) {
     const { user } = useAuth();
     const unverified = !!user && user.emailVerified === false;
+    // A verified address can stop working too (a closed mailbox): that reader is told the same way.
+    const undeliverable = !!user?.emailUndeliverable;
 
     return (
         <div className="min-h-screen flex flex-col bg-bg pb-[calc(3.75rem+env(safe-area-inset-bottom,0px))] lg:pb-0">
@@ -57,9 +59,9 @@ function PageShell({ children, contentClassName = '', tab = false, sidebar = nul
                 It used to appear solely inside the comment box and the create-channel form, so
                 someone who never tried either was never told — and the ten-minute link they
                 missed, or never received, looked like nothing was wrong. */}
-            {unverified && (
+            {(unverified || undeliverable) && (
                 <div className="max-w-[1400px] w-full mx-auto px-3 sm:px-6 pt-3">
-                    <EmailVerificationNotice message={t('auth.verificationNotice.banner')} />
+                    <EmailVerificationNotice message={t('auth.verificationNotice.banner')} showAddress />
                 </div>
             )}
             {/* tabIndex=-1 lets route-change navigation (App.jsx) move focus here

@@ -471,6 +471,8 @@ export const ar = {
             // Email is required at signup now, so this reaches only accounts created before that
             // — a profile edit cannot clear the field, since a blank one is read as "no change".
             // Adding an address on the profile page sends the link by itself.
+            EMAIL_UNDELIVERABLE: 'لا يصل البريد إلى هذا العنوان. غيّره من صفحة الملف الشخصي وسيصلك رابط جديد.',
+            EMAIL_CHANGE_TOO_SOON: 'أُرسل رابط توثيق قبل قليل. انتظر عشرين دقيقة ثم غيّر العنوان مرة أخرى.',
             EMAIL_ADDRESS_MISSING: 'لا يوجد بريد إلكتروني مسجّل في حسابك. أضف بريدك من صفحة الملف الشخصي وسيصلك رابط التوثيق.',
 
             // Re-queueing a failed transcode. Refused when the video is not FAILED (there may be
@@ -573,6 +575,15 @@ export const ar = {
             sent: 'تم إرسال رابط التوثيق، تحقق من بريدك',
             resend: 'إعادة إرسال رابط التوثيق',
             failed: 'تعذر إرسال الرابط، حاول لاحقاً',
+            sentTo: 'أُرسل الرابط إلى ',
+            notYours: 'ليس عنوانك؟ غيّره',
+            undeliverableBefore: 'لم يصل بريدنا إلى ',
+            undeliverableAfter: '؛ رفضه الخادم المستقبِل، فيبدو أن العنوان غير صحيح أو لم يعد يعمل. غيّره ليصلك رابط التوثيق.',
+            changeAddress: 'غيّر بريدك',
+        },
+        emailTypo: {
+            didYouMean: 'هل تقصد ',
+            questionMark: '؟',
         },
         passwordMismatch: 'كلمتا المرور غير متطابقتين',
         passwordTooWeak: 'كلمة المرور يجب أن تحتوي على 8 أحرف على الأقل مع حرف كبير وحرف صغير ورقم ورمز خاص',

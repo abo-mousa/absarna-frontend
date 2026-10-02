@@ -6,7 +6,7 @@ import { changePassword, deleteAccount, signOutEverywhere } from '@/lib/api/auth
 import { isRemembered } from '@/lib/authStorage';
 import PageShell from '../components/layout/PageShell';
 import { Input, Button, Modal, ImageUploadField, RejectedFields } from '../components/ui';
-import { EmailVerificationNotice } from '../components/auth';
+import { EmailTypoHint, EmailVerificationNotice } from '../components/auth';
 import { useMyChannels } from '../hooks/useChannels';
 import { useProfilePicture } from '../hooks/useOwnerImage';
 import { useNavigate } from 'react-router-dom';
@@ -24,14 +24,15 @@ import { EMAIL_MAX_LENGTH, FULL_NAME_MAX_LENGTH, BIO_MAX_LENGTH } from '@/lib/va
  * ten-minute link expired, or landed in spam, saw nothing at all here — the page that is otherwise
  * about their account.
  */
-function VerificationCard({ verified }) {
+function VerificationCard({ verified, undeliverable }) {
     return (
         <div className="bg-surface p-6 sm:p-8 rounded-lg shadow-sm border border-border-light mt-6">
             <h2 className="text-lg font-bold mb-4">{t('profile.verification.heading')}</h2>
-            {verified ? (
+            {/* A verified address can still stop working (a closed mailbox); that is said here too. */}
+            {verified && !undeliverable ? (
                 <p className="text-sm text-text-secondary">✓ {t('profile.verification.verified')}</p>
             ) : (
-                <EmailVerificationNotice message={t('profile.verification.notVerified')} />
+                <EmailVerificationNotice message={t('profile.verification.notVerified')} showAddress />
             )}
         </div>
     );
@@ -345,6 +346,24 @@ function UserProfile() {
         }
     }, [user]);
 
+    // «غيّره» on the verification notice leads here: put the reader in the field it asked them to
+    // fix, once the form holds the address — not at the top of a page they then have to read.
+    const [focusedEmail, setFocusedEmail] = useState(false);
+    useEffect(() => {
+        if (!user || focusedEmail || window.location.hash !== '#email') return undefined;
+        setFocusedEmail(true);
+        // After this commit's other effects: the router's own focus move to #main-content and
+        // the scroll restoration run in the same commit, and would otherwise undo this one.
+        const timer = setTimeout(() => {
+            const field = document.getElementById('email');
+            if (!field) return;
+            field.scrollIntoView({ block: 'center' });
+            field.focus();
+            field.select();
+        }, 0);
+        return () => clearTimeout(timer);
+    }, [user, focusedEmail]);
+
     // Trimmed on both sides: the input keeps whatever was typed, and a stray space is not a change
     // of address — asking for a password over one would be unexplainable.
     const emailChanged = form.email.trim() !== savedEmail.trim();
@@ -410,6 +429,7 @@ function UserProfile() {
                             placeholder={t('fields.fullNamePlaceholder')}
                         />
                         <Input
+                            id="email"
                             label={t('fields.email')}
                             type="email"
                             value={form.email}
@@ -419,6 +439,10 @@ function UserProfile() {
                             dir="ltr"
                             placeholder="email@example.com"
                         />
+                        {/* Also over the saved address once it has bounced: «gmial.com» is the usual reason. */}
+                        {(emailChanged || user?.emailUndeliverable) && (
+                            <EmailTypoHint value={form.email} onAccept={(email) => setForm({ ...form, email })} />
+                        )}
 
                         {/*
                           * Revealed by the edit rather than always present: changing the address is
@@ -466,7 +490,7 @@ function UserProfile() {
                     </RejectedFields>
                 </div>
 
-                <VerificationCard verified={user?.emailVerified !== false} />
+                <VerificationCard verified={user?.emailVerified !== false} undeliverable={!!user?.emailUndeliverable} />
 
                 <ChangePasswordCard />
 

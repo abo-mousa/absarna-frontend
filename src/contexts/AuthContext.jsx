@@ -11,6 +11,9 @@ import { useToast } from './ToastContext';
 import { currentLocale, t } from '@/i18n';
 import { keepRefusal } from '@/lib/rejectedFields';
 
+/** How soon a return to the tab may read an unverified account's profile again. */
+const ADDRESS_RECHECK_MS = 30_000;
+
 const AuthContext = createContext();
 
 // One retry, then accept the answer — see fetchUserProfile for why a second attempt is worth
@@ -159,6 +162,23 @@ export const AuthProvider = ({ children }) => {
         // every token change would fire a second profile request straight after each of them.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    // An unverified reader goes to their mail app and comes back: that return is when the account
+    // has news — the link was opened on the phone, or the mail bounced and the address is wrong —
+    // so the profile is read again then, at most twice a minute. Only while there is something to
+    // learn: a verified account with a working address never re-reads on focus.
+    const pendingAddress = !!user && (user.emailVerified === false || !!user.emailUndeliverable);
+    useEffect(() => {
+        if (!pendingAddress) return undefined;
+        let last = Date.now();
+        const onVisible = () => {
+            if (document.visibilityState !== 'visible' || Date.now() - last < ADDRESS_RECHECK_MS) return;
+            last = Date.now();
+            fetchUserProfile();
+        };
+        document.addEventListener('visibilitychange', onVisible);
+        return () => document.removeEventListener('visibilitychange', onVisible);
+    }, [pendingAddress, fetchUserProfile]);
 
     // The session-expiry handler needs the route the visitor is on when the session dies. It
     // reads `window.location` at that moment rather than subscribing this provider to the
