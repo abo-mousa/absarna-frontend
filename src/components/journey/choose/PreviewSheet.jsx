@@ -15,7 +15,7 @@ import { formatDigits, t } from '@/i18n';
 /**
  * What a reader sees before committing to a programme or a book: enough to answer "is this for me,
  * and can I keep it up?" without leaving the choice — the first episode to try, how long an episode
- * runs, the whole in hours, where a portion a day leads, and the first few episodes by name.
+ * runs, the whole in hours, where a portion a day leads, and every episode by name, paged inside the sheet.
  *
  * <p>«اجعله وِردي» here is the ONE commit button of the whole choosing flow: a card anywhere opens
  * this sheet, and nothing else starts a goal. A programme already pursued says so and links to it.
@@ -26,11 +26,12 @@ function PreviewSheet({ item, proposal = null, deadline = null, shortlist, onTog
     const goals = useGoals();
     const existing = goalFor(goals.data, series ? { seriesId: item.targetId } : { bookId: item.targetId });
     const page = detail.data?.pages?.[0];
-    const episodes = page?.content || [];
+    const episodes = detail.data?.pages?.flatMap((each) => each.content || []) || [];
     const firstEpisode = episodes[0] || item.firstEpisode || null;
 
     const units = series ? (page?.series?.contentCount ?? item.episodes ?? 0) : (item.pages ?? item.book?.pages ?? 0);
-    const average = series ? averageMinutes(episodes) : null;
+    // From the first page only, so the figures above do not shift as «تحميل المزيد» loads more.
+    const average = series ? averageMinutes(page?.content || []) : null;
     // The reader's own pace: from the proposal they opened (whatever they set on its card), else
     // one episode, or a month's worth of pages; − and + re-cut the track, and it is what the goal
     // dialog opens with.
@@ -42,31 +43,27 @@ function PreviewSheet({ item, proposal = null, deadline = null, shortlist, onTog
     return (
         <Modal open onClose={onClose} title={item.title} maxWidth="620px">
             <div className="flex flex-col gap-5">
-                <div className="relative">
-                    <Poster item={{ ...item, firstEpisode }} className="aspect-video w-full" />
-                    {series && firstEpisode && (
-                        <Link
-                            to={`/video/${firstEpisode.id}`}
-                            className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/10 hover:bg-black/20 hover:no-underline"
-                        >
-                            <span className="w-14 h-14 rounded-full bg-surface text-primary flex items-center justify-center shadow">
-                                <Play size={22} fill="currentColor" aria-hidden="true" />
-                            </span>
-                            <span className="px-3 py-1 rounded-full bg-black/70 text-white text-xs font-semibold">{t('journey.choose.watchFirst')}</span>
-                        </Link>
-                    )}
-                </div>
-
-                <div className="flex flex-col gap-1">
-                    {item.channelName && <span className="text-sm text-text-secondary">{item.channelName}</span>}
-                    <span className="text-sm">
-                        {[
-                            units ? amountText(series ? 'EPISODES' : 'PAGES', units) : null,
-                            average ? t('journey.choose.perEpisode', { minutes: learningTime(average) }) : null,
-                            average && units ? t('journey.choose.total', { time: learningTime(average * units) }) : null,
-                        ].filter(Boolean).join(' · ')}
-                    </span>
-                    {item.chosenBy ? <span className="text-sm text-gold-ink">{chosenByText(item.chosenBy)}</span> : null}
+                {/* The picture is a thumbnail beside the facts, not a hero: what a reader is deciding
+                    on is the episodes below, and on a phone a full-width poster pushed them off the
+                    first screen. */}
+                <div className="flex items-start gap-4">
+                    <Poster item={{ ...item, firstEpisode }} className="aspect-video w-32 sm:w-40 flex-shrink-0" />
+                    <div className="flex flex-col gap-1 min-w-0">
+                        {item.channelName && <span className="text-sm text-text-secondary">{item.channelName}</span>}
+                        <span className="text-sm">
+                            {[
+                                units ? amountText(series ? 'EPISODES' : 'PAGES', units) : null,
+                                average ? t('journey.choose.perEpisode', { minutes: learningTime(average) }) : null,
+                                average && units ? t('journey.choose.total', { time: learningTime(average * units) }) : null,
+                            ].filter(Boolean).join(' · ')}
+                        </span>
+                        {item.chosenBy ? <span className="text-sm text-gold-ink">{chosenByText(item.chosenBy)}</span> : null}
+                        {series && firstEpisode && (
+                            <Link to={`/video/${firstEpisode.id}`} className="inline-flex items-center gap-1.5 text-sm font-semibold mt-1">
+                                <Play size={14} fill="currentColor" aria-hidden="true" />{t('journey.choose.watchFirst')}
+                            </Link>
+                        )}
+                    </div>
                 </div>
 
                 {description && <p dir="auto" className="font-reading text-sm leading-loose text-text-secondary line-clamp-3">{description}</p>}
@@ -83,24 +80,29 @@ function PreviewSheet({ item, proposal = null, deadline = null, shortlist, onTog
                     </div>
                 )}
 
+                {/* Every episode by name, inside the sheet: the titles are what the programme
+                    holds, and the reader should not have to leave the choice to read past three. */}
                 {series && (
-                    <div className="flex flex-col">
+                    <section className="flex flex-col">
+                        {units > 0 && <h3 className="text-sm font-bold pb-1">{t('journey.choose.allEpisodes', { count: amountText('EPISODES', units) })}</h3>}
                         {detail.isLoading && <Spinner />}
-                        {episodes.slice(0, 3).map((video, index) => (
-                            <div key={video.id} className="flex items-center justify-between gap-3 py-2 border-b border-border-light text-sm">
-                                <span className="flex items-center gap-3 min-w-0">
-                                    <span className="text-text-muted w-4">{index + 1}</span>
-                                    <span dir="auto" className="truncate">{video.title}</span>
-                                </span>
-                                {video.duration && <span className="text-text-muted flex-shrink-0">{formatDigits(video.duration)}</span>}
-                            </div>
-                        ))}
-                        {units > 3 && (
-                            <Link to={`/series/${item.targetId}`} className="pt-2 text-sm font-semibold">
-                                {t('journey.choose.allEpisodes', { count: amountText('EPISODES', units) })}
-                            </Link>
+                        <ol>
+                            {episodes.map((video, index) => (
+                                <li key={video.id} className="flex items-start justify-between gap-3 py-2 border-b border-border-light text-sm">
+                                    <span className="flex items-start gap-3 min-w-0">
+                                        <span className="text-text-muted w-6 flex-shrink-0 tabular-nums">{formatDigits(index + 1)}</span>
+                                        <span dir="auto" className="line-clamp-2">{video.title}</span>
+                                    </span>
+                                    {video.duration && <span className="text-text-muted flex-shrink-0">{formatDigits(video.duration)}</span>}
+                                </li>
+                            ))}
+                        </ol>
+                        {detail.hasNextPage && (
+                            <Button variant="ghost" className="mt-2 self-center" onClick={() => detail.fetchNextPage()} disabled={detail.isFetchingNextPage}>
+                                {detail.isFetchingNextPage ? t('common.loading') : t('common.loadMore')}
+                            </Button>
                         )}
-                    </div>
+                    </section>
                 )}
 
                 <div className="sticky -bottom-6 -mx-6 -mb-6 px-6 py-4 flex items-center gap-3 border-t border-border-light bg-surface">
