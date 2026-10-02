@@ -27,6 +27,24 @@ export const useSeriesDetail = (id, size = 20, enabled = true) => {
 };
 
 /**
+ * A series' episodes by name and length only (`GET /series/{id}/episodes`) — the goal preview's
+ * list. Not `useSeriesDetail`: that is the series page's full cards, and the sheet used three
+ * fields of each. The description arrives on the first page.
+ */
+export const useSeriesEpisodes = (id, size = 50, enabled = true) => {
+    return useInfiniteQuery({
+        queryKey: ['series-episodes', id, size],
+        queryFn: async ({ pageParam = 0 }) => {
+            const res = await api.get(`/series/${id}/episodes`, { params: { page: pageParam, size } });
+            return res.data;
+        },
+        initialPageParam: 0,
+        getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.currentPage + 1 : undefined),
+        enabled: enabled && !!id,
+    });
+};
+
+/**
  * One video's position in its series, and its neighbours.
  *
  * <p>Its own request rather than something derived from the list above, and that is the point:

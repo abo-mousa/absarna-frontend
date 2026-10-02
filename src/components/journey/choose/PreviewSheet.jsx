@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Bookmark, Play } from 'lucide-react';
 import { Modal, Button, KhatamStar, Spinner } from '@/components/ui';
-import { useSeriesDetail } from '@/hooks/useSeries';
+import { useSeriesEpisodes } from '@/hooks/useSeries';
 import { useGoals } from '@/hooks/useGoals';
 import { goalFor, bookPortion } from '@/lib/journey';
 import { averageMinutes, chosenByText, itemKey, prefillFor } from '@/lib/goalChoice';
 import { amountText, learningTime } from '@/lib/goalText';
+import { formatTimestamp } from '@/lib/spans';
 import { Poster } from './parts';
 import PaceStepper from '../PaceStepper';
 import PortionTrack from '../PortionTrack';
@@ -22,14 +23,15 @@ import { formatDigits, t } from '@/i18n';
  */
 function PreviewSheet({ item, proposal = null, deadline = null, shortlist, onToggle, onCommit, onClose }) {
     const series = item.kind === 'FINISH_SERIES';
-    const detail = useSeriesDetail(series ? item.targetId : null, 20, series);
+    const detail = useSeriesEpisodes(series ? item.targetId : null, 50, series);
     const goals = useGoals();
     const existing = goalFor(goals.data, series ? { seriesId: item.targetId } : { bookId: item.targetId });
     const page = detail.data?.pages?.[0];
     const episodes = detail.data?.pages?.flatMap((each) => each.content || []) || [];
-    const firstEpisode = episodes[0] || item.firstEpisode || null;
+    // The poster is the suggestion's own first-episode card; the slim list carries no picture.
+    const firstEpisode = item.firstEpisode || episodes[0] || null;
 
-    const units = series ? (page?.series?.contentCount ?? item.episodes ?? 0) : (item.pages ?? item.book?.pages ?? 0);
+    const units = series ? (item.episodes ?? 0) : (item.pages ?? item.book?.pages ?? 0);
     // From the first page only, so the figures above do not shift as «تحميل المزيد» loads more.
     const average = series ? averageMinutes(page?.content || []) : null;
     // The reader's own pace: from the proposal they opened (whatever they set on its card), else
@@ -38,7 +40,7 @@ function PreviewSheet({ item, proposal = null, deadline = null, shortlist, onTog
     const [chosen, setChosen] = useState(null);
     const amount = chosen ?? (proposal?.amount || (series ? 1 : bookPortion(units, 0)));
     const saved = shortlist.some((entry) => itemKey(entry) === itemKey(item));
-    const description = series ? page?.series?.description : item.book?.description;
+    const description = series ? page?.description : item.book?.description;
 
     return (
         <Modal open onClose={onClose} title={item.title} maxWidth="620px">
@@ -93,7 +95,7 @@ function PreviewSheet({ item, proposal = null, deadline = null, shortlist, onTog
                                         <span className="text-text-muted w-6 flex-shrink-0 tabular-nums">{formatDigits(index + 1)}</span>
                                         <span dir="auto" className="line-clamp-2">{video.title}</span>
                                     </span>
-                                    {video.duration && <span className="text-text-muted flex-shrink-0">{formatDigits(video.duration)}</span>}
+                                    {video.durationSeconds ? <span className="text-text-muted flex-shrink-0">{formatTimestamp(video.durationSeconds)}</span> : null}
                                 </li>
                             ))}
                         </ol>
