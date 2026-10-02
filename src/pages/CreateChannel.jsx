@@ -88,7 +88,7 @@ function CreateChannel() {
     const [needsVerification, setNeedsVerification] = useState(false);
     const [loading, setLoading] = useState(false);
     const resolveYouTube = useResolveYouTubeChannel();
-    const { user } = useAuth();
+    const { user, refreshUser } = useAuth();
     // The channel the lookup resolved to, kept so the page can show what it found.
     const [foundChannel, setFoundChannel] = useState(null);
 
@@ -141,6 +141,9 @@ function CreateChannel() {
         try {
             await api.post('/channels', form);
             showToast(t('createChannel.created'), 'success');
+            // The navbar's shortcut reads `user.uploadChannelSlug`: left alone it kept offering
+            // "new channel" and leading back here until a reload — an invitation to a second one.
+            refreshUser?.();
 
             // The pictures need the channel to exist — there is no slug to upload under before
             // this — so they go now, and a failure here never loses the channel: it exists, and
