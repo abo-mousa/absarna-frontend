@@ -2,7 +2,6 @@ import { useEffect, useRef } from 'react';
 import {
     RESUME_STALL_CHECK_MS,
     resumeAction,
-    shouldPauseWhenHidden,
     stillStalled,
 } from '@/lib/player/resume';
 
@@ -22,18 +21,19 @@ import {
  * page was away and the playhead is not moving. A viewer has no reason to suspect the app rather
  * than the video, so the app has to notice on their behalf.
  *
- * <p><b>It also stops the video on the way out, and that half is not a detail.</b> Leaving the
- * browser does not reliably stop a video — Chrome on Android keeps the audio going with a media
- * notification, which is deliberate and is the right default for a music site — so a lecture
- * opened and left behind carried on talking into somebody's pocket, on their data. See
- * `shouldPauseWhenHidden` for the two cases where playing on IS what the viewer asked for.
+ * <p><b>It never stops the video on the way out.</b> It used to: a playing video was paused the
+ * moment the page was hidden, against Chrome on Android carrying a lecture on in somebody's pocket.
+ * But listening to a lecture while doing something else — another tab, another app, the phone in
+ * a pocket on the way to work — is how much of this catalogue is actually used, and pausing it
+ * stopped exactly that (product owner, 2026-10-02). A viewer who wants it stopped has the media
+ * notification and the pause button, the same as on every other player.
  *
- * <p><b>And nothing here ever presses play for anybody.</b> A video this hook paused stays paused
- * until the viewer says otherwise: resuming on return would undo the stop they just watched
- * happen, and starting a lecture by itself is a worse thing to get wrong than not starting it — in
- * a mosque, a lecture hall or a quiet room it is the one failure everybody in earshot notices.
- * `wasPlaying` is still recorded, because the REPAIR below needs to know whether there was
- * anything to repair; it is not a licence to start playing.
+ * <p><b>And nothing here ever presses play for anybody.</b> If the platform paused the video while
+ * the page was away (iOS does), it stays paused until the viewer says otherwise: starting a
+ * lecture by itself is a worse thing to get wrong than not starting it — in a mosque, a lecture
+ * hall or a quiet room it is the one failure everybody in earshot notices. `wasPlaying` is still
+ * recorded, because the REPAIR below needs to know whether there was anything to repair; it is
+ * not a licence to start playing.
  *
  * @param videoRef   the element to watch
  * @param enabled    off unless there is an element (the YouTube and link branches have none)
@@ -55,21 +55,8 @@ export function useResumeAfterBackground({ videoRef, enabled = true, onRecover }
         const remember = () => {
             const el = videoRef.current;
             if (!el) return;
-            const playing = !el.paused && !el.ended;
-            wasPlayingRef.current = playing;
+            wasPlayingRef.current = !el.paused && !el.ended;
             positionRef.current = el.currentTime;
-
-            if (shouldPauseWhenHidden({
-                playing,
-                pictureInPicture: typeof document !== 'undefined'
-                    && document.pictureInPictureElement === el,
-                // Safari's own property, and the only page-visible sign that the sound is coming
-                // out of a television rather than the phone. Absent everywhere else, which reads
-                // as false and is correct there.
-                castingToRemote: Boolean(el.webkitCurrentPlaybackTargetIsWireless),
-            })) {
-                el.pause();
-            }
         };
 
         const recover = () => {
@@ -81,9 +68,8 @@ export function useResumeAfterBackground({ videoRef, enabled = true, onRecover }
                 position: Number.isFinite(el?.currentTime) && el.currentTime > 0
                     ? el.currentTime
                     : positionRef.current,
-                // Never true for a video this hook paused. A repair puts the source and the
-                // position back; whether to play is the viewer's, and they have just been shown a
-                // stopped video.
+                // Never true for a video that came back paused. A repair puts the source and the
+                // position back; whether to play is the viewer's.
                 resume: wasPlayingRef.current && !el?.paused,
             });
         };
@@ -106,18 +92,15 @@ export function useResumeAfterBackground({ videoRef, enabled = true, onRecover }
             }
             // `'play'` is deliberately not acted on. It is the honest reading of the element's
             // state — it was playing, it is paused, so continuing is what would put it back — but
-            // this hook is why it is paused, and pressing play here would hand the viewer back a
-            // lecture they watched stop when they left. They start it again, or they do not.
+            // the platform paused it while the viewer was away, and a lecture that starts by
+            // itself on their return is the worse mistake. They start it again, or they do not.
             if (!wasPlayingRef.current) return;
 
             // The quiet case, and the one that needs a second look rather than a single read:
             // an element that is not paused, holds no error, and is not moving because whatever
             // was feeding it stopped while the page was hidden. A `readyState` sampled in the same
             // task as the visibility change says almost nothing, so the answer is whether the
-            // playhead has gone anywhere a second later. It survives the pause above because
-            // picture-in-picture and casting are exempt from it — they are exactly the two
-            // sessions still running while nobody is looking, and the two with nobody watching to
-            // notice that they stalled.
+            // playhead has gone anywhere a second later.
             const before = el.currentTime;
             checkTimerRef.current = setTimeout(() => {
                 const current = videoRef.current;
