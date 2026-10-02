@@ -66,6 +66,10 @@ function ChannelPage() {
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
+        isLoading: videosLoading,
+        isError: videosError,
+        error: videosErrorObject,
+        refetch: refetchVideos,
     } = useChannelVideos(slug, 24, !!channel, videoSearchTerm);
     const videos = videoPages?.pages.flatMap((page) => page.content) || [];
     // The tab badge must keep counting the WHOLE channel, so it is frozen while a filter is
@@ -83,6 +87,10 @@ function ChannelPage() {
         fetchNextPage: fetchNextBooksPage,
         hasNextPage: hasNextBooksPage,
         isFetchingNextPage: isFetchingNextBooksPage,
+        isLoading: booksLoading,
+        isError: booksError,
+        error: booksErrorObject,
+        refetch: refetchBooks,
     } = useChannelBooks(slug, 24, !!channel && activeTab === 'books');
     const books = bookPages?.pages.flatMap((page) => page.content) || [];
     const { data: bookBadge } = useChannelBooks(slug, 1, !!channel);
@@ -93,6 +101,10 @@ function ChannelPage() {
         fetchNextPage: fetchNextArticlesPage,
         hasNextPage: hasNextArticlesPage,
         isFetchingNextPage: isFetchingNextArticlesPage,
+        isLoading: articlesLoading,
+        isError: articlesError,
+        error: articlesErrorObject,
+        refetch: refetchArticles,
     } = useChannelArticles(slug, 24, !!channel && activeTab === 'articles');
     const articles = articlePages?.pages.flatMap((page) => page.content) || [];
     const { data: articleBadge } = useChannelArticles(slug, 1, !!channel);
@@ -103,6 +115,10 @@ function ChannelPage() {
         fetchNextPage: fetchNextPostsPage,
         hasNextPage: hasNextPostsPage,
         isFetchingNextPage: isFetchingNextPostsPage,
+        isLoading: postsLoading,
+        isError: postsError,
+        error: postsErrorObject,
+        refetch: refetchPosts,
     } = useChannelPosts(slug, 24, !!channel && activeTab === 'posts');
     const posts = postPages?.pages.flatMap((page) => page.content) || [];
     const { data: postBadge } = useChannelPosts(slug, 1, !!channel);
@@ -117,6 +133,10 @@ function ChannelPage() {
         fetchNextPage: fetchNextSeriesPage,
         hasNextPage: hasNextSeriesPage,
         isFetchingNextPage: isFetchingNextSeriesPage,
+        isLoading: seriesLoading,
+        isError: seriesError,
+        error: seriesErrorObject,
+        refetch: refetchSeries,
     } = useChannelSeries(slug, !!channel && activeTab === 'series');
     const series = seriesPages?.pages.flatMap((page) => page.content) || [];
     const { data: seriesBadge } = useChannelSeries(slug, !!channel, 1);
@@ -376,6 +396,10 @@ function ChannelPage() {
                         </div>
                     )}
                 <QueryState
+                    isLoading={videosLoading}
+                    isError={videosError}
+                    error={videosErrorObject}
+                    onRetry={refetchVideos}
                     isEmpty={videos.length === 0}
                     emptyTitle={videoSearchTerm ? t('channel.noVideosMatch') : t('channel.noVideos')}
                 >
@@ -407,7 +431,12 @@ function ChannelPage() {
             )}
 
             {activeTab === 'books' && (
-                <QueryState isEmpty={books.length === 0} emptyTitle={t('books.emptyOnChannel')}>
+                <QueryState
+                    isLoading={booksLoading}
+                    isError={booksError}
+                    error={booksErrorObject}
+                    onRetry={refetchBooks}
+                    isEmpty={books.length === 0} emptyTitle={t('books.emptyOnChannel')}>
                     <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-x-5 gap-y-8">
                         {books.map((book) => (
                             <BookCard key={book.id} book={book} progress={readingProgress[book.id]} />
@@ -429,7 +458,12 @@ function ChannelPage() {
             )}
 
             {activeTab === 'articles' && (
-                <QueryState isEmpty={articles.length === 0} emptyTitle={t('articles.emptyOnChannel')}>
+                <QueryState
+                    isLoading={articlesLoading}
+                    isError={articlesError}
+                    error={articlesErrorObject}
+                    onRetry={refetchArticles}
+                    isEmpty={articles.length === 0} emptyTitle={t('articles.emptyOnChannel')}>
                     <div className="grid gap-3">
                         {articles.map((article) => (
                             <ArticleCard key={article.id} article={article} />
@@ -451,7 +485,12 @@ function ChannelPage() {
             )}
 
             {activeTab === 'posts' && (
-                <QueryState isEmpty={posts.length === 0} emptyTitle={t('channel.noPosts')}>
+                <QueryState
+                    isLoading={postsLoading}
+                    isError={postsError}
+                    error={postsErrorObject}
+                    onRetry={refetchPosts}
+                    isEmpty={posts.length === 0} emptyTitle={t('channel.noPosts')}>
                     <div className="grid gap-3">
                         {posts.map((post) => (
                             <PostCard key={post.id} post={post} />
@@ -473,7 +512,12 @@ function ChannelPage() {
             )}
 
             {activeTab === 'series' && (
-                <QueryState isEmpty={series.length === 0} emptyTitle={t('series.emptyOnChannel')}>
+                <QueryState
+                    isLoading={seriesLoading}
+                    isError={seriesError}
+                    error={seriesErrorObject}
+                    onRetry={refetchSeries}
+                    isEmpty={series.length === 0} emptyTitle={t('series.emptyOnChannel')}>
                     <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 3xl:grid-cols-5 gap-x-5 gap-y-8">
                         {series.map((s) => (
                             // `publiclyListed === false` reaches only the channel's owner: a series
