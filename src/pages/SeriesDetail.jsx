@@ -1,9 +1,11 @@
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import { Tv, Clapperboard } from 'lucide-react';
 import { ArrowBack } from '@/components/ui/DirectionalIcon';
 import PageShell from '../components/layout/PageShell';
 import { QueryState } from '../components/ui';
-import { VideoCard } from '../components/content';
+import { SeriesEpisodeRow } from '../components/content';
+import { safeStorage } from '@/lib/safeStorage';
 import { useSeriesDetail } from '../hooks/useSeries';
 import { useWatchProgressMap } from '../hooks/useVideos';
 import { useChannel } from '../hooks/useChannels';
@@ -13,11 +15,20 @@ import { channelTabPath } from '@/lib/navigation';
 import MakeWird from '../components/journey/MakeWird';
 import { t } from '@/i18n';
 
+// The reader's choice of order, kept in this browser for every series: a preference about how
+// they like to read a list, not about one course. Episode order unless they chose otherwise.
+const ORDER_KEY = 'absarna.seriesOrder';
+const readOrder = () => (safeStorage.getItem(ORDER_KEY) === 'newest' ? 'newest' : 'episode');
+
 function SeriesDetail() {
     const { id } = useParams();
-    const navigate = useNavigate();
     const { token } = useAuth();
-    const { data, isLoading, isError, error, fetchNextPage, hasNextPage, isFetchingNextPage } = useSeriesDetail(id);
+    const [order, setOrderState] = useState(readOrder);
+    const setOrder = (next) => {
+        setOrderState(next);
+        safeStorage.setItem(ORDER_KEY, next);
+    };
+    const { data, isLoading, isError, error, fetchNextPage, hasNextPage, isFetchingNextPage, isPlaceholderData } = useSeriesDetail(id, 20, true, order);
     const watchProgress = useWatchProgressMap(!!token);
 
     // Series metadata rides on every page; the first one is as good as any.
@@ -89,21 +100,40 @@ function SeriesDetail() {
                     <MakeWird seriesId={series.id} title={series.title} variant="button" className="mt-4" />
                 </div>
 
+                {content.length > 1 && (
+                    <div role="group" aria-label={t('series.orderLabel')} className="flex justify-end mb-2">
+                        <div className="inline-flex rounded-md border border-border p-0.5 text-sm">
+                            {['episode', 'newest'].map((value) => (
+                                <button
+                                    key={value}
+                                    type="button"
+                                    aria-pressed={order === value}
+                                    onClick={() => setOrder(value)}
+                                    className={`px-3 py-1 rounded font-semibold transition-colors ${
+                                        order === value ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary'
+                                    }`}
+                                >
+                                    {value === 'newest' ? t('series.orderNewest') : t('series.orderEpisode')}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 <QueryState
                     isEmpty={content.length === 0}
                     emptyIcon={Clapperboard}
                     emptyTitle={t('series.empty')}
                 >
-                    <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 3xl:grid-cols-5 gap-x-5 gap-y-8">
+                    {/* Rows, not a grid of cards: a series is read in order, and each row carries
+                        its episode's description, opened in place (SeriesEpisodeRow). */}
+                    {/* Dimmed while the other order is on its way: the toggle has already moved, and
+                        an undimmed list in the old order reads as a toggle that did nothing. */}
+                    <ol aria-busy={isPlaceholderData} className={`transition-opacity ${isPlaceholderData ? 'opacity-50' : ''}`}>
                         {content.map((item) => (
-                            <VideoCard
-                                key={item.id}
-                                video={item}
-                                onClick={() => navigate(`/video/${item.id}`)}
-                                watch={watchProgress[item.id]}
-                            />
+                            <SeriesEpisodeRow key={item.id} video={item} watch={watchProgress[item.id]} />
                         ))}
-                    </div>
+                    </ol>
 
                     {hasNextPage && (
                         <div className="text-center mt-6">

@@ -12,17 +12,26 @@ import { useUserScope } from './useUserScope';
  *
  * <p>The endpoint used to return every video; a 99-video series made that a real cost. Pages
  * accumulate the same way the other listings do, so "load more" appends rather than replaces.
+ *
+ * @param order `episode` (episode 1 first, the default) or `newest` — the page's toggle
  */
-export const useSeriesDetail = (id, size = 20, enabled = true) => {
+export const useSeriesDetail = (id, size = 20, enabled = true, order = 'episode') => {
     return useInfiniteQuery({
-        queryKey: ['series', id, size],
+        // `order` last, so invalidating ['series', id] still reaches both orders.
+        queryKey: ['series', id, size, order],
         queryFn: async ({ pageParam = 0 }) => {
-            const res = await api.get(`/series/${id}`, { params: { page: pageParam, size } });
+            // `newest` is the episode order read backwards (the backend's); anything else is it.
+            const params = { page: pageParam, size, ...(order === 'newest' ? { order } : {}) };
+            const res = await api.get(`/series/${id}`, { params });
             return res.data;
         },
         initialPageParam: 0,
         getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.currentPage + 1 : undefined),
         enabled: enabled && !!id,
+        // Flipping the order keeps the list on screen until the other order arrives, rather than
+        // dropping the page to a spinner. Only within one series: another series must never
+        // flash this one's episodes.
+        placeholderData: (previous, previousQuery) => (previousQuery?.queryKey[1] === id ? previous : undefined),
     });
 };
 

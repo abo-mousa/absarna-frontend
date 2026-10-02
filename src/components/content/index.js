@@ -1,4 +1,5 @@
 export { default as VideoCard } from './VideoCard';
+export { default as SeriesEpisodeRow } from './SeriesEpisodeRow';
 export { default as BookCard } from './BookCard';
 export { default as BookCover } from './BookCover';
 export { default as BookDownloadButton } from './BookDownloadButton';

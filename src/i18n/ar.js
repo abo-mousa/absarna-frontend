@@ -2443,6 +2443,10 @@ export const ar = {
         backToChannel: 'العودة إلى قناة {name}',
         empty: 'لا توجد فيديوهات في هذه السلسلة بعد',
         emptyOnChannel: 'لا توجد سلاسل بعد',
+        // The series page's order toggle. Either way an episode keeps its number.
+        orderLabel: 'ترتيب الحلقات',
+        orderEpisode: 'الأقدم أولاً',
+        orderNewest: 'الأحدث أولاً',
         // Owner-only: on their own channel page, a series no visitor can see. Feminine, agreeing
         // with «سلسلة» — common.hiddenFromVisitors is worded for a video.
         hiddenBadge: 'مخفية عن الزوار',

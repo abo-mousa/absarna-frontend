@@ -76,6 +76,15 @@ function ExpandableText({
             <div
                 ref={outerRef}
                 id={regionId}
+                // Keyboard focus reaching a link inside the collapsed box opens it. Otherwise Tab
+                // lands on a link below the cut, the clipped box scrolls itself to show it, and
+                // the visible lines become a garbled slice from the middle of the text.
+                onFocus={() => {
+                    if (!expanded && overflowing) {
+                        if (outerRef.current) outerRef.current.scrollTop = 0;
+                        setExpanded(true);
+                    }
+                }}
                 className={`relative ${expanded ? '' : `overflow-hidden ${collapsedClassName}`}`}
             >
                 <div ref={innerRef}>{children}</div>
