@@ -1,11 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { CalendarDays } from 'lucide-react';
-import { Modal, Button, CalendarPicker, KhatamStar } from '../ui';
+import { Modal, Button, CalendarPicker, ConfirmDialog, KhatamStar } from '../ui';
 import { EmailVerificationNotice } from '../auth';
 import { Chips, Stepper } from './controls';
 import SacredText from './SacredText';
 import { useCreateGoal, useGoalPreview, useUpdateGoal } from '@/hooks/useGoals';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { useConfirmation } from '@/hooks/useConfirmation';
 import { useToast } from '@/contexts/ToastContext';
 import { hijriDeadlines } from '@/lib/hijriSeasons';
 import { amountText, commitmentSentence, goalTitle, measureOf } from '@/lib/goalText';
@@ -23,6 +24,16 @@ const ANCHORS = ['FAJR', 'DHUHR', 'ASR', 'MAGHRIB', 'ISHA', 'MORNING_ADHKAR', 'C
  * slot is all Today, the fallback and the review read; the anchor and the hour only describe it.
  */
 const PRAYER_SLOT = { FAJR: 'GHADWA', MORNING_ADHKAR: 'GHADWA', DHUHR: 'RAWHA', ASR: 'RAWHA', MAGHRIB: 'DULJA', ISHA: 'DULJA' };
+/**
+ * The refusals that are about an earlier step than the one the reader pressed «اعقد العزم» on: the
+ * dialog goes back to that step, so the sentence appears beside the thing it asks them to change.
+ */
+const STEP_OF_REFUSAL = {
+    GOAL_DEADLINE_PAST: 'amount',
+    GOAL_MINIMUM_ABOVE_AMOUNT: 'amount',
+    GOAL_FALLBACK_SAME_SLOT: 'time',
+    GOAL_ANCHOR_TEXT_REQUIRED: 'time',
+};
 /** How the time step refines a part of the day: after a prayer or a habit, at an hour, or not at all. */
 const whenOf = (form) => (form.atTime ? 'HOUR' : form.anchor || null);
 
@@ -73,23 +84,43 @@ function initialForm(goal, prefill) {
  */
 function GoalDialog({ open, onClose, goal = null, prefill = null, unverified = false, onCreated = null }) {
     const editing = !!goal;
+    // Words the reader wrote (the intention, a habit of their own) are asked about before a stray
+    // tap on the backdrop or Escape throws them away; a few chips are not worth the question.
+    const typed = useRef(false);
+    const [ask, confirmation] = useConfirmation();
+    // Stable, so the dialog's focus trap is not re-registered above the question it opens.
+    const closeRef = useRef(onClose);
+    closeRef.current = onClose;
+    const requestClose = useCallback(async () => {
+        if (typed.current && !(await ask(t('journey.dialog.discardTitle'), {
+            danger: true, confirmLabel: t('journey.dialog.discard'),
+        }))) return;
+        closeRef.current();
+    }, [ask]);
     return (
-        <Modal
-            open={open}
-            onClose={onClose}
-            title={editing ? t('journey.dialog.editTitle') : t('journey.dialog.title')}
-            maxWidth="580px"
-        >
-            {unverified && !editing
-                ? <EmailVerificationNotice message={t('journey.dialog.verifyFirst')} />
-                : open && <GoalForm key={goal?.id ?? JSON.stringify(prefill)} goal={goal} prefill={prefill} onDone={onClose} onCreated={onCreated} />}
-        </Modal>
+        <>
+            <Modal
+                open={open}
+                onClose={requestClose}
+                title={editing ? t('journey.dialog.editTitle') : t('journey.dialog.title')}
+                maxWidth="580px"
+            >
+                {unverified && !editing
+                    ? <EmailVerificationNotice message={t('journey.dialog.verifyFirst')} />
+                    : open && <GoalForm key={goal?.id ?? JSON.stringify(prefill)} goal={goal} prefill={prefill} onDone={onClose} onCreated={onCreated} typed={typed} />}
+            </Modal>
+            <ConfirmDialog {...confirmation} cancelLabel={t('journey.dialog.keepEditing')} />
+        </>
     );
 }
 
-function GoalForm({ goal, prefill, onDone, onCreated }) {
+function GoalForm({ goal, prefill, onDone, onCreated, typed }) {
     const editing = !!goal;
-    const [form, setForm] = useState(() => initialForm(goal, prefill));
+    const [initial] = useState(() => initialForm(goal, prefill));
+    const [form, setForm] = useState(initial);
+    // Read by the dialog when it is asked to close; a ref, since nothing re-renders on it.
+    typed.current = form.intentionText.trim() !== initial.intentionText.trim()
+        || form.anchorText.trim() !== initial.anchorText.trim();
     const set = (patch) => setForm((current) => ({ ...current, ...patch }));
     const steps = useMemo(() => [
         'amount',
@@ -122,7 +153,10 @@ function GoalForm({ goal, prefill, onDone, onCreated }) {
     }), [form.kind, form.targetId, form.measure, form.period, form.amount, form.minimumAmount, form.daysPerWeek, form.deadline, daily]), 300);
     const preview = useGoalPreview(body, !!body.kind);
 
-    const canContinue = step !== 'time' || form.when !== 'HOUR' || !!form.atTime;
+    // An hour chosen needs the hour, and «غير ذلك» needs the words — the backend refuses both, and
+    // finding out on the last step was the one dead end in the dialog.
+    const canContinue = step !== 'time'
+        || ((form.when !== 'HOUR' || !!form.atTime) && (form.anchor !== 'CUSTOM' || !!form.anchorText.trim()));
 
     const submit = () => {
         setError(null);
@@ -133,13 +167,19 @@ function GoalForm({ goal, prefill, onDone, onCreated }) {
             slot: form.period === 'DAY' ? form.slot || undefined : undefined,
             fallbackSlot: form.period === 'DAY' && form.slot ? form.fallbackSlot || undefined : undefined,
             atTime: form.period === 'DAY' && form.atTime ? form.atTime : undefined,
-            anchor: form.slot ? form.anchor || undefined : undefined,
-            anchorText: form.slot && form.anchor === 'CUSTOM' ? form.anchorText.trim() || undefined : undefined,
+            // With the slot it describes, so a weekly goal (no slot) never carries one left over from
+            // a time chosen before the reader switched to weekly.
+            anchor: form.period === 'DAY' && form.slot ? form.anchor || undefined : undefined,
+            anchorText: form.period === 'DAY' && form.slot && form.anchor === 'CUSTOM' ? form.anchorText.trim() || undefined : undefined,
             identityPreset: form.identityPreset || undefined,
             identityText: form.identityText.trim() || undefined,
             intentionText: form.intentionText.trim() || undefined,
         };
-        const onError = (err) => setError(describeError(err, t('journey.dialog.saveFailed')));
+        const onError = (err) => {
+            setError(describeError(err, t('journey.dialog.saveFailed')));
+            const back = steps.indexOf(STEP_OF_REFUSAL[err?.response?.data?.reason]);
+            if (back >= 0) setStepIndex(back);
+        };
         if (editing) {
             update.mutate({
                 id: goal.id,
@@ -256,6 +296,7 @@ function AmountStep({ form, set, editing, preview }) {
                         value={Math.min(form.minimumAmount, form.amount)}
                         onChange={(minimumAmount) => set({ minimumAmount })}
                         max={form.amount}
+                        step={form.measure === 'MINUTES' ? 5 : 1}
                         display={unit}
                     />
                     <p className="text-xs text-text-muted mt-2">{t('journey.dialog.minimumHint')}</p>

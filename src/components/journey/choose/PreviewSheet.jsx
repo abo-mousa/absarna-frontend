@@ -5,7 +5,7 @@ import { Modal, Button, KhatamStar, Spinner } from '@/components/ui';
 import { useSeriesEpisodes } from '@/hooks/useSeries';
 import { useGoals } from '@/hooks/useGoals';
 import { goalFor, bookPortion } from '@/lib/journey';
-import { averageMinutes, chosenByText, itemKey, prefillFor } from '@/lib/goalChoice';
+import { averageMinutes, chosenByText, itemKey, prefillFor, withPace } from '@/lib/goalChoice';
 import { amountText, learningTime } from '@/lib/goalText';
 import { formatTimestamp } from '@/lib/spans';
 import { Poster } from './parts';
@@ -31,7 +31,9 @@ function PreviewSheet({ item, proposal = null, deadline = null, shortlist, onTog
     // The poster is the suggestion's own first-episode card; the slim list carries no picture.
     const firstEpisode = item.firstEpisode || episodes[0] || null;
 
-    const units = series ? (item.episodes ?? 0) : (item.pages ?? item.book?.pages ?? 0);
+    // A programme found by search or offered as "continue" carries no count of its own; the
+    // episodes endpoint's first page does, so the pace and the finish can still be shown.
+    const units = series ? (item.episodes ?? page?.total ?? 0) : (item.pages ?? item.book?.pages ?? 0);
     // From the first page only, so the figures above do not shift as «تحميل المزيد» loads more.
     const average = series ? averageMinutes(page?.content || []) : null;
     // The reader's own pace: from the proposal they opened (whatever they set on its card), else
@@ -110,7 +112,9 @@ function PreviewSheet({ item, proposal = null, deadline = null, shortlist, onTog
                 <div className="sticky -bottom-6 -mx-6 -mb-6 px-6 py-4 flex items-center gap-3 border-t border-border-light bg-surface">
                     <button
                         type="button"
-                        onClick={() => onToggle(item)}
+                        // With the pace set here, so «قائمتي» compares — and commits — what the
+                        // reader chose, not the default.
+                        onClick={() => onToggle(withPace(item, amount, deadline))}
                         aria-pressed={saved}
                         aria-label={saved ? t('journey.choose.saved') : t('journey.choose.save')}
                         className={`w-12 h-12 flex-shrink-0 rounded-md border border-border flex items-center justify-center ${saved ? 'text-primary' : 'text-text-primary'}`}

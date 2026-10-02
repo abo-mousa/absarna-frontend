@@ -377,6 +377,7 @@ export const ar = {
             INVITATION_SUBJECT_LINK: 'لا يُوضع {{link}} في العنوان؛ ضعه في نصّ الرسالة.',
             GOAL_DEADLINE_PAST: 'يجب أن يكون الموعد بعد اليوم.',
             GOAL_MINIMUM_ABOVE_AMOUNT: 'لا يكون الحدّ الأدنى أكثر من الوِرد.',
+            GOAL_ANCHOR_TEXT_REQUIRED: 'اكتب ما يأتي الوِرد بعده، أو اختر غيره.',
             GOAL_FALLBACK_SAME_SLOT: 'الوقت الثاني يكون في وقتٍ آخر من اليوم غير الأول.',
             SUBJECT_REQUIRED: 'اختر مجالًا أولًا.',
             SUBJECT_INFERENCE_NOT_FOUND: 'لم يعد لهذه السلسلة اقتراح نؤكّده.',
@@ -1806,6 +1807,9 @@ export const ar = {
             end: '.',
         },
         dialog: {
+            discardTitle: 'أتترك ما كتبت؟ لن يُحفظ هذا الوِرد.',
+            discard: 'اتركه',
+            keepEditing: 'أكمل',
             yourWird: 'وِردك',
             title: 'اعقد العزم',
             editTitle: 'تعديل الهدف',
@@ -1934,6 +1938,7 @@ export const ar = {
             notNow: 'ليس الآن',
         },
         choose: {
+            verifyFirst: 'لتبدأ وِردًا، أكّد بريدك الإلكتروني أولًا. يمكنك أن تتصفّح وتختار الآن.',
             deadlinePickPrompt: 'أدِر الحلقة أو اضغط يومًا أو موسمًا',
             searchChannels: 'ابحث عن قناة باسمها…',
             deadlineSeasons: 'من المواسم',

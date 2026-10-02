@@ -20,7 +20,9 @@ function CompareSheet({ shortlist, onToggle, onCommit, onClose }) {
                     {shortlist.map((item) => {
                         const series = item.kind === 'FINISH_SERIES';
                         const units = series ? item.episodes : (item.pages ?? item.book?.pages);
-                        const amount = series ? 1 : bookPortion(units, 0);
+                        // The pace set on the card or in the preview it was saved from, else the default.
+                        const amount = item.pace?.amount || (series ? 1 : bookPortion(units, 0));
+                        const deadline = item.pace?.deadline || null;
                         const facts = [
                             [series ? t('journey.choose.facts.episodes') : t('journey.choose.facts.pages'),
                                 units ? amountText(series ? 'EPISODES' : 'PAGES', units) : '—'],
@@ -52,7 +54,7 @@ function CompareSheet({ shortlist, onToggle, onCommit, onClose }) {
                                         ))}
                                     </dl>
                                     {item.chosenBy ? <span className="text-xs text-gold-ink">{chosenByText(item.chosenBy)}</span> : null}
-                                    <Button className="mt-auto" onClick={() => onCommit(prefillFor(item))}>{t('journey.choose.pick')}</Button>
+                                    <Button className="mt-auto" onClick={() => onCommit(prefillFor(item, amount, deadline))}>{t('journey.choose.pick')}</Button>
                                 </div>
                             </div>
                         );

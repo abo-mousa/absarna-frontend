@@ -5,6 +5,8 @@ import PageShell from '../components/layout/PageShell';
 import { Button } from '../components/ui';
 import { ArrowBack } from '../components/ui/DirectionalIcon';
 import { useJourney } from '../components/journey';
+import { EmailVerificationNotice } from '../components/auth';
+import { useAuth } from '../contexts/AuthContext';
 import GuidedChoice from '../components/journey/choose/GuidedChoice';
 import BrowseChoice from '../components/journey/choose/BrowseChoice';
 import PreviewSheet from '../components/journey/choose/PreviewSheet';
@@ -72,10 +74,10 @@ function readParams(search) {
     };
 }
 
-function Start({ go, onCommit, onOpen, openGoal }) {
+function Start({ go, onCommit, onOpen, onHabit }) {
     const today = useToday();
     const goals = useGoals();
-    const [habits, setHabits] = useState(false);
+    const { user } = useAuth();
     // The one warm suggestion: a programme the reader started and does not pursue yet.
     const next = (today.data?.continueWatching || [])
         .map((entry) => entry.next)
@@ -91,6 +93,10 @@ function Start({ go, onCommit, onOpen, openGoal }) {
                 <h1 className="font-serif text-4xl font-bold">{t('journey.choose.startTitle')}</h1>
                 <p className="text-text-secondary">{t('journey.choose.startText')}</p>
             </div>
+
+            {/* Said before the questions, not after them: the dialog refuses an unverified reader
+                anyway, and finding that out after choosing was the flow's worst moment. */}
+            {user?.emailVerified === false && <EmailVerificationNotice message={t('journey.choose.verifyFirst')} />}
 
             {started && (
                 <div className="rounded-lg border border-border bg-surface overflow-hidden">
@@ -128,25 +134,23 @@ function Start({ go, onCommit, onOpen, openGoal }) {
                 ))}
             </div>
 
-            <div className="flex flex-col items-center gap-3">
-                <button type="button" data-guide="choose-habits" onClick={() => setHabits((open) => !open)} aria-expanded={habits} className="text-sm font-semibold text-text-secondary hover:underline">
-                    {t('journey.choose.habits')}
-                </button>
-                {habits && (
-                    <div className="flex flex-wrap justify-center gap-2">
-                        {HABITS.map((habit) => (
-                            <button
-                                key={habit.measure}
-                                type="button"
-                                data-guide={`habit-${habit.measure}`}
-                                onClick={() => openGoal(habit)}
-                                className="h-10 px-4 rounded-full border border-border bg-surface text-sm font-semibold hover:border-primary"
-                            >
-                                {t('journey.choose.habitDaily', { amount: amountText(habit.measure, habit.amount) })}
-                            </button>
-                        ))}
-                    </div>
-                )}
+            {/* A habit with no programme behind it — the simplest goal there is, so in view rather
+                behind a toggle. The guide-shot script still clicks `choose-habits`; it is harmless. */}
+            <div data-guide="choose-habits" className="flex flex-col items-center gap-3">
+                <span className="text-sm font-semibold text-text-secondary">{t('journey.choose.habits')}</span>
+                <div className="flex flex-wrap justify-center gap-2">
+                    {HABITS.map((habit) => (
+                        <button
+                            key={habit.measure}
+                            type="button"
+                            data-guide={`habit-${habit.measure}`}
+                            onClick={() => onHabit(habit)}
+                            className="h-10 px-4 rounded-full border border-border bg-surface text-sm font-semibold hover:border-primary"
+                        >
+                            {t('journey.choose.habitDaily', { amount: amountText(habit.measure, habit.amount) })}
+                        </button>
+                    ))}
+                </div>
             </div>
         </div>
     );
@@ -200,7 +204,7 @@ function JourneyChoose() {
                         <ArrowBack size={16} />{t('journey.choose.back')}
                     </button>
                 )}
-                {!params.way && <Start go={go} onCommit={onCommit} onOpen={onOpen} openGoal={openGoal} />}
+                {!params.way && <Start go={go} onCommit={onCommit} onOpen={onOpen} onHabit={onCommit} />}
                 {params.way === 'guided' && (
                     <GuidedChoice
                         params={params}

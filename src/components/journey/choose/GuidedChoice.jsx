@@ -3,7 +3,7 @@ import { BookOpen, CalendarDays, Gem, HandHeart, Megaphone, Moon, Scale, ScrollT
 import { Button, CalendarPicker, QueryState } from '@/components/ui';
 import { useGoalProposalPages, useGoalTopics } from '@/hooks/useGoalChoice';
 import { FIELDS, fieldOf, isField, searchSubjects, subjectLabel } from '@/lib/subjects';
-import { MINUTE_CHOICES, asksForSubject, chosenByText, deadlineChoices, deadlineDate, isCustomDeadline, isSeasonDeadline, itemKey } from '@/lib/goalChoice';
+import { MINUTE_CHOICES, asksForSubject, chosenByText, deadlineChoices, deadlineDate, isCustomDeadline, isSeasonDeadline, itemKey, withPace } from '@/lib/goalChoice';
 import { hijriDeadlines } from '@/lib/hijriSeasons';
 import { amountText, learningTime } from '@/lib/goalText';
 import { countOf } from '@/lib/plural';
@@ -28,6 +28,13 @@ const holds = (topic) => [
     topic.books ? countOf('journey.units.BOOKS', topic.books) : null,
 ].filter(Boolean).join(' · ');
 
+/** How the deadline answer reads back: the row's choice, a Hijri season, or the reader's date. */
+function deadlineLabel(value) {
+    if (isSeasonDeadline(value)) return t(`journey.seasons.${value}`);
+    if (isCustomDeadline(value)) return formatDay(value, { day: 'numeric', month: 'long' });
+    return t(`journey.choose.deadlines.${['month', 'quarter'].includes(value) ? value : 'none'}`);
+}
+
 function Answered({ params, go }) {
     const chips = [];
     // A subject picked on the first screen is one answer, not a field and then a subject.
@@ -40,6 +47,8 @@ function Answered({ params, go }) {
     }
     if (params.step === 'proposals') {
         chips.push({ key: 'time', label: t('journey.choose.minutesADay', { minutes: learningTime(params.minutes) }), step: 'time' });
+        // The proposals are paced to it, so it is an answer as much as the minutes are.
+        chips.push({ key: 'deadline', label: deadlineLabel(params.deadline), step: 'time' });
     }
     if (!chips.length) return null;
     return (
@@ -48,7 +57,9 @@ function Answered({ params, go }) {
                 <button
                     key={chip.key}
                     type="button"
-                    onClick={() => go({ step: chip.step, page: 0 })}
+                    // Pushed, not replaced: replacing left two identical entries behind, and the
+                    // first Back from the question seemed to do nothing.
+                    onClick={() => go({ step: chip.step, page: 0 }, true)}
                     className="h-8 px-3 rounded-full bg-primary-light text-primary-dark dark:text-primary text-sm font-semibold"
                 >
                     {chip.label}
@@ -403,7 +414,7 @@ function ProposalCard({ proposal, deadline, onOpen, shortlist, onToggle }) {
                 <button type="button" className="block w-full" onClick={() => onOpen(item, chosen)} aria-label={item.title}>
                     <Poster item={item} className="aspect-video w-full rounded-none" />
                 </button>
-                <ShortlistMark item={item} shortlist={shortlist} onToggle={onToggle} className="absolute top-2 start-2" />
+                <ShortlistMark item={withPace(item, amount, deadline)} shortlist={shortlist} onToggle={onToggle} className="absolute top-2 start-2" />
             </div>
             <div className="p-4 flex flex-col gap-3 flex-1">
                 <div className="flex flex-col gap-0.5">

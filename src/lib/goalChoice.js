@@ -82,6 +82,13 @@ export function prefillFor(item, amount = null, deadline = null) {
     return { kind: 'FINISH_SERIES', targetId: item.targetId, title: item.title, measure: 'EPISODES', amount: amount || 1, ...extra };
 }
 
+/**
+ * An item as it goes on the shortlist from a proposal or a preview: with the pace the reader set
+ * there (`{ amount, deadline }`), so the compare sheet shows and commits that pace. The key is
+ * the item's, so the mark toggles the same entry whatever the pace.
+ */
+export const withPace = (item, amount, deadline = null) => ({ ...item, pace: { amount, deadline: deadline || null } });
+
 /** A key for an item across kinds — a series and a book may share an id. */
 export const itemKey = (item) => `${item.kind}:${item.targetId}`;
 

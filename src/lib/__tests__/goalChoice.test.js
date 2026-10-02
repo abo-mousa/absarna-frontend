@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-    SHORTLIST_MAX, asksForSubject, averageMinutes, daysToFinish, deadlineChoices, deadlineDate, itemKey, prefillFor, toggleShortlist,
+    SHORTLIST_MAX, asksForSubject, averageMinutes, daysToFinish, deadlineChoices, deadlineDate, itemKey, prefillFor, toggleShortlist, withPace,
 } from '@/lib/goalChoice';
 
 /**
@@ -65,6 +65,14 @@ describe('toggleShortlist', () => {
         const full = [1, 2, 3].reduce((list, id) => toggleShortlist(list, item(id)), []);
         expect(full).toHaveLength(SHORTLIST_MAX);
         expect(toggleShortlist(full, item(4))).toBe(full);
+    });
+
+    it('keeps the pace an item was saved with, and toggles it off by the item alone', () => {
+        const saved = toggleShortlist([], withPace(item(7), 3, '2026-12-01'));
+        expect(saved[0].pace).toEqual({ amount: 3, deadline: '2026-12-01' });
+        expect(prefillFor(saved[0], saved[0].pace.amount, saved[0].pace.deadline))
+            .toMatchObject({ amount: 3, deadline: '2026-12-01' });
+        expect(toggleShortlist(saved, withPace(item(7), 1))).toEqual([]);
     });
 });
 

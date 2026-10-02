@@ -354,6 +354,7 @@ export const en = {
             INVITATION_SUBJECT_LINK: 'The subject cannot carry {{link}}; put it in the letter.',
             GOAL_DEADLINE_PAST: 'The date has to be after today.',
             GOAL_MINIMUM_ABOVE_AMOUNT: 'The minimum cannot be more than the portion.',
+            GOAL_ANCHOR_TEXT_REQUIRED: 'Write what the portion follows, or choose another option.',
             GOAL_FALLBACK_SAME_SLOT: 'The second time has to be a different part of the day from the first.',
             SUBJECT_REQUIRED: 'Choose a field first.',
             SUBJECT_INFERENCE_NOT_FOUND: 'This series no longer has a suggestion to confirm.',
@@ -1570,6 +1571,9 @@ export const en = {
             end: '.',
         },
         dialog: {
+            discardTitle: 'Leave what you wrote? This portion will not be saved.',
+            discard: 'Leave it',
+            keepEditing: 'Keep going',
             yourWird: 'Your portion',
             title: 'Set your resolve',
             editTitle: 'Edit goal',
@@ -1698,6 +1702,7 @@ export const en = {
             notNow: 'Not now',
         },
         choose: {
+            verifyFirst: 'To start a portion, confirm your email address first. You can browse and choose in the meantime.',
             deadlinePickPrompt: 'Turn the ring, or press a day or a season',
             searchChannels: 'Search a channel by name…',
             deadlineSeasons: 'A season',
