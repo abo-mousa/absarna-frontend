@@ -5,25 +5,15 @@ import { daysBetween, formatDay, localDay } from '@/lib/dayFormat';
 import { distanceOf } from '@/lib/ringTurn';
 import { countOf } from '@/lib/plural';
 import { hasHijriCalendar } from '@/lib/hijriSeasons';
+import { CALENDAR_KEY, GREGORY, HIJRI, readerCalendar } from '@/lib/readerCalendar';
 import { safeStorage } from '@/lib/safeStorage';
-import { currentLocale, t } from '@/i18n';
+import { t } from '@/i18n';
 import ZelligeMonth from './calendar/ZelligeMonth';
 import MoonMonth from './calendar/MoonMonth';
 import AstrolabeMonth from './calendar/AstrolabeMonth';
 
-const HIJRI = 'islamic-umalqura';
-const GREGORY = 'gregory';
-const STORAGE_KEY = 'absarna.calendar';
 const STYLE_KEY = 'absarna.calendarStyle';
 const STYLES = ['astrolabe', 'moons', 'zellige'];
-
-/** The reader's calendar: what they last chose here, else Hijri for an Arabic reader. */
-function initialCalendar() {
-    if (!hasHijriCalendar()) return GREGORY;
-    const stored = safeStorage.getItem(STORAGE_KEY);
-    if (stored === HIJRI || stored === GREGORY) return stored;
-    return currentLocale() === 'ar' ? HIJRI : GREGORY;
-}
 
 /** The reader's style, remembered; the zellige grid by default — it reads like any calendar. */
 function initialStyle() {
@@ -62,9 +52,12 @@ const ICONS = {
  * <p>The value is always a Gregorian 'YYYY-MM-DD' — what the backend stores. Every day, in every
  * style, is a real button: arrows move a day or a week (mirrored under RTL), Enter or Space
  * chooses, and each is named in full to a screen reader.
+ *
+ * <p>`showAhead={false}` leaves out the grid's "in N days" line, for a caller that reads the
+ * chosen day back itself — said twice, one under the other, it was noise.
  */
-function CalendarPicker({ value = null, onChange, min = null, max = null, marks = {} }) {
-    const [calendarChoice, setCalendarChoice] = useState(initialCalendar);
+function CalendarPicker({ value = null, onChange, min = null, max = null, marks = {}, showAhead = true }) {
+    const [calendarChoice, setCalendarChoice] = useState(readerCalendar);
     const [style, setStyle] = useState(initialStyle);
     const calendar = style === 'moons' ? HIJRI : calendarChoice;
     const today = localDay();
@@ -109,7 +102,7 @@ function CalendarPicker({ value = null, onChange, min = null, max = null, marks 
 
     const chooseCalendar = (cal) => {
         setCalendarChoice(cal);
-        safeStorage.setItem(STORAGE_KEY, cal);
+        safeStorage.setItem(CALENDAR_KEY, cal);
     };
     const chooseStyle = (next) => {
         setStyle(next);
@@ -233,7 +226,7 @@ function CalendarPicker({ value = null, onChange, min = null, max = null, marks 
             </div>
 
             {/* The distance, read aloud as it changes; on screen the rings show it in their plate. */}
-            <p className={ring ? 'sr-only' : '-mt-1 text-center text-sm min-h-[1.25rem]'} aria-live="polite">
+            <p className={ring || !showAhead ? 'sr-only' : '-mt-1 text-center text-sm min-h-[1.25rem]'} aria-live="polite">
                 {aheadText && (
                     <>
                         <span className="font-semibold text-primary-dark dark:text-primary">{aheadText.main}</span>

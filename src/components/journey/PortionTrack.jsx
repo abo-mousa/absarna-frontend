@@ -1,7 +1,8 @@
 import { KhatamStar } from '../ui';
 import { amountText } from '@/lib/goalText';
 import { finishText } from '@/lib/goalChoice';
-import { formatDay, localDay } from '@/lib/dayFormat';
+import { localDay } from '@/lib/dayFormat';
+import { formatReaderDay } from '@/lib/readerCalendar';
 import { t } from '@/i18n';
 
 /** Past this many portions the segments would be slivers, so they are grouped by week. */
@@ -71,7 +72,7 @@ function PortionTrack({
                     className="relative flex-1 flex items-stretch gap-[3px] h-3"
                     role="img"
                     aria-label={t('journey.track.aria', {
-                        done: amountText(measure, done), total: amountText(measure, total, true), finish: formatDay(finish),
+                        done: amountText(measure, done), total: amountText(measure, total, true), finish: formatReaderDay(finish),
                     })}
                 >
                     {done > 0 && (
@@ -114,8 +115,8 @@ function PortionTrack({
                     </span>
                     {remaining > 0 && (
                         <span className="text-xs text-text-secondary">
-                            {formatDay(finish)}
-                            {deadline && <span className="text-gold-ink">{' · '}{t('journey.choose.pace.deadline', { date: formatDay(deadline) })}</span>}
+                            {formatReaderDay(finish)}
+                            {deadline && <span className="text-gold-ink">{' · '}{t('journey.choose.pace.deadline', { date: formatReaderDay(deadline) })}</span>}
                         </span>
                     )}
                 </span>

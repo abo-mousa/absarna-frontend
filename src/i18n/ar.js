@@ -1771,7 +1771,7 @@ export const ar = {
             TEACHES_HIS_FAMILY: 'أنا ممّن يتعلّم ليعلّم أهله',
         },
         seasons: {
-            monthEnd: 'آخر الشهر',
+            monthEnd: 'آخر {month}',
             ramadan: 'قبل رمضان',
             dhulHijjah: 'قبل عشر ذي الحجة',
             yearEnd: 'آخر السنة الهجرية',

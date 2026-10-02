@@ -8,11 +8,12 @@ import { useCreateGoal, useGoalPreview, useUpdateGoal } from '@/hooks/useGoals';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useConfirmation } from '@/hooks/useConfirmation';
 import { useToast } from '@/contexts/ToastContext';
-import { hijriDeadlines } from '@/lib/hijriSeasons';
+import { hijriDeadlines, seasonLabel } from '@/lib/hijriSeasons';
+import { formatReaderDay } from '@/lib/readerCalendar';
 import { amountText, commitmentSentence, goalTitle, measureOf } from '@/lib/goalText';
 import { SLOTS, slotOfTime } from '@/lib/slots';
 import { describeError } from '@/lib/describeError';
-import { formatDay, localDay } from '@/lib/dayFormat';
+import { localDay } from '@/lib/dayFormat';
 import { countOf } from '@/lib/plural';
 import { t } from '@/i18n';
 
@@ -184,7 +185,10 @@ function GoalForm({ goal, prefill, onDone, onCreated, typed }) {
             update.mutate({
                 id: goal.id,
                 ...shared,
-                deadline: form.deadline || undefined,
+                // Only when it moved: the backend checks a deadline against today whenever one is
+                // sent, so re-sending a passed one refused every edit of that goal — its time of
+                // day, its amount, anything.
+                deadline: form.deadline && form.deadline !== goal.deadline ? form.deadline : undefined,
                 clearDeadline: goal.deadline && !form.deadline ? true : undefined,
                 // "Any time" again: the backend drops the fallback, the hour and the anchor with it.
                 clearSlot: goal.slot && !shared.slot ? true : undefined,
@@ -321,9 +325,9 @@ function AmountStep({ form, set, editing, preview }) {
                         onChange={(deadline) => set({ deadline })}
                         options={[
                             { value: null, label: t('journey.dialog.noDeadline') },
-                            ...seasons.map((season) => ({ value: season.date, label: t(`journey.seasons.${season.key}`) })),
+                            ...seasons.map((season) => ({ value: season.date, label: seasonLabel(season) })),
                             ...(form.deadline && !seasons.some((season) => season.date === form.deadline)
-                                ? [{ value: form.deadline, label: formatDay(form.deadline) }] : []),
+                                ? [{ value: form.deadline, label: formatReaderDay(form.deadline) }] : []),
                         ]}
                     />
                     <button
@@ -343,7 +347,7 @@ function AmountStep({ form, set, editing, preview }) {
                                 // Tomorrow, on the reader's clock: the backend refuses today, and the
                                 // UTC date is yesterday's for an evening in Riyadh.
                                 min={localDay(new Date(Date.now() + 86_400_000))}
-                                marks={Object.fromEntries(seasons.map((season) => [season.date, t(`journey.seasons.${season.key}`)]))}
+                                marks={Object.fromEntries(seasons.map((season) => [season.date, seasonLabel(season)]))}
                             />
                         </div>
                     )}
@@ -363,7 +367,7 @@ function Preview({ preview, form, unit, onAccept }) {
     if (pace?.remaining === 0) {
         lines.push(t('journey.preview.alreadyDone'));
     } else {
-        if (pace?.finishDate) lines.push(t('journey.preview.finishOn', { date: formatDay(pace.finishDate) }));
+        if (pace?.finishDate) lines.push(t('journey.preview.finishOn', { date: formatReaderDay(pace.finishDate) }));
         // With a deadline, say what it needs only when the chosen amount falls short of it —
         // "one a day is enough" beside a chosen two reads as a correction nobody asked for.
         if (form.deadline && pace?.perPortion > form.amount) {

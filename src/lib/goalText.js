@@ -1,6 +1,6 @@
 import { formatDigits, t } from '@/i18n';
 import { countOf } from './plural';
-import { formatDay } from './dayFormat';
+import { formatReaderDay } from './readerCalendar';
 
 /**
  * How a goal is said, in one place — the dialog's read-back, Today's portion cards, the goal page
@@ -102,7 +102,7 @@ export function paceText(goal) {
         if (pace.aheadDays < 0) return t('journey.pace.behind', { amount: amountText(measureOf(goal), pace.perPortion) });
         return t('journey.pace.onTime');
     }
-    return pace.finishDate ? t('journey.pace.finishOn', { date: formatDay(pace.finishDate) }) : null;
+    return pace.finishDate ? t('journey.pace.finishOn', { date: formatReaderDay(pace.finishDate) }) : null;
 }
 
 

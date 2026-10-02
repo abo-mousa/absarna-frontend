@@ -1535,7 +1535,7 @@ export const en = {
             TEACHES_HIS_FAMILY: 'I am someone who learns to teach my family',
         },
         seasons: {
-            monthEnd: 'End of the month',
+            monthEnd: 'End of {month}',
             ramadan: 'Before Ramadan',
             dhulHijjah: 'Before the ten days of Dhu al-Hijjah',
             yearEnd: 'End of the Hijri year',

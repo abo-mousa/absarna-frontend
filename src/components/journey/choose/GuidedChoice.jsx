@@ -4,7 +4,8 @@ import { Button, CalendarPicker, QueryState } from '@/components/ui';
 import { useGoalProposalPages, useGoalTopics } from '@/hooks/useGoalChoice';
 import { FIELDS, fieldOf, isField, searchSubjects, subjectLabel } from '@/lib/subjects';
 import { MINUTE_CHOICES, asksForSubject, chosenByText, deadlineChoices, deadlineDate, isCustomDeadline, isSeasonDeadline, itemKey, withPace } from '@/lib/goalChoice';
-import { hijriDeadlines } from '@/lib/hijriSeasons';
+import { hijriDeadlines, seasonLabel, seasonLabelOf } from '@/lib/hijriSeasons';
+import { formatReaderDay, otherCalendar } from '@/lib/readerCalendar';
 import { amountText, learningTime } from '@/lib/goalText';
 import { countOf } from '@/lib/plural';
 import { formatDay } from '@/lib/dayFormat';
@@ -30,8 +31,8 @@ const holds = (topic) => [
 
 /** How the deadline answer reads back: the row's choice, a Hijri season, or the reader's date. */
 function deadlineLabel(value) {
-    if (isSeasonDeadline(value)) return t(`journey.seasons.${value}`);
-    if (isCustomDeadline(value)) return formatDay(value, { day: 'numeric', month: 'long' });
+    if (isSeasonDeadline(value)) return seasonLabelOf(value);
+    if (isCustomDeadline(value)) return formatReaderDay(value);
     return t(`journey.choose.deadlines.${['month', 'quarter'].includes(value) ? value : 'none'}`);
 }
 
@@ -261,8 +262,8 @@ function CustomDeadlineChip({ params, open, setOpen }) {
         >
             <CalendarDays size={16} aria-hidden="true" />
             {!custom ? t('journey.choose.deadlineCustom')
-                : isSeasonDeadline(params.deadline) ? t(`journey.seasons.${params.deadline}`)
-                    : formatDay(params.deadline, { day: 'numeric', month: 'long' })}
+                : isSeasonDeadline(params.deadline) ? seasonLabelOf(params.deadline)
+                    : formatReaderDay(params.deadline)}
         </button>
     );
 }
@@ -291,14 +292,14 @@ function CustomDeadlinePanel({ params, go, onClose }) {
             {/* What is chosen, in one block: the day large, then both calendars and how far off. */}
             <div className="flex flex-col">
                 <span className="text-xs font-semibold text-text-secondary">
-                    {isSeasonDeadline(choice) ? t(`journey.seasons.${choice}`) : t('journey.choose.deadlineCustomTitle')}
+                    {isSeasonDeadline(choice) ? seasonLabelOf(choice) : t('journey.choose.deadlineCustomTitle')}
                 </span>
                 <span className={`font-serif leading-snug ${valid ? 'text-xl font-bold text-primary-dark dark:text-primary' : 'text-base font-semibold text-text-muted'}`} aria-live="polite">
-                    {valid ? formatDay(date, { weekday: 'long', day: 'numeric', month: 'long' }) : t('journey.choose.deadlinePickPrompt')}
+                    {valid ? formatReaderDay(date, { weekday: 'long', day: 'numeric', month: 'long' }) : t('journey.choose.deadlinePickPrompt')}
                 </span>
                 {valid && (
                     <span className="text-xs text-text-secondary">
-                        {formatDay(date, { day: 'numeric', month: 'long', year: 'numeric' }, 'islamic-umalqura')}
+                        {formatDay(date, { day: 'numeric', month: 'long', year: 'numeric' }, otherCalendar())}
                         {' · '}{t('journey.choose.deadlineAway', { duration: away })}
                     </span>
                 )}
@@ -316,8 +317,8 @@ function CustomDeadlinePanel({ params, go, onClose }) {
                                 choice === season.key ? 'border-gold bg-gold-light text-gold-ink' : 'border-border bg-bg text-text-primary hover:border-gold'
                             }`}
                         >
-                            {t(`journey.seasons.${season.key}`)}
-                            <span className="text-xs font-normal text-text-secondary">{formatDay(season.date, { day: 'numeric', month: 'short' })}</span>
+                            {seasonLabel(season)}
+                            <span className="text-xs font-normal text-text-secondary">{formatReaderDay(season.date, { day: 'numeric', month: 'short' })}</span>
                         </button>
                     ))}
                 </div>
@@ -329,7 +330,9 @@ function CustomDeadlinePanel({ params, go, onClose }) {
                     onChange={setChoice}
                     min={min}
                     max={max}
-                    marks={Object.fromEntries(seasons.map((season) => [season.date, t(`journey.seasons.${season.key}`)]))}
+                    marks={Object.fromEntries(seasons.map((season) => [season.date, seasonLabel(season)]))}
+                    // The read-back above already says how far off it is.
+                    showAhead={false}
                 />
             </div>
 
