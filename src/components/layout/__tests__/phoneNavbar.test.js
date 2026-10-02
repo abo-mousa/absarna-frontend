@@ -16,8 +16,9 @@ import { t } from '@/i18n';
  */
 
 // As the profile now describes them: the rights are the backend's (Capabilities), sent as flags.
-const admin = { role: 'PLATFORM_ADMIN', platformAdmin: true, canUpload: true };
-const creator = { role: 'CREATOR', platformAdmin: false, canUpload: true };
+const admin = { role: 'PLATFORM_ADMIN', platformAdmin: true, canUpload: true, uploadChannelSlug: 'platform' };
+const creator = { role: 'CREATOR', platformAdmin: false, canUpload: true, uploadChannelSlug: 'tafsir' };
+const newcomer = { role: 'USER', platformAdmin: false, canUpload: true, uploadChannelSlug: '' };
 const viewer = { role: 'USER', platformAdmin: false, canUpload: false };
 
 describe('accountMenuActions', () => {
@@ -33,6 +34,18 @@ describe('accountMenuActions', () => {
         expect(accountMenuActions(viewer)).toEqual(['profile', 'history', 'bookmarks', 'guide', 'theme', 'language', 'logout']);
     });
 
+    it('offers a verified account with no channel the way to create one instead of upload', () => {
+        expect(accountMenuActions(newcomer)).toEqual(['profile', 'history', 'bookmarks', 'createChannel', 'guide', 'theme', 'language', 'logout']);
+    });
+
+    it('shows channel creation in the menu on every width, unlike the phone-only upload row', () => {
+        const menu = readFileSync('src/components/layout/AccountMenu.jsx', 'utf8');
+        const row = menu.slice(menu.indexOf("case 'createChannel'"), menu.indexOf("case 'admin'"));
+        expect(row).not.toContain('md:hidden');
+        expect(t('nav.createChannel')).not.toBe('nav.createChannel');
+        expect(t('nav.createChannelShort')).not.toBe('nav.createChannelShort');
+    });
+
     it('offers a visitor sign-in first, then registration and the settings', () => {
         expect(accountMenuActions(null, false)).toEqual(['login', 'register', 'guide', 'theme', 'language']);
     });
@@ -46,7 +59,7 @@ describe('accountMenuActions', () => {
     it('puts every button the navbar hides on a phone into the menu', () => {
         const navbar = readFileSync('src/components/layout/Navbar.jsx', 'utf8');
         const hidden = [...navbar.matchAll(/className=\{`?\$?\{?desktopIconButtonClass/g)].length;
-        expect(hidden).toBe(4);
+        expect(hidden).toBe(5);
         expect(accountMenuActions(creator)).toContain('upload');
         expect(accountMenuActions(admin)).toContain('admin');
         expect(accountMenuActions(null, false)).toEqual(expect.arrayContaining(['theme', 'language']));

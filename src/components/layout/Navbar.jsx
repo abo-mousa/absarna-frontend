@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAppBusy } from '@/hooks/useAppBusy';
-import { Upload, Sun, Moon, Search, ArrowLeft, Shield } from 'lucide-react';
+import { Upload, Plus, Sun, Moon, Search, ArrowLeft, Shield } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { uploadPathFor } from '@/lib/navigation';
@@ -215,12 +215,18 @@ function Navbar() {
                             {/* The one account control that stays a button of its own on a wide
                                 screen: it is what a creator comes back to do. On a phone there is
                                 no room, and it is in the avatar's menu instead. */}
-                            {user?.canUpload && (
+                            {user?.canUpload && (user.uploadChannelSlug ? (
                                 <Link to={uploadLink} title={t('nav.upload')} aria-label={t('nav.upload')} className={desktopIconButtonClass}>
                                     <Upload size={18} />
                                     <span className={iconLabelClass}>{t('nav.uploadShort')}</span>
                                 </Link>
-                            )}
+                            ) : (
+                                // No channel yet: the same button leads to making one, and says so.
+                                <Link to={uploadLink} title={t('nav.createChannel')} aria-label={t('nav.createChannel')} className={desktopIconButtonClass}>
+                                    <Plus size={18} />
+                                    <span className={iconLabelClass}>{t('nav.createChannelShort')}</span>
+                                </Link>
+                            ))}
 
                             {/* A platform admin's panel, beside upload from `md` up: only admins see
                                 it, so nobody else's bar is busier, and it is the page they open

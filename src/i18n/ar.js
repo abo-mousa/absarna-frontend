@@ -206,6 +206,8 @@ export const ar = {
         darkShort: 'داكن',
         upload: 'رفع محتوى',
         uploadShort: 'رفع',
+        createChannel: 'إنشاء قناة',
+        createChannelShort: 'قناة جديدة',
         profile: 'الملف الشخصي',
         profileShort: 'حسابي',
         adminPanel: 'لوحة التحكم',

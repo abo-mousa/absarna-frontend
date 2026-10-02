@@ -192,6 +192,8 @@ export const en = {
         darkShort: 'Dark',
         upload: 'Upload content',
         uploadShort: 'Upload',
+        createChannel: 'Create a channel',
+        createChannelShort: 'New channel',
         profile: 'Profile',
         profileShort: 'Account',
         adminPanel: 'Admin panel',

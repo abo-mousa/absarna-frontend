@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { User, Upload, Shield, LogOut, Sun, Moon, LogIn, UserPlus, History, Bookmark, Compass } from 'lucide-react';
+import { User, Upload, Shield, LogOut, Sun, Moon, LogIn, UserPlus, History, Bookmark, Compass, Plus } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useOutsideClick } from '@/hooks/useOutsideClick';
@@ -26,8 +26,10 @@ export function accountMenuActions(user, signedIn = true) {
         // What the sidebar used to hold for an account, now that there is no sidebar.
         'history',
         'bookmarks',
-        // The backend's answers (profile), never a role compared here.
-        ...(user?.canUpload ? ['upload'] : []),
+        // The backend's answers (profile), never a role compared here. With no channel to upload
+        // to, the shortcut is channel creation, and it says so — on every width, since this row
+        // is how a newcomer finds out a channel is theirs to make.
+        ...(user?.canUpload ? [user.uploadChannelSlug ? 'upload' : 'createChannel'] : []),
         ...(user?.platformAdmin ? ['admin'] : []),
         'guide',
         'theme',
@@ -195,6 +197,13 @@ function AccountMenu({ attentionCount = 0 }) {
                                     <Link key={action} role="menuitem" to={uploadPathFor(user)} className={`md:hidden ${itemClass}`}>
                                         <Upload size={18} />
                                         {t('nav.upload')}
+                                    </Link>
+                                );
+                            case 'createChannel':
+                                return (
+                                    <Link key={action} role="menuitem" to={uploadPathFor(user)} className={itemClass}>
+                                        <Plus size={18} />
+                                        {t('nav.createChannel')}
                                     </Link>
                                 );
                             case 'admin':
