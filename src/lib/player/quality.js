@@ -77,3 +77,26 @@ export const qualityOptions = ({
 
     return { options, activeId };
 };
+
+/**
+ * Whether hls.js should cap a ladder's rungs to the player's size — no, when its top rung is 720p
+ * or smaller.
+ *
+ * The cap compares the element's size in DEVICE pixels, so on a 1× monitor an inline player some
+ * 800 px wide is "smaller than 480p" and a 720p lecture played at 480p — on a 27-inch screen the
+ * text on a slide was soft, and on a retina laptop beside it, at 2×, the same player got 720p.
+ * The cap exists to stop a small player pulling 1080p; at 720p and below the top rung is cheap
+ * (its ceiling is 2.5 Mbit/s), and for a catalogue of slides and text it is what makes them
+ * readable. ABR still steps down on a slow connection — this removes a size cap, not that.
+ *
+ * Measured on the short side, the way the worker names rungs, so a portrait 720×1280 is a 720p.
+ */
+export const TOP_RUNG_ALWAYS_ALLOWED = 720;
+
+export const capsToPlayerSize = (levels) => {
+    const sides = (levels ?? [])
+        .map((level) => Math.min(level.width || 0, level.height || 0))
+        .filter((side) => side > 0);
+    if (sides.length === 0) return true;
+    return Math.max(...sides) > TOP_RUNG_ALWAYS_ALLOWED;
+};

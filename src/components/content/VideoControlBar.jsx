@@ -339,6 +339,19 @@ export const keyboardAction = (key, rtl = isRtl()) => {
 };
 
 /** The volume icon has three states, because "on" and "quiet" are worth telling apart. */
+/**
+ * Whether focus arrived by keyboard rather than by a click — the browser's own `:focus-visible`
+ * heuristic, which is exactly that question. A browser that cannot answer counts it as keyboard:
+ * a bar that stays up is the old behaviour, a bar a keyboard viewer cannot keep up is worse.
+ */
+export const isKeyboardFocus = (target) => {
+    try {
+        return target.matches(':focus-visible');
+    } catch {
+        return true;
+    }
+};
+
 const VolumeIcon = ({ muted, volume }) => {
     if (muted || volume === 0) return <VolumeX size={18} />;
     return volume < 0.5 ? <Volume1 size={18} /> : <Volume2 size={18} />;
@@ -646,7 +659,8 @@ export default function VideoControlBar({
 
     const handleMenuOpenChange = useCallback((open) => onMenuOpenChange?.(open), [onMenuOpenChange]);
 
-    // Focus is a kind of attention the fade timer cannot see, so it counts the same as a pointer.
+    // Keyboard focus is a kind of attention the fade timer cannot see, so it counts the same as a
+    // pointer.
     const shown = visible || focusInside;
     const shownTime = scrubTime ?? currentTime;
     const playedRatio = scale ? shownTime / scale : 0;
@@ -753,7 +767,12 @@ export default function VideoControlBar({
                 // focus/blur rather than :focus-within, because the value is needed in JS. React
                 // maps these to focusin/focusout, which bubble; the relatedTarget check is what
                 // tells "left the bar" from "moved between two of its buttons".
-                onFocus={() => setFocusInside(true)}
+                //
+                // KEYBOARD focus only (`:focus-visible`). A mouse click focuses the button it
+                // lands on too, and counting that pinned the bar for good: press fullscreen and
+                // focus stays on that button for the whole film, so the controls never faded
+                // there. A mouse viewer is already covered by the pointer handlers.
+                onFocus={(e) => setFocusInside(isKeyboardFocus(e.target))}
                 onBlur={(e) => {
                     if (!e.currentTarget.contains(e.relatedTarget)) setFocusInside(false);
                 }}

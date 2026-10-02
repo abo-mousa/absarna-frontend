@@ -71,22 +71,32 @@ export const isDuplicateReport = (last, { videoId, progressSeconds, at }) => Boo
 export const qualityLabel = (quality) => tOptional(`video.qualityLabels.${quality}`) ?? quality;
 
 /**
- * Whether this browser plays HLS in a <video> tag by itself.
+ * Whether to hand HLS to the browser's own <video> tag rather than to hls.js.
  *
- * Safari does, on macOS and iOS, and there it is strictly better than hls.js: it is the platform
- * decoder, it costs no JavaScript, and on iOS it is the only thing that works at all. Everything
- * else plays HLS only through Media Source Extensions, which is what hls.js drives. So this is not
- * a capability check for a fallback; it decides which of two first-class paths to take.
+ * **Only where there is no Media Source Extensions, and the order of the two checks is the fix.**
+ * Asking `canPlayType` first read a `"maybe"` as "native": Chrome on Android has long answered
+ * that, and desktop Chrome does since it gained native HLS — so on the browsers most readers use,
+ * the player went native, where the browser picks the rung and exposes no list. The quality menu
+ * offered nothing but «تلقائي» and the sound-only rung, and a lecture with slides played at 480p
+ * with no way to ask for 720p.
  *
- * Computed once against a detached element — the answer cannot change mid-session.
+ * So hls.js wherever `MediaSource` exists (Chrome, Firefox, Edge, Safari on macOS and iPad), and
+ * native only where it does not — the iPhone, whose WebKit gives a page no `MediaSource` (only
+ * `ManagedMediaSource`) and where native is the path that works. macOS Safari gives up its
+ * platform decoder for the quality menu; that is the trade, and the menu is what was missing.
+ *
+ * Computed once — the answer cannot change mid-session.
  */
-let nativeHlsSupport = null;
+export const prefersNativeHls = (hasMediaSource, canPlayHls) => !hasMediaSource && canPlayHls;
+
+let nativeHlsPreference = null;
 export const supportsNativeHls = () => {
-    if (nativeHlsSupport === null) {
-        nativeHlsSupport =
-            document.createElement('video').canPlayType('application/vnd.apple.mpegurl') !== '';
+    if (nativeHlsPreference === null) {
+        nativeHlsPreference = prefersNativeHls(
+            typeof window !== 'undefined' && typeof window.MediaSource === 'function',
+            document.createElement('video').canPlayType('application/vnd.apple.mpegurl') !== '');
     }
-    return nativeHlsSupport;
+    return nativeHlsPreference;
 };
 
 /**

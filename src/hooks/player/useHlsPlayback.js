@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { reportPlaybackError } from '@/lib/telemetry';
+import { capsToPlayerSize } from '@/lib/player/quality';
 
 /**
  * How many times one viewing session will re-fetch its playback URL after a fatal network error.
@@ -142,6 +143,7 @@ export function useHlsPlayback({ enabled, playbackUrl, videoId, videoRef, pendin
                 autoStartLoad: false,
                 // Also not the default. Without it ABR will happily choose the 1080p rung for a
                 // 640px-wide player, which is bandwidth spent on pixels the element cannot show.
+                // Switched off again per manifest when 720p is the top — see capsToPlayerSize.
                 capLevelToPlayerSize: true,
                 // How far AHEAD to fetch, and this pair is one setting, not two.
                 //
@@ -183,6 +185,7 @@ export function useHlsPlayback({ enabled, playbackUrl, videoId, videoRef, pendin
                             : `${Math.round(level.bitrate / 1000)}k`,
                     }))
                     .sort((a, b) => b.height - a.height));
+                hls.capLevelToPlayerSize = capsToPlayerSize(data.levels);
                 hls.currentLevel = selectedLevelRef.current;
 
                 // A pending seek means this instance is a CONTINUATION — the viewer swapped to the

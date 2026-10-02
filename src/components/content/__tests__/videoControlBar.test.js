@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
     bufferingIsOwed,
     formatTime,
+    isKeyboardFocus,
     keyboardAction,
     parseDuration,
     ratioFromPointer,
@@ -332,5 +333,20 @@ describe('bufferingIsOwed', () => {
         // can misreport.
         expect(bufferingIsOwed({ ...playing, readyState: 2 })).toBe(true);
         expect(bufferingIsOwed({ ...playing, readyState: 0 })).toBe(true);
+    });
+});
+
+/**
+ * Only keyboard focus keeps the bar up. A clicked fullscreen button kept focus for the whole film
+ * and the controls never faded in fullscreen.
+ */
+describe('isKeyboardFocus', () => {
+    it('follows the browser\'s :focus-visible answer', () => {
+        expect(isKeyboardFocus({ matches: () => false })).toBe(false);
+        expect(isKeyboardFocus({ matches: () => true })).toBe(true);
+    });
+
+    it('counts focus as keyboard where the browser cannot say', () => {
+        expect(isKeyboardFocus({ matches: () => { throw new SyntaxError(); } })).toBe(true);
     });
 });

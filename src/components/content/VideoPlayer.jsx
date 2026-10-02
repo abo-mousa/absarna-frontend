@@ -493,9 +493,11 @@ const VideoPlayer = forwardRef(function VideoPlayer(
                 onPointerLeave={(e) => {
                     if (e.pointerType !== 'touch') hideNow();
                 }}
+                // The cursor goes with the controls: a still arrow over the middle of a fullscreen
+                // lecture is as much in the way as the bar was.
                 className={`relative outline-none ${isFullscreen
                     ? 'flex h-full w-full items-center justify-center bg-black'
-                    : ''}`}
+                    : ''} ${controlsVisible || menuOpen ? '' : 'cursor-none'}`}
             >
                 <video
                     ref={attachVideo}
@@ -619,7 +621,7 @@ const VideoPlayer = forwardRef(function VideoPlayer(
                         aria-label={t('video.settings.pictureInPicture')}
                         className={`absolute end-2 top-2 z-10 flex h-9 w-9 items-center
                             justify-center rounded-full bg-black/60 text-white transition-opacity
-                            duration-200 hover:bg-black/80 focus:opacity-100 focus:outline-none
+                            duration-200 hover:bg-black/80 focus-visible:opacity-100 focus:outline-none
                             focus-visible:ring-2 focus-visible:ring-white
                             ${controlsVisible || menuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
                     >

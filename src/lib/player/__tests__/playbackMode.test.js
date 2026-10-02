@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { playbackMode } from '@/lib/player/playback';
+import { playbackMode, prefersNativeHls } from '@/lib/player/playback';
 
 /**
  * Which player drives a given playback URL — the one decision in VideoPlayer whose failure is
@@ -16,15 +16,13 @@ describe('playbackMode', () => {
     const hls = { url: 'https://media/videos/7/42/v2/master.m3u8', format: 'hls' };
     const mp4 = { url: 'https://media/videos/7/42/v1/720p.mp4', format: 'progressive' };
 
-    it('sends HLS to the browser itself where the browser can play it', () => {
-        // Safari, macOS and iOS. Strictly better than hls.js there: it is the platform decoder,
-        // it costs no JavaScript, and on iOS it is the only thing that works.
+    it('sends HLS to the browser itself where native is preferred', () => {
+        // The iPhone: no MediaSource, so native is the only path that works (see prefersNativeHls).
         expect(playbackMode(hls, true)).toBe('hls-native');
     });
 
     it('sends HLS to hls.js everywhere else', () => {
-        // Chrome, Edge, Firefox: no native HLS, so the manifest and its segments are fed to the
-        // element through Media Source Extensions instead.
+        // Every browser with MediaSource — which is what gives the viewer a quality menu.
         expect(playbackMode(hls, false)).toBe('hls-js');
     });
 
@@ -72,5 +70,21 @@ describe('playbackMode', () => {
         expect(playbackMode(undefined, false)).toBe('progressive');
         expect(playbackMode(null, true)).toBe('progressive');
         expect(playbackMode({}, false)).toBe('progressive');
+    });
+});
+
+/**
+ * Native only where there is no MediaSource. A `"maybe"` from canPlayType — Chrome on Android,
+ * desktop Chrome since it gained native HLS — used to win, and took the quality menu with it.
+ */
+describe('prefersNativeHls', () => {
+    it('prefers hls.js wherever MediaSource exists, even if the element claims HLS', () => {
+        expect(prefersNativeHls(true, true)).toBe(false);
+        expect(prefersNativeHls(true, false)).toBe(false);
+    });
+
+    it('goes native only without MediaSource, and only if the element can play it', () => {
+        expect(prefersNativeHls(false, true)).toBe(true);
+        expect(prefersNativeHls(false, false)).toBe(false);
     });
 });
