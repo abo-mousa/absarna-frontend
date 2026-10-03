@@ -413,6 +413,8 @@ export const en = {
             EMAIL_ADDRESS_MISSING: 'Your account has no email address on it. Add one on your profile page and the verification link will be sent by itself.',
 
             TRANSCODE_NOT_RETRYABLE: 'This video cannot be reprocessed right now: either its processing did not fail, or it was never uploaded here in the first place. Refresh the page to see its current state.',
+            VIDEO_FILE_STILL_PROCESSING: 'This video is still being processed, so its file cannot be replaced yet. Wait for it to finish, then try again.',
+            VIDEO_FILE_NOT_UPLOADED: 'This video has no uploaded file to replace.',
         },
     },
 
@@ -2578,6 +2580,14 @@ export const en = {
         edit: 'Edit',
 
         videoStatus: {
+            replaceFile: {
+                action: 'Replace the file',
+                confirmTitle: 'Replace the file of “{title}”?',
+                confirmBody: 'The current file is deleted and the new one is processed and checked from the start, so the video is hidden from visitors until that finishes. Its comments, views and place in its series stay.',
+                confirm: 'Replace the file',
+                done: 'File replaced — the new one is being processed',
+                failed: 'Could not replace the file: {reason}',
+            },
             processing: 'Processing',
             processingHint: 'The server is preparing this video. It is not shown to visitors until processing finishes. This list updates by itself, and the time shown is an estimate.',
             queue: {
@@ -2674,6 +2684,13 @@ export const en = {
 
         forms: {
             uploadingProgress: 'Uploading {progress}%',
+            cancelUpload: 'Cancel upload',
+            leaveDuringUpload: {
+                title: 'An upload is still in progress',
+                body: 'Leaving this page stops it. You can stay until it finishes, or leave and start it again later.',
+                confirm: 'Leave and stop the upload',
+                stay: 'Stay',
+            },
             video: {
                 heading: 'Upload a video',
                 fileLabel: 'Video file',

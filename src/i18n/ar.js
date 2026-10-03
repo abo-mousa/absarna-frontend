@@ -483,6 +483,8 @@ export const ar = {
             // one). Both read to the owner as "this row is not in the state you think it is",
             // which is why the sentence sends them to refresh rather than to try again.
             TRANSCODE_NOT_RETRYABLE: 'لا يمكن إعادة معالجة هذا الفيديو الآن: إمّا أن معالجته لم تفشل، أو أنه ليس مرفوعاً على المنصة أصلاً. حدّث الصفحة لترى حالته الحالية.',
+            VIDEO_FILE_STILL_PROCESSING: 'ما زال هذا الفيديو قيد المعالجة، فلا يمكن استبدال ملفه الآن. انتظر حتى تنتهي ثم حاول مرة أخرى.',
+            VIDEO_FILE_NOT_UPLOADED: 'ليس لهذا الفيديو ملف مرفوع يمكن استبداله.',
         },
     },
 
@@ -2960,6 +2962,14 @@ export const ar = {
         // The owner's dashboard row for a video, which is where an owner actually looks -- the
         // badge on the home feed told them a video was held and this list said nothing at all.
         videoStatus: {
+            replaceFile: {
+                action: 'استبدال الملف',
+                confirmTitle: 'استبدال ملف «{title}»؟',
+                confirmBody: 'يُحذف الملف الحالي ويُعالَج الملف الجديد ويُفحص من البداية، فيُخفى الفيديو عن الزوار حتى ينتهي ذلك. تبقى تعليقاته ومشاهداته ومكانه في سلسلته.',
+                confirm: 'استبدال الملف',
+                done: 'تم استبدال الملف — الملف الجديد قيد المعالجة',
+                failed: 'تعذّر استبدال الملف: {reason}',
+            },
             processing: 'جاري المعالجة',
             processingHint: 'يعمل الخادم على تجهيز الفيديو. لا يظهر للزوار قبل انتهاء المعالجة. تتحدّث هذه القائمة تلقائيًا، والوقت المذكور تقديري.',
             // Where the upload stands in the transcode queue (lib/transcodeQueue). The time is a
@@ -3086,6 +3096,13 @@ export const ar = {
             // On a section's upload button (videos, books) while a file is on its way and the
             // dialog is closed.
             uploadingProgress: 'جاري الرفع {progress}%',
+            cancelUpload: 'إلغاء الرفع',
+            leaveDuringUpload: {
+                title: 'ما زال هناك رفع جارٍ',
+                body: 'مغادرة هذه الصفحة توقفه. يمكنك البقاء حتى ينتهي، أو المغادرة وبدء الرفع لاحقاً.',
+                confirm: 'المغادرة وإيقاف الرفع',
+                stay: 'البقاء',
+            },
             video: {
                 heading: 'رفع فيديو',
                 fileLabel: 'ملف الفيديو',

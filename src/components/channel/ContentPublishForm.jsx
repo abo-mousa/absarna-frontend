@@ -19,9 +19,11 @@ import { formatPercent } from '@/lib/numbers';
  * differs is written out.
  *
  * @param heading      the form's own title
- * @param file         optional `{ label, hint, accept, onChange, uploading, progress, fileName }`
- *                     for the types backed by a presigned upload. `hint` is shown before a file is
- *                     picked, because picking one starts the upload — see below.
+ * @param file         optional `{ label, hint, accept, onChange, uploading, progress, fileName,
+ *                     onCancel, ready }` for the types backed by a presigned upload. `hint` is
+ *                     shown before a file is picked, because picking one starts the upload — see
+ *                     below. `onCancel` stops an upload on its way (the wrong file, picked);
+ *                     `ready: false` says no finished upload is behind the form yet.
  * @param submitLabel  the button's text
  * @param submitIcon   optional icon element for the button
  * @param submitting   the create call is in flight — see the button below
@@ -72,7 +74,18 @@ function ContentPublishForm({ heading, onSubmit, file, submitLabel, submitIcon, 
                                     style={{ width: `${file.progress}%` }}
                                 />
                             </div>
-                            <p className="text-sm text-text-muted mt-1">{formatPercent(file.progress)}</p>
+                            <div className="flex items-center justify-between gap-3 mt-1">
+                                <p className="text-sm text-text-muted">{formatPercent(file.progress)}</p>
+                                {file.onCancel && (
+                                    <button
+                                        type="button"
+                                        onClick={file.onCancel}
+                                        className="text-sm font-semibold text-red-600 dark:text-red-400 hover:underline"
+                                    >
+                                        {t('channelManage.forms.cancelUpload')}
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>
@@ -88,10 +101,12 @@ function ContentPublishForm({ heading, onSubmit, file, submitLabel, submitIcon, 
                 then has to find and delete.
                 A press while the FILE is still uploading is the other one: there is no session id
                 in form state yet, so the request goes out without it and comes back a 400 the
-                owner can do nothing useful with, having watched a progress bar to no purpose. */}
+                owner can do nothing useful with, having watched a progress bar to no purpose.
+                The same request goes out when no file was ever picked, or the upload was
+                cancelled — `ready: false` — so the button waits for a file there too. */}
             {/* Both wordings are rendered, so the button does not change width at the moment it
                 is pressed — see SwapLabel. */}
-            <Button type="submit" icon={submitIcon} disabled={submitting || Boolean(file?.uploading)}>
+            <Button type="submit" icon={submitIcon} disabled={submitting || Boolean(file?.uploading) || file?.ready === false}>
                 <SwapLabel
                     showing={submitting ? 'sending' : 'resting'}
                     faces={{ resting: submitLabel, sending: t('common.sending') }}

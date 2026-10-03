@@ -5,6 +5,7 @@ import ContentPublishForm from '../ContentPublishForm';
 import ManagedContentList from './ManagedContentList';
 import { useChannelContentTab } from '@/hooks/useChannelContentTab';
 import { useChannelUpload } from '@/hooks/useChannelUpload';
+import { useLeaveGuard } from '@/hooks/useLeaveGuard';
 import { acceptAttribute } from '@/hooks/usePresignedUpload';
 import { stripEmpty } from '@/lib/forms';
 import { useChannel } from '@/hooks/useChannels';
@@ -32,6 +33,8 @@ export default function BooksTab({ slug, active }) {
     const { data: channel } = useChannel(slug, active);
     const content = useChannelContentTab(slug, 'books', active);
     const upload = useChannelUpload(slug, 'books');
+    // Leaving stops an upload on its way, so the page asks first.
+    const leaveGuard = useLeaveGuard(upload.uploading);
     const [form, setForm] = useState(EMPTY_FORM);
     const [adding, setAdding] = useState(false);
     // 'idle' | 'counting' | 'counted' | 'failed' — the page count read from the picked file.
@@ -47,7 +50,8 @@ export default function BooksTab({ slug, active }) {
         if (file) {
             const pick = ++pickRef.current;
             setPageCount('counting');
-            setForm((current) => ({ ...current, pages: '' }));
+            // The session too: it belonged to the file picked before this one.
+            setForm((current) => ({ ...current, pages: '', uploadSessionId: '' }));
             countPdfPages(file).then((pages) => {
                 if (pick !== pickRef.current) return;
                 setPageCount(pages ? 'counted' : 'failed');
@@ -89,6 +93,7 @@ export default function BooksTab({ slug, active }) {
         <div className="grid grid-cols-1 gap-6">
             <ConfirmDialog {...content.confirmDialog} />
             <ConfirmDialog {...upload.confirmDialog} />
+            <ConfirmDialog {...leaveGuard} />
             <Modal open={adding} onClose={() => setAdding(false)} title={t('channelManage.forms.book.heading')} maxWidth="640px">
                 <ContentPublishForm
                     bare
@@ -105,6 +110,14 @@ export default function BooksTab({ slug, active }) {
                         uploading: upload.uploading,
                         progress: upload.progress,
                         fileName: upload.fileName,
+                        onCancel: () => {
+                            upload.cancel();
+                            // The count was the cancelled file's.
+                            pickRef.current += 1;
+                            setPageCount('idle');
+                            setForm((current) => ({ ...current, pages: '' }));
+                        },
+                        ready: Boolean(form.uploadSessionId),
                     }}
                 >
                     <Input label={t('fields.title')} value={form.title} onChange={field('title')} field="title" required />

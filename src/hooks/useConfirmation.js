@@ -31,6 +31,8 @@ export function useConfirmation() {
     const dialog = {
         open: question !== null,
         title: question?.title ?? '',
+        body: question?.body,
+        cancelLabel: question?.cancelLabel,
         danger: question?.danger ?? false,
         confirmLabel: question?.confirmLabel,
         onConfirm: () => settle(true),

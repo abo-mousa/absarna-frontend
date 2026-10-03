@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useConfirmation } from './useConfirmation';
 import { useToast } from '@/contexts/ToastContext';
 import { usePresignedUpload, ResumeUnavailableError } from '@/hooks/usePresignedUpload';
@@ -39,6 +39,14 @@ export function useChannelUpload(slug, kind) {
 
     const { cancel } = upload;
     useEffect(() => () => cancel(), [cancel]);
+
+    // The owner pressing "cancel", as opposed to the page being left. Both abort the transfer; only
+    // this one gives the session up — see `selectFile`.
+    const userCancelled = useRef(false);
+    const cancelUpload = useCallback(() => {
+        userCancelled.current = true;
+        cancel();
+    }, [cancel]);
 
     /**
      * Uploads fresh, remembering the session the moment the backend mints it — before any bytes go
@@ -102,6 +110,10 @@ export function useChannelUpload(slug, kind) {
      * <p>An `AbortError` is not reported: it means the page was left, the session survives it, and
      * by then there is nothing mounted to show a toast to.
      *
+     * <p><b>Unless the owner cancelled.</b> Then the session is given up — forgotten here and
+     * discarded at the backend, which frees the channel's upload slot — because a wrong file is
+     * not something to offer to resume.
+     *
      * @param onUploaded     given the session id and the file's name without its extension
      * @param failureMessage turns a reason into the toast copy for this content type
      */
@@ -112,13 +124,25 @@ export function useChannelUpload(slug, kind) {
         const file = input.files[0];
         if (!file) return;
 
+        userCancelled.current = false;
         setUploading(true);
         setFileName(file.name);
         try {
             const uploadSessionId = await uploadResuming(file);
+            // Cancelled as the last part landed: nothing was aborted, and it is still a cancel.
+            if (userCancelled.current) {
+                const e = new Error('Upload cancelled');
+                e.name = 'AbortError';
+                throw e;
+            }
             onUploaded(uploadSessionId, file.name.replace(/\.[^/.]+$/, ''));
         } catch (err) {
-            if (err.name !== 'AbortError') {
+            if (err.name === 'AbortError' && userCancelled.current) {
+                const remembered = rememberedSession(slug, kind);
+                forgetSession(slug, kind);
+                setFileName(null);
+                if (remembered) upload.discard(slug, kind, remembered.sessionId);
+            } else if (err.name !== 'AbortError') {
                 // Nothing usable was picked: showing the name would read as "this one is attached".
                 setFileName(null);
                 // `describeError`, not the raw body: `err` here is either a refusal from our
@@ -135,7 +159,7 @@ export function useChannelUpload(slug, kind) {
             // the input never holds a stale selection while the session id lives in form state.
             input.value = '';
         }
-    }, [uploadResuming, showToast]);
+    }, [uploadResuming, showToast, upload, slug, kind]);
 
     /**
      * Call after a successful publish: the session is spent, so stop offering to resume it — and
@@ -147,5 +171,6 @@ export function useChannelUpload(slug, kind) {
     }, [slug, kind]);
 
     // Rendered once by the tab as <ConfirmDialog {...upload.confirmDialog} />.
-    return { selectFile, uploading, progress: upload.progress, forget, fileName, confirmDialog };
+    return { selectFile, uploading, progress: upload.progress, forget, fileName, confirmDialog,
+        cancel: cancelUpload };
 }

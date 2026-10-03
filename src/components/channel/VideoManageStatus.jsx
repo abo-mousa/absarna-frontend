@@ -44,11 +44,15 @@ import { direction, t } from '@/i18n';
  *       tone comes from `lib/review` rather than being picked here.</li>
  * </ul>
  *
+ * <p>`replaceAction` is the videos tab's "replace the file" control, drawn here with its label
+ * under a failed transcode and under a verdict that hides the video: the notice says a different
+ * file can be uploaded, and this is where that is done.
+ *
  * <p>Owner-facing by construction: this component only ever renders inside the channel dashboard,
  * which is already gated. `ownerNotices` is passed `true` for that reason — and the backend does
  * not send `review` to anyone else regardless, so neither side can leak it alone.
  */
-function VideoManageStatus({ video, slug, isOwner }) {
+function VideoManageStatus({ video, slug, isOwner, replaceAction }) {
     const { showToast } = useToast();
     const retry = useRetryTranscode(slug);
     const dismissDuplicate = useDismissDuplicate(slug);
@@ -87,6 +91,8 @@ function VideoManageStatus({ video, slug, isOwner }) {
     }
 
     const queue = queueStatus(video.transcodeQueue);
+    // Null for a row whose file cannot be replaced (an embed, or one still processing).
+    const replaceButton = replaceAction?.(video, { labelled: true }) ?? null;
 
     return (
         <div className="mt-1.5 grid gap-1.5">
@@ -125,17 +131,21 @@ function VideoManageStatus({ video, slug, isOwner }) {
                     <p className="text-xs text-text-secondary leading-relaxed mb-2">
                         {t('channelManage.videoStatus.failedHint')}
                     </p>
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        icon={<RotateCw size={13} />}
-                        disabled={retry.isPending}
-                        onClick={handleRetry}
-                    >
-                        {retry.isPending
-                            ? t('channelManage.videoStatus.retrying')
-                            : t('channelManage.videoStatus.retry')}
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            icon={<RotateCw size={13} />}
+                            disabled={retry.isPending}
+                            onClick={handleRetry}
+                        >
+                            {retry.isPending
+                                ? t('channelManage.videoStatus.retrying')
+                                : t('channelManage.videoStatus.retry')}
+                        </Button>
+                        {/* For the failure a retry cannot fix: a file ffmpeg cannot read. */}
+                        {replaceButton}
+                    </div>
                 </div>
             )}
 
@@ -151,8 +161,10 @@ function VideoManageStatus({ video, slug, isOwner }) {
                     </p>
                     <p className="text-xs text-text-secondary leading-relaxed mb-2">
                         {t('channelManage.videoStatus.duplicateHint')}{' '}
-                        <Link to={`/video/${duplicateOf}`} className="underline">
+                        {/* A new tab, like the row's title: leaving this page stops an upload. */}
+                        <Link to={`/video/${duplicateOf}`} target="_blank" rel="noopener noreferrer" className="underline">
                             {t('channelManage.videoStatus.duplicateOpen')}
+                            <span className="sr-only"> {t('common.opensInNewTab')}</span>
                         </Link>
                     </p>
                     <Button
@@ -239,6 +251,10 @@ function VideoManageStatus({ video, slug, isOwner }) {
                     )}
                 </div>
             ))}
+
+            {/* Once, under the verdicts, when one of them hides the video: «يمكنك رفع نسخة أخرى»
+                has to be something the owner can do from where they read it. */}
+            {video.status !== 'FAILED' && notices.some((notice) => notice.hidden) && replaceButton}
         </div>
     );
 }

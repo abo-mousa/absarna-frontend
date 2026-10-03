@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Plus, Upload, ArrowUp, ArrowDown, Import, BookOpen } from 'lucide-react';
+import { Plus, Upload, ArrowUp, ArrowDown, Import, BookOpen, FileUp } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { ArrowBack } from '@/components/ui/DirectionalIcon';
 import { useToast } from '@/contexts/ToastContext';
@@ -16,7 +16,9 @@ import { useChannelContentTab } from '@/hooks/useChannelContentTab';
 import { useKeepScrollPlace } from '@/hooks/useKeepScrollPlace';
 import { useChannelUpload } from '@/hooks/useChannelUpload';
 import { useChannelSeriesManage, useMoveInSeries } from '@/hooks/useSeries';
-import { MANAGE_PAGE_SIZE } from '@/hooks/useChannels';
+import { MANAGE_PAGE_SIZE, useReplaceVideoFile } from '@/hooks/useChannels';
+import { useConfirmation } from '@/hooks/useConfirmation';
+import { useLeaveGuard } from '@/hooks/useLeaveGuard';
 import { usePresignedUpload, acceptAttribute } from '@/hooks/usePresignedUpload';
 import { useUploadOriginal } from '@/hooks/useChannelYouTube';
 import { describeError } from '@/lib/describeError';
@@ -96,7 +98,9 @@ export default function VideosTab({ slug, channel, youtubeState, isOwner, active
     const [form, setForm] = useState(EMPTY_FORM);
     // The just-published video whose poster is being offered, or null.
     const [posterFor, setPosterFor] = useState(null);
-    const uploadOriginalAction = useUploadOriginalAction(slug, youtubeState);
+    const fileActions = useFileActions(slug, youtubeState);
+    // Leaving stops whichever upload is on its way, so the page asks first.
+    const leaveGuard = useLeaveGuard(upload.uploading || fileActions.busy);
 
     const field = (key) => (e) => setForm({ ...form, [key]: e.target.value });
     // What the browser read from the file being uploaded, and which file that was: sent with the
@@ -107,6 +111,9 @@ export default function VideosTab({ slug, channel, youtubeState, isOwner, active
     const handleFileSelect = (e) => {
         const file = e.target.files?.[0];
         if (file) {
+            // The form may still hold the session of a file picked before this one, which the
+            // upload hook discards: publishing with it would be refused.
+            setForm((current) => ({ ...current, uploadSessionId: '' }));
             claim.current = { file, values: {} };
             readMediaClaim(file).then((values) => {
                 if (claim.current.file === file) claim.current = { file, values };
@@ -164,6 +171,8 @@ export default function VideosTab({ slug, channel, youtubeState, isOwner, active
         <div className="grid grid-cols-1 gap-6">
             <ConfirmDialog {...content.confirmDialog} />
             <ConfirmDialog {...upload.confirmDialog} />
+            <ConfirmDialog {...fileActions.confirmDialog} />
+            <ConfirmDialog {...leaveGuard} />
             <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="flex gap-1 p-1 rounded-lg bg-surface border border-border-light w-fit">
                     {['all', 'bySeries'].map((id) => (
@@ -244,6 +253,8 @@ export default function VideosTab({ slug, channel, youtubeState, isOwner, active
                         uploading: upload.uploading,
                         progress: upload.progress,
                         fileName: upload.fileName,
+                        onCancel: upload.cancel,
+                        ready: Boolean(form.uploadSessionId),
                     }}
                 >
                     <Input label={t('fields.title')} value={form.title} onChange={field('title')} field="title" required />
@@ -339,11 +350,13 @@ export default function VideosTab({ slug, channel, youtubeState, isOwner, active
                             heading={t('channelManage.forms.video.listHeading', { count: content.totalItems })}
                             content={content}
                             getHref={videoPageHref}
-                            extraActions={uploadOriginalAction}
+                            extraActions={fileActions.rowAction}
                             // The transcode state, the retry out of a failed one, and the moderation verdicts
                             // — on the screen an owner actually opens. A held video is READY, visible and
                             // reachable by nobody, and before this the dashboard said nothing about it at all.
-                            renderStatus={(video) => <VideoManageStatus video={video} slug={slug} isOwner={isOwner} />}
+                            renderStatus={(video) => (
+                                <VideoManageStatus video={video} slug={slug} isOwner={isOwner} replaceAction={fileActions.replaceAction} />
+                            )}
                         />
                     )}
 
@@ -360,7 +373,8 @@ export default function VideosTab({ slug, channel, youtubeState, isOwner, active
                             active={active}
                             onBack={() => openSeriesView(null)}
                             onSeriesChange={setOpenSeries}
-                            extraActions={uploadOriginalAction}
+                            extraActions={fileActions.rowAction}
+                            replaceAction={fileActions.replaceAction}
                             isOwner={isOwner}
                         />
                     )}
@@ -374,7 +388,7 @@ export default function VideosTab({ slug, channel, youtubeState, isOwner, active
  * One series opened: its videos, a page at a time in the series' own order, with the series'
  * actions above them. `series` is `'none'` for the videos in no series, which has no actions.
  */
-function SeriesVideos({ slug, series, active, onBack, onSeriesChange, extraActions, isOwner }) {
+function SeriesVideos({ slug, series, active, onBack, onSeriesChange, extraActions, replaceAction, isOwner }) {
     const none = series === 'none';
     const content = useChannelContentTab(slug, 'videos', active, none ? 'none' : String(series.id));
     const title = none ? t('channelManage.seriesView.noSeries') : series.title;
@@ -434,83 +448,156 @@ function SeriesVideos({ slug, series, active, onBack, onSeriesChange, extraActio
                 content={content}
                 getHref={videoPageHref}
                 extraActions={rowActions}
-                renderStatus={(video) => <VideoManageStatus video={video} slug={slug} isOwner={isOwner} />}
+                renderStatus={(video) => (
+                    <VideoManageStatus video={video} slug={slug} isOwner={isOwner} replaceAction={replaceAction} />
+                )}
             />
         </div>
     );
 }
 
 /**
- * The per-row action that replaces an imported video's YouTube embed with the real file.
- *
- * <p>Reuses the ordinary presigned upload; only the final call differs — it attaches the session to
- * a video that already exists rather than creating one. Deliberately NOT routed through the resume
- * machinery: resume is keyed per (channel, kind) and one remembered session cannot describe which
- * of two thousand videos it belongs to. A second, independent uploader, so replacing one video's
- * source shares no progress or cancellation with the publish form on the same tab.
- *
- * <p>`sourceType === 'YOUTUBE'` is the eligibility test rather than a "has a file" flag, because
- * object keys never appear on a DTO — and it is exactly right: a video still typed YOUTUBE is one
- * we do not host.
+ * Whether an uploaded video's file can be replaced now: a file we host, and no transcode that
+ * could still report on it. The backend refuses the same cases (`VIDEO_FILE_STILL_PROCESSING`);
+ * this only decides whether the control is drawn.
  */
-function useUploadOriginalAction(slug, youtubeState) {
-    const { showToast } = useToast();
-    const originalUpload = usePresignedUpload();
-    const uploadOriginal = useUploadOriginal(slug);
-    const [claimingVideoId, setClaimingVideoId] = useState(null);
+export function canReplaceFile(video) {
+    if (video?.sourceType !== 'UPLOAD') return false;
+    return video.status === 'FAILED' || (video.status === 'READY' && !video.transcodeQueue);
+}
 
-    const handleUpload = async (e, video) => {
+/**
+ * The two per-row actions that put a new file under an existing video.
+ *
+ * <p><b>Upload the original</b> replaces an imported video's YouTube embed with the real file, and
+ * needs the owner's own verification with Google. <b>Replace the file</b> is for a video already
+ * uploaded here — a refused one, a wrong one, one ffmpeg could not read — and needs nothing more
+ * than managing the channel; it asks first, because the old file is deleted. Both keep the video:
+ * its comments, views and place in a series.
+ *
+ * <p>Both reuse the ordinary presigned upload; only the final call differs — it attaches the
+ * session to a video that already exists rather than creating one. Deliberately NOT routed
+ * through the resume machinery: resume is keyed per (channel, kind) and one remembered session
+ * cannot describe which of two thousand videos it belongs to. A second, independent uploader, so
+ * it shares no progress or cancellation with the publish form on the same tab — and one at a
+ * time: while a row is uploading, every other row's control waits.
+ *
+ * <p>`sourceType === 'YOUTUBE'` is the eligibility test for the first rather than a "has a file"
+ * flag, because object keys never appear on a DTO — and it is exactly right: a video still typed
+ * YOUTUBE is one we do not host.
+ *
+ * @returns `rowAction(video)` for the row's icons, `replaceAction(video, { labelled })` for the
+ *          same replace control with its words, `confirmDialog` to render once, and `busy`
+ */
+function useFileActions(slug, youtubeState) {
+    const { showToast } = useToast();
+    const uploader = usePresignedUpload();
+    const uploadOriginal = useUploadOriginal(slug);
+    const replaceFile = useReplaceVideoFile(slug);
+    const [busyVideoId, setBusyVideoId] = useState(null);
+    const [ask, confirmDialog] = useConfirmation();
+
+    const handleUpload = async (e, video, replacing) => {
         const file = e.target.files[0];
         e.target.value = '';
         if (!file) return;
+        if (replacing && !(await ask(t('channelManage.videoStatus.replaceFile.confirmTitle', { title: video.title }), {
+            body: t('channelManage.videoStatus.replaceFile.confirmBody'),
+            confirmLabel: t('channelManage.videoStatus.replaceFile.confirm'),
+            danger: true,
+        }))) return;
 
-        setClaimingVideoId(video.id);
+        setBusyVideoId(video.id);
+        let uploadSessionId = null;
         try {
-            const uploadSessionId = await originalUpload.upload(file, { kind: 'videos', slug });
-            await uploadOriginal.mutateAsync({ videoId: video.id, uploadSessionId });
-            showToast(t('youtube.uploadedOriginal'), 'success');
+            // Read while the bytes travel: it decides the transcode lane, as on a first upload.
+            const claim = replacing ? readMediaClaim(file) : null;
+            uploadSessionId = await uploader.upload(file, { kind: 'videos', slug });
+            if (replacing) {
+                await replaceFile.mutateAsync({ videoId: video.id, uploadSessionId, claim: await claim });
+            } else {
+                await uploadOriginal.mutateAsync({ videoId: video.id, uploadSessionId });
+            }
+            showToast(t(replacing ? 'channelManage.videoStatus.replaceFile.done' : 'youtube.uploadedOriginal'), 'success');
         } catch (err) {
             if (err.name !== 'AbortError') {
-                // The refusal worth wording here is `YOUTUBE_NEEDS_OWNER_VERIFICATION` — an
-                // admin-attested channel may not license hosting its own file — and it arrives as
-                // a reason code that only `describeError` reads.
-                showToast(t('youtube.uploadOriginalFailed', { reason: describeError(err) }), 'error');
+                // The refusals worth wording arrive as reason codes that only `describeError`
+                // reads: `YOUTUBE_NEEDS_OWNER_VERIFICATION`, `VIDEO_FILE_STILL_PROCESSING`.
+                showToast(t(replacing ? 'channelManage.videoStatus.replaceFile.failed' : 'youtube.uploadOriginalFailed',
+                    { reason: describeError(err) }), 'error');
             }
+            // A refusal leaves a finished upload attached to nothing: free the channel's slot.
+            // Only on an answer — a timeout may be the server still assembling it.
+            if (uploadSessionId && err.response) uploader.discard(slug, 'videos', uploadSessionId);
         } finally {
-            setClaimingVideoId(null);
+            setBusyVideoId(null);
         }
     };
 
-    return (video) => {
-        if (video.sourceType !== 'YOUTUBE') return null;
+    const fileInput = (video, replacing, disabled) => (
+        <input
+            type="file"
+            accept={acceptAttribute('videos')}
+            disabled={disabled}
+            onChange={(e) => handleUpload(e, video, replacing)}
+            // sr-only, not hidden: display:none takes the input out of the tab order, so
+            // the keyboard could never reach it. FilePicker does the same.
+            className="sr-only"
+        />
+    );
 
-        const busy = claimingVideoId === video.id;
-        const ownerVerified = youtubeState?.verifiedBy === 'OWNER';
-
+    const iconLabel = (video, replacing, enabled, title) => {
+        const busy = busyVideoId === video.id;
+        const usable = enabled && busyVideoId === null;
         return (
             <label
-                title={ownerVerified ? t('youtube.uploadOriginal') : t('youtube.uploadOriginalNeedsOwner')}
-                className={`p-2 rounded-md transition-colors ${
-                    ownerVerified && !busy
+                title={title}
+                aria-label={title}
+                className={`p-2 rounded-md transition-colors focus-within:ring-2 focus-within:ring-primary ${
+                    usable
                         ? 'text-text-secondary hover:bg-surface-hover hover:text-primary cursor-pointer'
                         : 'text-text-muted opacity-50 cursor-not-allowed'
                 }`}
             >
                 {busy
-                    ? <span className="text-xs">{formatPercent(originalUpload.progress)}</span>
-                    : <Upload size={16} />}
-                <input
-                    type="file"
-                    accept={acceptAttribute('videos')}
-                    disabled={!ownerVerified || busy}
-                    onChange={(e) => handleUpload(e, video)}
-                    // sr-only, not hidden: display:none takes the input out of the tab order, so
-                    // the keyboard could never reach "upload the original". FilePicker does the same.
-                    className="sr-only"
-                />
+                    ? <span className="text-xs">{formatPercent(uploader.progress)}</span>
+                    : replacing ? <FileUp size={16} /> : <Upload size={16} />}
+                {fileInput(video, replacing, !usable)}
             </label>
         );
     };
+
+    const rowAction = (video) => {
+        if (video.sourceType === 'YOUTUBE') {
+            const ownerVerified = youtubeState?.verifiedBy === 'OWNER';
+            return iconLabel(video, false, ownerVerified,
+                ownerVerified ? t('youtube.uploadOriginal') : t('youtube.uploadOriginalNeedsOwner'));
+        }
+        if (!canReplaceFile(video)) return null;
+        return iconLabel(video, true, true, t('channelManage.videoStatus.replaceFile.action'));
+    };
+
+    const replaceAction = (video, { labelled = false } = {}) => {
+        if (!canReplaceFile(video)) return null;
+        if (!labelled) return iconLabel(video, true, true, t('channelManage.videoStatus.replaceFile.action'));
+        const busy = busyVideoId === video.id;
+        const usable = busyVideoId === null;
+        return (
+            <label
+                className={`inline-flex w-fit items-center gap-1.5 px-3 py-1.5 rounded-md border border-border text-xs font-semibold transition-colors focus-within:ring-2 focus-within:ring-primary ${
+                    usable ? 'text-text-secondary hover:bg-surface-hover cursor-pointer' : 'text-text-muted opacity-60 cursor-not-allowed'
+                }`}
+            >
+                <FileUp size={13} />
+                {busy
+                    ? t('channelManage.forms.uploadingProgress', { progress: uploader.progress })
+                    : t('channelManage.videoStatus.replaceFile.action')}
+                {fileInput(video, true, !usable)}
+            </label>
+        );
+    };
+
+    return { rowAction, replaceAction, confirmDialog, busy: busyVideoId !== null };
 }
 
 /**

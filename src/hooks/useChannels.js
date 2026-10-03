@@ -874,3 +874,30 @@ export const useSetChannelReviewExemptions = () => {
         },
     });
 };
+
+/**
+ * Replaces an uploaded video's file with a finished upload session, keeping the video
+ * (`POST …/videos/{id}/file`). The row goes back to processing, and every verdict on the old file
+ * is void. Refused with `VIDEO_FILE_STILL_PROCESSING` while a transcode is still running.
+ *
+ * <p>Not `useUploadOriginal`: that gives an imported video its first file and asks for proof of
+ * owning the YouTube channel. This one is for a file the platform already hosts.
+ */
+export const useReplaceVideoFile = (slug) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ videoId, uploadSessionId, claim = {} }) => {
+            const res = await api.post(
+                `/channels/${slug}/content/videos/${videoId}/file`,
+                { uploadSessionId, ...claim },
+                { timeout: UPLOAD_CONFIRM_TIMEOUT_MS });
+            return res.data;
+        },
+        onSuccess: () => {
+            invalidateChannelContent(queryClient, slug, 'videos');
+            // Its own page holds the old file's playback and verdicts.
+            queryClient.invalidateQueries({ queryKey: ['video'] });
+        },
+    });
+};

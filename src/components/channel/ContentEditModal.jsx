@@ -40,6 +40,35 @@ const LABELS = {
     originalPublishDate: 'fields.originalPublishDateOptional',
 };
 
+/**
+ * The flag that empties each optional field. The backend's PATCH merges and skips nulls, so
+ * `description: null` changes nothing — it answered 200 and the description stayed. A field with no
+ * flag here (title, an article's body) is required: emptied, it is sent as typed and the backend
+ * refuses it, which the dialog shows — never dropped, or "save" would close on nothing saved.
+ */
+const CLEAR_FLAG = {
+    description: 'clearDescription',
+    category: 'clearCategory',
+    originalPublishDate: 'clearOriginalPublishDate',
+    pages: 'clearPages',
+};
+
+/**
+ * What changed between the item a dialog opened with and its form, as the PATCH body: a changed
+ * field by its name, an emptied optional one by its `clear*` flag.
+ */
+export function fieldChanges(fields, item, form) {
+    const changes = {};
+    for (const field of fields) {
+        const before = String(item[field] ?? '');
+        const after = String(form[field] ?? '');
+        if (before === after) continue;
+        if (after.trim() !== '' || !CLEAR_FLAG[field]) changes[field] = after;
+        else if (before.trim() !== '') changes[CLEAR_FLAG[field]] = true;
+    }
+    return changes;
+}
+
 function ContentEditModal({ open, type, item, onClose, onSave, saving, error = null, slug }) {
     const fields = FIELDS[type] || [];
     const [form, setForm] = useState({});
@@ -88,16 +117,8 @@ function ContentEditModal({ open, type, item, onClose, onSave, saving, error = n
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        // Only the fields that actually differ. '' is sent as null so a cleared optional field is
-        // cleared rather than stored as an empty string.
-        const changes = {};
-        for (const field of fields) {
-            const before = item[field] ?? '';
-            const after = form[field] ?? '';
-            if (String(before) !== String(after)) {
-                changes[field] = after === '' ? null : after;
-            }
-        }
+        // Only the fields that actually differ.
+        const changes = fieldChanges(fields, item, form);
         if (type === 'videos' && format !== (item.ownFormat || '')) {
             if (format) changes.format = format;
             else changes.inheritFormat = true;
@@ -153,7 +174,7 @@ function ContentEditModal({ open, type, item, onClose, onSave, saving, error = n
                         textarea={field === 'description' || field === 'content'}
                         rows={field === 'content' ? 12 : 3}
                         type={field === 'originalPublishDate' ? 'date' : field === 'pages' ? 'number' : 'text'}
-                        required={field === 'title'}
+                        required={field === 'title' || field === 'content'}
                         field={field}
                     />
                 )))}
