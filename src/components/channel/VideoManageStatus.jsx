@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom';
-import { AlertTriangle, Copy, Loader2, RotateCw, VideoOff } from 'lucide-react';
+import { AlertTriangle, Clock, Copy, Loader2, RotateCw, VideoOff } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import { Button } from '@/components/ui';
 import { useDismissDuplicate, useRetryTranscode } from '@/hooks/useChannels';
+import { queueStatus } from '@/lib/transcodeQueue';
 import { ownerNotices } from '@/lib/review';
 import { describeError } from '@/lib/describeError';
-import { t } from '@/i18n';
+import { direction, t } from '@/i18n';
 
 /**
  * What one of the owner's videos has to say about itself, on the dashboard row.
@@ -85,15 +86,31 @@ function VideoManageStatus({ video, slug, isOwner }) {
         return null;
     }
 
+    const queue = queueStatus(video.transcodeQueue);
+
     return (
         <div className="mt-1.5 grid gap-1.5">
             {video.status === 'UPLOADED' && (
+                // Two states an owner tells apart at a glance: a clock while other uploads are in
+                // front of this one, the spinner once the worker has it. Wraps as whole phrases —
+                // on a phone the detail drops under the label rather than breaking mid-sentence.
+                //
+                // `dir` is the INTERFACE's, not the row's. The row block is `dir="auto"` on the
+                // title (ContentManageList), which is right for a one-word badge and wrong for a
+                // sentence with a number in it: under an Arabic title the English line read
+                // "videos ahead of yours 3", and under a Latin one the Arabic line ran backwards.
                 <p
-                    className="flex items-center gap-1.5 text-xs text-text-muted"
+                    dir={direction()}
+                    className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-text-muted"
                     title={t('channelManage.videoStatus.processingHint')}
                 >
-                    <Loader2 size={12} className="animate-spin flex-shrink-0" />
-                    {t('channelManage.videoStatus.processing')}
+                    <span className="inline-flex items-center gap-1.5 font-medium text-text-secondary">
+                        {queue.waiting
+                            ? <Clock size={12} className="flex-shrink-0" />
+                            : <Loader2 size={12} className="animate-spin flex-shrink-0" />}
+                        {t(queue.waiting ? 'channelManage.videoStatus.queue.waiting' : 'channelManage.videoStatus.processing')}
+                    </span>
+                    {queue.detail && <span>{queue.detail}</span>}
                 </p>
             )}
 

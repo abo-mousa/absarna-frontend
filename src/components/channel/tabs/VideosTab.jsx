@@ -161,7 +161,7 @@ export default function VideosTab({ slug, channel, youtubeState, isOwner, active
     };
 
     return (
-        <div className="grid gap-6">
+        <div className="grid grid-cols-1 gap-6">
             <ConfirmDialog {...content.confirmDialog} />
             <ConfirmDialog {...upload.confirmDialog} />
             <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -323,7 +323,7 @@ export default function VideosTab({ slug, channel, youtubeState, isOwner, active
 
             {/* Inline style: the held height is a runtime value, which Tailwind cannot see. */}
             <div style={heldHeight ? { minHeight: heldHeight } : undefined}>
-                <div ref={listRef} className="grid gap-6">
+                <div ref={listRef} className="grid grid-cols-1 gap-6">
                     {/* Only once the first page has ANSWERED empty: before it arrives (or while the tab
                         is not open and its query is off) there is no data, which is not "no videos". */}
                     {view === 'all' && content.pageInfo && content.totalItems === 0 && !content.term && (

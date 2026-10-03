@@ -2579,7 +2579,34 @@ export const en = {
 
         videoStatus: {
             processing: 'Processing',
-            processingHint: 'The server is preparing this video. It is not shown to visitors until processing finishes, and there is no notification \u2014 refresh the page in a little while.',
+            processingHint: 'The server is preparing this video. It is not shown to visitors until processing finishes. This list updates by itself, and the time shown is an estimate.',
+            queue: {
+                waiting: 'In the queue',
+                left: '{wait} left',
+                readyIn: 'ready in {wait}',
+                ahead: {
+                    one: '{count} video ahead of yours',
+                    two: '{count} videos ahead of yours',
+                    few: '{count} videos ahead of yours',
+                    many: '{count} videos ahead of yours',
+                    other: '{count} videos ahead of yours',
+                },
+                underAMinute: 'under a minute',
+                aboutMinutes: {
+                    one: 'about {count} minute',
+                    two: 'about {count} minutes',
+                    few: 'about {count} minutes',
+                    many: 'about {count} minutes',
+                    other: 'about {count} minutes',
+                },
+                aboutHours: {
+                    one: 'about {count} hour',
+                    two: 'about {count} hours',
+                    few: 'about {count} hours',
+                    many: 'about {count} hours',
+                    other: 'about {count} hours',
+                },
+            },
             failed: 'Processing failed',
             // Says what failed, what did NOT fail (the file is still on the servers), and what to
             // do. The last part matters most: before the retry button existed the only way out

@@ -2961,7 +2961,36 @@ export const ar = {
         // badge on the home feed told them a video was held and this list said nothing at all.
         videoStatus: {
             processing: 'جاري المعالجة',
-            processingHint: 'يعمل الخادم على تجهيز الفيديو. لا يظهر للزوار قبل انتهاء المعالجة، ولا يوجد إشعار — حدّث الصفحة بعد قليل.',
+            processingHint: 'يعمل الخادم على تجهيز الفيديو. لا يظهر للزوار قبل انتهاء المعالجة. تتحدّث هذه القائمة تلقائيًا، والوقت المذكور تقديري.',
+            // Where the upload stands in the transcode queue (lib/transcodeQueue). The time is a
+            // rough sum of estimates, so it is always «نحو».
+            queue: {
+                waiting: 'في قائمة الانتظار',
+                left: 'بقي {wait}',
+                readyIn: 'يجهز خلال {wait}',
+                ahead: {
+                    one: 'أمامه فيديو واحد',
+                    two: 'أمامه فيديوان',
+                    few: 'أمامه {count} فيديوهات',
+                    many: 'أمامه {count} فيديو',
+                    other: 'أمامه {count} فيديو',
+                },
+                underAMinute: 'أقل من دقيقة',
+                aboutMinutes: {
+                    one: 'نحو دقيقة',
+                    two: 'نحو دقيقتين',
+                    few: 'نحو {count} دقائق',
+                    many: 'نحو {count} دقيقة',
+                    other: 'نحو {count} دقيقة',
+                },
+                aboutHours: {
+                    one: 'نحو ساعة',
+                    two: 'نحو ساعتين',
+                    few: 'نحو {count} ساعات',
+                    many: 'نحو {count} ساعة',
+                    other: 'نحو {count} ساعة',
+                },
+            },
             failed: 'فشلت المعالجة',
             // Says what failed, what did NOT fail (the file is still on the servers), and what to
             // do. The last part matters most: before the retry button existed the only way out

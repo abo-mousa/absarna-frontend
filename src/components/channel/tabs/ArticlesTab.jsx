@@ -30,7 +30,7 @@ export default function ArticlesTab({ slug, active }) {
     };
 
     return (
-        <div className="grid gap-6">
+        <div className="grid grid-cols-1 gap-6">
             <ConfirmDialog {...content.confirmDialog} />
             <Modal open={adding} onClose={() => setAdding(false)} title={t('channelManage.forms.article.heading')} maxWidth="800px">
                 <ContentPublishForm

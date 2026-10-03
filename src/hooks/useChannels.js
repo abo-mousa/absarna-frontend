@@ -1,6 +1,7 @@
 import { keepPreviousData, useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { UPLOAD_CONFIRM_TIMEOUT_MS } from '@/lib/api/client';
 import { queryKeys } from '@/lib/queryKeys';
+import { processingRefetchInterval } from '@/lib/transcodeQueue';
 import { useUserScope } from './useUserScope';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -327,6 +328,9 @@ export const useChannelContentList = (slug, type, enabled = true, page = 0, seri
         // The current page stays on screen while the next loads, so the list does not collapse
         // to "loading" and yank the scroll position between pages.
         placeholderData: keepPreviousData,
+        // While a video on the page is still processing, re-read the list so its place in the
+        // queue moves and READY arrives without a manual refresh. Off otherwise.
+        refetchInterval: (query) => (type === 'videos' ? processingRefetchInterval(query.state.data) : false),
     });
 };
 

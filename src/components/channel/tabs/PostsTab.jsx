@@ -29,7 +29,7 @@ export default function PostsTab({ slug, active }) {
     };
 
     return (
-        <div className="grid gap-6">
+        <div className="grid grid-cols-1 gap-6">
             <ConfirmDialog {...content.confirmDialog} />
             <Modal open={adding} onClose={() => setAdding(false)} title={t('channelManage.forms.post.heading')} maxWidth="560px">
                 <ContentPublishForm

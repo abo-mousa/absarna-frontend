@@ -86,7 +86,7 @@ export default function BooksTab({ slug, active }) {
     };
 
     return (
-        <div className="grid gap-6">
+        <div className="grid grid-cols-1 gap-6">
             <ConfirmDialog {...content.confirmDialog} />
             <ConfirmDialog {...upload.confirmDialog} />
             <Modal open={adding} onClose={() => setAdding(false)} title={t('channelManage.forms.book.heading')} maxWidth="640px">

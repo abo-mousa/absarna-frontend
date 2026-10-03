@@ -45,7 +45,7 @@ function ContentManageList({ items, loading, onToggleVisibility, onDelete, onEdi
     }
 
     return (
-        <div className="grid gap-2">
+        <div className="grid grid-cols-1 gap-2">
             {items.map((item) => (
                 <div
                     key={item.id}
