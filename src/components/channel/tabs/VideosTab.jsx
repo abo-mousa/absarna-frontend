@@ -21,6 +21,7 @@ import { usePresignedUpload, acceptAttribute } from '@/hooks/usePresignedUpload'
 import { useUploadOriginal } from '@/hooks/useChannelYouTube';
 import { describeError } from '@/lib/describeError';
 import { stripEmpty } from '@/lib/forms';
+import { readMediaClaim } from '@/lib/mediaClaim';
 import { t } from '@/i18n';
 import { formatPercent } from '@/lib/numbers';
 import { formatLabel } from '@/lib/formats';
@@ -98,8 +99,23 @@ export default function VideosTab({ slug, channel, youtubeState, isOwner, active
     const uploadOriginalAction = useUploadOriginalAction(slug, youtubeState);
 
     const field = (key) => (e) => setForm({ ...form, [key]: e.target.value });
+    // What the browser read from the file being uploaded, and which file that was: sent with the
+    // create request so the backend can route a short upload past a long one (lib/mediaClaim).
+    // Keyed by the file, so a slow read for an earlier pick never attaches to a later one.
+    const claim = useRef({ file: null, values: {} });
 
-    const handleFileSelect = (e) => upload.selectFile(e, {
+    const handleFileSelect = (e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            claim.current = { file, values: {} };
+            readMediaClaim(file).then((values) => {
+                if (claim.current.file === file) claim.current = { file, values };
+            });
+        }
+        return selectUpload(e);
+    };
+
+    const selectUpload = (e) => upload.selectFile(e, {
         failureMessage: (reason) => t('channelManage.forms.video.uploadFailed', { reason }),
         onUploaded: (uploadSessionId, fallbackTitle) => setForm((current) => ({
             ...current,
@@ -115,12 +131,15 @@ export default function VideosTab({ slug, channel, youtubeState, isOwner, active
     const handleSubmit = (e) => {
         e.preventDefault();
         const wasUpload = !!form.uploadSessionId;
-        content.publish({ ...stripEmpty(form), speaker: channel.name }, {
+        // Only beside an upload: a claim is about the file, and a URL-created video has none.
+        const claimed = wasUpload ? claim.current.values : {};
+        content.publish({ ...stripEmpty(form), ...claimed, speaker: channel.name }, {
             action: t('channelManage.forms.video.action'),
             successMessage: t('channelManage.forms.video.published'),
             onSuccess: (created) => {
                 // The session is spent: confirm assembled the object and created the row.
                 upload.forget();
+                claim.current = { file: null, values: {} };
                 setForm(EMPTY_FORM);
                 setUploadOpen(false);
                 // THE POSTER STEP, offered here rather than only from the edit dialog.
