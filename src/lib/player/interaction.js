@@ -42,7 +42,8 @@ export function requestPlay(element) {
  * arrow or clicks a timestamp past B stays where they went; the repeat resumes once they are back
  * inside it.
  */
-export function repeatTarget(time, range, previous) {
+export function repeatTarget(time, range, previous, { paused = false, seeking = false } = {}) {
+    if (paused || seeking) return null;
     if (!range || !Number.isFinite(range.end) || range.end <= range.start) return null;
     if (previous == null || previous < range.start || previous >= range.end) return null;
     return time >= range.end ? range.start : null;

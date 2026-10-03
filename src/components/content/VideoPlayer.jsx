@@ -254,8 +254,12 @@ const VideoPlayer = forwardRef(function VideoPlayer(
 
     const handleTimeUpdate = (e) => {
         const time = e.currentTarget.currentTime;
-        const target = repeatTarget(time, repeatRange, lastPlaybackTimeRef.current);
-        lastPlaybackTimeRef.current = time;
+        // Seeking/paused timeupdates can arrive before the queued `seeking` event. Only
+        // ordinary playback may cross B; keep the last playing time for the ended fallback.
+        const advancing = !e.currentTarget.paused && !e.currentTarget.seeking;
+        const target = repeatTarget(time, repeatRange, lastPlaybackTimeRef.current, e.currentTarget);
+        if (e.currentTarget.seeking) lastPlaybackTimeRef.current = null;
+        else if (advancing) lastPlaybackTimeRef.current = time;
         // The seek fires `seeking`, which clears the ref again — the jump back to A is a seek too.
         if (target !== null) e.currentTarget.currentTime = target;
         const now = Date.now();

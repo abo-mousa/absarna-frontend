@@ -42,6 +42,11 @@ describe('player interaction regressions', () => {
         expect(repeatTarget(25, { start: 10, end: null }, 19)).toBe(null);
         expect(repeatTarget(25, { start: 20, end: 10 }, 15)).toBe(null);
     });
+    it('ignores a queued timeupdate during a pause or before the seeking event', () => {
+        const range = { start: 10, end: 20 };
+        expect(repeatTarget(25, range, 19.8, { paused: true })).toBe(null);
+        expect(repeatTarget(25, range, 19.8, { seeking: true })).toBe(null);
+    });
     it('lets a seek past B stand', () => {
         // Straight after a seek there is no previous playback time.
         expect(repeatTarget(25, { start: 10, end: 20 }, null)).toBe(null);
