@@ -2832,7 +2832,7 @@ export const ar = {
         subheading: 'قناتك تظهر مباشرة بعد الإنشاء، ويمكنك النشر فوراً.',
         nameLabel: 'اسم القناة *',
         namePlaceholder: 'مثال: محمد إلهامي',
-        slugLabel: 'رابط القناة *',
+        slugLabel: 'معرّف القناة *',
         slugHint: 'بالأحرف الإنجليزية الصغيرة والأرقام والشرطات، وهو الاسم الذي يظهر في رابط قناتك.',
         slugPreview: 'رابط قناتك:',
         descriptionPlaceholder: 'وصف القناة...',
