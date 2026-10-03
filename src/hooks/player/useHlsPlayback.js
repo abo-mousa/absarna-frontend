@@ -75,6 +75,8 @@ export function useHlsPlayback({ enabled, playbackUrl, videoId, videoRef, pendin
      * MinIO locally, so the deployment most likely to hit it is the one nobody tested it on.
      */
     const [unrecoverable, setUnrecoverable] = useState(false);
+    // This browser cannot run hls.js at all — see the isSupported check.
+    const [unsupported, setUnsupported] = useState(false);
     // Bumped by `retryPlayback`, and in the effect's deps for exactly that: a retry has to rebuild
     // the instance even when the re-minted URL comes back byte-identical, which is the ordinary
     // case (a video's media URL is not time-limited).
@@ -125,8 +127,9 @@ export function useHlsPlayback({ enabled, playbackUrl, videoId, videoRef, pendin
             if (cancelled) return;
             if (!Hls.isSupported()) {
                 // No MSE at all. Rare and old, and there is nothing to fall back to — an .m3u8 in
-                // a <video> tag here plays nothing, so the element's own "unsupported" text is the
-                // honest outcome.
+                // a <video> tag here plays nothing. Its own state rather than `unrecoverable`:
+                // that one offers a retry, and no retry can change what this browser supports.
+                setUnsupported(true);
                 return;
             }
             hls = new Hls({
@@ -310,6 +313,7 @@ export function useHlsPlayback({ enabled, playbackUrl, videoId, videoRef, pendin
              * state.
              */
             function giveUp() {
+                rememberRef.current();
                 hls.destroy();
                 if (hlsRef.current === hls) hlsRef.current = null;
                 setUnrecoverable(true);
@@ -330,6 +334,8 @@ export function useHlsPlayback({ enabled, playbackUrl, videoId, videoRef, pendin
 
             hls.loadSource(playbackUrl);
             hls.attachMedia(el);
+        }).catch(() => {
+            if (!cancelled) setUnrecoverable(true);
         });
 
         return () => {
@@ -435,5 +441,5 @@ export function useHlsPlayback({ enabled, playbackUrl, videoId, videoRef, pendin
     }, [enabled]);
 
     return { levels, selectedLevel, selectLevel, startLoadAt, seekBeforeLoad, resumeLoading,
-        unrecoverable, retryPlayback };
+        unrecoverable, unsupported, retryPlayback };
 }

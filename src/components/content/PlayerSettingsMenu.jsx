@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Check, Settings } from 'lucide-react';
+import { Check, Settings, X } from 'lucide-react';
 import { ChevronBack, ChevronForward } from '@/components/ui/DirectionalIcon';
 import { useOutsideClick } from '@/hooks/useOutsideClick';
 import { isRtl, t } from '@/i18n';
@@ -38,10 +38,12 @@ import { isRtl, t } from '@/i18n';
  *
  * @param groups   drill-down settings — `[{ id, title, options: [{ id, label }], activeId, onSelect }]`
  * @param toggles  on/off rows — `[{ id, label, active, onToggle }]`
+ * @param actions       one-shot rows `{id, label, onSelect, disabled?, phoneOnly?}`; `phoneOnly`
+ *                      for a row whose button the bar shows on its own from `sm` up
  * @param onOpenChange  told whenever the panel opens or closes, so the bar can stay up while it is
  *                      open — a menu that disappears from under the pointer is unusable
  */
-export default function PlayerSettingsMenu({ groups = [], toggles = [], onOpenChange }) {
+export default function PlayerSettingsMenu({ groups = [], toggles = [], actions = [], onOpenChange }) {
     const [open, setOpen] = useState(false);
     // Which setting is drilled into, or null for the root list.
     const [openGroupId, setOpenGroupId] = useState(null);
@@ -90,7 +92,7 @@ export default function PlayerSettingsMenu({ groups = [], toggles = [], onOpenCh
         if (!open) return;
         const panel = panelRef.current;
         const target = panel?.querySelector('[data-menu-focus="true"]')
-            ?? panel?.querySelector('[role^="menuitem"]');
+            ?? Array.from(panel?.querySelectorAll('[role^="menuitem"]:not(:disabled)') ?? []).find((item) => item.getClientRects().length > 0);
         target?.focus();
     }, [open, openGroupId]);
 
@@ -104,6 +106,9 @@ export default function PlayerSettingsMenu({ groups = [], toggles = [], onOpenCh
      * one. A viewer pressing the arrow that points *into* the submenu must open it in both.
      */
     const handlePanelKeyDown = (e) => {
+        // Focus goes to the gear first and Tab's default then moves on from there. closePanel
+        // alone left focus on a row that was about to unmount, dropping it to the top of the page.
+        if (e.key === 'Tab') { dismissPanel(); return; }
         if (e.key === 'Escape') {
             // One thing per keypress: step out of a setting first, and only close from the root.
             // It must not reach the document either, where Escape also leaves fullscreen.
@@ -128,7 +133,7 @@ export default function PlayerSettingsMenu({ groups = [], toggles = [], onOpenCh
             return;
         }
         if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return;
-        const items = Array.from(panelRef.current?.querySelectorAll('[role^="menuitem"]') ?? []);
+        const items = Array.from(panelRef.current?.querySelectorAll('[role^="menuitem"]:not(:disabled)') ?? []).filter((item) => item.getClientRects().length > 0);
         if (items.length === 0) return;
         e.preventDefault();
         const current = items.indexOf(document.activeElement);
@@ -140,13 +145,13 @@ export default function PlayerSettingsMenu({ groups = [], toggles = [], onOpenCh
     };
 
     const settings = groups.filter((group) => group.options.length > 1);
-    if (settings.length === 0 && toggles.length === 0) return null;
+    if (settings.length === 0 && toggles.length === 0 && actions.length === 0) return null;
 
-    const rowClass = `w-full flex items-center gap-2 rounded px-2 py-1.5 text-start transition-colors
+    const rowClass = `w-full flex items-center gap-2 rounded min-h-11 sm:min-h-0 px-3 py-2 sm:px-2 sm:py-1.5 text-start transition-colors
         hover:bg-white/15 focus:outline-none focus-visible:bg-white/20`;
 
     return (
-        <div ref={wrapperRef} className="relative flex items-center">
+        <div ref={wrapperRef} className="static sm:relative flex items-center">
             <button
                 ref={gearRef}
                 type="button"
@@ -154,7 +159,7 @@ export default function PlayerSettingsMenu({ groups = [], toggles = [], onOpenCh
                 aria-expanded={open}
                 aria-label={t('video.settings.label')}
                 onClick={() => (open ? dismissPanel() : setOpen(true))}
-                className="flex items-center justify-center w-8 h-8 rounded-full text-white
+                className="flex items-center justify-center w-11 h-11 sm:w-8 sm:h-8 rounded-full text-white
                     transition-colors hover:bg-white/20 focus:outline-none focus-visible:ring-2
                     focus-visible:ring-white"
             >
@@ -165,6 +170,7 @@ export default function PlayerSettingsMenu({ groups = [], toggles = [], onOpenCh
                 <div
                     ref={panelRef}
                     role="menu"
+                    aria-label={t('video.settings.label')}
                     onKeyDown={handlePanelKeyDown}
                     // Opens upward from the gear, anchored to its trailing edge so a wide panel
                     // grows into the player rather than off it: the bar runs with the text, which
@@ -172,10 +178,15 @@ export default function PlayerSettingsMenu({ groups = [], toggles = [], onOpenCh
                     // panel growing outwards from there would hang off it. `end-0` rather than a
                     // physical side, so that holds on both builds. Capped shorter on a phone,
                     // where the whole player may be barely taller than this panel wants to be.
-                    className="absolute bottom-full end-0 mb-2 min-w-[210px] max-h-36 sm:max-h-60
+                    className="absolute bottom-0 inset-x-0 sm:inset-x-auto sm:bottom-full sm:end-0 sm:mb-2 sm:min-w-[240px] max-h-[min(43vw,320px)] sm:max-h-72
                         overflow-y-auto rounded-lg bg-black/90 p-1.5 text-sm text-white shadow-lg
                         backdrop-blur-sm"
                 >
+                    <button type="button" role="menuitem" onClick={dismissPanel}
+                        className="sticky top-0 z-10 flex min-h-11 w-full items-center justify-between rounded bg-black px-3 text-start sm:hidden"
+                        aria-label={t('video.settings.close')}>
+                        <span>{t('video.settings.label')}</span><X size={18} />
+                    </button>
                     {openGroup ? (
                         <>
                             {/* The way back, and the title of where you are — one row, because a
@@ -239,6 +250,13 @@ export default function PlayerSettingsMenu({ groups = [], toggles = [], onOpenCh
                                 </button>
                             ))}
 
+                            {actions.map((action) => (
+                                <button key={action.id} type="button" role="menuitem" disabled={action.disabled}
+                                    className={`${rowClass} disabled:opacity-40 ${action.phoneOnly ? 'sm:hidden' : ''}`}
+                                    onClick={() => { action.onSelect(); dismissPanel(); }}>
+                                    {action.label}
+                                </button>
+                            ))}
                             {toggles.length > 0 && (
                                 <div
                                     role="group"

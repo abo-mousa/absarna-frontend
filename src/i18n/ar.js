@@ -638,6 +638,14 @@ export const ar = {
     },
 
     video: {
+        // A–B repeat of one passage, in the settings menu.
+        repeat: {
+            setStart: 'تكرار مقطع: تحديد البداية (A)',
+            setEnd: 'تحديد النهاية (B) والتكرار',
+            clearRepeat: 'إلغاء تكرار المقطع',
+            repeating: 'تكرار {start} – {end}',
+            startSet: 'البداية عند {start}. انتقل إلى النهاية ثم حدد B.',
+        },
         // The finished star on a card (backend WatchProgress, 90%).
         finished: 'شاهدته كاملًا',
         watchAria: 'مشاهدة فيديو: {title}',
@@ -845,6 +853,7 @@ export const ar = {
 
         settings: {
             label: 'إعدادات المشغل',
+            close: 'إغلاق إعدادات المشغل',
             speed: 'سرعة التشغيل',
             // 1x, which is the absence of a choice rather than a measurement — every other speed
             // is a Latin-digit number like the rest of the app's figures (lib/numbers.js).

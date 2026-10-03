@@ -1,3 +1,4 @@
+import { requestPlay, toggleMediaMute } from '@/lib/player/interaction';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Airplay, Loader2, Maximize, Minimize, Pause, Play, Volume1, Volume2, VolumeX } from 'lucide-react';
 import { safeStorage } from '@/lib/safeStorage';
@@ -370,6 +371,8 @@ export default function VideoControlBar({
     onMenuOpenChange,
     onSeekBeforeLoad,
     onRequestFocus,
+    repeatRange,
+    onRepeatRangeChange,
 }) {
     const [playing, setPlaying] = useState(false);
     // Ended is tracked apart from `playing` (which is false for both a pause and an end) because
@@ -391,6 +394,9 @@ export default function VideoControlBar({
     // seek per pointer-move would ask the network for a segment the viewer is already scrubbing
     // past. The seek is committed once, on release.
     const [scrubTime, setScrubTime] = useState(null);
+    const [hoverTime, setHoverTime] = useState(null);
+    const [centreFocused, setCentreFocused] = useState(false);
+    const scrubRef = useRef(null);
     // Whether the keyboard is inside the bar. The fade is driven by the POINTER — it hides on a
     // timer whenever the video is playing — and it has no idea a viewer has tabbed onto the gear
     // or the timeline. Without this the settings button a keyboard viewer is standing on fades out
@@ -558,9 +564,8 @@ export default function VideoControlBar({
     const togglePlay = () => {
         const el = videoRef.current;
         if (!el) return;
-        // Ignored rather than surfaced: autoplay policy can refuse a play(), and the viewer
-        // pressing the button again is a perfectly good outcome.
-        if (el.paused || el.ended) el.play().catch(() => {});
+        // A rejected request is surfaced by the player's recoverable error overlay.
+        if (el.paused || el.ended) requestPlay(el);
         else el.pause();
     };
 
@@ -611,13 +616,7 @@ export default function VideoControlBar({
     const toggleMute = () => {
         const el = videoRef.current;
         if (!el) return;
-        const next = !el.muted;
-        // Un-muting a slider sitting at zero has to put a level back, or the button reads as
-        // broken: the icon changes, the aria-label changes, and nothing can be heard. Dragging to
-        // zero and pressing the icon is how a viewer silences a lecture to read something, and it
-        // is the obvious way back that has to work.
-        if (!next && el.volume === 0) el.volume = lastAudibleVolumeRef.current;
-        el.muted = next;
+        toggleMediaMute(el, lastAudibleVolumeRef.current);
         setVolume(el.volume);
         setMuted(el.muted);
     };
@@ -628,28 +627,41 @@ export default function VideoControlBar({
     // the only length anyone knows is the catalogue's, and it is enough to drag against — see
     // seekTo, which is where the difference between the two is actually settled.
     const handleTrackPointerDown = (e) => {
-        if (!scale) return;
+        if (!scale || e.button !== 0) return;
+        e.currentTarget.focus();
         e.currentTarget.setPointerCapture?.(e.pointerId);
-        setScrubTime(ratioFromPointer(e.clientX, trackRef.current?.getBoundingClientRect()) * scale);
+        scrubRef.current = ratioFromPointer(e.clientX, trackRef.current?.getBoundingClientRect()) * scale;
+        setScrubTime(scrubRef.current);
         onInteract?.();
     };
 
     const handleTrackPointerMove = (e) => {
-        if (scrubTime === null) return;
-        setScrubTime(ratioFromPointer(e.clientX, trackRef.current?.getBoundingClientRect()) * scale);
+        const pointedTime = ratioFromPointer(e.clientX, trackRef.current?.getBoundingClientRect()) * scale;
+        setHoverTime(pointedTime);
+        if (scrubRef.current === null) return;
+        scrubRef.current = ratioFromPointer(e.clientX, trackRef.current?.getBoundingClientRect()) * scale;
+        setScrubTime(scrubRef.current);
         onInteract?.();
     };
 
     const handleTrackPointerUp = (e) => {
-        if (scrubTime === null) return;
+        if (scrubRef.current === null) return;
         e.currentTarget.releasePointerCapture?.(e.pointerId);
-        seekTo(scrubTime);
+        seekTo(ratioFromPointer(e.clientX, trackRef.current?.getBoundingClientRect()) * scale);
+        scrubRef.current = null;
         setScrubTime(null);
+        setHoverTime(null);
     };
 
     // The slider's own arrows, kept from also reaching the player's shortcut handler and seeking
     // twice.
     const handleTrackKeyDown = (e) => {
+        if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+        if (e.key === 'Home' || e.key === 'End') {
+            e.preventDefault(); e.stopPropagation();
+            seekTo(e.key === 'Home' ? 0 : scale);
+            return;
+        }
         const action = keyboardAction(e.key);
         if (action !== 'seek-forward' && action !== 'seek-back') return;
         e.preventDefault();
@@ -661,7 +673,7 @@ export default function VideoControlBar({
 
     // Keyboard focus is a kind of attention the fade timer cannot see, so it counts the same as a
     // pointer.
-    const shown = visible || focusInside;
+    const shown = visible || focusInside || centreFocused || scrubTime !== null;
     const shownTime = scrubTime ?? currentTime;
     const playedRatio = scale ? shownTime / scale : 0;
     const bufferedRatio = scale ? buffered / scale : 0;
@@ -669,7 +681,7 @@ export default function VideoControlBar({
     const volumePercent = Math.round((muted ? 0 : volume) * 100);
     // Cached after the first call, so this is a property read and not a probe per render.
     const volumeIsControllable = supportsVolumeControl();
-    const iconButtonClass = `flex items-center justify-center w-8 h-8 rounded-full text-white
+    const iconButtonClass = `flex items-center justify-center w-11 h-11 shrink-0 sm:w-8 sm:h-8 rounded-full text-white
         transition-colors hover:bg-white/20 focus:outline-none focus-visible:ring-2
         focus-visible:ring-white`;
 
@@ -715,6 +727,8 @@ export default function VideoControlBar({
                             // onRequestFocus.
                             onRequestFocus?.();
                         }}
+                        onFocus={(e) => setCentreFocused(isKeyboardFocus(e.target))}
+                        onBlur={() => setCentreFocused(false)}
                         aria-label={showCentrePlay
                             ? (ended ? t('video.controls.replay') : t('video.controls.play'))
                             : t('video.controls.pause')}
@@ -811,11 +825,19 @@ export default function VideoControlBar({
                         onPointerDown={handleTrackPointerDown}
                         onPointerMove={handleTrackPointerMove}
                         onPointerUp={handleTrackPointerUp}
-                        onPointerCancel={handleTrackPointerUp}
+                        onPointerCancel={() => { scrubRef.current = null; setScrubTime(null); setHoverTime(null); }}
+                        onLostPointerCapture={() => { scrubRef.current = null; setScrubTime(null); }}
+                        onPointerLeave={() => setHoverTime(null)}
                         onKeyDown={handleTrackKeyDown}
-                        className="group relative flex h-4 cursor-pointer items-center touch-none
-                            focus:outline-none"
+                        className="group relative flex h-11 sm:h-6 cursor-pointer items-center touch-none
+                            focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded"
                     >
+                        {(scrubTime ?? hoverTime) !== null && scale > 0 && (
+                            <span dir="ltr" className="pointer-events-none absolute bottom-full rounded bg-black/90 px-2 py-1 text-xs tabular-nums text-white"
+                                style={{ insetInlineStart: `clamp(0px, ${((scrubTime ?? hoverTime) / scale) * 100}% - 32px, calc(100% - 64px))` }}>
+                                {formatTime(scrubTime ?? hoverTime)}
+                            </span>
+                        )}
                         <div className="relative h-1 w-full rounded-full bg-white/30 transition-[height]
                             group-hover:h-1.5 group-focus-visible:h-1.5">
                             {/* Buffered, then played on top of it, then the handle. */}
@@ -840,12 +862,20 @@ export default function VideoControlBar({
                                     rtl:translate-x-1/2 ltr:-translate-x-1/2
                                     rounded-full bg-primary opacity-0 transition-opacity
                                     group-hover:opacity-100 group-focus-visible:opacity-100"
-                                style={{ insetInlineStart: `${Math.min(100, playedRatio * 100)}%` }}
+                                style={{ insetInlineStart: `${Math.min(100, playedRatio * 100)}%`, opacity: scrubTime !== null ? 1 : undefined }}
                             />
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-1 sm:gap-2">
+                    {repeatRange && (
+                        <div className="flex items-center justify-between gap-2 text-xs text-white" role="status">
+                            <span>{t(repeatRange.end ? 'video.repeat.repeating' : 'video.repeat.startSet', {
+                                start: formatTime(repeatRange.start), end: formatTime(repeatRange.end),
+                            })}</span>
+                            <button type="button" onClick={() => onRepeatRangeChange?.(null)} className="min-h-11 px-2 underline focus-visible:ring-2 focus-visible:ring-white">{t('video.repeat.clearRepeat')}</button>
+                        </div>
+                    )}
+                    <div className="flex items-center gap-0 sm:gap-2">
                         <button
                             type="button"
                             onClick={togglePlay}
@@ -862,7 +892,7 @@ export default function VideoControlBar({
                             two: under the bar's RTL the bidi algorithm reorders the segments
                             around the slash and shows the total first, so a lecture four minutes
                             in reads «45:10 / 4:02». */}
-                        <span dir="ltr" className="text-xs text-white/90 tabular-nums">
+                        <span dir="ltr" className="text-[10px] sm:text-xs whitespace-nowrap text-white/90 tabular-nums">
                             {formatDigits(formatTime(shownTime))} / {formatDigits(formatTime(shownDuration))}
                         </span>
 
@@ -885,7 +915,7 @@ export default function VideoControlBar({
                             <button
                                 type="button"
                                 onClick={toggleMute}
-                                aria-label={muted ? t('video.controls.unmute') : t('video.controls.mute')}
+                                aria-label={muted || volume === 0 ? t('video.controls.unmute') : t('video.controls.mute')}
                                 className={iconButtonClass}
                             >
                                 <VolumeIcon muted={muted} volume={volume} />
@@ -919,6 +949,9 @@ export default function VideoControlBar({
                                     // browser. Inline because it is genuinely per-frame runtime data,
                                     // the case Tailwind's JIT cannot see.
                                     style={{
+                                        backgroundSize: '100% 4px',
+                                        backgroundRepeat: 'no-repeat',
+                                        backgroundPosition: 'center',
                                         backgroundImage: `linear-gradient(to right,
                                             rgb(255 255 255) ${volumePercent}%,
                                             rgb(255 255 255 / 0.3) ${volumePercent}%)`,
@@ -938,10 +971,10 @@ export default function VideoControlBar({
                                     // It keeps its default `flex-shrink`: at `w-16` on a narrow phone
                                     // the row is close to full, and a slider that gives up a few pixels
                                     // is better than a bar that overflows.
-                                    className="h-1 w-0 cursor-pointer appearance-none rounded-full bg-white/30
+                                    className="hidden sm:block h-11 w-0 cursor-pointer appearance-none rounded-full bg-transparent
                                         opacity-0 transition-all group-hover/volume:w-16
                                         group-hover/volume:opacity-100 focus:w-16 focus:opacity-100
-                                        [@media(hover:none)]:w-16 [@media(hover:none)]:opacity-100
+                                        [@media(hover:none)]:w-10 [@media(hover:none)]:opacity-100
                                         focus:outline-none focus-visible:ring-2 focus-visible:ring-white
                                         [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3
                                         [&::-webkit-slider-thumb]:appearance-none
@@ -958,6 +991,15 @@ export default function VideoControlBar({
                         <PlayerSettingsMenu
                             groups={groups}
                             toggles={toggles}
+                            actions={[
+                                ...(airplayAvailable ? [{ id: 'airplay', phoneOnly: true, label: t('video.controls.airplay'), onSelect: () => videoRef.current?.webkitShowPlaybackTargetPicker?.() }] : []),
+                                { id: 'repeat-start', label: t('video.repeat.setStart'), onSelect: () => onRepeatRangeChange?.({ start: videoRef.current?.currentTime || 0, end: null }) },
+                                ...(repeatRange ? [
+                                    { id: 'repeat-end', label: t('video.repeat.setEnd'), disabled: currentTime <= repeatRange.start + 0.5,
+                                        onSelect: () => onRepeatRangeChange?.({ ...repeatRange, end: videoRef.current?.currentTime || currentTime }) },
+                                    { id: 'repeat-clear', label: t('video.repeat.clearRepeat'), onSelect: () => onRepeatRangeChange?.(null) },
+                                ] : []),
+                            ]}
                             onOpenChange={handleMenuOpenChange}
                         />
 
@@ -966,7 +1008,7 @@ export default function VideoControlBar({
                                 type="button"
                                 onClick={() => videoRef.current?.webkitShowPlaybackTargetPicker?.()}
                                 aria-label={t('video.controls.airplay')}
-                                className={iconButtonClass}
+                                className={`${iconButtonClass} hidden sm:flex`}
                             >
                                 <Airplay size={18} />
                             </button>

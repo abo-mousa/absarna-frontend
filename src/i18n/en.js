@@ -545,6 +545,14 @@ export const en = {
     },
 
     video: {
+        // A–B repeat of one passage, in the settings menu.
+        repeat: {
+            setStart: 'Repeat passage: set start (A)',
+            setEnd: 'Set end (B) and repeat',
+            clearRepeat: 'Clear repeat',
+            repeating: 'Repeating {start} – {end}',
+            startSet: 'Start set at {start}. Move to the end, then set B.',
+        },
         // The finished star on a card (backend WatchProgress, 90%).
         finished: 'Watched',
         watchAria: 'Watch video: {title}',
@@ -652,6 +660,7 @@ export const en = {
 
         settings: {
             label: 'Player settings',
+            close: 'Close player settings',
             speed: 'Playback speed',
             normalSpeed: 'Normal',
             loop: 'Loop',

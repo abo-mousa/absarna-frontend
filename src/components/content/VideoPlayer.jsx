@@ -3,6 +3,7 @@ import { safeExternalUrl, extractYouTubeId } from '@/lib/media';
 import { useVideoPlaybackUrl } from '@/hooks/useMediaUrl';
 import { PROGRESS_REPORT_INTERVAL_MS, playbackMode, supportsNativeHls, uploadPlayerSurface }
     from '@/lib/player/playback';
+import { ownsShortcut, requestPlay, toggleMediaMute, repeatTarget } from '@/lib/player/interaction';
 import { PLAYBACK_SPEEDS } from '@/lib/player/rate';
 import {
     AUTO_OPTION,
@@ -106,6 +107,36 @@ const VideoPlayer = forwardRef(function VideoPlayer(
     // recitation or a passage being learned by heart — which a viewer turns on for one clip, not
     // as a standing preference.
     const [loopEnabled, setLoopEnabled] = useState(false);
+    const [repeatRange, setRepeatRange] = useState(null);
+    // The last playhead seen during ordinary playback, null straight after a seek — what tells
+    // repeatTarget that playback ran into B rather than that the viewer jumped past it.
+    const lastPlaybackTimeRef = useRef(null);
+    // For the mute shortcut: unmuting a slider at zero puts back the last level heard, not 100%.
+    const lastAudibleVolumeRef = useRef(1);
+    const [mediaFailed, setMediaFailed] = useState(false);
+    const [retrying, setRetrying] = useState(false);
+    useEffect(() => {
+        const el = videoRef.current;
+        if (!el) return undefined;
+        const failed = () => { setMediaFailed(true); pin(); };
+        // The browser wants a tap first. Nothing is broken, so no error: bring the play button up.
+        const blocked = () => pin();
+        const recovered = () => setMediaFailed(false);
+        const seeking = () => { lastPlaybackTimeRef.current = null; };
+        const volume = () => { if (el.volume > 0 && !el.muted) lastAudibleVolumeRef.current = el.volume; };
+        el.addEventListener('playbackfailure', failed);
+        el.addEventListener('playblocked', blocked);
+        el.addEventListener('playing', recovered);
+        el.addEventListener('seeking', seeking);
+        el.addEventListener('volumechange', volume);
+        return () => {
+            el.removeEventListener('playbackfailure', failed);
+            el.removeEventListener('playblocked', blocked);
+            el.removeEventListener('playing', recovered);
+            el.removeEventListener('seeking', seeking);
+            el.removeEventListener('volumechange', volume);
+        };
+    }, [playbackUrl, pin]);
 
     const { playbackRate, selectRate, mirrorBrowserRate, applyTo: applyRateTo } =
         usePlaybackRate(videoRef, Boolean(playbackUrl));
@@ -122,7 +153,8 @@ const VideoPlayer = forwardRef(function VideoPlayer(
     }, []);
 
     const { levels, selectedLevel, selectLevel, startLoadAt, seekBeforeLoad: hlsSeekBeforeLoad,
-        resumeLoading: resumeHlsLoading, unrecoverable: hlsGaveUp, retryPlayback } =
+        resumeLoading: resumeHlsLoading, unrecoverable: hlsGaveUp, unsupported: hlsUnsupported,
+        retryPlayback } =
         useHlsPlayback({
             enabled: usesHlsJs, playbackUrl, videoId, videoRef, pendingSeekRef, rememberPosition,
         });
@@ -146,7 +178,7 @@ const VideoPlayer = forwardRef(function VideoPlayer(
         if (!el) return;
         if (usesHlsJs) {
             resumeHlsLoading(position);
-            if (resume) el.play().catch(() => {});
+            if (resume) requestPlay(el);
             return;
         }
         pendingSeekRef.current = position;
@@ -215,14 +247,17 @@ const VideoPlayer = forwardRef(function VideoPlayer(
                 // to 0:00 with no sign anything went wrong.
                 seekBeforeLoad(target);
             }
-            // Ignored rather than surfaced: autoplay policies reject this in a tab that has never
-            // been interacted with, and the seek has already succeeded, which is the part the
-            // caller asked for.
-            element.play?.().catch(() => {});
+            // Surface a rejected play request so a successful seek never looks unresponsive.
+            requestPlay(element);
         },
     }), [isYouTube, playhead, seekBeforeLoad]);
 
     const handleTimeUpdate = (e) => {
+        const time = e.currentTarget.currentTime;
+        const target = repeatTarget(time, repeatRange, lastPlaybackTimeRef.current);
+        lastPlaybackTimeRef.current = time;
+        // The seek fires `seeking`, which clears the ref again — the jump back to A is a seek too.
+        if (target !== null) e.currentTarget.currentTime = target;
         const now = Date.now();
         if (now - lastReportedAtRef.current < PROGRESS_REPORT_INTERVAL_MS) return;
         lastReportedAtRef.current = now;
@@ -230,6 +265,14 @@ const VideoPlayer = forwardRef(function VideoPlayer(
     };
 
     const handlePauseOrEnded = (e) => {
+        // B at (or past) the very end: the element can end before a timeupdate reaches B. Same
+        // rule as repeatTarget — only when playback ran here from inside the passage.
+        if (e.type === 'ended' && repeatRange?.end
+            && repeatTarget(repeatRange.end, repeatRange, lastPlaybackTimeRef.current) !== null) {
+            e.currentTarget.currentTime = repeatRange.start;
+            requestPlay(e.currentTarget);
+            return;
+        }
         lastReportedAtRef.current = Date.now();
         report(e.currentTarget.currentTime);
         pin();
@@ -250,7 +293,7 @@ const VideoPlayer = forwardRef(function VideoPlayer(
             pendingSeekRef.current = null;
             if (resumePlaybackRef.current) {
                 resumePlaybackRef.current = false;
-                e.currentTarget.play().catch(() => {});
+                requestPlay(e.currentTarget);
             }
             return;
         }
@@ -307,6 +350,7 @@ const VideoPlayer = forwardRef(function VideoPlayer(
      * invisible until someone presses the key.
      */
     const handleShortcut = (e) => {
+        if (!ownsShortcut(e)) return;
         const inChrome = e.target !== e.currentTarget;
         // Never steal a key from something the viewer is typing in, from the volume slider (an
         // <input>, whose arrows are its own), or from the settings menu, which navigates itself.
@@ -326,7 +370,7 @@ const VideoPlayer = forwardRef(function VideoPlayer(
         nudge();
         switch (action) {
             case 'toggle-play':
-                if (el.paused || el.ended) el.play().catch(() => {});
+                if (el.paused || el.ended) requestPlay(el);
                 else el.pause();
                 break;
             case 'seek-forward':
@@ -344,7 +388,7 @@ const VideoPlayer = forwardRef(function VideoPlayer(
                 break;
             }
             case 'toggle-mute':
-                el.muted = !el.muted;
+                toggleMediaMute(el, lastAudibleVolumeRef.current);
                 break;
             case 'toggle-fullscreen':
                 toggleFullscreen();
@@ -384,9 +428,9 @@ const VideoPlayer = forwardRef(function VideoPlayer(
         // panel — and a button, since the viewer is now the only one who can decide to try again.
         // Which route it was decides what the button does: a failed mint is re-asked, a destroyed
         // hls.js instance has to be rebuilt as well (see retryPlayback).
-        if (surface === 'failed') {
+        if (surface === 'failed' && !playbackUrl) {
             return (
-                <div className="flex min-h-[300px] w-full flex-col items-center justify-center
+                <div className="flex aspect-video w-full flex-col items-center justify-center
                     gap-3 rounded-lg bg-black/80 px-4 py-10 text-center">
                     <p className="text-sm text-white/90">{t('video.playbackFailed')}</p>
                     <Button
@@ -403,7 +447,8 @@ const VideoPlayer = forwardRef(function VideoPlayer(
         // Rendering before the signed URL arrives would fire one unsigned request that 403s and
         // leave the player stuck showing an error for what is really just a pending fetch.
         if (surface === 'loading') {
-            return <div className="w-full h-[300px] rounded-lg bg-black/80 animate-pulse" />;
+            return <div role="status" aria-label={t('video.controls.buffering')}
+                className="aspect-video w-full rounded-lg bg-black/80 motion-safe:animate-pulse" />;
         }
 
         const { options: qualityChoices, activeId: activeQuality } = qualityOptions({
@@ -443,7 +488,7 @@ const VideoPlayer = forwardRef(function VideoPlayer(
                 id: 'loop',
                 label: t('video.settings.loop'),
                 active: loopEnabled,
-                onToggle: () => setLoopEnabled((on) => !on),
+                onToggle: () => { setLoopEnabled((on) => !on); setRepeatRange(null); },
             },
         ];
         if (pipSupported) {
@@ -495,9 +540,11 @@ const VideoPlayer = forwardRef(function VideoPlayer(
                 }}
                 // The cursor goes with the controls: a still arrow over the middle of a fullscreen
                 // lecture is as much in the way as the bar was.
-                className={`relative outline-none ${isFullscreen
+                className={`relative bg-black rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${isFullscreen
                     ? 'flex h-full w-full items-center justify-center bg-black'
-                    : ''} ${controlsVisible || menuOpen ? '' : 'cursor-none'}`}
+                    // Capped by the viewport so a wide desktop window does not push the player's
+                    // controls below the fold; object-contain letterboxes the rest.
+                    : 'aspect-video max-h-[80vh] mx-auto'} ${controlsVisible || menuOpen ? '' : 'cursor-none'}`}
             >
                 <video
                     ref={attachVideo}
@@ -511,11 +558,12 @@ const VideoPlayer = forwardRef(function VideoPlayer(
                     // No `controls`: the bar below is ours, and that is what lets the settings menu
                     // exist in fullscreen at all — see useFullscreen.
                     playsInline
-                    loop={loopEnabled}
+                    loop={loopEnabled && !repeatRange?.end}
                     // Honoured by the element on the progressive and Safari paths. hls.js ignores it
                     // entirely and is held back by `autoStartLoad: false` plus onPlay below.
                     preload="metadata"
                     onLoadedMetadata={handleLoadedMetadata}
+                    onError={() => { if (!usesHlsJs) { setMediaFailed(true); pin(); } }}
                     onTimeUpdate={handleTimeUpdate}
                     onPlay={handlePlay}
                     onPause={handlePauseOrEnded}
@@ -539,7 +587,7 @@ const VideoPlayer = forwardRef(function VideoPlayer(
                         const el = videoRef.current;
                         if (!el) return;
                         containerRef.current?.focus();
-                        if (el.paused || el.ended) el.play().catch(() => {});
+                        if (el.paused || el.ended) requestPlay(el);
                         else el.pause();
                     }}
                     // The browser synthesises a dblclick from two quick taps as well as from two
@@ -559,7 +607,7 @@ const VideoPlayer = forwardRef(function VideoPlayer(
                     className={`bg-black [@media(hover:hover)]:[transform:translateZ(0)]
                         ${isFullscreen
                         ? 'h-full w-full max-h-none rounded-none object-contain'
-                        : 'w-full max-h-[500px] rounded-lg'}`}
+                        : 'h-full w-full object-contain rounded-lg'}`}
                 >
                     {t('video.unsupported')}
                 </video>
@@ -619,7 +667,7 @@ const VideoPlayer = forwardRef(function VideoPlayer(
                         onClick={togglePip}
                         aria-pressed={pipActive}
                         aria-label={t('video.settings.pictureInPicture')}
-                        className={`absolute end-2 top-2 z-10 flex h-9 w-9 items-center
+                        className={`absolute end-2 top-2 z-10 flex h-11 w-11 sm:h-9 sm:w-9 items-center
                             justify-center rounded-full bg-black/60 text-white transition-opacity
                             duration-200 hover:bg-black/80 focus-visible:opacity-100 focus:outline-none
                             focus-visible:ring-2 focus-visible:ring-white
@@ -629,7 +677,33 @@ const VideoPlayer = forwardRef(function VideoPlayer(
                     </button>
                 )}
 
+                {hlsUnsupported ? (
+                    <div role="alert" className="absolute inset-0 z-30 flex items-center justify-center rounded-lg bg-black/90 p-4 text-center text-white">
+                        <p>{t('video.unsupported')}</p>
+                    </div>
+                ) : (mediaFailed || surface === 'failed') && (
+                    <div role="alert" className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 rounded-lg bg-black/90 p-4 text-center text-white">
+                        <p>{t('video.playbackFailed')}</p>
+                        <Button autoFocus variant="secondary" size="sm" disabled={retrying} onClick={async () => {
+                            if (pendingSeekRef.current == null) rememberPosition();
+                            // handleLoadedMetadata plays once the source is back; a play the
+                            // browser blocks there only brings the controls up (playblocked).
+                            resumePlaybackRef.current = true;
+                            setMediaFailed(false);
+                            // retryPlayback re-asks for the URL itself (it invalidates the query),
+                            // so the hls.js path must not also refetch — that was two requests.
+                            if (usesHlsJs) { retryPlayback(); return; }
+                            setRetrying(true);
+                            const result = await refetchPlaybackUrl();
+                            setRetrying(false);
+                            if (result.isError) return;
+                            videoRef.current?.load();
+                        }}>{t(retrying ? 'video.controls.buffering' : 'common.retry')}</Button>
+                    </div>
+                )}
                 <VideoControlBar
+                    repeatRange={repeatRange}
+                    onRepeatRangeChange={(range) => { setRepeatRange(range); if (range) setLoopEnabled(false); }}
                     videoRef={videoRef}
                     mediaKey={playbackUrl}
                     // The catalogue knows how long the video is; on the HLS path the element does
