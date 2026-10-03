@@ -2,7 +2,7 @@ import { requestPlay, toggleMediaMute } from '@/lib/player/interaction';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Airplay, Loader2, Maximize, Minimize, Pause, Play, Volume1, Volume2, VolumeX } from 'lucide-react';
 import { safeStorage } from '@/lib/safeStorage';
-import { formatDigits, isRtl, t } from '@/i18n';
+import { direction, formatDigits, t } from '@/i18n';
 import PlayerSettingsMenu from './PlayerSettingsMenu';
 
 /**
@@ -16,30 +16,18 @@ import PlayerSettingsMenu from './PlayerSettingsMenu';
  * refuse, and Safari's button does not use that API at all — it puts the element into its own
  * presentation mode, where there is nothing to re-point. Nor can a button be added to the native
  * bar: it lives in a closed shadow root. So `controls` is off and this is the bar, which also
- * settles button order, RTL, and one look in every browser.
+ * settles button order, direction, and one look in every browser.
  *
- * <p><b>The timeline runs with the text: the video starts where the reading starts and plays
- * away from it.</b> A timeline is read like the sentence beside it, so on the Arabic build it
- * begins at the right edge and fills leftwards, and on the English build it does the ordinary
- * thing. Everything that maps a position to a time follows from that one decision and must keep
- * following it: `ratioFromPointer` measures from the track's starting edge, the played and
- * buffered fills are anchored `start-0`, the arrow keys chase the handle (so ArrowLeft seeks
- * FORWARD under RTL and BACK under LTR), the double-tap zones on the picture put "back" on the
- * starting side (`lib/player/gestures.js`), and the play triangle points the way the video
- * travels.
- *
- * <p><b>The direction is a parameter, not a constant, and it is threaded rather than read.</b>
- * `ratioFromPointer` and `keyboardAction` take it with a default of `isRtl()`, so the component
- * passes nothing and a test passes both — which is the only way the mirrored arithmetic is
- * actually checked in the direction the reviewer is not currently looking at. Getting it backwards
- * neither throws nor logs.
- *
- * <p>Two islands stay left-to-right inside it, and both are deliberate. The clock is one LTR run
- * (`12:04 / 45:10`) because bidi would otherwise reorder the two readings around the slash and
- * show the total first. The volume group is the other: its slider is a native `<input
- * type="range">`, whose thumb the browser draws and mirrors on its own — and a browser that does
- * not mirror it leaves a control whose fill and whose thumb disagree. A volume level is not a
- * timeline and has no direction to respect, so it is not worth betting a control on that.
+ * <p><b>The player runs left to right in every language, Arabic included.</b> Play and pause on
+ * the left, the timeline filling from the left, ArrowRight and a double-tap on the right side
+ * seeking forward, and the play triangle pointing right — the way YouTube, the phone and the TV
+ * remote all draw it on an Arabic interface, and what Material and Apple's guidelines ask for:
+ * media controls depict the direction of the tape, not of reading, and are not mirrored. It used
+ * to mirror under RTL, and a right-pointing triangle on the card opened a left-pointing one in
+ * the player. The bar's root says `dir="ltr"` so its logical classes resolve that way, and the
+ * pointer, keyboard and tap arithmetic take no direction at all. Only TEXT inside the player —
+ * the settings menu, the repeat line, the error overlays — keeps the reading direction, because
+ * an Arabic sentence laid out LTR puts its full stop on the wrong side.
  *
  * <p><b>Element state is read here, not in `VideoPlayer`.</b> `timeupdate` fires several times a
  * second; holding the playhead in the player's own state would re-render the `<video>`, the hls.js
@@ -281,12 +269,9 @@ export const timelineScale = (elementDuration, durationHint) => {
 /**
  * How far into the video a pointer is, as 0…1.
  *
- * <p><b>Measured from the track's STARTING edge, because that is where the video starts.</b> Under
- * RTL that is the right edge and `1` is the left one; under LTR it is the other way round. This is
- * the single place that conversion happens — the fills and the handle are positioned from the same
- * logical edge with the same number — and getting it backwards neither throws nor logs: it
- * produces a timeline where every scrub lands at the mirror image of where it was aimed, which is
- * a thing to notice rather than a thing to see.
+ * <p><b>Measured from the track's LEFT edge, in every language</b> — the timeline runs left to
+ * right (see the top of this file). The fills and the handle are positioned from that same edge
+ * with the same number.
  *
  * <p>Exported and tested because it is the arithmetic behind every scrub, and its other failures
  * are silent too: a click on the very edge of the track, a drag that continues outside the player
@@ -295,12 +280,9 @@ export const timelineScale = (elementDuration, durationHint) => {
  * zero and seek to `NaN`, an assignment the element rejects, leaving a dead timeline with nothing
  * logged.
  */
-export const ratioFromPointer = (clientX, rect, rtl = isRtl()) => {
+export const ratioFromPointer = (clientX, rect) => {
     if (!rect || !rect.width) return 0;
-    const ratio = rtl
-        ? (rect.right - clientX) / rect.width
-        : (clientX - rect.left) / rect.width;
-    return Math.min(1, Math.max(0, ratio));
+    return Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
 };
 
 /**
@@ -311,21 +293,18 @@ export const ratioFromPointer = (clientX, rect, rtl = isRtl()) => {
  * presses the key. Space is deliberately included alongside `k`, `f` and `m` — the keys every
  * video player has trained people to expect.
  *
- * <p><b>The arrow that chases the handle is the one that seeks forward.</b> The arrows follow the
- * TIMELINE rather than the other way round: under RTL the handle moves leftwards as the lecture
- * plays, so ArrowLeft is forward, and under LTR it moves rightwards and ArrowRight is. That is also
- * what a native `<input type="range">` does under each `dir`, which is the behaviour a reader
- * already has in their fingers from every other slider on the web.
+ * <p><b>ArrowRight seeks forward in every language</b>, because the timeline runs left to right
+ * in every language and the arrow that chases the handle is the one that seeks forward.
  */
-export const keyboardAction = (key, rtl = isRtl()) => {
+export const keyboardAction = (key) => {
     switch (key) {
         case ' ':
         case 'k':
             return 'toggle-play';
         case 'ArrowLeft':
-            return rtl ? 'seek-forward' : 'seek-back';
+            return 'seek-back';
         case 'ArrowRight':
-            return rtl ? 'seek-back' : 'seek-forward';
+            return 'seek-forward';
         case 'ArrowUp':
             return 'volume-up';
         case 'ArrowDown':
@@ -741,13 +720,12 @@ export default function VideoControlBar({
                             ${showCentrePlay || shown ? 'pointer-events-auto' : 'pointer-events-none'}`}
                     >
                         {/* Filled, unlike the bar's outline icons: these are read as a target to
-                            press rather than as a control in a row of controls. The triangle is
-                            mirrored under RTL to point the way this player's timeline runs, and
-                            nudged the same way — a triangle's optical centre sits behind its
-                            bounding box, so centring the box leaves it looking off-centre in the
-                            disc. Left alone under LTR, where lucide already draws it correctly. */}
+                            press rather than as a control in a row of controls. The triangle
+                            points right in every language and is nudged right — a triangle's
+                            optical centre sits behind its bounding box, so centring the box leaves
+                            it looking off-centre in the disc. */}
                         {showCentrePlay
-                            ? <Play size={30} fill="currentColor" className="rtl:-translate-x-[2px] rtl:scale-x-[-1] ltr:translate-x-[2px]" />
+                            ? <Play size={30} fill="currentColor" className="translate-x-[2px]" />
                             : <Pause size={30} fill="currentColor" />}
                     </button>
                 </div>
@@ -764,11 +742,10 @@ export default function VideoControlBar({
             )}
 
             <div
-                // No `dir` of its own: the bar takes the page's, timeline included — see the note
-                // at the top of this file. Two islands inside it opt out to `ltr`, and both say
-                // why where they are.
                 // `pointer-events-none` on the wrapper with the row re-enabling them, so the scrim over
                 // the bottom of the picture never swallows a click meant for the video.
+                // Left to right whatever the interface language — see the top of this file.
+                dir="ltr"
                 className={`absolute inset-x-0 bottom-0 z-10 pointer-events-none transition-opacity
                     duration-200 ${shown ? 'opacity-100' : 'opacity-0'}`}
                 // No `onPointerMove` here on purpose. React events bubble, so a move over this bar
@@ -834,41 +811,36 @@ export default function VideoControlBar({
                     >
                         {(scrubTime ?? hoverTime) !== null && scale > 0 && (
                             <span dir="ltr" className="pointer-events-none absolute bottom-full rounded bg-black/90 px-2 py-1 text-xs tabular-nums text-white"
-                                style={{ insetInlineStart: `clamp(0px, ${((scrubTime ?? hoverTime) / scale) * 100}% - 32px, calc(100% - 64px))` }}>
+                                style={{ left: `clamp(0px, ${((scrubTime ?? hoverTime) / scale) * 100}% - 32px, calc(100% - 64px))` }}>
                                 {formatTime(scrubTime ?? hoverTime)}
                             </span>
                         )}
                         <div className="relative h-1 w-full rounded-full bg-white/30 transition-[height]
                             group-hover:h-1.5 group-focus-visible:h-1.5">
                             {/* Buffered, then played on top of it, then the handle. */}
-                            {/* Anchored `start-0` and grown away from it, because that is the
-                                direction this timeline runs: at 0:00 nothing is painted and the
-                                handle sits where the reading starts. */}
+                            {/* Anchored left and grown rightwards: at 0:00 nothing is painted and
+                                the handle sits at the left edge. */}
                             <div
-                                className="absolute inset-y-0 start-0 rounded-full bg-white/40"
+                                className="absolute inset-y-0 left-0 rounded-full bg-white/40"
                                 style={{ width: `${Math.min(100, bufferedRatio * 100)}%` }}
                             />
                             <div
-                                className="absolute inset-y-0 start-0 rounded-full bg-primary"
+                                className="absolute inset-y-0 left-0 rounded-full bg-primary"
                                 style={{ width: `${Math.min(100, playedRatio * 100)}%` }}
                             />
-                            {/* `insetInlineStart` in the style and an `rtl:`/`ltr:` pair for the
-                                half-width nudge that centres it: the offset is logical, the
-                                translate is not — CSS `translate` has no direction-aware form, so
-                                the handle would sit a handle's width off the playhead in whichever
-                                build was not the one it was written for. */}
+                            {/* Centred on the playhead by a half-width nudge back. */}
                             <div
                                 className="absolute top-1/2 h-3 w-3 -translate-y-1/2
-                                    rtl:translate-x-1/2 ltr:-translate-x-1/2
+                                    -translate-x-1/2
                                     rounded-full bg-primary opacity-0 transition-opacity
                                     group-hover:opacity-100 group-focus-visible:opacity-100"
-                                style={{ insetInlineStart: `${Math.min(100, playedRatio * 100)}%`, opacity: scrubTime !== null ? 1 : undefined }}
+                                style={{ left: `${Math.min(100, playedRatio * 100)}%`, opacity: scrubTime !== null ? 1 : undefined }}
                             />
                         </div>
                     </div>
 
                     {repeatRange && (
-                        <div className="flex items-center justify-between gap-2 text-xs text-white" role="status">
+                        <div dir={direction()} className="flex items-center justify-between gap-2 text-xs text-white" role="status">
                             <span>{t(repeatRange.end ? 'video.repeat.repeating' : 'video.repeat.startSet', {
                                 start: formatTime(repeatRange.start), end: formatTime(repeatRange.end),
                             })}</span>
@@ -884,14 +856,13 @@ export default function VideoControlBar({
                         >
                             {/* Mirrored like the centre disc, and only where the player runs right
                                 to left. */}
-                            {playing ? <Pause size={18} /> : <Play size={18} className="rtl:scale-x-[-1]" />}
+                            {playing ? <Pause size={18} /> : <Play size={18} />}
                         </button>
 
                         {/* Tabular figures, or the whole row twitches sideways once a second as the
-                            digits change width. `dir="ltr"` because this is one reading and not
-                            two: under the bar's RTL the bidi algorithm reorders the segments
-                            around the slash and shows the total first, so a lecture four minutes
-                            in reads «45:10 / 4:02». */}
+                            digits change width. `dir="ltr"` is already the bar's; kept on the
+                            clock because it is the one place where losing it reorders the two
+                            readings around the slash and shows the total first («45:10 / 4:02»). */}
                         <span dir="ltr" className="text-[10px] sm:text-xs whitespace-nowrap text-white/90 tabular-nums">
                             {formatDigits(formatTime(shownTime))} / {formatDigits(formatTime(shownDuration))}
                         </span>
@@ -902,15 +873,8 @@ export default function VideoControlBar({
                             focus, the way every player does it, so the bar is not mostly slider.
                             A finger has neither: see the two notes on the slider itself.
 
-                            The GROUP mirrors with the rest of the bar — mute button, then the
-                            slider opening away from it — and only the `<input>` itself opts out,
-                            down on the element. That split is the point: the slider is a native
-                            range input, so the browser draws and positions the thumb while the
-                            fill under it is painted by hand, and a browser that does not mirror
-                            the thumb under `dir="rtl"` leaves a control whose fill and whose
-                            handle point opposite ways. The timeline is worth that risk because it
-                            is read as time; a volume level is not, and it has no direction to
-                            respect either way. */}
+                            Left to right like the rest of the bar: mute button, then the slider
+                            opening rightwards from it. */}
                         <div className="group/volume flex items-center">
                             <button
                                 type="button"
@@ -927,9 +891,8 @@ export default function VideoControlBar({
                             {volumeIsControllable && (
                                 <input
                                     type="range"
-                                    // The one thing in the bar the browser draws for us, so the
-                                    // one thing whose direction is not ours to assert — see the
-                                    // note on the group above.
+                                    // The browser draws this thumb and the fill is painted by
+                                    // hand; both must agree, so the direction is stated here too.
                                     dir="ltr"
                                     min={0}
                                     max={1}

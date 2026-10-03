@@ -14,7 +14,6 @@
  * when a finger lands somewhere the player is not.
  */
 
-import { isRtl } from '@/i18n';
 
 /**
  * How long after a tap a second one still counts as part of the same gesture.
@@ -48,26 +47,16 @@ const SIDE_ZONE_RATIO = 0.3;
 /**
  * Which part of the picture a tap landed on: `'back'`, `'forward'` or `'centre'`.
  *
- * <p><b>The STARTING edge is backwards, because that is where the timeline starts.</b> These
- * zones are the timeline without the timeline being visible: the viewer is pointing at a direction
- * along it, so they have to point the same way. Under RTL the playhead starts at the right and
- * travels left, so the right side is "back"; under LTR it is the left. A tap on one side that sent
- * the handle the other way would be two directions for one gesture. This is the same rule the
- * arrow keys follow: the gesture belongs to the timeline, not to the screen.
- *
- * <p>Direction is a parameter defaulting to `isRtl()`, for the reason `ratioFromPointer`'s is —
- * threading it is what lets a test exercise both, where reading it would only ever exercise the
- * one the suite happens to run in.
+ * <p><b>Left is back and right is forward, in every language.</b> These zones are the timeline
+ * without the timeline being visible, and the timeline runs left to right everywhere (see
+ * VideoControlBar) — the same rule the arrow keys follow, and what YouTube does on an Arabic phone.
  *
  * <p>Answers `'centre'` for a missing or zero-width rect rather than guessing a side: that is the
  * first layout pass and a detached element, and the honest answer there is "not a seek zone".
  */
-export const tapZone = (clientX, rect, rtl = isRtl()) => {
+export const tapZone = (clientX, rect) => {
     if (!rect || !rect.width) return 'centre';
-    // Measured from the edge the timeline begins at: 0 is the start of the video, 1 is the end.
-    const ratio = rtl
-        ? (rect.right - clientX) / rect.width
-        : (clientX - rect.left) / rect.width;
+    const ratio = (clientX - rect.left) / rect.width;
     if (ratio < SIDE_ZONE_RATIO) return 'back';
     if (ratio > 1 - SIDE_ZONE_RATIO) return 'forward';
     return 'centre';

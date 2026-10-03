@@ -172,13 +172,15 @@ export default function PlayerSettingsMenu({ groups = [], toggles = [], actions 
                     role="menu"
                     aria-label={t('video.settings.label')}
                     onKeyDown={handlePanelKeyDown}
-                    // Opens upward from the gear, anchored to its trailing edge so a wide panel
-                    // grows into the player rather than off it: the bar runs with the text, which
-                    // puts the gear a couple of buttons in from the picture's trailing edge, so a
-                    // panel growing outwards from there would hang off it. `end-0` rather than a
-                    // physical side, so that holds on both builds. Capped shorter on a phone,
-                    // where the whole player may be barely taller than this panel wants to be.
-                    className="absolute bottom-0 inset-x-0 sm:inset-x-auto sm:bottom-full sm:end-0 sm:mb-2 sm:min-w-[240px] max-h-[min(43vw,320px)] sm:max-h-72
+                    // The bar runs left to right in every language, but this panel is text: it
+                    // takes the reading direction back, and its arrow keys follow it.
+                    dir={isRtl() ? 'rtl' : 'ltr'}
+                    // Opens upward from the gear, anchored to its right edge so a wide panel grows
+                    // into the player rather than off it: the gear sits near the picture's right
+                    // edge. `right-0`, physical, because the panel's own `dir` is the reading one.
+                    // Capped shorter on a phone, where the whole player may be barely taller than
+                    // this panel wants to be.
+                    className="absolute bottom-0 inset-x-0 sm:inset-x-auto sm:bottom-full sm:right-0 sm:mb-2 sm:min-w-[240px] max-h-[min(43vw,320px)] sm:max-h-72
                         overflow-y-auto rounded-lg bg-black/90 p-1.5 text-sm text-white shadow-lg
                         backdrop-blur-sm"
                 >

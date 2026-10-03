@@ -461,7 +461,7 @@ function AdminChannels() {
                                     <Button
                                         size="sm"
                                         onClick={() => openDecision(channel, 'reactivate')}
-                                        icon={<Play size={14} className="rtl:scale-x-[-1]" />}
+                                        icon={<Play size={14} />}
                                     >
                                         {t('admin.reactivate')}
                                     </Button>

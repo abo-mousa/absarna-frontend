@@ -22,28 +22,11 @@ import {
 const picture = { left: 20, right: 380, width: 360 };
 
 describe('tapZone', () => {
-    it('puts BACK on the right under RTL, because the timeline runs right to left', () => {
-        // The zones are the timeline without the timeline being visible. The bar is mirrored for
-        // Arabic — the handle starts at the right edge and travels left — so a tap on the right
-        // goes back towards 0:00. Mirroring one and not the other is the failure this pins: the
-        // gesture would send the handle away from the side that was tapped.
-        expect(tapZone(370, picture, true)).toBe('back');
-        expect(tapZone(30, picture, true)).toBe('forward');
-    });
-
-    it('puts BACK on the left under LTR', () => {
-        // The same rule, not a second one: "back" is the side the timeline starts at, and the
-        // direction is passed rather than read so both builds are actually exercised — the suite
-        // runs in one of them.
-        expect(tapZone(30, picture, false)).toBe('back');
-        expect(tapZone(370, picture, false)).toBe('forward');
-    });
-
-    it('defaults to the interface direction, which is Arabic in the test environment', () => {
-        // Guards the default: `useDoubleTapSeek` passes two arguments, so a default of LTR would
-        // pass every assertion above and seek backwards on the live player.
-        expect(tapZone(370, picture)).toBe('back');
-        expect(tapZone(30, picture)).toBe('forward');
+    it('puts BACK on the left and FORWARD on the right, in Arabic too', () => {
+        // The zones are the timeline without the timeline being visible, and the timeline runs
+        // left to right in every language — the suite runs in Arabic, so this is that build.
+        expect(tapZone(30, picture)).toBe('back');
+        expect(tapZone(370, picture)).toBe('forward');
     });
 
     it('leaves the middle of the picture to play and pause', () => {
@@ -57,12 +40,12 @@ describe('tapZone', () => {
     });
 
     it('draws the boundary at 30% of the width in from each edge', () => {
-        // 30% of 360 is 108, so on a picture spanning 20…380 the back zone starts at 272 and the
-        // forward zone ends at 128.
-        expect(tapZone(273, picture)).toBe('back');
-        expect(tapZone(271, picture)).toBe('centre');
-        expect(tapZone(127, picture)).toBe('forward');
+        // 30% of 360 is 108, so on a picture spanning 20…380 the back zone ends at 128 and the
+        // forward zone starts at 272.
+        expect(tapZone(127, picture)).toBe('back');
         expect(tapZone(129, picture)).toBe('centre');
+        expect(tapZone(273, picture)).toBe('forward');
+        expect(tapZone(271, picture)).toBe('centre');
     });
 
     it('answers "centre" for a box that is not on screen yet', () => {

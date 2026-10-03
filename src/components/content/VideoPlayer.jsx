@@ -21,7 +21,7 @@ import { usePictureInPicture } from '@/hooks/player/usePictureInPicture';
 import { useAutoHideControls } from '@/hooks/player/useAutoHideControls';
 import { useDoubleTapSeek } from '@/hooks/player/useDoubleTapSeek';
 import { useResumeAfterBackground } from '@/hooks/player/useResumeAfterBackground';
-import { t } from '@/i18n';
+import { direction, t } from '@/i18n';
 import { Button } from '@/components/ui';
 import { useConsent } from '@/contexts/ConsentContext';
 import { PictureInPicture2, RotateCcw, RotateCw } from 'lucide-react';
@@ -540,6 +540,9 @@ const VideoPlayer = forwardRef(function VideoPlayer(
                 }}
                 // The cursor goes with the controls: a still arrow over the middle of a fullscreen
                 // lecture is as much in the way as the bar was.
+                // The media surface runs left to right in every language (see VideoControlBar);
+                // the text on it — overlays, the tap counter — sets the reading direction back.
+                dir="ltr"
                 className={`relative bg-black rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${isFullscreen
                     ? 'flex h-full w-full items-center justify-center bg-black'
                     // Capped by the viewport so a wide desktop window does not push the player's
@@ -618,18 +621,19 @@ const VideoPlayer = forwardRef(function VideoPlayer(
                     tapped rather than in the middle, which is also how it teaches the gesture to
                     the next viewer who finds it by accident.
 
-                    "Back" is on the STARTING side, because that is where this player's timeline
-                    begins (see VideoControlBar) — the right of the picture under RTL, the left
-                    under LTR, which `start-0` gives for free. `role="status"` so the jump is announced rather
+                    "Back" is on the left and "forward" on the right, as the timeline runs (see
+                    VideoControlBar) — physical sides, because the box carries the reading
+                    direction for its text. `role="status"` so the jump is announced rather
                     than only drawn, and `pointer-events-none` so the flash never eats the tap that
                     follows it — a run of three taps is one gesture, and the second one must not
                     land on a box that appeared under the finger after the first. */}
                 {tapFeedback && (
                     <div
                         role="status"
+                        dir={direction()}
                         className={`pointer-events-none absolute inset-y-0 flex w-[30%] flex-col
                             items-center justify-center gap-1 bg-black/30 text-white
-                            ${tapFeedback.zone === 'back' ? 'start-0' : 'end-0'}`}
+                            ${tapFeedback.zone === 'back' ? 'left-0' : 'right-0'}`}
                     >
                         {tapFeedback.zone === 'back'
                             ? <RotateCcw size={26} />
@@ -667,7 +671,7 @@ const VideoPlayer = forwardRef(function VideoPlayer(
                         onClick={togglePip}
                         aria-pressed={pipActive}
                         aria-label={t('video.settings.pictureInPicture')}
-                        className={`absolute end-2 top-2 z-10 flex h-11 w-11 sm:h-9 sm:w-9 items-center
+                        className={`absolute right-2 top-2 z-10 flex h-11 w-11 sm:h-9 sm:w-9 items-center
                             justify-center rounded-full bg-black/60 text-white transition-opacity
                             duration-200 hover:bg-black/80 focus-visible:opacity-100 focus:outline-none
                             focus-visible:ring-2 focus-visible:ring-white
@@ -678,11 +682,11 @@ const VideoPlayer = forwardRef(function VideoPlayer(
                 )}
 
                 {hlsUnsupported ? (
-                    <div role="alert" className="absolute inset-0 z-30 flex items-center justify-center rounded-lg bg-black/90 p-4 text-center text-white">
+                    <div role="alert" dir={direction()} className="absolute inset-0 z-30 flex items-center justify-center rounded-lg bg-black/90 p-4 text-center text-white">
                         <p>{t('video.unsupported')}</p>
                     </div>
                 ) : (mediaFailed || surface === 'failed') && (
-                    <div role="alert" className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 rounded-lg bg-black/90 p-4 text-center text-white">
+                    <div role="alert" dir={direction()} className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 rounded-lg bg-black/90 p-4 text-center text-white">
                         <p>{t('video.playbackFailed')}</p>
                         <Button autoFocus variant="secondary" size="sm" disabled={retrying} onClick={async () => {
                             if (pendingSeekRef.current == null) rememberPosition();
