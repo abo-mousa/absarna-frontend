@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PLAYBACK_SPEEDS, sanitizeRate } from '@/lib/player/rate';
-import { qualityOptions } from '@/lib/player/quality';
+import { isRecording, qualityOptions } from '@/lib/player/quality';
 
 /**
  * What the player's settings menu offers, and what it accepts back.
@@ -122,6 +122,25 @@ describe('qualityOptions', () => {
         const { options } = qualityOptions({ mode: 'progressive', qualities: ['480p'] });
         expect(options).toHaveLength(2);
         expect(qualityOptions({ mode: 'hls-native', qualities: [] }).options).toHaveLength(1);
+    });
+});
+
+describe('a recording with no picture', () => {
+    // Its ladder is the audio rung alone, which the master playlist also serves: "Auto", a level
+    // and "Audio" would be three names for one stream.
+    it('offers nothing to choose, so the quality group is dropped', () => {
+        const levels = [{ index: 0, label: '' }];
+        for (const mode of ['hls-js', 'hls-native', 'progressive']) {
+            const { options, activeId } = qualityOptions({ mode, levels, qualities: ['audio'] });
+            expect(options).toHaveLength(1);
+            expect(activeId).toBe('auto');
+        }
+    });
+
+    it('is only a ladder of the audio rung alone', () => {
+        expect(isRecording(['audio'])).toBe(true);
+        expect(isRecording(['720p', 'audio'])).toBe(false);
+        expect(isRecording([])).toBe(false);
     });
 });
 

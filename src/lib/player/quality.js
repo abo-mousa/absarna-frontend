@@ -40,6 +40,14 @@ export const onAudioRung = (selectedQuality, servedQuality) =>
  *
  * The audio rung is appended from the API's ladder in every mode: the manifest can never offer it.
  */
+/**
+ * A recording with no picture: its ladder is the audio rung alone, and the master playlist serves
+ * that same rung as its one variant. There is nothing to choose between, so the menu offers
+ * nothing — `PlayerSettingsMenu` drops a group with a lone option.
+ */
+export const isRecording = (qualities = []) =>
+    qualities.length === 1 && qualities[0] === AUDIO_QUALITY;
+
 export const qualityOptions = ({
     mode,
     levels,
@@ -48,6 +56,9 @@ export const qualityOptions = ({
     servedQuality = null,
     selectedLevel = -1,
 }) => {
+    if (isRecording(qualities)) {
+        return { options: [{ id: AUTO_OPTION, label: qualityLabel(AUTO_OPTION) }], activeId: AUTO_OPTION };
+    }
     const onAudio = onAudioRung(selectedQuality, servedQuality);
     const options = [{ id: AUTO_OPTION, label: qualityLabel(AUTO_OPTION) }];
 

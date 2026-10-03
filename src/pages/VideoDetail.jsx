@@ -216,7 +216,12 @@ function VideoDetail() {
                             sourceType={video.sourceType}
                             sourceUrl={video.sourceUrl}
                             title={video.title}
-                            poster={thumbnail}
+                            // A recording with no picture shows its poster for the whole lecture,
+                            // so one without a poster of its own shows the channel's logo rather
+                            // than a black box. Logos are already on every card, so this sends
+                            // nothing new anywhere.
+                            poster={thumbnail ?? (video.channelLogoUrl
+                                ? resolveMediaUrl(video.channelLogoUrl) : null)}
                             duration={video.duration}
                             startTime={startTime}
                         />

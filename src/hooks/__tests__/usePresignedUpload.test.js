@@ -258,12 +258,12 @@ describe('uploadedBytes', () => {
 describe('ALLOWED_EXTENSIONS', () => {
     it('mirrors the backend UploadType allowlist exactly', () => {
         // Drift here is a file the picker offers and the backend refuses — the bug this replaced.
-        expect(ALLOWED_EXTENSIONS.videos).toEqual(['mp4', 'mov', 'm4v']);
+        expect(ALLOWED_EXTENSIONS.videos).toEqual(['mp4', 'mov', 'm4v', 'mp3', 'm4a', 'wav']);
         expect(ALLOWED_EXTENSIONS.books).toEqual(['pdf']);
     });
 
     it('renders an accept attribute the file dialog understands', () => {
-        expect(acceptAttribute('videos')).toBe('.mp4,.mov,.m4v');
+        expect(acceptAttribute('videos')).toBe('.mp4,.mov,.m4v,.mp3,.m4a,.wav');
         expect(acceptAttribute('books')).toBe('.pdf');
     });
 });

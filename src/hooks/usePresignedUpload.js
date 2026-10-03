@@ -35,7 +35,7 @@ const REISSUE_BATCH = 50;
  * one only decides what the picker offers and what is worth attempting.
  */
 export const ALLOWED_EXTENSIONS = {
-    videos: ['mp4', 'mov', 'm4v'],
+    videos: ['mp4', 'mov', 'm4v', 'mp3', 'm4a', 'wav'],
     books: ['pdf'],
 };
 
